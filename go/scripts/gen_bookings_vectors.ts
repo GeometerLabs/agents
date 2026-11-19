@@ -13,6 +13,9 @@
 //   ondc-vectors.json          src/ondc.ts through modules/ondc: the catalogue and every booking state at every stage, for two shops   (test/ondc.test.ts)
 //   scenarios-vectors.json     the agent run on scripted conversations with the in-memory stand-ins: what each message answers and what the record writes   (test/booking, adapters, record-decisions, language)
 //   report-vectors.json        templates/commerce/bookings/report: the busy month's report data from the record, the owner's lines, the printable page, the WhatsApp message and the monthly certificate, in every language  (test/report-*.test.ts)
+//   golive-vectors.json        the go-live certificate (report/certificate.ts), its signature and the checks of a signed file (modules/report/sign.ts, with a fixed Ed25519 key: its signatures are deterministic), and how the report reads a certificate (report/go-live.ts)  (test/report-go-live, -certificates, -sign)
+//   router-vectors.json        the three-step router as Bookings uses it (src/adapters/understanding.ts): rules, then a decision model, then a language model, over scripted answers  (test/understanding.test.ts, step-breaker.test.ts)
+//   standin-faults-vectors.json  the in-memory calendar, payments and messaging (what `fakes` mode must do in Go): the happy-path answers and every planned fault (op, mode, times, after)  (test/adapters.test.ts)
 //   runner-vectors.json        modules/runtime/tasks.ts createRunner over the real store: the queue's cases, and /readyz's store reason  (test/runtime.test.ts, server.test.ts)
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -51,6 +54,19 @@ import { ownerText } from "../../templates/commerce/bookings/report/text.ts";
 import { monthlyReportMessage, reportSubmissions } from "../../templates/commerce/bookings/report/whatsapp.ts";
 import { buildMonthlyCertificate, monthlyCertificateText } from "../../templates/commerce/bookings/report/certificate.ts";
 import { monthRange } from "../../modules/report/months.ts";
+import { createPrivateKey, generateKeyPairSync } from "node:crypto";
+import { buildGoLiveCertificate, goLiveSection, goLiveText, limitLines, summariseHandCheck } from "../../templates/commerce/bookings/report/certificate.ts";
+import { readGoLiveCertificate } from "../../templates/commerce/bookings/report/go-live.ts";
+import { envelopeFile, keyIdOf, publicKeyHex, verifyEnvelopeText } from "../../modules/report/sign.ts";
+import { createRouter } from "../../templates/commerce/bookings/src/adapters/understanding.ts";
+import { createModelParser } from "../../templates/commerce/bookings/src/adapters/model-llm.ts";
+import { createSystemOne } from "../../modules/understanding/system-one.ts";
+import { systemOneFetch, systemOneStandin } from "../../modules/standins/system-one.ts";
+import type { Decider } from "../../modules/standins/system-one.ts";
+import { createFakeCalendar } from "../../templates/commerce/bookings/src/adapters/calendar.ts";
+import { createFakePayments } from "../../modules/payments/payments.ts";
+import { createFakeMessaging } from "../../modules/messaging/messaging.ts";
+import { fakeClock } from "../../modules/core/clock.ts";
 import { seal } from "../../modules/report/sign.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -255,6 +271,130 @@ function scenarioVectors(): unknown {
   });
 }
 
+// a fixed Ed25519 key (the seed is bytes 1 to 32): a signature is then the same every run
+const SEED = Buffer.from(Array.from({ length: 32 }, (_, i) => i + 1));
+const fixedKey = () => createPrivateKey({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), SEED]), format: "der", type: "pkcs8" });
+const otherKey = () => createPrivateKey({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), Buffer.from(Array.from({ length: 32 }, (_, i) => 100 + i))]), format: "der", type: "pkcs8" });
+
+function goLiveVectors(): unknown {
+  const out: unknown[] = [];
+  const issuedAt = Date.parse("2027-02-04T10:30:00+05:30");
+  const upi = parseSettings({ ...example, payment: { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } }, calendar: { module: "own" } });
+  const hand = { held: 33, total: 33, checks: 196, failedTitles: [] as string[] };
+  const cases: [string, typeof settings, typeof hand & { notRun?: string[]; ranOn?: string }][] = [
+    ["glow salon, all held", settings, hand], ["glow salon, two failed", settings, { ...hand, held: 31, failedTitles: ["Cancellation after the window", "Late cancellation"] }],
+    ["a UPI shop", upi, hand], ["glow salon, two not run", settings, { ...hand, notRun: ["Cancellation after the window", "Late cancellation"] }],
+  ];
+  for (const [name, s, h] of cases) {
+    const cert = buildGoLiveCertificate({ settings: s, handCheck: h as never, issuedAt, preparedBy: "Divya, local Operator" });
+    out.push({ area: "certificate", name, input: { shop: name, handCheck: h, issuedAt }, output: clean(cert) });
+    const env = seal(cert);
+    for (const l of LANGUAGES) { out.push({ area: "text", name: `${name} text ${l}`, input: { language: l }, output: goLiveText(env, l) }); out.push({ area: "section", name: `${name} section ${l}`, input: { language: l }, output: goLiveSection(env, l) }); out.push({ area: "limits", name: `${name} limits ${l}`, input: { language: l }, output: limitLines(cert, l) }); }
+  }
+  // signatures and the checks of a file: round trip, a changed byte, someone else's key, naming a trusted key, a file that is not a document
+  const doc = buildGoLiveCertificate({ settings, handCheck: hand as never, issuedAt, preparedBy: "Divya, local Operator" });
+  const key = fixedKey();
+  const pub = publicKeyHex(key);
+  const signed = envelopeFile(seal(doc, key));
+  const unsigned = envelopeFile(seal(doc));
+  const other = envelopeFile(seal(doc, otherKey()));
+  const verified = (text: string, trust: string[] = []) => clean(verifyEnvelopeText(text, trust));
+  out.push({ area: "verify", name: "signed, no trusted key", input: { text: signed, trust: [] }, output: verified(signed) });
+  out.push({ area: "verify", name: "signed, the key named by its raw hex", input: { text: signed, trust: [pub] }, output: verified(signed, [pub]) });
+  out.push({ area: "verify", name: "signed, the key named by its id", input: { text: signed, trust: [keyIdOf(pub)] }, output: verified(signed, [keyIdOf(pub)]) });
+  out.push({ area: "verify", name: "unsigned", input: { text: unsigned, trust: [] }, output: verified(unsigned) });
+  out.push({ area: "verify", name: "signed by someone else's key, naming ours", input: { text: other, trust: [pub] }, output: verified(other, [pub]) });
+  out.push({ area: "verify", name: "one byte changed (the deposit)", input: { text: signed.replace('"depositInr":200', '"depositInr":201'), trust: [] }, output: verified(signed.replace('"depositInr":200', '"depositInr":201')) });
+  out.push({ area: "verify", name: "not JSON", input: { text: "{ half", trust: [] }, output: verified("{ half") });
+  out.push({ area: "verify", name: "another format", input: { text: signed.replace("geometer-document/1", "something-else/1"), trust: [] }, output: verified(signed.replace("geometer-document/1", "something-else/1")) });
+  out.push({ area: "key", name: "the fixed key", input: { seed: SEED.toString("hex") }, output: { publicKey: pub, keyId: keyIdOf(pub) } });
+  // how the monthly report reads a certificate it was given
+  const reading = (text: string, s: typeof settings) => clean(readGoLiveCertificate(text, s));
+  const own = (s: typeof settings, h: object = hand) => envelopeFile(seal(buildGoLiveCertificate({ settings: s, handCheck: h as never, issuedAt }), key));
+  out.push({ area: "reading", name: "a certificate made for this shop", input: { shop: "glow salon" }, output: reading(own(settings), settings) });
+  out.push({ area: "reading", name: "a certificate made for another shop's settings", input: { shop: "glow salon read as UPI" }, output: reading(own(settings), upi) });
+  out.push({ area: "reading", name: "a UPI shop's own", input: { shop: "upi" }, output: reading(own(upi), upi) });
+  out.push({ area: "reading", name: "checks that were not all run", input: { shop: "glow salon" }, output: reading(own(settings, { ...hand, notRun: ["Late cancellation"] }), settings) });
+  out.push({ area: "reading", name: "a torn file", input: { text: "{ half" }, output: reading("{ half", settings) });
+  return out;
+}
+
+async function routerVectors(): Promise<unknown> {
+  const ctx = { services: settings.services, languages: settings.languages };
+  const NOON = Date.UTC(2026, 10, 5);
+  const out: unknown[] = [];
+  const deciders: [string, Decider | "down"][] = [
+    ["no decision model", "down"], ["sure: greeting", (n) => ({ choice: n === "intent" ? "greeting" : n === "service" ? "no_service" : "no_slot", p: 0.95 })],
+    ["sure: book a haircut", (n) => ({ choice: n === "intent" ? "book" : n === "service" ? "haircut" : "no_slot", p: 0.95 })],
+    ["unsure", (n) => ({ choice: n === "intent" ? "greeting" : n === "service" ? "no_service" : "no_slot", p: 0.4 })],
+  ];
+  const models: [string, string | "down" | "none"][] = [["no language model", "none"], ["a language model that says book", JSON.stringify({ kind: "book", language: "en", serviceId: "haircut", offerInr: null, date: null, time: null, overrideAttempt: false })], ["a language model that is down", "down"], ["a language model that talks nonsense", "I am sorry"]];
+  const phrases = ["hello", "I want a haircut tomorrow at 6pm", "asdf qwer zxcv", "300 mein kar do", "cancel my booking", "STOP"];
+  for (const [dn, decider] of deciders) for (const [mn, model] of models) for (const text of phrases) {
+    const standin = systemOneStandin({ decider: decider === "down" ? undefined : decider });
+    const viaStandin = systemOneFetch(standin, { down: () => decider === "down" });
+    const modelFetch = (async () => {
+      if (model === "down") throw new TypeError("the connection failed");
+      return new Response(JSON.stringify({ id: "x", choices: [{ index: 0, message: { role: "assistant", content: model }, finish_reason: "stop" }], usage: { prompt_tokens: 2000, completion_tokens: 150 } }), { status: 200, headers: { "content-type": "application/json" } });
+    }) as unknown as typeof fetch;
+    const router = createRouter({
+      decision: { client: createSystemOne({ baseUrl: "http://decision.test", model: "laya", kind: "laya", timeoutMs: 1000 }, viaStandin) },
+      ...(model === "none" ? {} : { model: { parser: createModelParser({ wire: "openai", baseUrl: "http://model.test/v1", model: "deepseek-ai/DeepSeek-V4.1-Flash", timeoutMs: 1000 }, modelFetch), provider: "deepinfra", model: "deepseek-ai/DeepSeek-V4.1-Flash" } }),
+      now: () => NOON,
+    });
+    const result = await router.parseDetailed(text, ctx);
+    out.push({ name: `${dn} / ${mn} / ${text}`, input: { decision: dn, model: mn, text }, output: clean(result) });
+  }
+  return out;
+}
+
+/** What each in-memory service answers, and what every planned fault does, over three calls of one operation. */
+async function standinFaultVectors(): Promise<unknown> {
+  const out: unknown[] = [];
+  const clock = fakeClock(Date.UTC(2026, 10, 3, 4, 30));
+  const describe = async (f: () => Promise<unknown>): Promise<unknown> => {
+    try { const r = await f(); return { ok: true, result: clean(r) }; } catch (e) { const x = e as { name?: string; status?: number; message?: string }; return { ok: false, name: x.name ?? "Error", status: x.status ?? null, message: String(x.message ?? e) }; }
+  };
+  const plans = [{ times: 1 }, { times: 2, after: 1 }, {}];
+  const payOps: Record<string, (p: ReturnType<typeof createFakePayments>, ids: { link: string; payment: string }, n: number) => Promise<unknown>> = {
+    createRequest: (p, _i, n) => p.createRequest({ amount: 20000, reference_id: `b-${n}`, description: "Glow Salon deposit" }), fetchRequest: (p, i) => p.fetchRequest(i.link), listRequests: (p) => p.listRequests({ reference_id: "b-0" }),
+    cancelRequest: (p, i) => p.cancelRequest(i.link), fetchPayment: (p, i) => p.fetchPayment(i.payment), refund: (p, i, n) => p.refund(i.payment, { amount: 20000, receipt: `b-0:${i.payment}:${n}` }), listRefunds: (p, i) => p.listRefunds(i.payment),
+  };
+  for (const [op, call] of Object.entries(payOps)) for (const mode of ["lostReply", "error", "guardUnavailable", "uncertainHold", "outcomeUnknown", "guardRefused", "serverError", "declined", null] as const) for (const plan of mode === null ? [{}] : plans) {
+    const p = createFakePayments(clock);
+    const link = await p.createRequest({ amount: 20000, reference_id: "b-0", description: "Glow Salon deposit" });
+    const payment = p.customerPays(link.id);
+    if (mode) p.inject(op as never, mode, plan as never);
+    const results = []; for (let n = 1; n <= 3; n++) results.push(await describe(() => call(p, { link: link.id, payment: payment.id }, n)));
+    out.push({ service: "payments", name: `${op} ${mode ?? "no fault"} ${JSON.stringify(plan)}`, input: { op, mode, plan }, output: { results, links: clean(p.links()), refunds: clean(p.refunds()) } });
+  }
+  const start = Date.UTC(2026, 10, 4, 5, 30);
+  const calOps: Record<string, (c: ReturnType<typeof createFakeCalendar>, id: string, n: number) => Promise<unknown>> = {
+    insert: (c, _i, n) => c.insert({ summary: `hold ${n}`, start: start + n * 3_600_000, end: start + n * 3_600_000 + 2_700_000, status: "tentative", bookingRef: `b-${n}` } as never), get: (c, id) => c.get(id), list: (c) => c.list({ bookingRef: "b-0" }),
+    update: (c, id, n) => c.update(id, { status: "confirmed", summary: `c${n}` }), delete: (c, id) => c.delete(id), freeBusy: (c) => c.freeBusy(start - 3_600_000, start + 8 * 3_600_000), conflicts: (c) => c.conflicts(start, start + 2_700_000),
+  };
+  for (const [op, call] of Object.entries(calOps)) for (const mode of ["silentFailure", "lostReply", "conflict", "error", null] as const) for (const plan of mode === null ? [{}] : plans) {
+    const c = createFakeCalendar();
+    const first = await c.insert({ summary: "hold 0", start, end: start + 2_700_000, status: "tentative", bookingRef: "b-0" } as never);
+    if (mode) c.inject(op as never, mode, plan as never);
+    const results = []; for (let n = 1; n <= 3; n++) results.push(await describe(() => call(c, first.id, n)));
+    out.push({ service: "calendar", name: `${op} ${mode ?? "no fault"} ${JSON.stringify(plan)}`, input: { op, mode, plan }, output: { results, events: clean(c.events()) } });
+  }
+  const msgOps: Record<string, (m: ReturnType<typeof createFakeMessaging>, n: number) => Promise<unknown>> = {
+    sendText: (m, n) => m.sendText("+919811111111", `hello ${n}`),
+    sendTemplate: (m, n) => m.sendTemplate("+919811111111", { name: "booking_update", language: "en", body: `update ${n}`, parameters: [`p${n}`] } as never),
+    sendInteractive: (m, n) => m.sendInteractive!("+919811111111", { body: `pick ${n}`, buttons: [{ id: "yes", title: "Yes" }, { id: "no", title: "No" }] } as never),
+  };
+  for (const [op, call] of Object.entries(msgOps)) for (const mode of ["lostReply", "error", null] as const) for (const plan of mode === null ? [{}] : plans) {
+    const m = createFakeMessaging(clock);
+    m.receive("+919811111111", "hi"); // opens the customer's 24-hour window
+    if (mode) m.inject(op as never, mode, plan as never);
+    const results = []; for (let n = 1; n <= 3; n++) results.push(await describe(() => call(m, n)));
+    out.push({ service: "messaging", name: `${op} ${mode ?? "no fault"} ${JSON.stringify(plan)}`, input: { op, mode, plan }, output: { results, outbox: clean(m.outbox().map((x) => ({ to: x.to, kind: x.kind, text: x.text, templateName: x.templateName ?? null }))) } });
+  }
+  return out;
+}
+
 /** The busy month of the report tests (report/example-month.ts) made into a report, and every layer of it drawn: data, owner's lines, page, WhatsApp message, certificate. */
 async function reportVectors(): Promise<unknown> {
   const { world } = await runBusyMonth();
@@ -341,6 +481,9 @@ export async function generate(): Promise<Map<string, string>> {
   put("ondc-vectors.json", ondcVectors());
   put("scenarios-vectors.json", await Promise.all(scenarioVectors() as Promise<unknown>[]));
   put("report-vectors.json", await reportVectors());
+  put("golive-vectors.json", goLiveVectors());
+  put("router-vectors.json", await routerVectors());
+  put("standin-faults-vectors.json", await standinFaultVectors());
   put("runner-vectors.json", await runnerVectors());
   return files;
 }
