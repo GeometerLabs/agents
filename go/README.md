@@ -51,7 +51,8 @@ cmd/bookings/            main of ONE Bookings shop (wave 2): the same command li
 internal/bookings/       the Bookings template (wave 2): the settings checked with the TypeScript's sentences, the store read and written field for field (unknown members kept raw), the
                          agent over one step, the channel's reads, the pure rules (hours, double booking with units, refund limit, reminders), a customer's message read (parser.go, reading.go: the
                          rule parser and the reading the shared router is given), the ports to the services; read
-                         Explanation.md and Deferred.md (what is not ported yet: every step that calls a service)
+                         Explanation.md and Deferred.md (what is not ported yet: every step that calls a service); the words of every message, the WhatsApp templates, the labels and lists
+                         (templates.go, meta.go, interactive.go) are packed per language in words/*.json.gz, made from the TypeScript by scripts/gen_bookings_words.ts
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
 internal/signing/        Ed25519 and RFC 8785 canonical JSON, both ways: the shop's key and the signed feed / answer / notice / Agent Card's JWS (modules/signing), and the reading of them (VerifyDocument, VerifyNotice: the directory's checks)
 internal/listings/       the listings: state and rules, the owner's ops, the public and owner reads, the feed and check documents, photos, the assistant's draft and its grounding checks
@@ -61,7 +62,7 @@ internal/testclock/      the contract tests' clock (GEOMETER_TEST=1 + GEOMETER_T
 internal/push/           web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push)
 internal/language/       the bottom layer of reading words (modules/language): plain, canon, JavaScript's string length and whitespace; regex.go matches a JavaScript pattern the way
                          JavaScript does (each top-level alternative tried in turn at each place, the look-behind and look-ahead edges checked by hand, since RE2 has neither), over the
-                         TypeScript's own built patterns (patterns.json, written by scripts/gen_patterns.ts); dates.go (findDatePhrase, resolveDate); check.go (the outgoing check)
+                         TypeScript's own built patterns (patterns.json, written by scripts/gen_patterns.ts); dates.go (findDatePhrase, resolveDate); check.go (the outgoing check, with the moments a booking may state); format.go + formats.json (dates, times, phone numbers and the English capital, written from the TypeScript by scripts/gen_bookings_words.ts: shared by every template)
 internal/memory/         the shop's memory (modules/memory): notes with who, where, when and an audience, forget, the end of a note, recall within a scope; `assistant.memory`, field for field
 internal/understanding/  the model steps (modules/understanding): one JSON call over the OpenAI-compatible wire (model.go), the System One decision model (systemone.go), the router
                          that reads cheapest first over any template's reading (router.go, generic), and the details taken out before a model sees words (redact.go); every model
