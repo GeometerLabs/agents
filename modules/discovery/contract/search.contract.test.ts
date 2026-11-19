@@ -272,6 +272,9 @@ test("the MCP endpoint: initialize, the tools, search, one listing, one shop, an
   assert.equal(missing.body.result.structuredContent.error.code, "not_found");
   assert.equal((await call("shop_page", { shop: "https://pages.example/nobody/" })).body.result.structuredContent.error.code, "not_found");
   assert.equal((await call("search_listings", { category: "weapons" })).body.result.structuredContent.error.code, "bad_request");
+  // over MCP the language is the tool's own argument: an unknown one is a refusal there (the page, by contrast, falls back to the browser's language)
+  assert.equal((await call("search_listings", { lang: "fr" })).body.result.structuredContent.error.code, "bad_request");
+  assert.equal((await call("search_listings", { q: "kitten", radius_km: 5, lat: 10.5, lon: 76.2 })).body.result.structuredContent.results[0].shop.distanceKm, null, "a number is not a string: the point is ignored");
   assert.equal((await post(rpc(5, "tools/call", { name: "buy", arguments: {} }))).body.error.code, -32602);
   assert.equal((await post(rpc(6, "resources/list"))).body.error.code, -32601);
   assert.equal((await post({ jsonrpc: "1.0", id: 7, method: "ping" })).body.error.code, -32600);

@@ -9,7 +9,7 @@
 // "z" is "j", and word-final "a" is dropped (Hindi drops it, Malayalam keeps it, and a Latin typist may or may not write it). The result is deliberately loose: it
 // finds a word a buyer half-remembers, and the shop's own words and the owner's confirmation do the exact work. Pure: no import.
 
-const VOWELS: Record<string, string> = {
+export const VOWELS: Record<string, string> = {
   // Devanagari (U+0900 block)
   "अ": "a", "आ": "aa", "इ": "i", "ई": "ee", "उ": "u", "ऊ": "oo", "ऋ": "ri", "ए": "e", "ऐ": "ai", "ओ": "o", "औ": "au",
   // Malayalam
@@ -17,12 +17,12 @@ const VOWELS: Record<string, string> = {
   // Kannada
   "ಅ": "a", "ಆ": "aa", "ಇ": "i", "ಈ": "ee", "ಉ": "u", "ಊ": "oo", "ಋ": "ri", "ಎ": "e", "ಏ": "ee", "ಐ": "ai", "ಒ": "o", "ಓ": "oo", "ಔ": "au",
 };
-const SIGNS: Record<string, string> = {
+export const SIGNS: Record<string, string> = {
   "ा": "aa", "ि": "i", "ी": "ee", "ु": "u", "ू": "oo", "ृ": "ri", "े": "e", "ै": "ai", "ो": "o", "ौ": "au", "ॅ": "e", "ॉ": "o",
   "ാ": "aa", "ി": "i", "ീ": "ee", "ു": "u", "ൂ": "oo", "ൃ": "ri", "െ": "e", "േ": "ee", "ൈ": "ai", "ൊ": "o", "ോ": "oo", "ൗ": "au",
   "ಾ": "aa", "ಿ": "i", "ೀ": "ee", "ು": "u", "ೂ": "oo", "ೃ": "ri", "ೆ": "e", "ೇ": "ee", "ೈ": "ai", "ೊ": "o", "ೋ": "oo", "ೌ": "au",
 };
-const CONSONANTS: Record<string, string> = {
+export const CONSONANTS: Record<string, string> = {
   "क": "k", "ख": "kh", "ग": "g", "घ": "gh", "ङ": "n", "च": "ch", "छ": "chh", "ज": "j", "झ": "jh", "ञ": "n", "ट": "t", "ठ": "th", "ड": "d", "ढ": "dh", "ण": "n",
   "त": "t", "थ": "th", "द": "d", "ध": "dh", "न": "n", "प": "p", "फ": "f", "ब": "b", "भ": "bh", "म": "m", "य": "y", "र": "r", "ल": "l", "व": "v", "श": "sh", "ष": "sh", "स": "s", "ह": "h", "ळ": "l",
   "क़": "k", "ख़": "kh", "ग़": "g", "ज़": "j", "ड़": "d", "ढ़": "dh", "फ़": "f",
@@ -33,9 +33,9 @@ const CONSONANTS: Record<string, string> = {
   // Malayalam chillu letters: a consonant with no vowel
   "ൺ": "n", "ൻ": "n", "ർ": "r", "ൽ": "l", "ൾ": "l", "ൿ": "k",
 };
-const NASAL: Record<string, string> = { "ं": "n", "ँ": "n", "ം": "m", "ಂ": "m" };
-const VIRAMA = new Set(["्", "്", "್"]);
-const NO_VOWEL = new Set(["ൺ", "ൻ", "ർ", "ൽ", "ൾ", "ൿ"]);
+export const NASAL: Record<string, string> = { "ं": "n", "ँ": "n", "ം": "m", "ಂ": "m" };
+export const VIRAMA = new Set(["्", "്", "್"]);
+export const NO_VOWEL = new Set(["ൺ", "ൻ", "ർ", "ൽ", "ൾ", "ൿ"]);
 
 /** The plain Latin letters of a word in Devanagari, Malayalam or Kannada (other characters are kept as they are, lower-cased). */
 function spell(text: string): string {
