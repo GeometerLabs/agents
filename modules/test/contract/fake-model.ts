@@ -21,7 +21,7 @@ export const callName = (body: any): string => body?.response_format?.json_schem
  * Start the fake. `answer` gets the owner's words (the last user message) and the whole request, and returns the JSON the model would write (or a rawReply, statusReply or
  * slowReply). Every call is counted.
  */
-export async function startFakeModel(answer: (owner: string, body: any) => unknown = () => draftAnswer()): Promise<FakeModel> {
+export async function startFakeModel(answer: (owner: string, body: any) => unknown, o: { rawStrings?: boolean } = {}): Promise<FakeModel> {
   const fake: FakeModel = { port: 0, calls: 0, requests: [], answer, close: async () => undefined };
   const server: Server = createServer((req, res) => {
     const chunks: Buffer[] = [];
