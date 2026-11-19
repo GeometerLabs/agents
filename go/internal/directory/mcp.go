@@ -7,6 +7,7 @@ package directory
 import (
 	"context"
 	"encoding/json"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"strconv"
 	"strings"
 )
@@ -47,7 +48,7 @@ func DirectoryServer(deps SearchDeps, assistant *Assistant, who string) McpServe
 	call := func(name string, args map[string]any) (any, error) {
 		if name == "ask" && assistant != nil {
 			q, _ := args["question"].(string)
-			q = jsTrim(q)
+			q = language.TrimJS(q)
 			if q == "" {
 				return nil, &opError{"bad_request", "question must be the buyer's words"}
 			}

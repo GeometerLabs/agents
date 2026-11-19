@@ -5,13 +5,13 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { makeShop } from "./harness.ts";
+import { makeShop, SKIP } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
 after(async () => { for (const s of shops) { await s.stop(); s.cleanup(); } });
 
-test("a restore note makes one record line, once, and is renamed", async () => {
+test("a restore note makes one record line, once, and is renamed", { skip: SKIP }, async () => {
   const s = await makeShop(); shops.push(s);
   const { mkdirSync } = await import("node:fs"); mkdirSync(s.dataDir, { recursive: true });
   writeFileSync(join(s.dataDir, "restored.json"), JSON.stringify({ snapshot: "2026-11-17", restoredAt: "2026-11-18T05:00:00Z", lastSeq: 7 }));

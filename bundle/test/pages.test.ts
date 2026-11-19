@@ -185,7 +185,7 @@ test("generated: the pages domain's site reaches only the door, the door is on i
   const extra = caddy.slice(caddy.indexOf("old.example {"));
   assert.deepEqual(extra.slice(0, extra.indexOf("\n}") + 2).split("\n").map((l) => l.trim()).filter(Boolean), ["old.example {", "reverse_proxy door:8797", "}"], "nothing but the door: the home is never served under another name");
   const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence", home: "/srv/home" };
-  const c = composeServer(hosted, dirs, [], {});
+  const c = composeServer(hosted, dirs, [], { goImage: "geo-go:abc123def456" }); // the directory is a Go program (wave 1c): a pages server needs the programs' image
   const door = c.services.door.block as { networks: Record<string, unknown>; volumes: string[] };
   assert.deepEqual(Object.keys(door.networks).sort(), ["egress", "pages"]);
   assert.ok(!door.volumes.some((v) => v.includes("/secrets")), "no secret is mounted into the door");

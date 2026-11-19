@@ -74,7 +74,7 @@ export function feedItem(shop: FeedShop, l: Listing, nowMs: number): FeedItem {
   return {
     id: l.id, page: listingUrl(shop, l), category: SPEC_CATEGORY[l.category] ?? l.category,
     title: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.title])) as Partial<Record<Lang, string>>,
-    // a language with no text (the owner's plain form writes the title only) is left out, not written as "": a reader refuses an empty string (discovery/feed.ts), and the item with it
+    // a language with no text (the owner's plain form writes the title only) is left out, not written as "": a reader refuses an empty string (go/internal/directory feed.go), and the item with it
     text: Object.fromEntries(LANGS.filter((k) => l.words[k]?.text).map((k) => [k, l.words[k]!.text])) as Partial<Record<Lang, string>>,
     ownerLanguage: l.ownerLang, machineWritten: LANGS.filter((k) => l.words[k] && k !== l.ownerLang),
     price: l.pricePaise !== undefined ? { value: decimal(l.pricePaise), currency: "INR" as const, ...(l.priceNote ? { note: l.priceNote } : {}) } : null,

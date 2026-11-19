@@ -1,13 +1,12 @@
-// Measures a listings-only runtime from the outside, on the same machine and the same kind of shop folder: cold start, resident memory (idle, after 50 warm-up requests, with 200
-// listings), and the latency of 500 feed and 500 check requests. Not a test: it prints one JSON line.
+// Measures the Go listings-only runtime from the outside: cold start, resident memory (idle, after 50 warm-up requests, with 200 listings), and the latency of 500 feed and 500
+// check requests. Not a test: it prints one JSON line. (Until 19 Nov 2026 LISTINGS_IMPL=ts measured the TypeScript runtime the same way, for decision 61's figures; that runtime was
+// deleted in wave 1b.)
 //
-//   LISTINGS_IMPL=ts node templates/commerce/listings/contract/measure.ts
-//   LISTINGS_IMPL=go node templates/commerce/listings/contract/measure.ts
+//   node templates/commerce/listings/contract/measure.ts
 //
-// RSS comes from `ps -o rss=` (kilobytes of resident memory of the shop's own process). The requests are made one after another over one keep-alive connection by Node's fetch, the
-// same client for both runtimes, so the client's own cost is the same on both sides.
+// RSS comes from `ps -o rss=` (kilobytes of resident memory of the shop's own process). The requests are made one after another over one keep-alive connection by Node's fetch.
 import { execFileSync } from "node:child_process";
-import { IMPL, PAGE, makeShop } from "./harness.ts";
+import { IMPL, PAGE, SKIP, makeShop } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 
 const pidOf = (s: Shop): number => s.pid()!;
@@ -21,6 +20,7 @@ async function timed(n: number, f: () => Promise<unknown>): Promise<{ p50: numbe
   return { p50: pct(ms, 50), p95: pct(ms, 95), max: Math.max(...ms), mean: ms.reduce((a, b) => a + b, 0) / ms.length };
 }
 
+if (SKIP) { console.error(SKIP); process.exit(1); }
 const out: Record<string, unknown> = { impl: IMPL };
 const op = async (s: Shop, id: string, body: Record<string, unknown>) => { const r = await s.call("/internal/channel/owner-listing", { owner: s.owner, body: { id, op: body } }); if (r.status !== 200) throw new Error(JSON.stringify(r.body)); };
 

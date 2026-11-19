@@ -4,6 +4,7 @@
 package directory
 
 import (
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"regexp"
 	"strings"
 	"unicode"
@@ -12,7 +13,7 @@ import (
 // spell: the plain Latin letters of a word in Devanagari, Malayalam or Kannada (other characters are kept as they are, lower-cased).
 func spell(text string) string {
 	var out strings.Builder
-	chars := []rune(nfc(text))
+	chars := []rune(language.NFC(text))
 	for i := 0; i < len(chars); i++ {
 		c := string(chars[i])
 		if consonant, ok := romConsonants[c]; ok {
@@ -48,7 +49,7 @@ func spell(text string) string {
 	return out.String()
 }
 
-func jsLowerRune(r rune) string { return jsLower(string(r)) }
+func jsLowerRune(r rune) string { return language.LowerJS(string(r)) }
 
 var (
 	notLatin = regexp.MustCompile(`[^a-z0-9]+`)
@@ -58,7 +59,7 @@ var (
 
 // flatten: a Latin spelling (typed by a buyer, or made by spell) brought to the skeleton both sides are compared by.
 func flatten(latin string) string {
-	words := strings.Fields(notLatin.ReplaceAllString(jsLower(latin), " "))
+	words := strings.Fields(notLatin.ReplaceAllString(language.LowerJS(latin), " "))
 	for i, w := range words {
 		w = strings.NewReplacer("w", "v", "z", "j", "q", "k", "x", "ks").Replace(w) // single pass, as the chain of replaces each only sees letters the last left (none make another)
 		w = hAfter.ReplaceAllString(w, "$1")
