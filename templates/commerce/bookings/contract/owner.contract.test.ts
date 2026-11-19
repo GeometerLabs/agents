@@ -125,8 +125,7 @@ describe("the owner talks with the shop's assistant", () => {
     await s.settle();
     const view = (await s.ownerView()).body;
     assert.ok(view.app, "the owner's page carries the assistant's view");
-    assert.ok(JSON.stringify(view.app).length > 20);
-    assert.ok(s.record().some((r) => r.action.includes("owner") || r.action === "receive_message" || r.action === "assistant_talk"), JSON.stringify(s.record().map((r) => r.action)));
+    assert.ok(JSON.stringify(view.app).includes("what is on today?"), `the owner's own words and the shop's answer are on the page: ${JSON.stringify(view.app).slice(0, 400)}`);
     for (const bad of [{ kind: "owner_message", id: "t-2", text: "" }, { kind: "owner_message", id: "t-3", text: "x".repeat(901) }, { kind: "owner_message", text: "no id" }]) {
       assert.equal((await s.channelEvents([bad], { owner: true })).status, 400, JSON.stringify(bad).slice(0, 60));
     }
@@ -141,11 +140,12 @@ describe("the owner talks with the shop's assistant", () => {
   });
 
   contract("what the owner is told outside their 24-hour window goes as an approved template, never a plain text", async () => {
-    const s = await boot({ mode: "guards", settings: { cancellation: { windowHours: 24, refundLimitInr: 200 } } });
-    const { hash } = await s.book();
-    await s.events(s.guards!.pay(s.guards!.standins.fakes.payments.links()[0].id).map((event) => ({ kind: "payment_event", event }))); await s.settle();
-    await s.channelEvents([{ kind: "channel_request", id: "c-1", channel: "web", op: "cancel", handle: hash }]); await s.settle();
-    for (const m of s.sent(OWNER_NUMBER)) assert.equal(m.kind, "template", `the owner never wrote to this number, so only a template may reach them: ${m.kind} ${m.text}`);
+    const s = await boot({ mode: "guards", settings: { payment: { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } }, calendar: { module: "own" } } });
+    await s.book();                                       // the UPI shop asks the owner to look for the money
+    const toOwner = s.guards!.of("messaging", "POST").filter((c) => c.body.to === OWNER_NUMBER);
+    assert.ok(toOwner.length >= 1, "the owner was told");
+    for (const c of toOwner) assert.equal(c.body.type, "template", "the owner never wrote to this number, so only a template may reach them");
+    assert.equal(toOwner[0].body.template.name, "owner_upi_check");
   });
 });
 

@@ -71,15 +71,18 @@ describe("a Guard that is down", () => {
     assert.equal(told.length, 1, "told once");
   });
 
-  contract("the WhatsApp Guard down: the shop's work is done and kept, the customer's replies wait, and the shop says nothing twice when it is back", async () => {
+  contract("the WhatsApp Guard down: the customer's message is kept and waits, nothing is answered meanwhile, and when it is back there is one answer", async () => {
     const s = await boot();
     s.guards!.messaging.down();
-    const at = Date.now();
-    await s.inbound("+919811111111", "hello").catch(() => undefined);
+    const message = s.guards!.standins.fakes.messaging.receive("+919811111111", "hello");
+    assert.equal((await s.events([{ kind: "message", message }])).status, 200, "saved before anything else");
+    await sleep(1500);
+    assert.deepEqual([(await s.status()).tasks.pending, s.sent("+919811111111").length], [1, 0], "waiting, and nothing said");
     s.guards!.messaging.up();
-    assert.ok(Date.now() - at < 60_000);
-    await s.settle();
-    assert.equal((await s.status()).tasks.failed, 0, "nothing was lost into a failed step");
+    await until("the answer", () => s.sent("+919811111111").length === 1);
+    await s.settle(); await sleep(2500);
+    assert.equal(s.sent("+919811111111").length, 1, "one answer, not two");
+    assert.equal((await s.status()).tasks.failed, 0);
   });
 });
 
@@ -185,13 +188,13 @@ describe("a shop put back from last night's snapshot", () => {
     await s.stop();
     cpSync(s.dataDir, `${s.dataDir}-snapshot`, { recursive: true });
     await s.start();
-    await s.book({ name: "Ravi", phone: "+919822222222", startMs: openStart(Date.now(), 6) }); // b-2, after it: its hold and link exist at the Guards
+    await s.book({ name: "Ravi", phone: "+919822222222", startMs: openStart(Date.now(), 6, 12) }); // b-2, after it: its hold and link exist at the Guards
     await s.stop();
     rmSync(s.dataDir, { recursive: true, force: true });
     cpSync(`${s.dataDir}-snapshot`, s.dataDir, { recursive: true });   // the restore (the deployer's `restore`): the shop has no memory of b-2, and a note is left beside the database
     writeFileSync(join(s.dataDir, "restored.json"), JSON.stringify({ snapshot: "20261119T013000Z", restoredAt: new Date().toISOString(), lastSeq: null }));
     await s.start();
-    const third = await s.book({ name: "Meera", phone: "+919833333333", startMs: openStart(Date.now(), 7) });
+    const third = await s.book({ name: "Meera", phone: "+919833333333", startMs: openStart(Date.now(), 6, 15) });
     const view = (await s.request(third.hash)).body;
     assert.equal(view.ref, "b-100002", "every counter moved on by 100000: b-2 belongs to the customer the snapshot did not know");
     assert.equal(s.record().filter((r) => r.action === "restored").length, 1, "one line in the record says the data was put back");

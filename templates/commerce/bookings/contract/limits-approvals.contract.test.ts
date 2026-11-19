@@ -156,7 +156,8 @@ describe("the Guard says no", () => {
     const st = await s.status();
     assert.equal(st.refunds.needBuilder.total, 1, "it is on the builder's list");
     assert.equal(st.refunds.waitingForOwner, 0, "the owner is not asked");
-    assert.ok(s.record().some((r) => r.action === "refund" && r.outcome === "failed" || r.outcome === "blocked"));
+    const outcomes = s.record().filter((r) => r.action === "refund").map((r) => r.outcome);
+    assert.ok(outcomes.length >= 1 && !outcomes.includes("confirmed"), `the refund line says it did not happen: ${JSON.stringify(outcomes)}`);
   });
 
   contract("409 already_done: a refund a person at the server settled as made is done by their word and never sent again", async () => {
@@ -189,7 +190,7 @@ describe("the Guard says no", () => {
     assert.equal((await s.request(hash)).body.status, "cancelled");
     assert.equal(s.guards!.standins.fakes.payments.refunds().length, 0);
     const st = await s.status();
-    assert.ok(st.refunds.beingSentAgain === 1 || st.refunds.needBuilder.total === 0, "it waits to be sent again, it is not lost");
+    assert.deepEqual(st.refunds, { waitingForOwner: 0, beingSentAgain: 1, needBuilder: { total: 0 } }, "it waits to be sent again, by itself, a little later: it is not lost and nobody is asked");
     s.guards!.stub.killSwitch(false);
   });
 });

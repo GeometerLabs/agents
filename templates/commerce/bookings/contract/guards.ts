@@ -4,8 +4,8 @@
 //
 // What stands behind the recorders is the stand-ins (templates/commerce/bookings/standins: Razorpay's, Google Calendar's and WhatsApp's wire formats over in-memory fakes, tested
 // against the providers' own sample payloads in test/fixtures) and, in front of the refunds, the stub Guard (modules/standins/guard.ts: Guard's documented hold, refusal and
-// outcome-unknown behaviour, built from the limits spec generated from the shop's own settings). They are the other side of the wire: nothing of the runtime is imported.
-// Test-made faults answer from the captured Guard answers in test/fixtures/guard-responses.json (a refusal, a held refund, a kill switch, a licence refusal), never from words typed here.
+// outcome-unknown behaviour, built from the limits spec generated from the shop's own settings). They are the other side of the wire: nothing of the SHOP RUNTIME (server/, src/agent.ts) is imported. What IS imported, and a deletion wave must keep: the stand-ins and the stub Guard, `gatewayLimitsSpec` and `Settings` (the deployer's limits spec), and the Razorpay stand-in's and the inbox's webhook readers (README.md section 7 lists them).
+// What the Guards answer normally comes from the stand-ins (the providers' wire formats, tested against the providers' sample payloads in test/fixtures by test/live-adapters and test/standins); only the FAULTS answer from fixtures (the captured Guard answers in test/fixtures/guard-responses.json: a refusal, a busy Guard, a kill switch, a licence refusal), never from words typed here.
 //
 // Why a proxy in front of each: the stand-ins do not record headers or bodies, and a test must also make a Guard slow, down or wrong at a chosen moment. A recorder is a
 // 60-line reverse proxy; the faults are plans ("the next 2 calls to the calendar answer 503").

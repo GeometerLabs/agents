@@ -105,14 +105,14 @@ describe("the last slot, the buffer and someone else's event", () => {
     assert.ok(!o.body.days.flatMap((d: { starts: number[] }) => d.starts).includes(start), "and the page no longer offers it");
   });
 
-  contract("a calendar that cannot be read: the offer says so, and a booking asked for meanwhile is not held and not charged", async () => {
+  contract("a calendar that cannot be read: the offer says so and lists no day, rather than showing times that may be taken", async () => {
     const s = await boot({ mode: "guards", tickSeconds: 1 });
     s.guards!.calendar.down();
     const o = await offer(s, "2026-11-07", 2);
     assert.equal(o.calendarUnread, true);
     assert.deepEqual(o.days, []);
     s.guards!.calendar.up();
-    assert.equal(s.guards!.of("payments", "POST").length, 0);
+    assert.ok(startsOf(await offer(s, "2026-11-07", 2), "2026-11-07").length > 0, "and when it is back the times are offered again");
   });
 
   contract("a hold nobody pays ends by itself: on the beat of the clock the booking expires, the calendar hold is let go, and the time is free again", async () => {

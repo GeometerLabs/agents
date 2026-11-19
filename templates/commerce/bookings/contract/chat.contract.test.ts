@@ -195,6 +195,8 @@ describe("the model's answer is untrusted input", () => {
     const g = s.guest();
     assert.equal((await s.chat(g.hash, UNREADABLE, { id: "down-1" })).status, 200);
     assert.equal((await shopLines(s, g.hash)).length, 1);
+    assert.equal((await s.chat(g.hash, "I want a haircut tomorrow at 6pm", { id: "down-2" })).status, 200, "and the next message is read, by the rules");
+    assert.equal((await s.status()).bookings.awaiting_deposit, 1);
     assert.equal((await s.status()).tasks.failed, 0);
   });
 

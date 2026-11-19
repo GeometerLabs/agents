@@ -1,7 +1,7 @@
 // The harness of the Bookings runtime CONTRACT (see README.md in this folder). It makes a Bookings shop's folder in a temp directory exactly as the deployer does (client folder
 // with settings.json, runtime.json, pathway.lock written LAST, owner-link.json, pages.json, owner-grants.json; secrets internal_token, channel_token, record_key and the agent's
-// credential for its payments Guard), starts the shop as a SEPARATE PROCESS on a free port, and gives the tests an HTTP caller. Nothing of the runtime is imported except pure
-// helpers used to MAKE files and to say what a webhook or a handle looks like: the runtime itself is only ever reached over HTTP.
+// credential for its payments Guard), starts the shop as a SEPARATE PROCESS on a free port, and gives the tests an HTTP caller. The shop runtime (server/, src/agent.ts) is never imported: it is only
+// ever reached over HTTP. What is imported is pure helpers that MAKE files and handles and say what a webhook looks like, and the settings parser (README.md section 7 lists them).
 //
 // Which implementation runs is chosen by the environment:
 //   BOOKINGS_IMPL=ts   (default)  node templates/commerce/bookings/server/main.ts --client <folder>
@@ -117,6 +117,8 @@ export interface ShopOptions {
   clock?: boolean;
   /** Fakes mode: put the clock at this instant instead of START. */
   at?: number;
+  /** Guards (live) mode: ask for the test clock ANYWAY, to see that a live shop refuses to start on it (modules/runtime/test-clock.ts). */
+  forceClock?: boolean;
 }
 
 export interface Shop {
@@ -238,8 +240,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(client, "pathway.lock"), `bookings@${VERSION}\n`); // written last, as the deployer does
 
   // the test clock (fakes mode only): the machine's clock plus an offset, put at the unit tests' instant (a negative offset is accepted); the test moves it with `advance`
-  const clock = mode === "fakes" && o.clock !== false ? makeTestClockFile(join(root, "clock")) : undefined;
-  if (clock) clock.advance((o.at ?? START) - Date.now());
+  const clock = (mode === "fakes" && o.clock !== false) || o.forceClock ? makeTestClockFile(join(root, "clock")) : undefined;
+  if (clock && mode === "fakes") clock.advance((o.at ?? START) - Date.now());
   /** A file in the client folder, written whole as the deployer does (a rename), or removed. */
   const put = (name: string, value: unknown): void => {
     const file = join(client, name);

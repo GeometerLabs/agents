@@ -53,17 +53,27 @@ describe("the store's file", () => {
     await assert.rejects(s.start(), /newer|version|9999/iu);
   });
 
-  contract("the record holds no customer words and no customer name: a message is kept by its id and what the shop read from it, never the words", async () => {
+  contract("the record holds a customer's number in ONE place, the conversation, and no customer words and no name anywhere: what was said is kept as a keyed digest and a message by a fingerprint of its id", async () => {
     const s = await boot({ mode: "guards" });
     await s.inbound(CUSTOMER, "hello there, I am Asha");
     await s.book({ name: "Asha Verma" });
     await s.stop();
     const db = new DatabaseSync(join(s.dataDir, "agent.db"), { readOnly: true });
     try {
-      const entries = (db.prepare("SELECT entry FROM record").all() as { entry: string }[]).map((r) => r.entry).join("\n");
-      assert.ok(entries.length > 100);
-      assert.ok(!entries.includes("hello there"), "no customer words in the record");
-      assert.ok(!entries.includes("Asha Verma"), "no customer name in the record");
+      const rows = db.prepare("SELECT conversation, entry FROM record").all() as { conversation: string; entry: string }[];
+      assert.ok(rows.length > 5);
+      assert.ok(rows.some((r) => r.conversation === CUSTOMER), "the number is the record's conversation column");
+      let named = 0;
+      for (const r of rows) {
+        const entry = JSON.parse(r.entry) as Record<string, unknown>;
+        if (entry.conversation === CUSTOMER) named += 1;
+        const rest = JSON.stringify({ ...entry, conversation: undefined });
+        assert.ok(!rest.includes(CUSTOMER.slice(1)), `the number is nowhere else in a line: ${rest.slice(0, 200)}`);
+        assert.ok(!rest.includes("hello there") && !rest.includes("Asha"), "no customer words or name");
+        assert.match(String(entry.inputsDigest), /^[0-9a-f]{16,64}$/u, "what was said is a digest");
+      }
+      assert.ok(named > 0, "the entry's own `conversation` member carries it");
+      assert.ok(!rows.map((r) => r.entry).join("").includes("wamid"), "a WhatsApp message id is kept as a fingerprint only");
     } finally { db.close(); }
   });
 
@@ -115,8 +125,7 @@ describe("the licence", () => {
     assert.equal(s.guards!.of("payments", "POST", /\/refund$/u).length, 1, "the refund goes on");
     s.writeLicence(lease("active"));
     const again = await s.book({ name: "Ravi", phone: "+919822222222", startMs: openStart(Date.now(), 4) });
-    assert.ok(["held", "refused"].includes((await s.request(again.hash)).body.status));
-    assert.notEqual((await s.request(again.hash)).body.reason, "licence");
+    assert.equal((await s.request(again.hash)).body.status, "held", "new bookings are taken at once, with nothing asked in the wind-down done by itself");
   });
 
   contract("the final stop closes the open deposit links once through the payments service and sends nothing more; a payment made before is still recorded", async () => {

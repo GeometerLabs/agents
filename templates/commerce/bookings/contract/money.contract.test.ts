@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { CUSTOMER, MIN, contract, makeShop, openStart } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 import { fixture } from "./guards.ts";
+import { parseRazorpayEvent } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { handleHash, newHandle } from "../../../../modules/channels/handle.ts";
 
 const shops: Shop[] = [];
@@ -97,9 +98,12 @@ describe("a booking with a deposit", () => {
     assert.equal(s.guards!.calls.slice(calls).filter((c) => c.method !== "GET").length, 0, "nothing was written to a Guard");
     assert.ok(s.record().filter((r) => r.action === "receive_payment_event").some((r) => r.outcome === "blocked"));
     assert.equal(s.guards!.standins.fakes.payments.refunds().length, 0, "nobody is refunded money this shop never took");
-    // the shop reads the same fixture the provider documents for a paid link: its own ids do not match, so it too is blocked
-    const sample = fixture("razorpay-webhook-payment_link.paid.json");
-    assert.equal(sample.event, "payment_link.paid");
+    // the same webhook as the provider documents it (its own sample), read as the inbox reads it, names a link this shop never made: it too is blocked
+    const sample = parseRazorpayEvent(fixture("razorpay-webhook-payment_link.paid.json"), "evt_sample");
+    assert.equal(sample?.event, "request.paid");
+    await deliver(s, [sample]);
+    assert.equal((await s.request(hash)).body.status, "held");
+    assert.equal(s.record().filter((r) => r.action === "receive_payment_event" && r.outcome === "blocked").length, 3);
   });
 
   contract("a second payment on a paid link is refunded in full, once, with the booking and payment in the receipt", async () => {
