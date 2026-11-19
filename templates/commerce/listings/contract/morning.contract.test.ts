@@ -9,8 +9,8 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { REPO, draftAnswer, makeShop, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
-import { enablePush, softBrowser, startFakeGuard } from "./push-harness.ts";
-import type { FakeGuard } from "./push-harness.ts";
+import { enablePush, softBrowser, startFakeGuard } from "../../../../modules/test/contract/push-harness.ts";
+import type { FakeGuard } from "../../../../modules/test/contract/push-harness.ts";
 
 const shops: Shop[] = [];
 const others: { close(): Promise<void> }[] = [];
