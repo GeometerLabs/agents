@@ -237,8 +237,9 @@ func TestJSNumberVectors(t *testing.T) {
 		}
 	}
 	for _, c := range v.Rounds {
-		x := float64(c.Inr * 100) // an explicit conversion: no fused multiply-add may change the double that is rounded (the spec allows fusing across statements otherwise)
-		if got := RoundHalfUp(x); got != c.P && !(got == 0 && c.P == 0) {
+		// the production path (owner-money's toPaise), not a multiplication written in the test: the compiler may fuse a multiply with the next add or subtract unless the product is
+		// converted explicitly, and toPaise does that
+		if got := toPaise(c.Inr); float64(got) != c.P {
 			t.Errorf("Math.round(%v * 100) = %v, ts %v", c.Inr, got, c.P)
 		}
 	}

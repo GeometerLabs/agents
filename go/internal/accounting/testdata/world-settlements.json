@@ -42,7 +42,7 @@
  },
  "steps": [
   {
-   "at": 1793509200000,
+   "at": 1793509800000,
    "op": "post",
    "line": {
     "conversation": "919800000001",
@@ -70,7 +70,7 @@
    }
   },
   {
-   "at": 1793595600000,
+   "at": 1793596260000,
    "op": "post",
    "line": {
     "conversation": "919800000001",
@@ -98,7 +98,7 @@
    }
   },
   {
-   "at": 1793682000000,
+   "at": 1793682720000,
    "op": "post",
    "line": {
     "conversation": "919800000001",
@@ -126,7 +126,7 @@
    }
   },
   {
-   "at": 1793768400000,
+   "at": 1793769180000,
    "op": "post",
    "line": {
     "conversation": "919800000001",
@@ -154,7 +154,7 @@
    }
   },
   {
-   "at": 1793854800000,
+   "at": 1793855640000,
    "op": "post",
    "line": {
     "conversation": "919800000001",
@@ -182,7 +182,7 @@
    }
   },
   {
-   "at": 1793941200000,
+   "at": 1793942100000,
    "op": "post",
    "line": {
     "conversation": "919800000001",
@@ -210,7 +210,7 @@
    }
   },
   {
-   "at": 1794027600000,
+   "at": 1794028560000,
    "op": "post",
    "line": {
     "conversation": "919800000001",
@@ -235,6 +235,118 @@
    "result": {
     "posted": true,
     "doc": "RCT/26-27/0007"
+   }
+  },
+  {
+   "at": 1793510220000,
+   "op": "post",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-10",
+    "refs": {
+     "paymentId": "pay_h"
+    }
+   },
+   "event": {
+    "kind": "received",
+    "case": "b-10",
+    "paymentId": "pay_h",
+    "amountPaise": 4000,
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance"
+   },
+   "result": {
+    "posted": true,
+    "doc": "RCT/26-27/0008"
+   }
+  },
+  {
+   "at": 1793596680000,
+   "op": "post",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-11",
+    "refs": {
+     "paymentId": "pay_i"
+    }
+   },
+   "event": {
+    "kind": "received",
+    "case": "b-11",
+    "paymentId": "pay_i",
+    "amountPaise": 6000,
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance"
+   },
+   "result": {
+    "posted": true,
+    "doc": "RCT/26-27/0009"
+   }
+  },
+  {
+   "at": 1793683140000,
+   "op": "post",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-12",
+    "refs": {
+     "paymentId": "pay_j"
+    }
+   },
+   "event": {
+    "kind": "received",
+    "case": "b-12",
+    "paymentId": "pay_j",
+    "amountPaise": 2500,
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance"
+   },
+   "result": {
+    "posted": true,
+    "doc": "RCT/26-27/0010"
+   }
+  },
+  {
+   "at": 1793769600000,
+   "op": "post",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-13",
+    "refs": {
+     "paymentId": "pay_k"
+    }
+   },
+   "event": {
+    "kind": "received",
+    "case": "b-13",
+    "paymentId": "pay_k",
+    "amountPaise": 3500,
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance"
+   },
+   "result": {
+    "posted": true,
+    "doc": "RCT/26-27/0011"
    }
   },
   {
@@ -342,7 +454,22 @@
  ],
  "jobs": [
   {
+   "nowMs": 1794200400000,
+   "noRead": true,
+   "scripted": {},
+   "result": {
+    "status": "failed",
+    "day": "2026-11-08",
+    "posted": 0,
+    "listed": 0,
+    "error": "This payment module has no settlement read (its capabilities say readsSettlements: false)."
+   },
+   "asked": [],
+   "written": 0
+  },
+  {
    "nowMs": 1794286800000,
+   "noRead": false,
    "scripted": {
     "2026-11-09": [
      {
@@ -356,7 +483,7 @@
       "settled": true,
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "pay_a",
       "amount": 50000
      },
@@ -369,9 +496,9 @@
       "credit": 18608,
       "onHold": false,
       "settled": true,
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
+      "settledAt": 1794283200,
       "entityId": "pay_b",
       "amount": 20000
      },
@@ -384,9 +511,9 @@
       "credit": 0,
       "onHold": false,
       "settled": true,
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
+      "settledAt": 1794283200,
       "entityId": "rf_c",
       "amount": 30000
      },
@@ -401,7 +528,7 @@
       "settled": false,
       "settlementId": null,
       "utr": null,
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "pay_d",
       "amount": 15000
      },
@@ -416,7 +543,7 @@
       "settled": true,
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "pay_unknown",
       "amount": 9000
      },
@@ -431,7 +558,7 @@
       "settled": true,
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "adj_1",
       "amount": 500
      },
@@ -446,7 +573,7 @@
       "settled": true,
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "tr_1",
       "amount": 700
      },
@@ -461,7 +588,7 @@
       "settled": true,
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "pay_e",
       "amount": 7000
      },
@@ -476,7 +603,7 @@
       "settled": true,
       "settlementId": null,
       "utr": null,
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "pay_f",
       "amount": 3000
      },
@@ -489,8 +616,8 @@
       "credit": 8000,
       "onHold": false,
       "settled": true,
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
       "settledAt": null,
       "entityId": "pay_g",
       "amount": 8000
@@ -510,6 +637,7 @@
   },
   {
    "nowMs": 1794301200000,
+   "noRead": false,
    "scripted": {
     "2026-11-09": []
    },
@@ -524,6 +652,7 @@
   },
   {
    "nowMs": 1794373200000,
+   "noRead": false,
    "scripted": {
     "2026-11-10": [
      {
@@ -537,7 +666,7 @@
       "settled": true,
       "settlementId": "setl_2",
       "utr": "UTR0002",
-      "settledAt": 1762900000,
+      "settledAt": 1794369600,
       "entityId": "pay_a",
       "amount": 50000
      },
@@ -550,11 +679,71 @@
       "credit": 14646,
       "onHold": false,
       "settled": true,
-      "settlementId": "setl_2",
-      "utr": "UTR0002",
-      "settledAt": 1762900000,
+      "settlementId": "setl_10",
+      "utr": "UTR0010",
+      "settledAt": 1794369600,
       "entityId": "pay_d",
       "amount": 15000
+     },
+     {
+      "type": "payment",
+      "paymentId": null,
+      "fee": 118,
+      "tax": 18,
+      "debit": 0,
+      "credit": 5864,
+      "onHold": false,
+      "settled": true,
+      "settlementId": "setl_9",
+      "utr": "UTR0009",
+      "settledAt": 1794369600,
+      "entityId": "pay_i",
+      "amount": 6000
+     },
+     {
+      "type": "payment",
+      "paymentId": null,
+      "fee": 0,
+      "tax": 0,
+      "debit": 0,
+      "credit": 0,
+      "onHold": true,
+      "settled": false,
+      "settlementId": null,
+      "utr": null,
+      "settledAt": 1794283200,
+      "entityId": "pay_h",
+      "amount": 4000
+     },
+     {
+      "type": "payment",
+      "paymentId": null,
+      "fee": 59,
+      "tax": 9,
+      "debit": 0,
+      "credit": 2432,
+      "onHold": false,
+      "settled": true,
+      "settlementId": "setl_oct",
+      "utr": "UTR0oct",
+      "settledAt": 1793471399,
+      "entityId": "pay_j",
+      "amount": 2500
+     },
+     {
+      "type": "payment",
+      "paymentId": null,
+      "fee": 82,
+      "tax": 15,
+      "debit": 0,
+      "credit": 3403,
+      "onHold": false,
+      "settled": true,
+      "settlementId": "setl_nov",
+      "utr": "UTR0nov",
+      "settledAt": 1793471400,
+      "entityId": "pay_k",
+      "amount": 3500
      },
      {
       "type": "adjustment",
@@ -567,7 +756,7 @@
       "settled": true,
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": 1762900000,
+      "settledAt": 1794283200,
       "entityId": "adj_1",
       "amount": 500
      }
@@ -576,16 +765,17 @@
    "result": {
     "status": "read",
     "day": "2026-11-10",
-    "posted": 2,
-    "listed": 0
+    "posted": 5,
+    "listed": 1
    },
    "asked": [
     "2026-11-10"
    ],
-   "written": 3
+   "written": 7
   },
   {
    "nowMs": 1794718800000,
+   "noRead": false,
    "scripted": {
     "2026-11-11": [],
     "2026-11-12": [],
@@ -610,6 +800,7 @@
   },
   {
    "nowMs": 1794722400000,
+   "noRead": false,
    "scripted": {
     "2026-11-11": [],
     "2026-11-12": [],
@@ -625,7 +816,7 @@
       "settled": true,
       "settlementId": "setl_3",
       "utr": "UTR0003",
-      "settledAt": 1762900000,
+      "settledAt": 1794632400,
       "entityId": "pay_f",
       "amount": 3000
      }
@@ -649,7 +840,7 @@
  "entries": [
   {
    "seq": 1,
-   "time": "2026-11-01T05:00:00.000Z",
+   "time": "2026-11-01T05:10:00.000Z",
    "conversation": "919800000001",
    "booking": "b-1",
    "action": "record_deposit",
@@ -670,7 +861,7 @@
   },
   {
    "seq": 2,
-   "time": "2026-11-02T05:00:00.000Z",
+   "time": "2026-11-02T05:11:00.000Z",
    "conversation": "919800000001",
    "booking": "b-2",
    "action": "record_deposit",
@@ -691,7 +882,7 @@
   },
   {
    "seq": 3,
-   "time": "2026-11-03T05:00:00.000Z",
+   "time": "2026-11-03T05:12:00.000Z",
    "conversation": "919800000001",
    "booking": "b-3",
    "action": "record_deposit",
@@ -712,7 +903,7 @@
   },
   {
    "seq": 4,
-   "time": "2026-11-04T05:00:00.000Z",
+   "time": "2026-11-04T05:13:00.000Z",
    "conversation": "919800000001",
    "booking": "b-4",
    "action": "record_deposit",
@@ -733,7 +924,7 @@
   },
   {
    "seq": 5,
-   "time": "2026-11-05T05:00:00.000Z",
+   "time": "2026-11-05T05:14:00.000Z",
    "conversation": "919800000001",
    "booking": "b-5",
    "action": "record_deposit",
@@ -754,7 +945,7 @@
   },
   {
    "seq": 6,
-   "time": "2026-11-06T05:00:00.000Z",
+   "time": "2026-11-06T05:15:00.000Z",
    "conversation": "919800000001",
    "booking": "b-6",
    "action": "record_deposit",
@@ -775,7 +966,7 @@
   },
   {
    "seq": 7,
-   "time": "2026-11-07T05:00:00.000Z",
+   "time": "2026-11-07T05:16:00.000Z",
    "conversation": "919800000001",
    "booking": "b-7",
    "action": "record_deposit",
@@ -796,6 +987,90 @@
   },
   {
    "seq": 8,
+   "time": "2026-11-01T05:17:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-10",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_h",
+    "money": "received",
+    "amountPaise": "4000",
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance",
+    "doc": "RCT/26-27/0008"
+   }
+  },
+  {
+   "seq": 9,
+   "time": "2026-11-02T05:18:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-11",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_i",
+    "money": "received",
+    "amountPaise": "6000",
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance",
+    "doc": "RCT/26-27/0009"
+   }
+  },
+  {
+   "seq": 10,
+   "time": "2026-11-03T05:19:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-12",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_j",
+    "money": "received",
+    "amountPaise": "2500",
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance",
+    "doc": "RCT/26-27/0010"
+   }
+  },
+  {
+   "seq": 11,
+   "time": "2026-11-04T05:20:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-13",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_k",
+    "money": "received",
+    "amountPaise": "3500",
+    "method": "gateway",
+    "evidence": "provider",
+    "for": "advance",
+    "doc": "RCT/26-27/0011"
+   }
+  },
+  {
+   "seq": 12,
    "time": "2026-11-09T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-3",
@@ -813,7 +1088,7 @@
    }
   },
   {
-   "seq": 9,
+   "seq": 13,
    "time": "2026-11-09T06:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-3",
@@ -835,7 +1110,7 @@
    }
   },
   {
-   "seq": 10,
+   "seq": 14,
    "time": "2026-11-09T07:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-8",
@@ -851,7 +1126,7 @@
    }
   },
   {
-   "seq": 11,
+   "seq": 15,
    "time": "2026-11-09T07:30:00.000Z",
    "conversation": "919800000001",
    "booking": "b-8",
@@ -867,7 +1142,7 @@
    }
   },
   {
-   "seq": 12,
+   "seq": 16,
    "time": "2026-11-09T08:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-9",
@@ -884,7 +1159,7 @@
    }
   },
   {
-   "seq": 13,
+   "seq": 17,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-1",
@@ -907,16 +1182,16 @@
     "creditPaise": "48608",
     "debitPaise": "0",
     "feeBasis": "without_gst",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 14,
+   "seq": 18,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-2",
    "action": "settlement_row",
-   "inputsDigest": "cfa98803303a7905",
+   "inputsDigest": "439126daf2557daa",
    "outcome": "confirmed",
    "decisions": [],
    "language": "en",
@@ -925,8 +1200,8 @@
     "money": "settled",
     "amountPaise": "20000",
     "paymentId": "pay_b",
-    "settlementId": "setl_1",
-    "utr": "UTR0001",
+    "settlementId": "setl_B",
+    "utr": "UTR0B",
     "entity": "pay_b",
     "rowType": "payment",
     "feePaise": "1392",
@@ -934,16 +1209,16 @@
     "creditPaise": "18608",
     "debitPaise": "0",
     "feeBasis": "with_gst",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 15,
+   "seq": 19,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-3",
    "action": "settlement_row",
-   "inputsDigest": "629a5954ca2c66e8",
+   "inputsDigest": "c8976209de2c6d2d",
    "outcome": "confirmed",
    "decisions": [],
    "language": "en",
@@ -952,8 +1227,8 @@
     "money": "settled",
     "amountPaise": "30000",
     "paymentId": "pay_c",
-    "settlementId": "setl_1",
-    "utr": "UTR0001",
+    "settlementId": "setl_b",
+    "utr": "UTR0b",
     "entity": "rf_c",
     "rowType": "refund",
     "feePaise": "0",
@@ -961,11 +1236,11 @@
     "creditPaise": "0",
     "debitPaise": "30000",
     "feeBasis": "without_gst",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 16,
+   "seq": 20,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-4",
@@ -984,11 +1259,11 @@
     "taxPaise": "0",
     "creditPaise": "0",
     "debitPaise": "0",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 17,
+   "seq": 21,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1009,11 +1284,11 @@
     "debitPaise": "0",
     "settlementId": "setl_1",
     "utr": "UTR0001",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 18,
+   "seq": 22,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1034,11 +1309,11 @@
     "debitPaise": "500",
     "settlementId": "setl_1",
     "utr": "UTR0001",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 19,
+   "seq": 23,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1059,11 +1334,11 @@
     "debitPaise": "0",
     "settlementId": "setl_1",
     "utr": "UTR0001",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 20,
+   "seq": 24,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-5",
@@ -1084,11 +1359,11 @@
     "debitPaise": "0",
     "settlementId": "setl_1",
     "utr": "UTR0001",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 21,
+   "seq": 25,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-6",
@@ -1107,16 +1382,16 @@
     "taxPaise": "0",
     "creditPaise": "3000",
     "debitPaise": "0",
-    "settledAt": "1762900000"
+    "settledAt": "1794283200"
    }
   },
   {
-   "seq": 22,
+   "seq": 26,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-7",
    "action": "settlement_row",
-   "inputsDigest": "dcf9938deac60351",
+   "inputsDigest": "c439e36edbc53246",
    "outcome": "confirmed",
    "decisions": [],
    "language": "en",
@@ -1125,8 +1400,8 @@
     "money": "settled",
     "amountPaise": "8000",
     "paymentId": "pay_g",
-    "settlementId": "setl_1",
-    "utr": "UTR0001",
+    "settlementId": "setl-1",
+    "utr": "UTR0g",
     "entity": "pay_g",
     "rowType": "payment",
     "feePaise": "0",
@@ -1137,7 +1412,7 @@
    }
   },
   {
-   "seq": 23,
+   "seq": 27,
    "time": "2026-11-10T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1155,7 +1430,7 @@
    }
   },
   {
-   "seq": 24,
+   "seq": 28,
    "time": "2026-11-11T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-1",
@@ -1178,16 +1453,16 @@
     "creditPaise": "48608",
     "debitPaise": "0",
     "feeBasis": "without_gst",
-    "settledAt": "1762900000"
+    "settledAt": "1794369600"
    }
   },
   {
-   "seq": 25,
+   "seq": 29,
    "time": "2026-11-11T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-4",
    "action": "settlement_row",
-   "inputsDigest": "3dcac1bdb5f62f95",
+   "inputsDigest": "a6169a27eaf44cbf",
    "outcome": "confirmed",
    "decisions": [],
    "language": "en",
@@ -1196,8 +1471,8 @@
     "money": "settled",
     "amountPaise": "15000",
     "paymentId": "pay_d",
-    "settlementId": "setl_2",
-    "utr": "UTR0002",
+    "settlementId": "setl_10",
+    "utr": "UTR0010",
     "entity": "pay_d",
     "rowType": "payment",
     "feePaise": "300",
@@ -1205,11 +1480,115 @@
     "creditPaise": "14646",
     "debitPaise": "0",
     "feeBasis": "without_gst",
-    "settledAt": "1762900000"
+    "settledAt": "1794369600"
    }
   },
   {
-   "seq": 26,
+   "seq": 30,
+   "time": "2026-11-11T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-11",
+   "action": "settlement_row",
+   "inputsDigest": "8bc4712ce23ff97b",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "the payment service paid this out",
+   "refs": {
+    "money": "settled",
+    "amountPaise": "6000",
+    "paymentId": "pay_i",
+    "settlementId": "setl_9",
+    "utr": "UTR0009",
+    "entity": "pay_i",
+    "rowType": "payment",
+    "feePaise": "118",
+    "taxPaise": "18",
+    "creditPaise": "5864",
+    "debitPaise": "0",
+    "feeBasis": "without_gst",
+    "settledAt": "1794369600"
+   }
+  },
+  {
+   "seq": 31,
+   "time": "2026-11-11T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-10",
+   "action": "settlement_listed",
+   "inputsDigest": "1ee29b76bb8cd591",
+   "outcome": "unconfirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "the payment service is holding this row; it is not in the bank",
+   "refs": {
+    "why": "held",
+    "entity": "pay_h",
+    "rowType": "payment",
+    "amountPaise": "4000",
+    "feePaise": "0",
+    "taxPaise": "0",
+    "creditPaise": "0",
+    "debitPaise": "0",
+    "settledAt": "1794283200"
+   }
+  },
+  {
+   "seq": 32,
+   "time": "2026-11-11T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-12",
+   "action": "settlement_row",
+   "inputsDigest": "eb2b5259476dc0ab",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "the payment service paid this out",
+   "refs": {
+    "money": "settled",
+    "amountPaise": "2500",
+    "paymentId": "pay_j",
+    "settlementId": "setl_oct",
+    "utr": "UTR0oct",
+    "entity": "pay_j",
+    "rowType": "payment",
+    "feePaise": "59",
+    "taxPaise": "9",
+    "creditPaise": "2432",
+    "debitPaise": "0",
+    "feeBasis": "without_gst",
+    "settledAt": "1793471399"
+   }
+  },
+  {
+   "seq": 33,
+   "time": "2026-11-11T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-13",
+   "action": "settlement_row",
+   "inputsDigest": "4a92cbdbe501d1f1",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "the payment service paid this out",
+   "refs": {
+    "money": "settled",
+    "amountPaise": "3500",
+    "paymentId": "pay_k",
+    "settlementId": "setl_nov",
+    "utr": "UTR0nov",
+    "entity": "pay_k",
+    "rowType": "payment",
+    "feePaise": "82",
+    "taxPaise": "15",
+    "creditPaise": "3403",
+    "debitPaise": "0",
+    "feeBasis": "without_gst",
+    "settledAt": "1793471400"
+   }
+  },
+  {
+   "seq": 34,
    "time": "2026-11-11T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1218,16 +1597,16 @@
    "outcome": "confirmed",
    "decisions": [],
    "language": "en",
-   "notes": "read 3 settlement rows for 2026-11-10",
+   "notes": "read 7 settlement rows for 2026-11-10",
    "refs": {
     "day": "2026-11-10",
-    "rows": "3",
-    "posted": "2",
-    "listed": "0"
+    "rows": "7",
+    "posted": "5",
+    "listed": "1"
    }
   },
   {
-   "seq": 27,
+   "seq": 35,
    "time": "2026-11-15T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1245,7 +1624,7 @@
    }
   },
   {
-   "seq": 28,
+   "seq": 36,
    "time": "2026-11-15T05:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1263,7 +1642,7 @@
    }
   },
   {
-   "seq": 29,
+   "seq": 37,
    "time": "2026-11-15T06:00:00.000Z",
    "conversation": "919800000001",
    "booking": "b-6",
@@ -1286,11 +1665,11 @@
     "creditPaise": "2930",
     "debitPaise": "0",
     "feeBasis": "without_gst",
-    "settledAt": "1762900000"
+    "settledAt": "1794632400"
    }
   },
   {
-   "seq": 30,
+   "seq": 38,
    "time": "2026-11-15T06:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1308,7 +1687,7 @@
    }
   },
   {
-   "seq": 31,
+   "seq": 39,
    "time": "2026-11-15T06:00:00.000Z",
    "conversation": "919800000001",
    "booking": null,
@@ -1330,7 +1709,7 @@
   "lines": [
    {
     "seq": 1,
-    "at": "2026-11-01T05:00:00.000Z",
+    "at": "2026-11-01T05:10:00.000Z",
     "case": "b-1",
     "account": "gateway",
     "debitPaise": 50000,
@@ -1342,7 +1721,7 @@
    },
    {
     "seq": 1,
-    "at": "2026-11-01T05:00:00.000Z",
+    "at": "2026-11-01T05:10:00.000Z",
     "case": "b-1",
     "account": "advances",
     "debitPaise": 0,
@@ -1354,7 +1733,7 @@
    },
    {
     "seq": 2,
-    "at": "2026-11-02T05:00:00.000Z",
+    "at": "2026-11-02T05:11:00.000Z",
     "case": "b-2",
     "account": "gateway",
     "debitPaise": 20000,
@@ -1366,7 +1745,7 @@
    },
    {
     "seq": 2,
-    "at": "2026-11-02T05:00:00.000Z",
+    "at": "2026-11-02T05:11:00.000Z",
     "case": "b-2",
     "account": "advances",
     "debitPaise": 0,
@@ -1378,7 +1757,7 @@
    },
    {
     "seq": 3,
-    "at": "2026-11-03T05:00:00.000Z",
+    "at": "2026-11-03T05:12:00.000Z",
     "case": "b-3",
     "account": "gateway",
     "debitPaise": 100000,
@@ -1390,7 +1769,7 @@
    },
    {
     "seq": 3,
-    "at": "2026-11-03T05:00:00.000Z",
+    "at": "2026-11-03T05:12:00.000Z",
     "case": "b-3",
     "account": "advances",
     "debitPaise": 0,
@@ -1402,7 +1781,7 @@
    },
    {
     "seq": 4,
-    "at": "2026-11-04T05:00:00.000Z",
+    "at": "2026-11-04T05:13:00.000Z",
     "case": "b-4",
     "account": "gateway",
     "debitPaise": 15000,
@@ -1414,7 +1793,7 @@
    },
    {
     "seq": 4,
-    "at": "2026-11-04T05:00:00.000Z",
+    "at": "2026-11-04T05:13:00.000Z",
     "case": "b-4",
     "account": "advances",
     "debitPaise": 0,
@@ -1426,7 +1805,7 @@
    },
    {
     "seq": 5,
-    "at": "2026-11-05T05:00:00.000Z",
+    "at": "2026-11-05T05:14:00.000Z",
     "case": "b-5",
     "account": "gateway",
     "debitPaise": 7000,
@@ -1438,7 +1817,7 @@
    },
    {
     "seq": 5,
-    "at": "2026-11-05T05:00:00.000Z",
+    "at": "2026-11-05T05:14:00.000Z",
     "case": "b-5",
     "account": "advances",
     "debitPaise": 0,
@@ -1450,7 +1829,7 @@
    },
    {
     "seq": 6,
-    "at": "2026-11-06T05:00:00.000Z",
+    "at": "2026-11-06T05:15:00.000Z",
     "case": "b-6",
     "account": "gateway",
     "debitPaise": 3000,
@@ -1462,7 +1841,7 @@
    },
    {
     "seq": 6,
-    "at": "2026-11-06T05:00:00.000Z",
+    "at": "2026-11-06T05:15:00.000Z",
     "case": "b-6",
     "account": "advances",
     "debitPaise": 0,
@@ -1474,7 +1853,7 @@
    },
    {
     "seq": 7,
-    "at": "2026-11-07T05:00:00.000Z",
+    "at": "2026-11-07T05:16:00.000Z",
     "case": "b-7",
     "account": "gateway",
     "debitPaise": 8000,
@@ -1486,7 +1865,7 @@
    },
    {
     "seq": 7,
-    "at": "2026-11-07T05:00:00.000Z",
+    "at": "2026-11-07T05:16:00.000Z",
     "case": "b-7",
     "account": "advances",
     "debitPaise": 0,
@@ -1498,6 +1877,102 @@
    },
    {
     "seq": 8,
+    "at": "2026-11-01T05:17:00.000Z",
+    "case": "b-10",
+    "account": "gateway",
+    "debitPaise": 4000,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0008"
+   },
+   {
+    "seq": 8,
+    "at": "2026-11-01T05:17:00.000Z",
+    "case": "b-10",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 4000,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0008"
+   },
+   {
+    "seq": 9,
+    "at": "2026-11-02T05:18:00.000Z",
+    "case": "b-11",
+    "account": "gateway",
+    "debitPaise": 6000,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0009"
+   },
+   {
+    "seq": 9,
+    "at": "2026-11-02T05:18:00.000Z",
+    "case": "b-11",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 6000,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0009"
+   },
+   {
+    "seq": 10,
+    "at": "2026-11-03T05:19:00.000Z",
+    "case": "b-12",
+    "account": "gateway",
+    "debitPaise": 2500,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0010"
+   },
+   {
+    "seq": 10,
+    "at": "2026-11-03T05:19:00.000Z",
+    "case": "b-12",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 2500,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0010"
+   },
+   {
+    "seq": 11,
+    "at": "2026-11-04T05:20:00.000Z",
+    "case": "b-13",
+    "account": "gateway",
+    "debitPaise": 3500,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0011"
+   },
+   {
+    "seq": 11,
+    "at": "2026-11-04T05:20:00.000Z",
+    "case": "b-13",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 3500,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway",
+    "doc": "RCT/26-27/0011"
+   },
+   {
+    "seq": 12,
     "at": "2026-11-09T05:00:00.000Z",
     "case": "b-3",
     "account": "advances",
@@ -1506,7 +1981,7 @@
     "kind": "refund_owed"
    },
    {
-    "seq": 8,
+    "seq": 12,
     "at": "2026-11-09T05:00:00.000Z",
     "case": "b-3",
     "account": "refunds_owed",
@@ -1515,7 +1990,7 @@
     "kind": "refund_owed"
    },
    {
-    "seq": 9,
+    "seq": 13,
     "at": "2026-11-09T06:00:00.000Z",
     "case": "b-3",
     "account": "refunds_owed",
@@ -1527,7 +2002,7 @@
     "doc": "CN/26-27/0001"
    },
    {
-    "seq": 9,
+    "seq": 13,
     "at": "2026-11-09T06:00:00.000Z",
     "case": "b-3",
     "account": "gateway",
@@ -1539,7 +2014,7 @@
     "doc": "CN/26-27/0001"
    },
    {
-    "seq": 12,
+    "seq": 16,
     "at": "2026-11-09T08:00:00.000Z",
     "case": "b-9",
     "account": "returns",
@@ -1548,7 +2023,7 @@
     "kind": "refund_owed"
    },
    {
-    "seq": 12,
+    "seq": 16,
     "at": "2026-11-09T08:00:00.000Z",
     "case": "b-9",
     "account": "refunds_owed",
@@ -1557,7 +2032,7 @@
     "kind": "refund_owed"
    },
    {
-    "seq": 13,
+    "seq": 17,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-1",
     "account": "bank_settled",
@@ -1567,7 +2042,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 13,
+    "seq": 17,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-1",
     "account": "gateway_fees",
@@ -1577,7 +2052,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 13,
+    "seq": 17,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-1",
     "account": "gst_on_fees",
@@ -1587,7 +2062,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 13,
+    "seq": 17,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-1",
     "account": "gateway",
@@ -1597,7 +2072,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 14,
+    "seq": 18,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-2",
     "account": "bank_settled",
@@ -1607,7 +2082,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 14,
+    "seq": 18,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-2",
     "account": "gateway_fees",
@@ -1617,7 +2092,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 14,
+    "seq": 18,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-2",
     "account": "gst_on_fees",
@@ -1627,7 +2102,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 14,
+    "seq": 18,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-2",
     "account": "gateway",
@@ -1637,7 +2112,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 15,
+    "seq": 19,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-3",
     "account": "gateway",
@@ -1647,7 +2122,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 15,
+    "seq": 19,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-3",
     "account": "bank_settled",
@@ -1657,7 +2132,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 22,
+    "seq": 26,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-7",
     "account": "bank_settled",
@@ -1667,7 +2142,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 22,
+    "seq": 26,
     "at": "2026-11-10T05:00:00.000Z",
     "case": "b-7",
     "account": "gateway",
@@ -1677,7 +2152,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 24,
+    "seq": 28,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-1",
     "account": "bank_settled",
@@ -1687,7 +2162,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 24,
+    "seq": 28,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-1",
     "account": "gateway_fees",
@@ -1697,7 +2172,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 24,
+    "seq": 28,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-1",
     "account": "gst_on_fees",
@@ -1707,7 +2182,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 24,
+    "seq": 28,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-1",
     "account": "gateway",
@@ -1717,7 +2192,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 25,
+    "seq": 29,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-4",
     "account": "bank_settled",
@@ -1727,7 +2202,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 25,
+    "seq": 29,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-4",
     "account": "gateway_fees",
@@ -1737,7 +2212,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 25,
+    "seq": 29,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-4",
     "account": "gst_on_fees",
@@ -1747,7 +2222,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 25,
+    "seq": 29,
     "at": "2026-11-11T05:00:00.000Z",
     "case": "b-4",
     "account": "gateway",
@@ -1757,7 +2232,127 @@
     "evidence": "provider"
    },
    {
-    "seq": 29,
+    "seq": 30,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-11",
+    "account": "bank_settled",
+    "debitPaise": 5864,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 30,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-11",
+    "account": "gateway_fees",
+    "debitPaise": 118,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 30,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-11",
+    "account": "gst_on_fees",
+    "debitPaise": 18,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 30,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-11",
+    "account": "gateway",
+    "debitPaise": 0,
+    "creditPaise": 6000,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 32,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-12",
+    "account": "bank_settled",
+    "debitPaise": 2432,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 32,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-12",
+    "account": "gateway_fees",
+    "debitPaise": 59,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 32,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-12",
+    "account": "gst_on_fees",
+    "debitPaise": 9,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 32,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-12",
+    "account": "gateway",
+    "debitPaise": 0,
+    "creditPaise": 2500,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 33,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-13",
+    "account": "bank_settled",
+    "debitPaise": 3403,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 33,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-13",
+    "account": "gateway_fees",
+    "debitPaise": 82,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 33,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-13",
+    "account": "gst_on_fees",
+    "debitPaise": 15,
+    "creditPaise": 0,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 33,
+    "at": "2026-11-11T05:00:00.000Z",
+    "case": "b-13",
+    "account": "gateway",
+    "debitPaise": 0,
+    "creditPaise": 3500,
+    "kind": "settled",
+    "evidence": "provider"
+   },
+   {
+    "seq": 37,
     "at": "2026-11-15T06:00:00.000Z",
     "case": "b-6",
     "account": "bank_settled",
@@ -1767,7 +2362,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 29,
+    "seq": 37,
     "at": "2026-11-15T06:00:00.000Z",
     "case": "b-6",
     "account": "gateway_fees",
@@ -1777,7 +2372,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 29,
+    "seq": 37,
     "at": "2026-11-15T06:00:00.000Z",
     "case": "b-6",
     "account": "gst_on_fees",
@@ -1787,7 +2382,7 @@
     "evidence": "provider"
    },
    {
-    "seq": 29,
+    "seq": 37,
     "at": "2026-11-15T06:00:00.000Z",
     "case": "b-6",
     "account": "gateway",
@@ -1804,7 +2399,7 @@
     "fy": "26-27",
     "n": 1,
     "seq": 1,
-    "at": "2026-11-01T05:00:00.000Z",
+    "at": "2026-11-01T05:10:00.000Z",
     "case": "b-1",
     "kind": "received",
     "amountPaise": 50000,
@@ -1818,7 +2413,7 @@
     "fy": "26-27",
     "n": 2,
     "seq": 2,
-    "at": "2026-11-02T05:00:00.000Z",
+    "at": "2026-11-02T05:11:00.000Z",
     "case": "b-2",
     "kind": "received",
     "amountPaise": 20000,
@@ -1832,7 +2427,7 @@
     "fy": "26-27",
     "n": 3,
     "seq": 3,
-    "at": "2026-11-03T05:00:00.000Z",
+    "at": "2026-11-03T05:12:00.000Z",
     "case": "b-3",
     "kind": "received",
     "amountPaise": 100000,
@@ -1846,7 +2441,7 @@
     "fy": "26-27",
     "n": 4,
     "seq": 4,
-    "at": "2026-11-04T05:00:00.000Z",
+    "at": "2026-11-04T05:13:00.000Z",
     "case": "b-4",
     "kind": "received",
     "amountPaise": 15000,
@@ -1860,7 +2455,7 @@
     "fy": "26-27",
     "n": 5,
     "seq": 5,
-    "at": "2026-11-05T05:00:00.000Z",
+    "at": "2026-11-05T05:14:00.000Z",
     "case": "b-5",
     "kind": "received",
     "amountPaise": 7000,
@@ -1874,7 +2469,7 @@
     "fy": "26-27",
     "n": 6,
     "seq": 6,
-    "at": "2026-11-06T05:00:00.000Z",
+    "at": "2026-11-06T05:15:00.000Z",
     "case": "b-6",
     "kind": "received",
     "amountPaise": 3000,
@@ -1888,7 +2483,7 @@
     "fy": "26-27",
     "n": 7,
     "seq": 7,
-    "at": "2026-11-07T05:00:00.000Z",
+    "at": "2026-11-07T05:16:00.000Z",
     "case": "b-7",
     "kind": "received",
     "amountPaise": 8000,
@@ -1897,11 +2492,67 @@
     "method": "gateway"
    },
    {
+    "number": "RCT/26-27/0008",
+    "series": "RCT",
+    "fy": "26-27",
+    "n": 8,
+    "seq": 8,
+    "at": "2026-11-01T05:17:00.000Z",
+    "case": "b-10",
+    "kind": "received",
+    "amountPaise": 4000,
+    "evidence": "provider",
+    "paymentId": "pay_h",
+    "method": "gateway"
+   },
+   {
+    "number": "RCT/26-27/0009",
+    "series": "RCT",
+    "fy": "26-27",
+    "n": 9,
+    "seq": 9,
+    "at": "2026-11-02T05:18:00.000Z",
+    "case": "b-11",
+    "kind": "received",
+    "amountPaise": 6000,
+    "evidence": "provider",
+    "paymentId": "pay_i",
+    "method": "gateway"
+   },
+   {
+    "number": "RCT/26-27/0010",
+    "series": "RCT",
+    "fy": "26-27",
+    "n": 10,
+    "seq": 10,
+    "at": "2026-11-03T05:19:00.000Z",
+    "case": "b-12",
+    "kind": "received",
+    "amountPaise": 2500,
+    "evidence": "provider",
+    "paymentId": "pay_j",
+    "method": "gateway"
+   },
+   {
+    "number": "RCT/26-27/0011",
+    "series": "RCT",
+    "fy": "26-27",
+    "n": 11,
+    "seq": 11,
+    "at": "2026-11-04T05:20:00.000Z",
+    "case": "b-13",
+    "kind": "received",
+    "amountPaise": 3500,
+    "evidence": "provider",
+    "paymentId": "pay_k",
+    "method": "gateway"
+   },
+   {
     "number": "CN/26-27/0001",
     "series": "CN",
     "fy": "26-27",
     "n": 1,
-    "seq": 9,
+    "seq": 13,
     "at": "2026-11-09T06:00:00.000Z",
     "case": "b-3",
     "kind": "refund_made",
@@ -1912,7 +2563,7 @@
    }
   ],
   "problems": [],
-  "seen": 31,
+  "seen": 39,
   "identities": [
    [
     "received:pay_a",
@@ -1943,36 +2594,64 @@
     7
    ],
    [
-    "made:rf_c",
+    "received:pay_h",
+    8
+   ],
+   [
+    "received:pay_i",
     9
    ],
    [
-    "settled:setl_1:pay_a",
+    "received:pay_j",
+    10
+   ],
+   [
+    "received:pay_k",
+    11
+   ],
+   [
+    "made:rf_c",
     13
    ],
    [
-    "settled:setl_1:pay_b",
-    14
+    "settled:setl_1:pay_a",
+    17
    ],
    [
-    "settled:setl_1:rf_c",
-    15
+    "settled:setl_B:pay_b",
+    18
    ],
    [
-    "settled:setl_1:pay_g",
-    22
+    "settled:setl_b:rf_c",
+    19
+   ],
+   [
+    "settled:setl-1:pay_g",
+    26
    ],
    [
     "settled:setl_2:pay_a",
-    24
+    28
    ],
    [
-    "settled:setl_2:pay_d",
-    25
+    "settled:setl_10:pay_d",
+    29
+   ],
+   [
+    "settled:setl_9:pay_i",
+    30
+   ],
+   [
+    "settled:setl_oct:pay_j",
+    32
+   ],
+   [
+    "settled:setl_nov:pay_k",
+    33
    ],
    [
     "settled:setl_3:pay_f",
-    29
+    37
    ]
   ],
   "owedList": [
@@ -2229,6 +2908,146 @@
     "paise": 0
    },
    {
+    "case": "b-10",
+    "account": "gateway",
+    "paise": 4000
+   },
+   {
+    "case": "b-10",
+    "account": "advances",
+    "paise": -4000
+   },
+   {
+    "case": "b-10",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-10",
+    "account": "returns",
+    "paise": 0
+   },
+   {
+    "case": "b-10",
+    "account": "bank_settled",
+    "paise": 0
+   },
+   {
+    "case": "b-10",
+    "account": "gateway_fees",
+    "paise": 0
+   },
+   {
+    "case": "b-10",
+    "account": "gst_on_fees",
+    "paise": 0
+   },
+   {
+    "case": "b-11",
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": "b-11",
+    "account": "advances",
+    "paise": -6000
+   },
+   {
+    "case": "b-11",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-11",
+    "account": "returns",
+    "paise": 0
+   },
+   {
+    "case": "b-11",
+    "account": "bank_settled",
+    "paise": 5864
+   },
+   {
+    "case": "b-11",
+    "account": "gateway_fees",
+    "paise": 118
+   },
+   {
+    "case": "b-11",
+    "account": "gst_on_fees",
+    "paise": 18
+   },
+   {
+    "case": "b-12",
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": "b-12",
+    "account": "advances",
+    "paise": -2500
+   },
+   {
+    "case": "b-12",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-12",
+    "account": "returns",
+    "paise": 0
+   },
+   {
+    "case": "b-12",
+    "account": "bank_settled",
+    "paise": 2432
+   },
+   {
+    "case": "b-12",
+    "account": "gateway_fees",
+    "paise": 59
+   },
+   {
+    "case": "b-12",
+    "account": "gst_on_fees",
+    "paise": 9
+   },
+   {
+    "case": "b-13",
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": "b-13",
+    "account": "advances",
+    "paise": -3500
+   },
+   {
+    "case": "b-13",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-13",
+    "account": "returns",
+    "paise": 0
+   },
+   {
+    "case": "b-13",
+    "account": "bank_settled",
+    "paise": 3403
+   },
+   {
+    "case": "b-13",
+    "account": "gateway_fees",
+    "paise": 82
+   },
+   {
+    "case": "b-13",
+    "account": "gst_on_fees",
+    "paise": 15
+   },
+   {
     "case": "b-8",
     "account": "gateway",
     "paise": 0
@@ -2371,6 +3190,26 @@
     "receivable": 0
    },
    {
+    "case": "b-10",
+    "advances": 4000,
+    "receivable": 0
+   },
+   {
+    "case": "b-11",
+    "advances": 6000,
+    "receivable": 0
+   },
+   {
+    "case": "b-12",
+    "advances": 2500,
+    "receivable": 0
+   },
+   {
+    "case": "b-13",
+    "advances": 3500,
+    "receivable": 0
+   },
+   {
     "case": "b-8",
     "advances": 0,
     "receivable": 0
@@ -2408,6 +3247,22 @@
    },
    {
     "key": "b-7:pay_g",
+    "open": 0
+   },
+   {
+    "key": "b-10:pay_h",
+    "open": 0
+   },
+   {
+    "key": "b-11:pay_i",
+    "open": 0
+   },
+   {
+    "key": "b-12:pay_j",
+    "open": 0
+   },
+   {
+    "key": "b-13:pay_k",
     "open": 0
    },
    {
@@ -2470,11 +3325,11 @@
    },
    {
     "seq": 10,
-    "n": 0
+    "n": 2
    },
    {
     "seq": 11,
-    "n": 0
+    "n": 2
    },
    {
     "seq": 12,
@@ -2482,31 +3337,31 @@
    },
    {
     "seq": 13,
-    "n": 4
-   },
-   {
-    "seq": 14,
-    "n": 4
-   },
-   {
-    "seq": 15,
     "n": 2
    },
    {
-    "seq": 16,
+    "seq": 14,
     "n": 0
+   },
+   {
+    "seq": 15,
+    "n": 0
+   },
+   {
+    "seq": 16,
+    "n": 2
    },
    {
     "seq": 17,
-    "n": 0
+    "n": 4
    },
    {
     "seq": 18,
-    "n": 0
+    "n": 4
    },
    {
     "seq": 19,
-    "n": 0
+    "n": 2
    },
    {
     "seq": 20,
@@ -2518,7 +3373,7 @@
    },
    {
     "seq": 22,
-    "n": 2
+    "n": 0
    },
    {
     "seq": 23,
@@ -2526,15 +3381,15 @@
    },
    {
     "seq": 24,
-    "n": 4
+    "n": 0
    },
    {
     "seq": 25,
-    "n": 4
+    "n": 0
    },
    {
     "seq": 26,
-    "n": 0
+    "n": 2
    },
    {
     "seq": 27,
@@ -2542,7 +3397,7 @@
    },
    {
     "seq": 28,
-    "n": 0
+    "n": 4
    },
    {
     "seq": 29,
@@ -2550,10 +3405,42 @@
    },
    {
     "seq": 30,
-    "n": 0
+    "n": 4
    },
    {
     "seq": 31,
+    "n": 0
+   },
+   {
+    "seq": 32,
+    "n": 4
+   },
+   {
+    "seq": 33,
+    "n": 4
+   },
+   {
+    "seq": 34,
+    "n": 0
+   },
+   {
+    "seq": 35,
+    "n": 0
+   },
+   {
+    "seq": 36,
+    "n": 0
+   },
+   {
+    "seq": 37,
+    "n": 4
+   },
+   {
+    "seq": 38,
+    "n": 0
+   },
+   {
+    "seq": 39,
     "n": 0
    },
    {
@@ -2566,13 +3453,13 @@
    }
   ],
   "balancesAll": {
-   "gateway": 57000,
-   "advances": -173000,
+   "gateway": 61000,
+   "advances": -189000,
    "refunds_owed": -2500,
    "returns": 2500,
-   "bank_settled": 111400,
-   "gateway_fees": 3859,
-   "gst_on_fees": 741
+   "bank_settled": 123099,
+   "gateway_fees": 4118,
+   "gst_on_fees": 783
   },
   "balancesBy": [
    {
@@ -2580,13 +3467,13 @@
     "from": "1970-01-01T00:00:00.000Z",
     "to": "2100-01-01T00:00:00.000Z",
     "out": {
-     "gateway": 57000,
-     "advances": -173000,
+     "gateway": 61000,
+     "advances": -189000,
      "refunds_owed": -2500,
      "returns": 2500,
-     "bank_settled": 111400,
-     "gateway_fees": 3859,
-     "gst_on_fees": 741
+     "bank_settled": 123099,
+     "gateway_fees": 4118,
+     "gst_on_fees": 783
     }
    },
    {
@@ -2594,13 +3481,13 @@
     "from": "2026-10-31T18:30:00.000Z",
     "to": "2026-11-30T18:30:00.000Z",
     "out": {
-     "gateway": 57000,
-     "advances": -173000,
+     "gateway": 61000,
+     "advances": -189000,
      "refunds_owed": -2500,
      "returns": 2500,
-     "bank_settled": 111400,
-     "gateway_fees": 3859,
-     "gst_on_fees": 741
+     "bank_settled": 123099,
+     "gateway_fees": 4118,
+     "gst_on_fees": 783
     }
    },
    {
@@ -2608,31 +3495,31 @@
     "from": "2026-03-31T18:30:00.000Z",
     "to": "2027-03-31T18:30:00.000Z",
     "out": {
-     "gateway": 57000,
-     "advances": -173000,
+     "gateway": 61000,
+     "advances": -189000,
      "refunds_owed": -2500,
      "returns": 2500,
-     "bank_settled": 111400,
-     "gateway_fees": 3859,
-     "gst_on_fees": 741
+     "bank_settled": 123099,
+     "gateway_fees": 4118,
+     "gst_on_fees": 783
     }
    }
   ],
   "balancesFrom": {
-   "gateway": 57000,
-   "advances": -173000,
+   "gateway": 61000,
+   "advances": -189000,
    "refunds_owed": -2500,
    "returns": 2500,
-   "bank_settled": 111400,
-   "gateway_fees": 3859,
-   "gst_on_fees": 741
+   "bank_settled": 123099,
+   "gateway_fees": 4118,
+   "gst_on_fees": 783
   },
   "balancesTo": {}
  },
  "stepwise": {
-  "lines": 44,
+  "lines": 64,
   "problems": 0,
-  "seen": 31
+  "seen": 39
  },
  "next": [
   {
@@ -2641,7 +3528,7 @@
    "next": {
     "series": "RCT",
     "fy": "26-27",
-    "n": 8
+    "n": 12
    }
   },
   {
@@ -2727,26 +3614,26 @@
      {
       "account": "advances",
       "debitPaise": 30000,
-      "creditPaise": 203000
+      "creditPaise": 219000
      },
      {
       "account": "bank_settled",
-      "debitPaise": 141400,
+      "debitPaise": 153099,
       "creditPaise": 30000
      },
      {
       "account": "gateway",
-      "debitPaise": 233000,
-      "creditPaise": 176000
+      "debitPaise": 249000,
+      "creditPaise": 188000
      },
      {
       "account": "gateway_fees",
-      "debitPaise": 3859,
+      "debitPaise": 4118,
       "creditPaise": 0
      },
      {
       "account": "gst_on_fees",
-      "debitPaise": 741,
+      "debitPaise": 783,
       "creditPaise": 0
      },
      {
@@ -2763,8 +3650,8 @@
     "byKind": [
      {
       "kind": "received",
-      "entries": 7,
-      "paise": 203000
+      "entries": 11,
+      "paise": 219000
      },
      {
       "kind": "refund_made",
@@ -2778,12 +3665,12 @@
      },
      {
       "kind": "settled",
-      "entries": 7,
-      "paise": 176000
+      "entries": 10,
+      "paise": 188000
      }
     ],
     "closing": {
-     "advancesPaise": 173000,
+     "advancesPaise": 189000,
      "refundsOwedPaise": 2500,
      "receivablePaise": 0
     },
@@ -2800,8 +3687,8 @@
       "series": "RCT",
       "fy": "26-27",
       "first": "RCT/26-27/0001",
-      "last": "RCT/26-27/0007",
-      "count": 7,
+      "last": "RCT/26-27/0011",
+      "count": 11,
       "skipped": []
      }
     ],
@@ -2821,26 +3708,26 @@
      {
       "account": "advances",
       "debitPaise": 30000,
-      "creditPaise": 203000
+      "creditPaise": 219000
      },
      {
       "account": "bank_settled",
-      "debitPaise": 141400,
+      "debitPaise": 153099,
       "creditPaise": 30000
      },
      {
       "account": "gateway",
-      "debitPaise": 233000,
-      "creditPaise": 176000
+      "debitPaise": 249000,
+      "creditPaise": 188000
      },
      {
       "account": "gateway_fees",
-      "debitPaise": 3859,
+      "debitPaise": 4118,
       "creditPaise": 0
      },
      {
       "account": "gst_on_fees",
-      "debitPaise": 741,
+      "debitPaise": 783,
       "creditPaise": 0
      },
      {
@@ -2857,8 +3744,8 @@
     "byKind": [
      {
       "kind": "received",
-      "entries": 7,
-      "paise": 203000
+      "entries": 11,
+      "paise": 219000
      },
      {
       "kind": "refund_made",
@@ -2872,12 +3759,12 @@
      },
      {
       "kind": "settled",
-      "entries": 7,
-      "paise": 176000
+      "entries": 10,
+      "paise": 188000
      }
     ],
     "closing": {
-     "advancesPaise": 173000,
+     "advancesPaise": 189000,
      "refundsOwedPaise": 2500,
      "receivablePaise": 0
     },
@@ -2894,8 +3781,8 @@
       "series": "RCT",
       "fy": "26-27",
       "first": "RCT/26-27/0001",
-      "last": "RCT/26-27/0007",
-      "count": 7,
+      "last": "RCT/26-27/0011",
+      "count": 11,
       "skipped": []
      }
     ],
@@ -2915,26 +3802,26 @@
      {
       "account": "advances",
       "debitPaise": 30000,
-      "creditPaise": 203000
+      "creditPaise": 219000
      },
      {
       "account": "bank_settled",
-      "debitPaise": 141400,
+      "debitPaise": 153099,
       "creditPaise": 30000
      },
      {
       "account": "gateway",
-      "debitPaise": 233000,
-      "creditPaise": 176000
+      "debitPaise": 249000,
+      "creditPaise": 188000
      },
      {
       "account": "gateway_fees",
-      "debitPaise": 3859,
+      "debitPaise": 4118,
       "creditPaise": 0
      },
      {
       "account": "gst_on_fees",
-      "debitPaise": 741,
+      "debitPaise": 783,
       "creditPaise": 0
      },
      {
@@ -2951,8 +3838,8 @@
     "byKind": [
      {
       "kind": "received",
-      "entries": 7,
-      "paise": 203000
+      "entries": 11,
+      "paise": 219000
      },
      {
       "kind": "refund_made",
@@ -2966,12 +3853,12 @@
      },
      {
       "kind": "settled",
-      "entries": 7,
-      "paise": 176000
+      "entries": 10,
+      "paise": 188000
      }
     ],
     "closing": {
-     "advancesPaise": 173000,
+     "advancesPaise": 189000,
      "refundsOwedPaise": 2500,
      "receivablePaise": 0
     },
@@ -2988,8 +3875,8 @@
       "series": "RCT",
       "fy": "26-27",
       "first": "RCT/26-27/0001",
-      "last": "RCT/26-27/0007",
-      "count": 7,
+      "last": "RCT/26-27/0011",
+      "count": 11,
       "skipped": []
      }
     ],
@@ -3012,26 +3899,26 @@
       {
        "account": "advances",
        "debitPaise": 30000,
-       "creditPaise": 203000
+       "creditPaise": 219000
       },
       {
        "account": "bank_settled",
-       "debitPaise": 141400,
+       "debitPaise": 153099,
        "creditPaise": 30000
       },
       {
        "account": "gateway",
-       "debitPaise": 233000,
-       "creditPaise": 176000
+       "debitPaise": 249000,
+       "creditPaise": 188000
       },
       {
        "account": "gateway_fees",
-       "debitPaise": 3859,
+       "debitPaise": 4118,
        "creditPaise": 0
       },
       {
        "account": "gst_on_fees",
-       "debitPaise": 741,
+       "debitPaise": 783,
        "creditPaise": 0
       },
       {
@@ -3048,8 +3935,8 @@
      "byKind": [
       {
        "kind": "received",
-       "entries": 7,
-       "paise": 203000
+       "entries": 11,
+       "paise": 219000
       },
       {
        "kind": "refund_made",
@@ -3063,12 +3950,12 @@
       },
       {
        "kind": "settled",
-       "entries": 7,
-       "paise": 176000
+       "entries": 10,
+       "paise": 188000
       }
      ],
      "closing": {
-      "advancesPaise": 173000,
+      "advancesPaise": 189000,
       "refundsOwedPaise": 2500,
       "receivablePaise": 0
      },
@@ -3085,8 +3972,8 @@
        "series": "RCT",
        "fy": "26-27",
        "first": "RCT/26-27/0001",
-       "last": "RCT/26-27/0007",
-       "count": 7,
+       "last": "RCT/26-27/0011",
+       "count": 11,
        "skipped": []
       }
      ],
@@ -3133,26 +4020,26 @@
       {
        "account": "advances",
        "debitPaise": 30000,
-       "creditPaise": 203000
+       "creditPaise": 219000
       },
       {
        "account": "bank_settled",
-       "debitPaise": 141400,
+       "debitPaise": 153099,
        "creditPaise": 30000
       },
       {
        "account": "gateway",
-       "debitPaise": 233000,
-       "creditPaise": 176000
+       "debitPaise": 249000,
+       "creditPaise": 188000
       },
       {
        "account": "gateway_fees",
-       "debitPaise": 3859,
+       "debitPaise": 4118,
        "creditPaise": 0
       },
       {
        "account": "gst_on_fees",
-       "debitPaise": 741,
+       "debitPaise": 783,
        "creditPaise": 0
       },
       {
@@ -3169,8 +4056,8 @@
      "byKind": [
       {
        "kind": "received",
-       "entries": 7,
-       "paise": 203000
+       "entries": 11,
+       "paise": 219000
       },
       {
        "kind": "refund_made",
@@ -3184,12 +4071,12 @@
       },
       {
        "kind": "settled",
-       "entries": 7,
-       "paise": 176000
+       "entries": 10,
+       "paise": 188000
       }
      ],
      "closing": {
-      "advancesPaise": 173000,
+      "advancesPaise": 189000,
       "refundsOwedPaise": 2500,
       "receivablePaise": 0
      },
@@ -3206,8 +4093,8 @@
        "series": "RCT",
        "fy": "26-27",
        "first": "RCT/26-27/0001",
-       "last": "RCT/26-27/0007",
-       "count": 7,
+       "last": "RCT/26-27/0011",
+       "count": 11,
        "skipped": []
       }
      ],
@@ -3254,26 +4141,26 @@
       {
        "account": "advances",
        "debitPaise": 30000,
-       "creditPaise": 203000
+       "creditPaise": 219000
       },
       {
        "account": "bank_settled",
-       "debitPaise": 141400,
+       "debitPaise": 153099,
        "creditPaise": 30000
       },
       {
        "account": "gateway",
-       "debitPaise": 233000,
-       "creditPaise": 176000
+       "debitPaise": 249000,
+       "creditPaise": 188000
       },
       {
        "account": "gateway_fees",
-       "debitPaise": 3859,
+       "debitPaise": 4118,
        "creditPaise": 0
       },
       {
        "account": "gst_on_fees",
-       "debitPaise": 741,
+       "debitPaise": 783,
        "creditPaise": 0
       },
       {
@@ -3290,8 +4177,8 @@
      "byKind": [
       {
        "kind": "received",
-       "entries": 7,
-       "paise": 203000
+       "entries": 11,
+       "paise": 219000
       },
       {
        "kind": "refund_made",
@@ -3305,12 +4192,12 @@
       },
       {
        "kind": "settled",
-       "entries": 7,
-       "paise": 176000
+       "entries": 10,
+       "paise": 188000
       }
      ],
      "closing": {
-      "advancesPaise": 173000,
+      "advancesPaise": 189000,
       "refundsOwedPaise": 2500,
       "receivablePaise": 0
      },
@@ -3327,8 +4214,8 @@
        "series": "RCT",
        "fy": "26-27",
        "first": "RCT/26-27/0001",
-       "last": "RCT/26-27/0007",
-       "count": 7,
+       "last": "RCT/26-27/0011",
+       "count": 11,
        "skipped": []
       }
      ],
@@ -3374,8 +4261,8 @@
    "options": {},
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3427,8 +4314,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3480,8 +4367,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3533,8 +4420,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3587,8 +4474,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3641,8 +4528,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3692,8 +4579,8 @@
    "options": {},
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3745,8 +4632,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3798,8 +4685,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3851,8 +4738,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3905,8 +4792,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -3959,8 +4846,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -4010,8 +4897,8 @@
    "options": {},
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -4063,8 +4950,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -4116,8 +5003,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -4169,8 +5056,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -4223,8 +5110,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -4277,8 +5164,8 @@
    },
    "out": {
     "received": {
-     "count": 7,
-     "paise": 203000
+     "count": 11,
+     "paise": 219000
     },
     "refunds": {
      "count": 1,
@@ -4336,7 +5223,7 @@
    "entries": [
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -4357,7 +5244,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -4378,7 +5265,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -4399,7 +5286,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -4420,7 +5307,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -4441,7 +5328,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -4462,6 +5349,90 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_h",
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_i",
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_j",
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_k",
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -4479,7 +5450,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -4501,7 +5472,7 @@
      }
     },
     {
-     "seq": 10,
+     "seq": 14,
      "time": "2026-11-09T07:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -4517,7 +5488,7 @@
      }
     },
     {
-     "seq": 11,
+     "seq": 15,
      "time": "2026-11-09T07:30:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -4533,7 +5504,7 @@
      }
     },
     {
-     "seq": 12,
+     "seq": 16,
      "time": "2026-11-09T08:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-9",
@@ -4550,7 +5521,7 @@
      }
     },
     {
-     "seq": 13,
+     "seq": 17,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -4573,16 +5544,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 14,
+     "seq": 18,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "settlement_row",
-     "inputsDigest": "cfa98803303a7905",
+     "inputsDigest": "439126daf2557daa",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -4591,8 +5562,8 @@
       "money": "settled",
       "amountPaise": "20000",
       "paymentId": "pay_b",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
       "entity": "pay_b",
       "rowType": "payment",
       "feePaise": "1392",
@@ -4600,16 +5571,16 @@
       "creditPaise": "18608",
       "debitPaise": "0",
       "feeBasis": "with_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 15,
+     "seq": 19,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "settlement_row",
-     "inputsDigest": "629a5954ca2c66e8",
+     "inputsDigest": "c8976209de2c6d2d",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -4618,8 +5589,8 @@
       "money": "settled",
       "amountPaise": "30000",
       "paymentId": "pay_c",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
       "entity": "rf_c",
       "rowType": "refund",
       "feePaise": "0",
@@ -4627,11 +5598,11 @@
       "creditPaise": "0",
       "debitPaise": "30000",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 16,
+     "seq": 20,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
@@ -4650,11 +5621,11 @@
       "taxPaise": "0",
       "creditPaise": "0",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 17,
+     "seq": 21,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4675,11 +5646,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 18,
+     "seq": 22,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4700,11 +5671,11 @@
       "debitPaise": "500",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 19,
+     "seq": 23,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4725,11 +5696,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 20,
+     "seq": 24,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
@@ -4750,11 +5721,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 21,
+     "seq": 25,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -4773,16 +5744,16 @@
       "taxPaise": "0",
       "creditPaise": "3000",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 22,
+     "seq": 26,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "settlement_row",
-     "inputsDigest": "dcf9938deac60351",
+     "inputsDigest": "c439e36edbc53246",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -4791,8 +5762,8 @@
       "money": "settled",
       "amountPaise": "8000",
       "paymentId": "pay_g",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
       "entity": "pay_g",
       "rowType": "payment",
       "feePaise": "0",
@@ -4803,7 +5774,7 @@
      }
     },
     {
-     "seq": 23,
+     "seq": 27,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4821,7 +5792,7 @@
      }
     },
     {
-     "seq": 24,
+     "seq": 28,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -4844,16 +5815,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 25,
+     "seq": 29,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "settlement_row",
-     "inputsDigest": "3dcac1bdb5f62f95",
+     "inputsDigest": "a6169a27eaf44cbf",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -4862,8 +5833,8 @@
       "money": "settled",
       "amountPaise": "15000",
       "paymentId": "pay_d",
-      "settlementId": "setl_2",
-      "utr": "UTR0002",
+      "settlementId": "setl_10",
+      "utr": "UTR0010",
       "entity": "pay_d",
       "rowType": "payment",
       "feePaise": "300",
@@ -4871,11 +5842,115 @@
       "creditPaise": "14646",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 26,
+     "seq": 30,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "settlement_row",
+     "inputsDigest": "8bc4712ce23ff97b",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "6000",
+      "paymentId": "pay_i",
+      "settlementId": "setl_9",
+      "utr": "UTR0009",
+      "entity": "pay_i",
+      "rowType": "payment",
+      "feePaise": "118",
+      "taxPaise": "18",
+      "creditPaise": "5864",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1794369600"
+     }
+    },
+    {
+     "seq": 31,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "settlement_listed",
+     "inputsDigest": "1ee29b76bb8cd591",
+     "outcome": "unconfirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service is holding this row; it is not in the bank",
+     "refs": {
+      "why": "held",
+      "entity": "pay_h",
+      "rowType": "payment",
+      "amountPaise": "4000",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "0",
+      "debitPaise": "0",
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 32,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "settlement_row",
+     "inputsDigest": "eb2b5259476dc0ab",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "2500",
+      "paymentId": "pay_j",
+      "settlementId": "setl_oct",
+      "utr": "UTR0oct",
+      "entity": "pay_j",
+      "rowType": "payment",
+      "feePaise": "59",
+      "taxPaise": "9",
+      "creditPaise": "2432",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471399"
+     }
+    },
+    {
+     "seq": 33,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "settlement_row",
+     "inputsDigest": "4a92cbdbe501d1f1",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "3500",
+      "paymentId": "pay_k",
+      "settlementId": "setl_nov",
+      "utr": "UTR0nov",
+      "entity": "pay_k",
+      "rowType": "payment",
+      "feePaise": "82",
+      "taxPaise": "15",
+      "creditPaise": "3403",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471400"
+     }
+    },
+    {
+     "seq": 34,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4884,16 +5959,16 @@
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
-     "notes": "read 3 settlement rows for 2026-11-10",
+     "notes": "read 7 settlement rows for 2026-11-10",
      "refs": {
       "day": "2026-11-10",
-      "rows": "3",
-      "posted": "2",
-      "listed": "0"
+      "rows": "7",
+      "posted": "5",
+      "listed": "1"
      }
     },
     {
-     "seq": 27,
+     "seq": 35,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4911,7 +5986,7 @@
      }
     },
     {
-     "seq": 28,
+     "seq": 36,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4929,7 +6004,7 @@
      }
     },
     {
-     "seq": 29,
+     "seq": 37,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -4952,11 +6027,11 @@
       "creditPaise": "2930",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794632400"
      }
     },
     {
-     "seq": 30,
+     "seq": 38,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -4974,7 +6049,7 @@
      }
     },
     {
-     "seq": 31,
+     "seq": 39,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5006,7 +6081,7 @@
    "entries": [
     {
      "seq": 1,
-     "time": "2026-11-01T05:00:00.000Z",
+     "time": "2026-11-01T05:10:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
      "action": "record_deposit",
@@ -5027,7 +6102,7 @@
     },
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -5048,7 +6123,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -5069,7 +6144,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -5090,7 +6165,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -5111,7 +6186,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -5132,7 +6207,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -5153,6 +6228,90 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_h",
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_i",
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_j",
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_k",
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -5170,7 +6329,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -5192,7 +6351,7 @@
      }
     },
     {
-     "seq": 10,
+     "seq": 14,
      "time": "2026-11-09T07:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -5208,7 +6367,7 @@
      }
     },
     {
-     "seq": 11,
+     "seq": 15,
      "time": "2026-11-09T07:30:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -5224,7 +6383,7 @@
      }
     },
     {
-     "seq": 12,
+     "seq": 16,
      "time": "2026-11-09T08:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-9",
@@ -5241,7 +6400,7 @@
      }
     },
     {
-     "seq": 13,
+     "seq": 17,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -5264,16 +6423,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 14,
+     "seq": 18,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "settlement_row",
-     "inputsDigest": "cfa98803303a7905",
+     "inputsDigest": "439126daf2557daa",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -5282,8 +6441,8 @@
       "money": "settled",
       "amountPaise": "20000",
       "paymentId": "pay_b",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
       "entity": "pay_b",
       "rowType": "payment",
       "feePaise": "1392",
@@ -5291,16 +6450,16 @@
       "creditPaise": "18608",
       "debitPaise": "0",
       "feeBasis": "with_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 15,
+     "seq": 19,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "settlement_row",
-     "inputsDigest": "629a5954ca2c66e8",
+     "inputsDigest": "c8976209de2c6d2d",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -5309,8 +6468,8 @@
       "money": "settled",
       "amountPaise": "30000",
       "paymentId": "pay_c",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
       "entity": "rf_c",
       "rowType": "refund",
       "feePaise": "0",
@@ -5318,11 +6477,11 @@
       "creditPaise": "0",
       "debitPaise": "30000",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 16,
+     "seq": 20,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
@@ -5341,11 +6500,11 @@
       "taxPaise": "0",
       "creditPaise": "0",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 17,
+     "seq": 21,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5366,11 +6525,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 18,
+     "seq": 22,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5391,11 +6550,11 @@
       "debitPaise": "500",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 19,
+     "seq": 23,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5416,11 +6575,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 20,
+     "seq": 24,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
@@ -5441,11 +6600,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 21,
+     "seq": 25,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -5464,16 +6623,16 @@
       "taxPaise": "0",
       "creditPaise": "3000",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 22,
+     "seq": 26,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "settlement_row",
-     "inputsDigest": "dcf9938deac60351",
+     "inputsDigest": "c439e36edbc53246",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -5482,8 +6641,8 @@
       "money": "settled",
       "amountPaise": "8000",
       "paymentId": "pay_g",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
       "entity": "pay_g",
       "rowType": "payment",
       "feePaise": "0",
@@ -5494,7 +6653,7 @@
      }
     },
     {
-     "seq": 23,
+     "seq": 27,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5512,7 +6671,7 @@
      }
     },
     {
-     "seq": 24,
+     "seq": 28,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -5535,16 +6694,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 25,
+     "seq": 29,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "settlement_row",
-     "inputsDigest": "3dcac1bdb5f62f95",
+     "inputsDigest": "a6169a27eaf44cbf",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -5553,8 +6712,8 @@
       "money": "settled",
       "amountPaise": "15000",
       "paymentId": "pay_d",
-      "settlementId": "setl_2",
-      "utr": "UTR0002",
+      "settlementId": "setl_10",
+      "utr": "UTR0010",
       "entity": "pay_d",
       "rowType": "payment",
       "feePaise": "300",
@@ -5562,11 +6721,115 @@
       "creditPaise": "14646",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 26,
+     "seq": 30,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "settlement_row",
+     "inputsDigest": "8bc4712ce23ff97b",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "6000",
+      "paymentId": "pay_i",
+      "settlementId": "setl_9",
+      "utr": "UTR0009",
+      "entity": "pay_i",
+      "rowType": "payment",
+      "feePaise": "118",
+      "taxPaise": "18",
+      "creditPaise": "5864",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1794369600"
+     }
+    },
+    {
+     "seq": 31,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "settlement_listed",
+     "inputsDigest": "1ee29b76bb8cd591",
+     "outcome": "unconfirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service is holding this row; it is not in the bank",
+     "refs": {
+      "why": "held",
+      "entity": "pay_h",
+      "rowType": "payment",
+      "amountPaise": "4000",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "0",
+      "debitPaise": "0",
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 32,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "settlement_row",
+     "inputsDigest": "eb2b5259476dc0ab",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "2500",
+      "paymentId": "pay_j",
+      "settlementId": "setl_oct",
+      "utr": "UTR0oct",
+      "entity": "pay_j",
+      "rowType": "payment",
+      "feePaise": "59",
+      "taxPaise": "9",
+      "creditPaise": "2432",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471399"
+     }
+    },
+    {
+     "seq": 33,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "settlement_row",
+     "inputsDigest": "4a92cbdbe501d1f1",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "3500",
+      "paymentId": "pay_k",
+      "settlementId": "setl_nov",
+      "utr": "UTR0nov",
+      "entity": "pay_k",
+      "rowType": "payment",
+      "feePaise": "82",
+      "taxPaise": "15",
+      "creditPaise": "3403",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471400"
+     }
+    },
+    {
+     "seq": 34,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5575,16 +6838,16 @@
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
-     "notes": "read 3 settlement rows for 2026-11-10",
+     "notes": "read 7 settlement rows for 2026-11-10",
      "refs": {
       "day": "2026-11-10",
-      "rows": "3",
-      "posted": "2",
-      "listed": "0"
+      "rows": "7",
+      "posted": "5",
+      "listed": "1"
      }
     },
     {
-     "seq": 27,
+     "seq": 35,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5602,7 +6865,7 @@
      }
     },
     {
-     "seq": 28,
+     "seq": 36,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5620,7 +6883,7 @@
      }
     },
     {
-     "seq": 29,
+     "seq": 37,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -5643,11 +6906,11 @@
       "creditPaise": "2930",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794632400"
      }
     },
     {
-     "seq": 30,
+     "seq": 38,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5665,7 +6928,7 @@
      }
     },
     {
-     "seq": 31,
+     "seq": 39,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -5699,7 +6962,7 @@
    "entries": [
     {
      "seq": 1,
-     "time": "2026-11-01T05:00:00.000Z",
+     "time": "2026-11-01T05:10:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
      "action": "record_deposit",
@@ -5720,7 +6983,7 @@
     },
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -5741,7 +7004,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -5762,7 +7025,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -5783,7 +7046,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -5804,7 +7067,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -5825,7 +7088,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -5846,6 +7109,90 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_h",
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_i",
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_j",
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_k",
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -5863,7 +7210,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -5885,7 +7232,7 @@
      }
     },
     {
-     "seq": 10,
+     "seq": 14,
      "time": "2026-11-09T07:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -5901,7 +7248,7 @@
      }
     },
     {
-     "seq": 11,
+     "seq": 15,
      "time": "2026-11-09T07:30:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -5917,7 +7264,7 @@
      }
     },
     {
-     "seq": 12,
+     "seq": 16,
      "time": "2026-11-09T08:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-9",
@@ -5934,7 +7281,7 @@
      }
     },
     {
-     "seq": 13,
+     "seq": 17,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -5957,16 +7304,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 14,
+     "seq": 18,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "settlement_row",
-     "inputsDigest": "cfa98803303a7905",
+     "inputsDigest": "439126daf2557daa",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -5975,8 +7322,8 @@
       "money": "settled",
       "amountPaise": "20000",
       "paymentId": "pay_b",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
       "entity": "pay_b",
       "rowType": "payment",
       "feePaise": "1392",
@@ -5984,16 +7331,16 @@
       "creditPaise": "18608",
       "debitPaise": "0",
       "feeBasis": "with_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 15,
+     "seq": 19,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "settlement_row",
-     "inputsDigest": "629a5954ca2c66e8",
+     "inputsDigest": "c8976209de2c6d2d",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -6002,8 +7349,8 @@
       "money": "settled",
       "amountPaise": "30000",
       "paymentId": "pay_c",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
       "entity": "rf_c",
       "rowType": "refund",
       "feePaise": "0",
@@ -6011,11 +7358,11 @@
       "creditPaise": "0",
       "debitPaise": "30000",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 16,
+     "seq": 20,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
@@ -6034,11 +7381,11 @@
       "taxPaise": "0",
       "creditPaise": "0",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 17,
+     "seq": 21,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6059,11 +7406,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 18,
+     "seq": 22,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6084,11 +7431,11 @@
       "debitPaise": "500",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 19,
+     "seq": 23,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6109,11 +7456,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 20,
+     "seq": 24,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
@@ -6134,11 +7481,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 21,
+     "seq": 25,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -6157,16 +7504,16 @@
       "taxPaise": "0",
       "creditPaise": "3000",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 22,
+     "seq": 26,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "settlement_row",
-     "inputsDigest": "dcf9938deac60351",
+     "inputsDigest": "c439e36edbc53246",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -6175,8 +7522,8 @@
       "money": "settled",
       "amountPaise": "8000",
       "paymentId": "pay_g",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
       "entity": "pay_g",
       "rowType": "payment",
       "feePaise": "0",
@@ -6187,7 +7534,7 @@
      }
     },
     {
-     "seq": 23,
+     "seq": 27,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6205,7 +7552,7 @@
      }
     },
     {
-     "seq": 24,
+     "seq": 28,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -6228,16 +7575,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 25,
+     "seq": 29,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "settlement_row",
-     "inputsDigest": "3dcac1bdb5f62f95",
+     "inputsDigest": "a6169a27eaf44cbf",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -6246,8 +7593,8 @@
       "money": "settled",
       "amountPaise": "15000",
       "paymentId": "pay_d",
-      "settlementId": "setl_2",
-      "utr": "UTR0002",
+      "settlementId": "setl_10",
+      "utr": "UTR0010",
       "entity": "pay_d",
       "rowType": "payment",
       "feePaise": "300",
@@ -6255,11 +7602,115 @@
       "creditPaise": "14646",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 26,
+     "seq": 30,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "settlement_row",
+     "inputsDigest": "8bc4712ce23ff97b",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "6000",
+      "paymentId": "pay_i",
+      "settlementId": "setl_9",
+      "utr": "UTR0009",
+      "entity": "pay_i",
+      "rowType": "payment",
+      "feePaise": "118",
+      "taxPaise": "18",
+      "creditPaise": "5864",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1794369600"
+     }
+    },
+    {
+     "seq": 31,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "settlement_listed",
+     "inputsDigest": "1ee29b76bb8cd591",
+     "outcome": "unconfirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service is holding this row; it is not in the bank",
+     "refs": {
+      "why": "held",
+      "entity": "pay_h",
+      "rowType": "payment",
+      "amountPaise": "4000",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "0",
+      "debitPaise": "0",
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 32,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "settlement_row",
+     "inputsDigest": "eb2b5259476dc0ab",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "2500",
+      "paymentId": "pay_j",
+      "settlementId": "setl_oct",
+      "utr": "UTR0oct",
+      "entity": "pay_j",
+      "rowType": "payment",
+      "feePaise": "59",
+      "taxPaise": "9",
+      "creditPaise": "2432",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471399"
+     }
+    },
+    {
+     "seq": 33,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "settlement_row",
+     "inputsDigest": "4a92cbdbe501d1f1",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "3500",
+      "paymentId": "pay_k",
+      "settlementId": "setl_nov",
+      "utr": "UTR0nov",
+      "entity": "pay_k",
+      "rowType": "payment",
+      "feePaise": "82",
+      "taxPaise": "15",
+      "creditPaise": "3403",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471400"
+     }
+    },
+    {
+     "seq": 34,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6268,16 +7719,16 @@
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
-     "notes": "read 3 settlement rows for 2026-11-10",
+     "notes": "read 7 settlement rows for 2026-11-10",
      "refs": {
       "day": "2026-11-10",
-      "rows": "3",
-      "posted": "2",
-      "listed": "0"
+      "rows": "7",
+      "posted": "5",
+      "listed": "1"
      }
     },
     {
-     "seq": 27,
+     "seq": 35,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6295,7 +7746,7 @@
      }
     },
     {
-     "seq": 28,
+     "seq": 36,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6313,7 +7764,7 @@
      }
     },
     {
-     "seq": 29,
+     "seq": 37,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -6336,11 +7787,11 @@
       "creditPaise": "2930",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794632400"
      }
     },
     {
-     "seq": 30,
+     "seq": 38,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6358,7 +7809,7 @@
      }
     },
     {
-     "seq": 31,
+     "seq": 39,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6390,7 +7841,7 @@
    "entries": [
     {
      "seq": 1,
-     "time": "2026-11-01T05:00:00.000Z",
+     "time": "2026-11-01T05:10:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
      "action": "record_deposit",
@@ -6412,7 +7863,7 @@
     },
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -6433,7 +7884,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -6454,7 +7905,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -6475,7 +7926,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -6496,7 +7947,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -6517,7 +7968,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -6538,6 +7989,90 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_h",
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_i",
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_j",
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_k",
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -6555,7 +8090,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -6577,7 +8112,7 @@
      }
     },
     {
-     "seq": 10,
+     "seq": 14,
      "time": "2026-11-09T07:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -6593,7 +8128,7 @@
      }
     },
     {
-     "seq": 11,
+     "seq": 15,
      "time": "2026-11-09T07:30:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -6609,7 +8144,7 @@
      }
     },
     {
-     "seq": 12,
+     "seq": 16,
      "time": "2026-11-09T08:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-9",
@@ -6626,7 +8161,7 @@
      }
     },
     {
-     "seq": 13,
+     "seq": 17,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -6649,16 +8184,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 14,
+     "seq": 18,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "settlement_row",
-     "inputsDigest": "cfa98803303a7905",
+     "inputsDigest": "439126daf2557daa",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -6667,8 +8202,8 @@
       "money": "settled",
       "amountPaise": "20000",
       "paymentId": "pay_b",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
       "entity": "pay_b",
       "rowType": "payment",
       "feePaise": "1392",
@@ -6676,16 +8211,16 @@
       "creditPaise": "18608",
       "debitPaise": "0",
       "feeBasis": "with_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 15,
+     "seq": 19,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "settlement_row",
-     "inputsDigest": "629a5954ca2c66e8",
+     "inputsDigest": "c8976209de2c6d2d",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -6694,8 +8229,8 @@
       "money": "settled",
       "amountPaise": "30000",
       "paymentId": "pay_c",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
       "entity": "rf_c",
       "rowType": "refund",
       "feePaise": "0",
@@ -6703,11 +8238,11 @@
       "creditPaise": "0",
       "debitPaise": "30000",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 16,
+     "seq": 20,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
@@ -6726,11 +8261,11 @@
       "taxPaise": "0",
       "creditPaise": "0",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 17,
+     "seq": 21,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6751,11 +8286,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 18,
+     "seq": 22,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6776,11 +8311,11 @@
       "debitPaise": "500",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 19,
+     "seq": 23,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6801,11 +8336,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 20,
+     "seq": 24,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
@@ -6826,11 +8361,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 21,
+     "seq": 25,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -6849,16 +8384,16 @@
       "taxPaise": "0",
       "creditPaise": "3000",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 22,
+     "seq": 26,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "settlement_row",
-     "inputsDigest": "dcf9938deac60351",
+     "inputsDigest": "c439e36edbc53246",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -6867,8 +8402,8 @@
       "money": "settled",
       "amountPaise": "8000",
       "paymentId": "pay_g",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
       "entity": "pay_g",
       "rowType": "payment",
       "feePaise": "0",
@@ -6879,7 +8414,7 @@
      }
     },
     {
-     "seq": 23,
+     "seq": 27,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6897,7 +8432,7 @@
      }
     },
     {
-     "seq": 24,
+     "seq": 28,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -6920,16 +8455,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 25,
+     "seq": 29,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "settlement_row",
-     "inputsDigest": "3dcac1bdb5f62f95",
+     "inputsDigest": "a6169a27eaf44cbf",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -6938,8 +8473,8 @@
       "money": "settled",
       "amountPaise": "15000",
       "paymentId": "pay_d",
-      "settlementId": "setl_2",
-      "utr": "UTR0002",
+      "settlementId": "setl_10",
+      "utr": "UTR0010",
       "entity": "pay_d",
       "rowType": "payment",
       "feePaise": "300",
@@ -6947,11 +8482,115 @@
       "creditPaise": "14646",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 26,
+     "seq": 30,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "settlement_row",
+     "inputsDigest": "8bc4712ce23ff97b",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "6000",
+      "paymentId": "pay_i",
+      "settlementId": "setl_9",
+      "utr": "UTR0009",
+      "entity": "pay_i",
+      "rowType": "payment",
+      "feePaise": "118",
+      "taxPaise": "18",
+      "creditPaise": "5864",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1794369600"
+     }
+    },
+    {
+     "seq": 31,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "settlement_listed",
+     "inputsDigest": "1ee29b76bb8cd591",
+     "outcome": "unconfirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service is holding this row; it is not in the bank",
+     "refs": {
+      "why": "held",
+      "entity": "pay_h",
+      "rowType": "payment",
+      "amountPaise": "4000",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "0",
+      "debitPaise": "0",
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 32,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "settlement_row",
+     "inputsDigest": "eb2b5259476dc0ab",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "2500",
+      "paymentId": "pay_j",
+      "settlementId": "setl_oct",
+      "utr": "UTR0oct",
+      "entity": "pay_j",
+      "rowType": "payment",
+      "feePaise": "59",
+      "taxPaise": "9",
+      "creditPaise": "2432",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471399"
+     }
+    },
+    {
+     "seq": 33,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "settlement_row",
+     "inputsDigest": "4a92cbdbe501d1f1",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "3500",
+      "paymentId": "pay_k",
+      "settlementId": "setl_nov",
+      "utr": "UTR0nov",
+      "entity": "pay_k",
+      "rowType": "payment",
+      "feePaise": "82",
+      "taxPaise": "15",
+      "creditPaise": "3403",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471400"
+     }
+    },
+    {
+     "seq": 34,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6960,16 +8599,16 @@
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
-     "notes": "read 3 settlement rows for 2026-11-10",
+     "notes": "read 7 settlement rows for 2026-11-10",
      "refs": {
       "day": "2026-11-10",
-      "rows": "3",
-      "posted": "2",
-      "listed": "0"
+      "rows": "7",
+      "posted": "5",
+      "listed": "1"
      }
     },
     {
-     "seq": 27,
+     "seq": 35,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -6987,7 +8626,7 @@
      }
     },
     {
-     "seq": 28,
+     "seq": 36,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7005,7 +8644,7 @@
      }
     },
     {
-     "seq": 29,
+     "seq": 37,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -7028,11 +8667,11 @@
       "creditPaise": "2930",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794632400"
      }
     },
     {
-     "seq": 30,
+     "seq": 38,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7050,7 +8689,7 @@
      }
     },
     {
-     "seq": 31,
+     "seq": 39,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7082,7 +8721,7 @@
    "entries": [
     {
      "seq": 1,
-     "time": "2026-11-01T05:00:00.000Z",
+     "time": "2026-11-01T05:10:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
      "action": "record_deposit",
@@ -7104,7 +8743,7 @@
     },
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -7125,7 +8764,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -7146,7 +8785,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -7167,7 +8806,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -7188,7 +8827,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -7209,7 +8848,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -7230,6 +8869,90 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_h",
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_i",
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_j",
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_k",
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -7247,7 +8970,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -7269,7 +8992,7 @@
      }
     },
     {
-     "seq": 10,
+     "seq": 14,
      "time": "2026-11-09T07:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -7285,7 +9008,7 @@
      }
     },
     {
-     "seq": 11,
+     "seq": 15,
      "time": "2026-11-09T07:30:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -7301,7 +9024,7 @@
      }
     },
     {
-     "seq": 12,
+     "seq": 16,
      "time": "2026-11-09T08:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-9",
@@ -7318,7 +9041,7 @@
      }
     },
     {
-     "seq": 13,
+     "seq": 17,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -7341,16 +9064,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 14,
+     "seq": 18,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "settlement_row",
-     "inputsDigest": "cfa98803303a7905",
+     "inputsDigest": "439126daf2557daa",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -7359,8 +9082,8 @@
       "money": "settled",
       "amountPaise": "20000",
       "paymentId": "pay_b",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
       "entity": "pay_b",
       "rowType": "payment",
       "feePaise": "1392",
@@ -7368,16 +9091,16 @@
       "creditPaise": "18608",
       "debitPaise": "0",
       "feeBasis": "with_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 15,
+     "seq": 19,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "settlement_row",
-     "inputsDigest": "629a5954ca2c66e8",
+     "inputsDigest": "c8976209de2c6d2d",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -7386,8 +9109,8 @@
       "money": "settled",
       "amountPaise": "30000",
       "paymentId": "pay_c",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
       "entity": "rf_c",
       "rowType": "refund",
       "feePaise": "0",
@@ -7395,11 +9118,11 @@
       "creditPaise": "0",
       "debitPaise": "30000",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 16,
+     "seq": 20,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
@@ -7418,11 +9141,11 @@
       "taxPaise": "0",
       "creditPaise": "0",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 17,
+     "seq": 21,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7443,11 +9166,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 18,
+     "seq": 22,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7468,11 +9191,11 @@
       "debitPaise": "500",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 19,
+     "seq": 23,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7493,11 +9216,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 20,
+     "seq": 24,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
@@ -7518,11 +9241,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 21,
+     "seq": 25,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -7541,16 +9264,16 @@
       "taxPaise": "0",
       "creditPaise": "3000",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 22,
+     "seq": 26,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "settlement_row",
-     "inputsDigest": "dcf9938deac60351",
+     "inputsDigest": "c439e36edbc53246",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -7559,8 +9282,8 @@
       "money": "settled",
       "amountPaise": "8000",
       "paymentId": "pay_g",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
       "entity": "pay_g",
       "rowType": "payment",
       "feePaise": "0",
@@ -7571,7 +9294,7 @@
      }
     },
     {
-     "seq": 23,
+     "seq": 27,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7589,7 +9312,7 @@
      }
     },
     {
-     "seq": 24,
+     "seq": 28,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -7612,16 +9335,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 25,
+     "seq": 29,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "settlement_row",
-     "inputsDigest": "3dcac1bdb5f62f95",
+     "inputsDigest": "a6169a27eaf44cbf",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -7630,8 +9353,8 @@
       "money": "settled",
       "amountPaise": "15000",
       "paymentId": "pay_d",
-      "settlementId": "setl_2",
-      "utr": "UTR0002",
+      "settlementId": "setl_10",
+      "utr": "UTR0010",
       "entity": "pay_d",
       "rowType": "payment",
       "feePaise": "300",
@@ -7639,11 +9362,115 @@
       "creditPaise": "14646",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 26,
+     "seq": 30,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "settlement_row",
+     "inputsDigest": "8bc4712ce23ff97b",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "6000",
+      "paymentId": "pay_i",
+      "settlementId": "setl_9",
+      "utr": "UTR0009",
+      "entity": "pay_i",
+      "rowType": "payment",
+      "feePaise": "118",
+      "taxPaise": "18",
+      "creditPaise": "5864",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1794369600"
+     }
+    },
+    {
+     "seq": 31,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "settlement_listed",
+     "inputsDigest": "1ee29b76bb8cd591",
+     "outcome": "unconfirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service is holding this row; it is not in the bank",
+     "refs": {
+      "why": "held",
+      "entity": "pay_h",
+      "rowType": "payment",
+      "amountPaise": "4000",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "0",
+      "debitPaise": "0",
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 32,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "settlement_row",
+     "inputsDigest": "eb2b5259476dc0ab",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "2500",
+      "paymentId": "pay_j",
+      "settlementId": "setl_oct",
+      "utr": "UTR0oct",
+      "entity": "pay_j",
+      "rowType": "payment",
+      "feePaise": "59",
+      "taxPaise": "9",
+      "creditPaise": "2432",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471399"
+     }
+    },
+    {
+     "seq": 33,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "settlement_row",
+     "inputsDigest": "4a92cbdbe501d1f1",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "3500",
+      "paymentId": "pay_k",
+      "settlementId": "setl_nov",
+      "utr": "UTR0nov",
+      "entity": "pay_k",
+      "rowType": "payment",
+      "feePaise": "82",
+      "taxPaise": "15",
+      "creditPaise": "3403",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471400"
+     }
+    },
+    {
+     "seq": 34,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7652,16 +9479,16 @@
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
-     "notes": "read 3 settlement rows for 2026-11-10",
+     "notes": "read 7 settlement rows for 2026-11-10",
      "refs": {
       "day": "2026-11-10",
-      "rows": "3",
-      "posted": "2",
-      "listed": "0"
+      "rows": "7",
+      "posted": "5",
+      "listed": "1"
      }
     },
     {
-     "seq": 27,
+     "seq": 35,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7679,7 +9506,7 @@
      }
     },
     {
-     "seq": 28,
+     "seq": 36,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7697,7 +9524,7 @@
      }
     },
     {
-     "seq": 29,
+     "seq": 37,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -7720,11 +9547,11 @@
       "creditPaise": "2930",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794632400"
      }
     },
     {
-     "seq": 30,
+     "seq": 38,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7742,7 +9569,7 @@
      }
     },
     {
-     "seq": 31,
+     "seq": 39,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -7772,7 +9599,7 @@
    "entries": [
     {
      "seq": 1,
-     "time": "2026-11-01T05:00:00.000Z",
+     "time": "2026-11-01T05:10:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
      "action": "record_deposit",
@@ -7792,7 +9619,7 @@
     },
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -7812,7 +9639,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -7832,7 +9659,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -7852,7 +9679,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -7872,7 +9699,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -7892,7 +9719,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -7912,6 +9739,86 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -7928,7 +9835,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -7949,7 +9856,7 @@
      }
     },
     {
-     "seq": 10,
+     "seq": 14,
      "time": "2026-11-09T07:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -7965,7 +9872,7 @@
      }
     },
     {
-     "seq": 11,
+     "seq": 15,
      "time": "2026-11-09T07:30:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -7981,7 +9888,7 @@
      }
     },
     {
-     "seq": 12,
+     "seq": 16,
      "time": "2026-11-09T08:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-9",
@@ -7997,7 +9904,7 @@
      }
     },
     {
-     "seq": 13,
+     "seq": 17,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -8019,16 +9926,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 14,
+     "seq": 18,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "settlement_row",
-     "inputsDigest": "cfa98803303a7905",
+     "inputsDigest": "439126daf2557daa",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -8036,8 +9943,8 @@
      "refs": {
       "money": "settled",
       "amountPaise": "20000",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
       "entity": "pay_b",
       "rowType": "payment",
       "feePaise": "1392",
@@ -8045,16 +9952,16 @@
       "creditPaise": "18608",
       "debitPaise": "0",
       "feeBasis": "with_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 15,
+     "seq": 19,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "settlement_row",
-     "inputsDigest": "629a5954ca2c66e8",
+     "inputsDigest": "c8976209de2c6d2d",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -8062,8 +9969,8 @@
      "refs": {
       "money": "settled",
       "amountPaise": "30000",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
       "entity": "rf_c",
       "rowType": "refund",
       "feePaise": "0",
@@ -8071,11 +9978,11 @@
       "creditPaise": "0",
       "debitPaise": "30000",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 16,
+     "seq": 20,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
@@ -8094,11 +10001,11 @@
       "taxPaise": "0",
       "creditPaise": "0",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 17,
+     "seq": 21,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8119,11 +10026,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 18,
+     "seq": 22,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8144,11 +10051,11 @@
       "debitPaise": "500",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 19,
+     "seq": 23,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8169,11 +10076,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 20,
+     "seq": 24,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
@@ -8194,11 +10101,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 21,
+     "seq": 25,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -8217,16 +10124,16 @@
       "taxPaise": "0",
       "creditPaise": "3000",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 22,
+     "seq": 26,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "settlement_row",
-     "inputsDigest": "dcf9938deac60351",
+     "inputsDigest": "c439e36edbc53246",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -8234,8 +10141,8 @@
      "refs": {
       "money": "settled",
       "amountPaise": "8000",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
       "entity": "pay_g",
       "rowType": "payment",
       "feePaise": "0",
@@ -8246,7 +10153,7 @@
      }
     },
     {
-     "seq": 23,
+     "seq": 27,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8264,7 +10171,7 @@
      }
     },
     {
-     "seq": 24,
+     "seq": 28,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -8286,16 +10193,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 25,
+     "seq": 29,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "settlement_row",
-     "inputsDigest": "3dcac1bdb5f62f95",
+     "inputsDigest": "a6169a27eaf44cbf",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -8303,8 +10210,8 @@
      "refs": {
       "money": "settled",
       "amountPaise": "15000",
-      "settlementId": "setl_2",
-      "utr": "UTR0002",
+      "settlementId": "setl_10",
+      "utr": "UTR0010",
       "entity": "pay_d",
       "rowType": "payment",
       "feePaise": "300",
@@ -8312,11 +10219,112 @@
       "creditPaise": "14646",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794369600"
      }
     },
     {
-     "seq": 26,
+     "seq": 30,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "settlement_row",
+     "inputsDigest": "8bc4712ce23ff97b",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "6000",
+      "settlementId": "setl_9",
+      "utr": "UTR0009",
+      "entity": "pay_i",
+      "rowType": "payment",
+      "feePaise": "118",
+      "taxPaise": "18",
+      "creditPaise": "5864",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1794369600"
+     }
+    },
+    {
+     "seq": 31,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "settlement_listed",
+     "inputsDigest": "1ee29b76bb8cd591",
+     "outcome": "unconfirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service is holding this row; it is not in the bank",
+     "refs": {
+      "why": "held",
+      "entity": "pay_h",
+      "rowType": "payment",
+      "amountPaise": "4000",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "0",
+      "debitPaise": "0",
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 32,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "settlement_row",
+     "inputsDigest": "eb2b5259476dc0ab",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "2500",
+      "settlementId": "setl_oct",
+      "utr": "UTR0oct",
+      "entity": "pay_j",
+      "rowType": "payment",
+      "feePaise": "59",
+      "taxPaise": "9",
+      "creditPaise": "2432",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471399"
+     }
+    },
+    {
+     "seq": 33,
+     "time": "2026-11-11T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "settlement_row",
+     "inputsDigest": "4a92cbdbe501d1f1",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "3500",
+      "settlementId": "setl_nov",
+      "utr": "UTR0nov",
+      "entity": "pay_k",
+      "rowType": "payment",
+      "feePaise": "82",
+      "taxPaise": "15",
+      "creditPaise": "3403",
+      "debitPaise": "0",
+      "feeBasis": "without_gst",
+      "settledAt": "1793471400"
+     }
+    },
+    {
+     "seq": 34,
      "time": "2026-11-11T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8325,16 +10333,16 @@
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
-     "notes": "read 3 settlement rows for 2026-11-10",
+     "notes": "read 7 settlement rows for 2026-11-10",
      "refs": {
       "day": "2026-11-10",
-      "rows": "3",
-      "posted": "2",
-      "listed": "0"
+      "rows": "7",
+      "posted": "5",
+      "listed": "1"
      }
     },
     {
-     "seq": 27,
+     "seq": 35,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8352,7 +10360,7 @@
      }
     },
     {
-     "seq": 28,
+     "seq": 36,
      "time": "2026-11-15T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8370,7 +10378,7 @@
      }
     },
     {
-     "seq": 29,
+     "seq": 37,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
@@ -8392,11 +10400,11 @@
       "creditPaise": "2930",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794632400"
      }
     },
     {
-     "seq": 30,
+     "seq": 38,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8414,7 +10422,7 @@
      }
     },
     {
-     "seq": 31,
+     "seq": 39,
      "time": "2026-11-15T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -8439,7 +10447,11 @@
     "entry 4 could not be read as money: a received line has no paymentId",
     "entry 5 could not be read as money: a received line has no paymentId",
     "entry 6 could not be read as money: a received line has no paymentId",
-    "entry 7 could not be read as money: a received line has no paymentId"
+    "entry 7 could not be read as money: a received line has no paymentId",
+    "entry 8 could not be read as money: a received line has no paymentId",
+    "entry 9 could not be read as money: a received line has no paymentId",
+    "entry 10 could not be read as money: a received line has no paymentId",
+    "entry 11 could not be read as money: a received line has no paymentId"
    ],
    "booksPrivate": [
     "entry 1 could not be read as money: a received line has no paymentId",
@@ -8448,17 +10460,21 @@
     "entry 4 could not be read as money: a received line has no paymentId",
     "entry 5 could not be read as money: a received line has no paymentId",
     "entry 6 could not be read as money: a received line has no paymentId",
-    "entry 7 could not be read as money: a received line has no paymentId"
+    "entry 7 could not be read as money: a received line has no paymentId",
+    "entry 8 could not be read as money: a received line has no paymentId",
+    "entry 9 could not be read as money: a received line has no paymentId",
+    "entry 10 could not be read as money: a received line has no paymentId",
+    "entry 11 could not be read as money: a received line has no paymentId"
    ],
    "figures": [],
    "figuresFromPayment": []
   },
   {
-   "name": "first 10 entries",
+   "name": "first 13 entries",
    "entries": [
     {
      "seq": 1,
-     "time": "2026-11-01T05:00:00.000Z",
+     "time": "2026-11-01T05:10:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
      "action": "record_deposit",
@@ -8479,7 +10495,7 @@
     },
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -8500,7 +10516,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -8521,7 +10537,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -8542,7 +10558,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -8563,7 +10579,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -8584,7 +10600,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -8605,6 +10621,90 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_h",
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_i",
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_j",
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_k",
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -8622,7 +10722,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -8641,22 +10741,6 @@
       "method": "gateway",
       "evidence": "provider",
       "doc": "CN/26-27/0001"
-     }
-    },
-    {
-     "seq": 10,
-     "time": "2026-11-09T07:00:00.000Z",
-     "conversation": "919800000001",
-     "booking": "b-8",
-     "action": "upi_request",
-     "inputsDigest": "44136fa355b3678a",
-     "outcome": "confirmed",
-     "decisions": [],
-     "language": "en",
-     "notes": "",
-     "refs": {
-      "requestId": "upi-9",
-      "amountPaise": "6000"
      }
     }
    ],
@@ -8666,11 +10750,11 @@
    "figuresFromPayment": []
   },
   {
-   "name": "first 20 entries",
+   "name": "first 26 entries",
    "entries": [
     {
      "seq": 1,
-     "time": "2026-11-01T05:00:00.000Z",
+     "time": "2026-11-01T05:10:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
      "action": "record_deposit",
@@ -8691,7 +10775,7 @@
     },
     {
      "seq": 2,
-     "time": "2026-11-02T05:00:00.000Z",
+     "time": "2026-11-02T05:11:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "record_deposit",
@@ -8712,7 +10796,7 @@
     },
     {
      "seq": 3,
-     "time": "2026-11-03T05:00:00.000Z",
+     "time": "2026-11-03T05:12:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "record_deposit",
@@ -8733,7 +10817,7 @@
     },
     {
      "seq": 4,
-     "time": "2026-11-04T05:00:00.000Z",
+     "time": "2026-11-04T05:13:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
      "action": "record_deposit",
@@ -8754,7 +10838,7 @@
     },
     {
      "seq": 5,
-     "time": "2026-11-05T05:00:00.000Z",
+     "time": "2026-11-05T05:14:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
      "action": "record_deposit",
@@ -8775,7 +10859,7 @@
     },
     {
      "seq": 6,
-     "time": "2026-11-06T05:00:00.000Z",
+     "time": "2026-11-06T05:15:00.000Z",
      "conversation": "919800000001",
      "booking": "b-6",
      "action": "record_deposit",
@@ -8796,7 +10880,7 @@
     },
     {
      "seq": 7,
-     "time": "2026-11-07T05:00:00.000Z",
+     "time": "2026-11-07T05:16:00.000Z",
      "conversation": "919800000001",
      "booking": "b-7",
      "action": "record_deposit",
@@ -8817,6 +10901,90 @@
     },
     {
      "seq": 8,
+     "time": "2026-11-01T05:17:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-10",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_h",
+      "money": "received",
+      "amountPaise": "4000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0008"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-11-02T05:18:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-11",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_i",
+      "money": "received",
+      "amountPaise": "6000",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0009"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-11-03T05:19:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-12",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_j",
+      "money": "received",
+      "amountPaise": "2500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0010"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-11-04T05:20:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-13",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_k",
+      "money": "received",
+      "amountPaise": "3500",
+      "method": "gateway",
+      "evidence": "provider",
+      "for": "advance",
+      "doc": "RCT/26-27/0011"
+     }
+    },
+    {
+     "seq": 12,
      "time": "2026-11-09T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -8834,7 +11002,7 @@
      }
     },
     {
-     "seq": 9,
+     "seq": 13,
      "time": "2026-11-09T06:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
@@ -8856,7 +11024,7 @@
      }
     },
     {
-     "seq": 10,
+     "seq": 14,
      "time": "2026-11-09T07:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -8872,7 +11040,7 @@
      }
     },
     {
-     "seq": 11,
+     "seq": 15,
      "time": "2026-11-09T07:30:00.000Z",
      "conversation": "919800000001",
      "booking": "b-8",
@@ -8888,7 +11056,7 @@
      }
     },
     {
-     "seq": 12,
+     "seq": 16,
      "time": "2026-11-09T08:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-9",
@@ -8905,7 +11073,7 @@
      }
     },
     {
-     "seq": 13,
+     "seq": 17,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-1",
@@ -8928,16 +11096,16 @@
       "creditPaise": "48608",
       "debitPaise": "0",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 14,
+     "seq": 18,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-2",
      "action": "settlement_row",
-     "inputsDigest": "cfa98803303a7905",
+     "inputsDigest": "439126daf2557daa",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -8946,8 +11114,8 @@
       "money": "settled",
       "amountPaise": "20000",
       "paymentId": "pay_b",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_B",
+      "utr": "UTR0B",
       "entity": "pay_b",
       "rowType": "payment",
       "feePaise": "1392",
@@ -8955,16 +11123,16 @@
       "creditPaise": "18608",
       "debitPaise": "0",
       "feeBasis": "with_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 15,
+     "seq": 19,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-3",
      "action": "settlement_row",
-     "inputsDigest": "629a5954ca2c66e8",
+     "inputsDigest": "c8976209de2c6d2d",
      "outcome": "confirmed",
      "decisions": [],
      "language": "en",
@@ -8973,8 +11141,8 @@
       "money": "settled",
       "amountPaise": "30000",
       "paymentId": "pay_c",
-      "settlementId": "setl_1",
-      "utr": "UTR0001",
+      "settlementId": "setl_b",
+      "utr": "UTR0b",
       "entity": "rf_c",
       "rowType": "refund",
       "feePaise": "0",
@@ -8982,11 +11150,11 @@
       "creditPaise": "0",
       "debitPaise": "30000",
       "feeBasis": "without_gst",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 16,
+     "seq": 20,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-4",
@@ -9005,11 +11173,11 @@
       "taxPaise": "0",
       "creditPaise": "0",
       "debitPaise": "0",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 17,
+     "seq": 21,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -9030,11 +11198,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 18,
+     "seq": 22,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -9055,11 +11223,11 @@
       "debitPaise": "500",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 19,
+     "seq": 23,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": null,
@@ -9080,11 +11248,11 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
      }
     },
     {
-     "seq": 20,
+     "seq": 24,
      "time": "2026-11-10T05:00:00.000Z",
      "conversation": "919800000001",
      "booking": "b-5",
@@ -9105,7 +11273,56 @@
       "debitPaise": "0",
       "settlementId": "setl_1",
       "utr": "UTR0001",
-      "settledAt": "1762900000"
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 25,
+     "time": "2026-11-10T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "settlement_listed",
+     "inputsDigest": "6c77f864e35cc46f",
+     "outcome": "unconfirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "a settled row with no settlement id or bank reference is not posted",
+     "refs": {
+      "why": "problem",
+      "entity": "pay_f",
+      "rowType": "payment",
+      "amountPaise": "3000",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "3000",
+      "debitPaise": "0",
+      "settledAt": "1794283200"
+     }
+    },
+    {
+     "seq": 26,
+     "time": "2026-11-10T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-7",
+     "action": "settlement_row",
+     "inputsDigest": "c439e36edbc53246",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "the payment service paid this out",
+     "refs": {
+      "money": "settled",
+      "amountPaise": "8000",
+      "paymentId": "pay_g",
+      "settlementId": "setl-1",
+      "utr": "UTR0g",
+      "entity": "pay_g",
+      "rowType": "payment",
+      "feePaise": "0",
+      "taxPaise": "0",
+      "creditPaise": "8000",
+      "debitPaise": "0",
+      "feeBasis": "without_gst"
      }
     }
    ],
@@ -9152,15 +11369,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9181,7 +11398,12 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9223,15 +11445,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9252,7 +11474,12 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9296,15 +11523,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9325,13 +11552,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9373,15 +11605,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9402,13 +11634,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9452,15 +11689,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9481,13 +11718,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9529,15 +11771,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9558,13 +11800,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9608,15 +11855,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9637,13 +11884,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9685,15 +11937,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9714,13 +11966,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9764,15 +12021,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9793,13 +12050,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9841,15 +12103,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9870,13 +12132,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9920,15 +12187,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -9949,13 +12216,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
@@ -9997,15 +12269,15 @@
     },
     "month": {
      "received": {
-      "paise": 203000,
-      "count": 7
+      "paise": 219000,
+      "count": 11
      },
      "givenBack": {
       "paise": 30000,
       "count": 1
      },
      "keptPaise": 0,
-     "gatewayChargesPaise": 4600,
+     "gatewayChargesPaise": 4901,
      "stillToCome": null
     },
     "byWord": [],
@@ -10026,13 +12298,18 @@
       "kind": "gateway",
       "case": "b-3",
       "paise": 100000,
-      "sinceMs": 1793682000000
+      "sinceMs": 1793682720000
      },
      {
       "kind": "gateway",
       "case": "b-5",
       "paise": 7000,
-      "sinceMs": 1793854800000
+      "sinceMs": 1793855640000
+     },
+     {
+      "kind": "gateway_held",
+      "case": "b-10",
+      "paise": 4000
      },
      {
       "kind": "not_through_assistant",
