@@ -24,9 +24,11 @@ import { rmSync } from "node:fs";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { join } from "node:path";
-import { REMOVAL_WAIT_MS, SETUP_MS, newRecoveryCode, newSetupToken, recoveryHash, setupHash } from "../../../../modules/channels/owner-grants.ts";
-import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
+import { REMOVAL_WAIT_MS, newRecoveryCode, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
+import { newSoftPasskey, softRegister } from "../../../../modules/channels/test/soft-authenticator.ts";
 import type { SoftPasskey } from "../../../../modules/channels/test/soft-authenticator.ts";
+import { code, iso, ownerKit, qr } from "../../../../modules/test/contract/owner-kit.ts";
+import type { Grant } from "../../../../modules/test/contract/owner-kit.ts";
 import { putOwnerKeep, readOwnerKeep } from "../../../../bundle/backup/owner-keep.ts";
 import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT } from "../../../../modules/channels/owner-phones.ts";
 import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../../../modules/channels/owner-signin.ts";
@@ -34,8 +36,8 @@ import { fitNotification } from "../../../../modules/push/sender.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { OWNER_BASE, makeShop } from "./harness.ts";
 import type { Shop, ShopOptions } from "./harness.ts";
-import { softBrowser, startFakeGuard } from "./push-harness.ts";
-import type { FakeGuard, SoftBrowser } from "./push-harness.ts";
+import { softBrowser, startFakeGuard } from "../../../../modules/test/contract/push-harness.ts";
+import type { FakeGuard, SoftBrowser } from "../../../../modules/test/contract/push-harness.ts";
 
 const shops: Shop[] = [];
 const servers: Server[] = [];
@@ -53,59 +55,13 @@ const B = "+919822222222";
 const ANDROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
 const rp = { rpId: new URL(OWNER_BASE).hostname, origin: new URL(OWNER_BASE).origin };
-const iso = (t: number): string => new Date(t).toISOString();
 
 /** A started shop on the test clock, owned by `owner` (A unless said otherwise). */
 async function boot(o: ShopOptions = {}): Promise<Shop> {
   const s = await makeShop({ clock: true, owner: A, ...o }); shops.push(s); await s.start(); return s;
 }
 
-type Grant = { kind: "setup"; token: string } | { kind: "recovery"; code: string };
-const qr = (token: string): Grant => ({ kind: "setup", token });
-const code = (c: string): Grant => ({ kind: "recovery", code: c });
-/** The Operator's file as the panel writes it, every time taken from the shop's clock: a QR (15 minutes), a card, a request. */
-function grants(s: Shop, o: { token?: string; expiresAt?: string; codes?: string[]; pending?: { askedAt: number; by?: string }; passkeysBefore?: string } = {}): Record<string, unknown> {
-  const now = s.now();
-  return {
-    schema: 1,
-    ...(o.token ? { setup: { sha256: setupHash(o.token), createdAt: iso(now), expiresAt: o.expiresAt ?? iso(now + SETUP_MS) } } : {}),
-    ...(o.codes ? { recovery: { codes: o.codes.map(recoveryHash), createdAt: iso(now) } } : {}),
-    ...(o.passkeysBefore ? { passkeysBefore: o.passkeysBefore } : {}),
-    ...(o.pending ? { pendingRemoval: { askedBy: o.pending.by ?? "Divya", askedAt: iso(o.pending.askedAt), effectiveAt: iso(o.pending.askedAt + REMOVAL_WAIT_MS) } } : {}),
-  };
-}
-
-const passkey = (s: Shop, op: string, extra: Record<string, unknown> = {}) => s.call("/internal/channel/owner-passkey", { body: { op, ...extra } });
-const grantState = async (s: Shop, g: Grant): Promise<string> => (await passkey(s, "grant_state", { grant: g })).body.state;
-/** A phone registers with a grant (the setup QR's token, a recovery code, an "add a phone" link or Geometer's reset QR). */
-async function register(s: Shop, g: Grant, ua = ANDROID): Promise<{ phone: SoftPasskey; session: string }> {
-  const ro = await passkey(s, "register_options", { grant: g });
-  assert.equal(ro.status, 200, `register_options: ${JSON.stringify(ro.body)}`);
-  const phone = newSoftPasskey(rp.rpId);
-  const r = await passkey(s, "register", { grant: g, response: softRegister(phone, ro.body.options, rp.origin), ua });
-  assert.equal(r.status, 200, `register: ${JSON.stringify(r.body)}`);
-  return { phone, session: r.body.session as string };
-}
-/** How many passkeys the shop offers at sign-in now (0: the passkey button is not shown). */
-const offered = async (s: Shop): Promise<number> => (await passkey(s, "signin_options")).body.count;
-/** A phone signs in with its passkey: the status, and the new session on 200. */
-async function signin(s: Shop, phone: SoftPasskey): Promise<{ status: number; session?: string }> {
-  const so = await passkey(s, "signin_options");
-  if (!so.body.options) return { status: 0 };
-  const r = await passkey(s, "signin", { response: softSignin(phone, so.body.options, rp.origin) });
-  return { status: r.status, ...(r.status === 200 ? { session: r.body.session as string } : {}) };
-}
-/** Is this session good now? (The inbox's question, with the internal token.) */
-const good = async (s: Shop, session: string): Promise<boolean> => (await s.call("/internal/owner-session", { session })).status === 204;
-const phones = (s: Shop, session: string | undefined, body: Record<string, unknown>, owner?: string) => s.call("/internal/channel/owner-phones", { ...(session ? { session } : {}), ...(owner ? { owner } : {}), body });
-/** The owner's phones page data, for the phone that holds `session`. */
-async function list(s: Shop, session: string): Promise<any> {
-  const r = await phones(s, session, { op: "list" });
-  assert.equal(r.status, 200, `list: ${JSON.stringify(r.body)}`);
-  return r.body;
-}
-/** What the panel's probe sees (/status, the internal token): the passkeys, whether the shop is locked, and the Operator's pending request. */
-const panel = async (s: Shop): Promise<{ passkeys: number; alertPhones: number; locked?: boolean; removal?: { askedBy: string; effectiveAt: string } }> => (await s.call("/status")).body.ownerAccess;
+const { grants, passkey, grantState, register, offered, signin, good, phones, list, panel, lines, told, near } = ownerKit(OWNER_BASE);
 /** "Add a phone" from the owner's own phone: the token at the end of the link's address. */
 async function addPhoneLink(s: Shop, session: string): Promise<string> {
   const r = await phones(s, session, { op: "add_phone" });
@@ -120,20 +76,6 @@ async function lockedShop(o: ShopOptions = {}): Promise<{ s: Shop; p1: { phone: 
   const p1id = (await list(s, p1.session)).phones[0].id as string;
   return { s, p1, p1id };
 }
-/** The record's owner_session lines with this `what` (the tick writes the request notices). */
-const lines = (s: Shop, what: string) => s.record().filter((r) => r.action === "owner_session" && r.refs.what === what);
-/** Wait until the tick has written `n` lines with this `what` (a 1-second tick), then a little more, to see that no second one comes. */
-async function told(s: Shop, what: string, n = 1): Promise<void> {
-  for (let i = 0; i < 100 && lines(s, what).length < n; i++) await new Promise((r) => setTimeout(r, 100));
-  await new Promise((r) => setTimeout(r, 2500)); // two more ticks
-  assert.equal(lines(s, what).length, n, `${what} lines in the record:\n${s.log()}`);
-}
-/** Within a minute of the expected moment (the panel shows effectiveAt as an ISO time). */
-const near = (actual: string | number | undefined, expected: number, what: string): void => {
-  const t = typeof actual === "string" ? Date.parse(actual) : actual;
-  assert.ok(t !== undefined && Math.abs(t - expected) < MIN, `${what}: ${actual === undefined ? "none" : iso(t!)}, expected about ${iso(expected)}`);
-};
-
 describe("the test clock", () => {
   test("a shop in live mode (what the panel writes for every real shop) refuses to start on a test clock", async () => {
     const s = await makeShop({ clock: true, owner: A }); shops.push(s);

@@ -6,14 +6,14 @@
 // Both read the same folders and the same environment (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS). The process is started and stopped through children.ts (its own process
 // group, so the Go host's child for a quarantined shop goes with it; stopped at the end of each test; a leak fails the run).
 import type { ChildProcess } from "node:child_process";
-import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
 import { PAGE, REPO, VERSION } from "./harness.ts";
-import { spawnChild, stopChild } from "./children.ts";
+import { freePort } from "../../../../modules/test/contract/net.ts";
+import { spawnChild, stopChild } from "../../../../modules/test/contract/children.ts";
 
 export type Impl = "ts" | "go";
 export const GO_SHARED_BIN = process.env.LISTINGS_SHARED_GO_BIN ?? join(REPO, "go", "bin", "listings-shared");
@@ -45,14 +45,6 @@ export function writeShop(root: Root, name: string): ShopFolder {
 }
 
 export const dataFile = (root: Root, name: string): string => join(root.dir, "data", name, "data", "agent.db");
-
-async function freePort(): Promise<number> {
-  const s = createServer();
-  await new Promise<void>((r) => s.listen(0, "127.0.0.1", r));
-  const port = (s.address() as { port: number }).port;
-  await new Promise<void>((r) => s.close(() => r()));
-  return port;
-}
 
 export interface Host {
   url: string;
