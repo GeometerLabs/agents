@@ -16,7 +16,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { verifyDocument } from "../../../../modules/signing/index.ts";
-import { PAGE } from "./harness.ts";
+import { PAGE, tinyJpeg } from "./harness.ts";
 import { dataFile, haveGo, makeRoot, startHost, writeShop } from "./shared-harness.ts";
 import type { Host, Root, ShopFolder } from "./shared-harness.ts";
 
@@ -126,6 +126,19 @@ async function boot(names: string[], prepare?: (root: Root, shops: Record<string
       assert.deepEqual((await t.host.call("glow-pets", "/internal/channel/listings")).body.listings.map((l: any) => l.id), ["l-1"]);
       assert.deepEqual((await t.host.call("sree-cycles", "/internal/channel/listings")).body.listings, [], "the other shop has none of it");
       assert.equal((await t.host.call("sree-cycles", "/internal/channel/shop-feed", { body: q })).status, 404, "the other shop's switch is off");
+      // a photo of one shop is in that shop's file only (the deleted shared-shops.test.ts carried over): published in glow-pets, it is not in sree-cycles' feed or photos
+      const up = await t.host.call("glow-pets", "/internal/channel/owner-photo", { owner: a.owner, raw: tinyJpeg(), type: "image/jpeg" });
+      assert.equal(up.status, 200, JSON.stringify(up.body));
+      await t.settle("glow-pets");
+      await publish("r-2", { op: "publish_form", category: "home", title: "Brass lamp", photos: [up.body.photo.id] });
+      assert.equal((await t.host.call("glow-pets", `/internal/channel/listing-photo?id=${up.body.photo.id}`)).status, 200);
+      assert.equal((await t.host.call("sree-cycles", `/internal/channel/listing-photo?id=${up.body.photo.id}`)).status, 404, "the other shop has not got the photo");
+      await t.host.call("sree-cycles", "/internal/channel/owner-listing", { owner: t.shops["sree-cycles"].owner, body: { id: "sw-1", op: { op: "shop", visible: true } } });
+      await t.settle("sree-cycles");
+      const other = await t.host.call("sree-cycles", "/internal/channel/shop-feed", { body: { ...q, name: "Sree Cycles" } });
+      assert.equal(other.status, 200, JSON.stringify(other.body));
+      assert.deepEqual(other.body.items, [], "a listing of one shop is in that shop's feed and nobody else's");
+      assert.equal((await t.host.call("glow-pets", "/internal/channel/shop-feed", { body: q })).body.items.length, 2);
     });
 
     test("a shop let go closes its store BEFORE /shared/shops stops naming it, and keeps its file", async () => {

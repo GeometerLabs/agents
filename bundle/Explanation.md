@@ -1314,7 +1314,7 @@ The shop's runtime (`modules/runtime/owner-file.ts`) serves it at `<owner app>/f
 ## 18 Nov 2026: listings-only shops on one shared process (block S, phase C)
 
 **What.** A shop that only shows what it has (template `listings`) is free and takes no money or WhatsApp. It has no Guard, so it gets no container: every such shop on a server is a folder in ONE
-container, `rt-listings` (`modules/runtime/shared.ts`, started by `templates/commerce/listings/server/shared-main.ts`), with its own store file in the shared volume, `rt-data-listings/<shop>/data/agent.db`.
+container, `rt-listings` (then `modules/runtime/shared.ts`, started by `templates/commerce/listings/server/shared-main.ts`; since 19 Nov 2026 the Go program `go/cmd/listings-shared`, see "How the Go runtimes reach a server"), with its own store file in the shared volume, `rt-data-listings/<shop>/data/agent.db`.
 Decision 60 of the implementation plan (owner, 18 Nov).
 
 **Why this shape.** (1) Reuse: each shop in the process is the template's ordinary `startClient` with its own folder, tokens and store, so a shop run alone and a shop run here are the same code, and

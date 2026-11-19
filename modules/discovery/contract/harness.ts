@@ -24,6 +24,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, "..", "..", "..");
 /** What runs: only the Go directory is left (the name stays so a recording says what made it). */
 export const IMPL = "go" as const;
+// The TypeScript directory is deleted: a run that asks for it must not pass quietly on Go (a log reading "DIRECTORY_IMPL=ts ... pass" would be a TypeScript pass that never ran).
+if (process.env.DIRECTORY_IMPL !== undefined && process.env.DIRECTORY_IMPL !== "go") throw new Error(`DIRECTORY_IMPL=${process.env.DIRECTORY_IMPL}: only the Go directory is left (the TypeScript one was deleted on 19 Nov 2026); unset DIRECTORY_IMPL or set it to go`);
 export const GO_BIN = process.env.DIRECTORY_GO_BIN ?? join(REPO, "go", "bin", "directory");
 /** The pages domain the fake shops and the directory share. */
 export const DOMAIN = "pages.example";

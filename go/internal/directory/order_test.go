@@ -3,7 +3,9 @@
 package directory
 
 import (
+	"os"
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -41,5 +43,21 @@ func TestOrderTakesTurnsAndCapsTheFirstPage(t *testing.T) {
 	}
 	if got[0][:1] == got[1][:1] {
 		t.Errorf("shops take turns, but %v starts with one shop twice", got[:3])
+	}
+}
+
+// The order code never names what must not matter (carried over from order.test.ts's scan of order.ts when the TypeScript directory was deleted): with its comments removed, order.go
+// has no word for a price, a plan, a payment, an Operator, advertising, popularity, a row id, a size, a name, the time of arrival, a rank or a relevance score, and no clock or chance.
+func TestOrderCodeNamesNothingThatMustNotMatter(t *testing.T) {
+	src, err := os.ReadFile("order.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(string(src), "")
+	code = regexp.MustCompile(`//[^\n]*`).ReplaceAllString(code, "")
+	for _, word := range []string{"price", "plan", "payment", "paid", "operator", "advert", "sponsor", "popular", "rowid", "size", "name", "arrival", "rank", "bm25", "time.Now", "rand"} {
+		if regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(word)).MatchString(code) {
+			t.Errorf("order.go uses %q", word)
+		}
 	}
 }

@@ -101,17 +101,17 @@ func orderResults(candidates []Candidate, q OrderQuery) []string {
 	}
 	// group by (fit, band, fresh): the groups go in that order; inside a group the shops take turns
 	groups := map[string][]orderRow{}
-	var names []string
+	var groupOrder []string
 	for _, r := range rows {
 		g := strconv.Itoa(r.fit) + "/" + strconv.Itoa(r.band) + "/" + strconv.Itoa(r.fresh)
 		if _, ok := groups[g]; !ok {
-			names = append(names, g)
+			groupOrder = append(groupOrder, g)
 		}
 		groups[g] = append(groups[g], r)
 	}
-	sort.SliceStable(names, func(i, j int) bool { return compareGroups(names[i], names[j]) < 0 })
+	sort.SliceStable(groupOrder, func(i, j int) bool { return compareGroups(groupOrder[i], groupOrder[j]) < 0 })
 	var list []orderRow
-	for _, g := range names {
+	for _, g := range groupOrder {
 		list = append(list, takeTurns(groups[g], q.Seed)...)
 	}
 	return capFirstPage(list)

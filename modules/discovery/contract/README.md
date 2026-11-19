@@ -63,13 +63,13 @@ come out as they were. After a change that is meant, record again (`DIRECTORY_GO
 | TypeScript test (`modules/discovery/test/`) | now checked by |
 | --- | --- |
 | `feed.test.ts` | `feeds.contract.test.ts` (over HTTP) and `go/internal/directory/golden_test.go` `TestFeedsReadAsTheTypeScriptReadThem` (a good feed and 46 changes, the TypeScript reader's answers in `testdata/feeds.json.gz`) |
-| `index.test.ts` | `search.contract.test.ts`, `cross-restart.test.ts`, the golden answers, `refresh_test.go` (a failing feed keeps the index; fewer items replace the old), `vectors_test.go` (the fold, the words); the rebuild is not ported (Deferred.md) |
+| `index.test.ts` | `search.contract.test.ts`, `cross-restart.test.ts`, `feeds.contract.test.ts` (the counts: their values and columns, no table of searches or addresses), the golden answers, `refresh_test.go` (a failing feed keeps the index; fewer items replace the old), `vectors_test.go` (the fold, the words); the rebuild is not ported (Deferred.md) |
 | `search.test.ts` | `search.contract.test.ts`, `feeds.contract.test.ts`, the golden answers, `check_test.go` (60 s memory at 59 and 61 s, the two-minute edge, an answer changed after signing, the question's body) |
-| `order.test.ts` | `search.contract.test.ts`, `order_test.go`, `vectors_test.go` (the TypeScript's order on 36 cases) |
+| `order.test.ts` | `search.contract.test.ts`, `order_test.go` (the six fields; the order code names no price, plan, payment...), `vectors_test.go` (the TypeScript's order on 36 cases) |
 | `notices.test.ts` | `feeds.contract.test.ts`, `shop-protocol.contract.test.ts`, `notices_test.go`, `refresh_test.go` |
 | `http.test.ts` | `search.contract.test.ts`, the golden answers (every route's status and headers), `limits_test.go` (the window resets after a minute) |
-| `page.test.ts` | the golden answers and `golden_test.go` `TestPagesAreTheTypeScriptPages` (every state in four languages, whole, as the TypeScript rendered them: `testdata/pages.json.gz`) |
-| `mcp.test.ts` | `search.contract.test.ts`, `assistant.contract.test.ts`, the golden answers (every MCP answer whole) |
+| `page.test.ts` | the golden answers and `golden_test.go` `TestPagesAreTheTypeScriptPages` (every state in four languages, whole, as the TypeScript rendered them: `testdata/pages.json.gz`); its check of the words themselves (every line in every language, none empty, none English, no banned word) is `modules/discovery/test/words.test.ts`, beside `words.ts` |
+| `mcp.test.ts` | `search.contract.test.ts` (and a card changed after signing fails), `feeds.contract.test.ts` (a held shop's `shop_page` is not found), `assistant.contract.test.ts`, the golden answers (every MCP answer whole) |
 | `assistant.test.ts` | `assistant.contract.test.ts`, the golden answers, `vectors_test.go` (typed answers, cleaning, rules); the decision model and the model-written line are not ported (Deferred.md) |
 | `bundle/test/directory-service.test.ts`, `directory-assistant.test.ts` | the deployer's checks: `bundle/test/go-runtime.test.ts`; the service's way out: `fetcher_test.go`; its key: `cmd/directory/main_test.go`; its credential: `assistant.contract.test.ts` |
 | `modules/listings/test/protocol.test.ts` (its four checks with the directory's reader) | `shop-protocol.contract.test.ts` (the shops' own feed, check answer and notice, accepted by the directory) |
