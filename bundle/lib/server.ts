@@ -180,7 +180,7 @@ export interface ServerConfig {
    */
   pushRelay?: { publicKey: string };
   /**
-   * Block S (18 Nov 2026): the directory of local shops that runs beside the front door (bundle/services/directory.ts), only with `pages`. `feeds` are feed addresses to read besides the
+   * Block S (18 Nov 2026): the directory of local shops that runs beside the front door (the Go program go/cmd/directory), only with `pages`. `feeds` are feed addresses to read besides the
    * shops that send a "my feed changed" notice (for example a builder's own domain: https://shops.example/s/ravi/listings.json); `area` is what the directory's Agent Card says it covers.
    * Both optional: a server with a pages domain has a directory either way.
    */

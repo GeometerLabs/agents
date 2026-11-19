@@ -12,7 +12,7 @@ import { gatewayOf, isGatewayKind } from "../modules/payments/providers/index.ts
 import type { PaymentSettings } from "../modules/payments/providers/index.ts";
 import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
-import { composeServer } from "./generate/compose.ts";
+import { composeServer, hasDirectory } from "./generate/compose.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
 import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, directoryConfig, doorConfig, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
@@ -476,8 +476,8 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (server.pages) ensureDir(p.home);
   // the speech models folder, if speech is on: made here so Docker does not make it as root; the server admin's fetch-models fills it (services/speech/README.md)
   if (server.speech?.enabled) ensureDir(server.speech.modelsDir ?? p.speechModels);
-  // wave 1b: the image of the Go programs, named from this checkout's commit; the compose file needs the name only when a shop runs on Go
-  const goImage = shops.some((sh) => sh.runtime) ? goImageFor(ctx.appDir) : undefined;
+  // wave 1b: the image of the Go programs, named from this checkout's commit; the compose file needs the name only when a shop runs on Go or the server has the directory (wave 1c)
+  const goImage = shops.some((sh) => sh.runtime) || hasDirectory(server) ? goImageFor(ctx.appDir) : undefined;
   const composed = composeServer(server, dirsOf(ctx), shops, { ...(goImage ? { goImage } : {}), opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}), ...(directoryAssistant(server) ? { assistant: true } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
@@ -583,8 +583,9 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (directoryAssistant(server)) modelAgents.push({ id: DIRECTORY_AGENT_ID, sha: sha(ensureSecret(secretFile(ctx.dir, "directory", "agent_model"), mintGuardToken)) });
   problems.push(...await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }));
   // wave 1b: a shop that runs on a Go program needs the image of the programs of THIS checkout (made at install and at `geometer update`; made here when it is gone, for example after a
-  // `docker system prune`). Checked before anything is written or started, so a build that fails leaves the server exactly as it was.
-  if (prepared.some((p) => goRuntimeOf(p.pathwayDir))) {
+  // `docker system prune`). So does the directory (wave 1c), on every server with a pages domain and fleet. Checked before anything is written or started, so a build that fails leaves
+  // the server exactly as it was.
+  if (prepared.some((p) => goRuntimeOf(p.pathwayDir)) || hasDirectory(server)) {
     const built = await ensureGoRuntimes(ctx);
     if (!built.ok) problems.push({ rule: "go-runtime", message: built.reason });
   }

@@ -34,7 +34,7 @@ import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT } from "../../../../modules
 import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../../../modules/channels/owner-signin.ts";
 import { fitNotification } from "../../../../modules/push/sender.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
-import { OWNER_BASE, makeShop } from "./harness.ts";
+import { makeShop, OWNER_BASE, SKIP } from "./harness.ts";
 import type { Shop, ShopOptions } from "./harness.ts";
 import { softBrowser, startFakeGuard } from "../../../../modules/test/contract/push-harness.ts";
 import type { FakeGuard, SoftBrowser } from "../../../../modules/test/contract/push-harness.ts";
@@ -76,7 +76,7 @@ async function lockedShop(o: ShopOptions = {}): Promise<{ s: Shop; p1: { phone: 
   const p1id = (await list(s, p1.session)).phones[0].id as string;
   return { s, p1, p1id };
 }
-describe("the test clock", () => {
+describe("the test clock", { skip: SKIP }, () => {
   test("a shop in live mode (what the panel writes for every real shop) refuses to start on a test clock", async () => {
     const s = await makeShop({ clock: true, owner: A }); shops.push(s);
     s.setMode("live");
@@ -84,7 +84,7 @@ describe("the test clock", () => {
   });
 });
 
-describe("the lock and the owner's phones", () => {
+describe("the lock and the owner's phones", { skip: SKIP }, () => {
   test("the first passkey locks the shop; the phones list shows each phone with its label, how it came and 'this phone'; only a session made here opens it", async () => {
     const s = await boot();
     assert.deepEqual(await panel(s), { passkeys: 0, alertPhones: 0, locked: false });
@@ -106,7 +106,7 @@ describe("the lock and the owner's phones", () => {
   });
 });
 
-describe("the Operator's files cannot reopen a locked shop", () => {
+describe("the Operator's files cannot reopen a locked shop", { skip: SKIP }, () => {
   test("ATTACK: a QR or a card the Operator makes after the first passkey is refused, whatever the file says, even back-dated; one seen before it still works", async () => {
     const s = await boot();
     const before = newRecoveryCode();
@@ -182,7 +182,7 @@ describe("the Operator's files cannot reopen a locked shop", () => {
   });
 });
 
-describe("the owner's own codes and phones", () => {
+describe("the owner's own codes and phones", { skip: SKIP }, () => {
   test("the owner's own codes: shown once, void the Operator's card, and register a new phone (via own_code); a phone that makes codes cannot void another phone's set", async () => {
     const s = await boot();
     const card = newRecoveryCode();
@@ -307,7 +307,7 @@ describe("the owner's own codes and phones", () => {
   });
 });
 
-describe("the Operator's request to remove every phone", () => {
+describe("the Operator's request to remove every phone", { skip: SKIP }, () => {
   test("ATTACK: a back-dated request starts its 48 hours at first sight; the owner sees it and cancels; the same request is never heard again, a new one waits a day", async () => {
     const { s, p1 } = await lockedShop();
     s.advance(HOUR);
@@ -374,7 +374,7 @@ describe("the Operator's request to remove every phone", () => {
   });
 });
 
-describe("the owner's number is locked with the first phone", () => {
+describe("the owner's number is locked with the first phone", { skip: SKIP }, () => {
   test("ATTACK: a changed number after the lock keeps the owner's phones and is a 48-hour request; a cancel sticks for a day, then the same change may be asked again", async () => {
     const { s, p1 } = await lockedShop();
     await s.stop();
@@ -432,7 +432,7 @@ describe("the owner's number is locked with the first phone", () => {
   });
 });
 
-describe("Geometer's reset", () => {
+describe("Geometer's reset", { skip: SKIP }, () => {
   test("ATTACK: a reset voids every phone, session, QR, card and code and cancels the request; in its window only the reset's own QR works, and what the panel shows then is void for good", async () => {
     const s = await boot();
     const card = newRecoveryCode();
@@ -492,7 +492,7 @@ describe("Geometer's reset", () => {
   });
 });
 
-describe("restarts and restores", () => {
+describe("restarts and restores", { skip: SKIP }, () => {
   test("ATTACK: a request seen by the panel's probe and then a restart before any tick is still told, once; a restart never tells it again", async () => {
     const { s } = await lockedShop();
     s.writeGrants(grants(s, { pending: { askedAt: s.now() } }));
@@ -564,7 +564,7 @@ async function fakePushGuard(): Promise<number> {
   return (server.address() as { port: number }).port;
 }
 
-describe("the owner's alerts follow the phone", () => {
+describe("the owner's alerts follow the phone", { skip: SKIP }, () => {
   test("the first passkey ends the alerts no phone holds; afterwards only a phone subscribes, the phones page lists its alert, and removing the phone ends it", async () => {
     const guard = await fakePushGuard();
     const s = await boot({ services: { push: { baseUrl: `http://127.0.0.1:${guard}` } } });
@@ -621,7 +621,7 @@ describe("the owner's alerts follow the phone", () => {
 // What each alert SAYS: the browser opens what the Guard was sent and it is, byte for byte, the TypeScript function's words in the owner's language (owner-phones.ts, owner-signin.ts),
 // fitted as the sender fits every notification. The moment an alert carries is the shop's clock when it was made, to the minute, so the words are matched against every minute of
 // the call's window.
-describe("every alert is TypeScript's words in the owner's language", () => {
+describe("every alert is TypeScript's words in the owner's language", { skip: SKIP }, () => {
   /** A shop with push on (a fake Guard that keeps what it is sent), its first phone locked in, and that phone's browser subscribed to the owner's alerts. */
   async function heard(o: ShopOptions & { ownerLanguage: Language }): Promise<{ s: Shop; guard: FakeGuard; p1: { phone: SoftPasskey; session: string }; b: SoftBrowser }> {
     const guard = await startFakeGuard(); guards.push(guard);

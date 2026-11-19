@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"math/big"
 	"regexp"
 	"strings"
@@ -29,7 +30,7 @@ var (
 // label is "" and the page says "a phone". The User-Agent itself is never kept.
 func PhoneLabel(userAgent any) string {
 	ua, _ := userAgent.(string)
-	ua = cut(ua, 400)
+	ua = language.UTF16SliceFFFD(ua, 400)
 	// order matters: an iPad or iPhone UA also says "Mac OS X"; an Android UA also says "Linux"
 	platform := ""
 	switch {

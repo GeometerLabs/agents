@@ -1,26 +1,23 @@
-// Writes what the Go directory (go/internal/directory) takes from the TypeScript directory instead of retyping it (the rule of decision 61: words, tables and specs are GENERATED, once, from
-// the TypeScript source, and a test fails when a committed file is out of date). Run from the repository root:   node go/scripts/gen_directory.ts      (add --check to only compare)
+// Writes what the Go directory (go/internal/directory) takes from the TypeScript that is still its source, instead of retyping it (the rule of decision 61: words, tables and specs are
+// GENERATED, once, from the TypeScript source, and a test fails when a committed file is out of date). Run from the repository root:   node go/scripts/gen_directory.ts   (--check compares)
 //
-//   internal/directory/romanise_gen.go     the Devanagari, Malayalam and Kannada letter tables of modules/discovery/romanise.ts (the walk over them is hand-written Go)
-//   internal/directory/words/pack.json.gz  everything else the directory says or serves that is text: the page's words in four languages (each function-valued line RENDERED at sentinel
-//                                          values and turned into a template with slots, every plural form checked against the real function for n = 0..1000), the style sheet and the one
-//                                          script the pages carry (cut out of a page the real page.ts renders: so CUSTOMER_CSS, the paints and the page's own CSS are never retyped), the MCP tools,
-//                                          their instructions and versions, the Agent Card (rendered with slots for the origin, the area and the provider), and the assistant's system prompt and
-//                                          JSON schema (captured from the call the real assistant makes to a fake model)
+//   internal/directory/words/pack.json.gz  the page's words in four languages and the languages' names (modules/discovery/words.ts, which the review sheet bundle/panel/review.ts also
+//                                          reads; each function-valued line RENDERED at sentinel values and turned into a template with slots, every plural form checked against the real
+//                                          function for n = 0..1000), the languages and the kinds (modules/discovery/types.ts), the shops' own style sheet (modules/channels/look.ts
+//                                          CUSTOMER_CSS), the shops' paints (modules/channels/chat-paint.ts PAINTS) and the MCP versions (modules/channels/mcp.ts)
 //   internal/directory/words/baloo-2-latin-wght-normal.woff2   the page's one font, copied from modules/channels/fonts (go:embed cannot reach outside the Go module)
-// After writing, run `gofmt -w go/internal/directory/romanise_gen.go`. The generated files are the SOURCE once the TypeScript directory is deleted (wave 1c's switch); until then this script and the freshness test (words_fresh_test.go) keep them equal.
+//
+// The rest of what the directory serves (the page's own style, its script, the MCP tools, the Agent Card, the assistant's prompt) and the Latin-fold tables have had no TypeScript source
+// since the TypeScript directory was deleted (19 Nov 2026, wave 1c): they are Go source in internal/directory (words/*.css, *.js, *.json, romanise_tables.go), cut out of what this script
+// made from the TypeScript before then.
 import { gunzipSync, gzipSync } from "node:zlib";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DIRECTORY_WORDS, LANGUAGE_LABEL } from "../../modules/discovery/words.ts";
-import { orderPage, searchPage, EMPTY_FORM } from "../../modules/discovery/page.ts";
-import { ASK_TOOL, DIRECTORY_TOOLS } from "../../modules/discovery/mcp.ts";
-import { directoryCard } from "../../modules/discovery/card.ts";
-import { assistantFromSettings } from "../../modules/discovery/assistant.ts";
 import { MCP_VERSIONS } from "../../modules/channels/mcp.ts";
-import { CONSONANTS, NASAL, NO_VOWEL, SIGNS, VIRAMA, VOWELS } from "../../modules/discovery/romanise.ts";
-import { generateSigningKey } from "../../modules/signing/keys.ts";
+import { CUSTOMER_CSS } from "../../modules/channels/look.ts";
+import { PAINTS } from "../../modules/channels/chat-paint.ts";
 import { CATEGORIES, LANGS } from "../../modules/discovery/types.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -31,24 +28,12 @@ function write(file: string, data: string | Buffer): void {
   const path = join(OUT, file);
   mkdirSync(dirname(path), { recursive: true });
   if (check) {
-    // a generated .go file is run through gofmt after it is written (its alignment is gofmt's, not ours): compare it with the white space collapsed
-    const squash = (t: string): string => (file.endsWith(".go") ? t.replace(/\s+/gu, " ") : t);
-    const same = existsSync(path) && (typeof data === "string" ? squash(readFileSync(path, "utf8")) === squash(data) : Buffer.compare(readFileSync(path), data) === 0);
+    const same = existsSync(path) && (typeof data === "string" ? readFileSync(path, "utf8") === data : Buffer.compare(readFileSync(path), data) === 0);
     if (!same) { stale = true; console.error(`stale: ${file}`); }
     return;
   }
   writeFileSync(path, data);
 }
-
-// ---- romanise tables as Go ----
-const goStr = (s: string): string => JSON.stringify(s);
-function goMap(name: string, m: Record<string, string>): string {
-  return `var ${name} = map[string]string{\n${Object.entries(m).map(([k, v]) => `\t${goStr(k)}: ${goStr(v)},`).join("\n")}\n}\n`;
-}
-function goSet(name: string, s: Set<string>): string {
-  return `var ${name} = map[string]bool{\n${[...s].map((k) => `\t${goStr(k)}: true,`).join("\n")}\n}\n`;
-}
-write("romanise_gen.go", `// Code generated by go/scripts/gen_directory.ts from modules/discovery/romanise.ts; DO NOT EDIT. The letter tables of the Latin fold (see romanise.go for the walk over them).\npackage directory\n\n${goMap("romVowels", VOWELS)}\n${goMap("romSigns", SIGNS)}\n${goMap("romConsonants", CONSONANTS)}\n${goMap("romNasal", NASAL)}\n${goSet("romVirama", VIRAMA)}\n${goSet("romNoVowel", NO_VOWEL)}`);
 
 // ---- words: strings, lists, maps as they are; functions rendered into templates ----
 const O = "\uE000", C = "\uE001"; // private-use characters, which no word of ours holds
@@ -105,39 +90,7 @@ for (const lang of LANGS) {
 }
 for (const key of Object.keys(FUNCTIONS)) if (typeof (DIRECTORY_WORDS.en as unknown as Record<string, unknown>)[key] !== "function") throw new Error(`${key} is no longer a function`);
 
-// ---- the style sheet and the script, cut out of the pages the real code renders ----
-const ctx = { origin: "https://pages.example", lang: "en" as const, now: 0, nonce: "NONCE", fontUrl: "/search/font.woff2", assistant: false };
-const order = orderPage(ctx);
-const style = /<style>([\s\S]*?)<\/style>/u.exec(order)![1];
-const startPage = searchPage(ctx, EMPTY_FORM, { state: "start" });
-const script = /<script nonce="NONCE">([\s\S]*?)<\/script>/u.exec(startPage)![1];
-for (const lang of LANGS) if (/<style>([\s\S]*?)<\/style>/u.exec(orderPage({ ...ctx, lang }))![1] !== style) throw new Error("the style sheet differs by language");
-
-// ---- the Agent Card, with slots ----
-const key = generateSigningKey();
-const cards: Record<string, unknown> = {};
-for (const assistant of [false, true]) for (const area of [false, true]) {
-  const card = directoryCard({ origin: slot("origin"), provider: { organization: slot("org"), url: slot("purl") }, ...(area ? { area: slot("area") } : {}), key, ...(assistant ? { assistant: true } : {}) });
-  const { signatures: _s, ...body } = card as Record<string, unknown>;
-  cards[`${assistant ? "ask" : "plain"}-${area ? "area" : "none"}`] = JSON.parse(slotsOf(JSON.stringify(body)));
-}
-
-// ---- the assistant's call, captured from a fake model ----
-let captured: { system: string; schema: unknown; name: string } | undefined;
-const fakeFetch: typeof fetch = async (_url, init) => {
-  const body = JSON.parse(String(init?.body));
-  captured = { system: body.messages[0].content, schema: body.response_format.json_schema.schema, name: body.response_format.json_schema.name };
-  return new Response(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{}" } }] }), { status: 200 });
-};
-const assistant = assistantFromSettings({ monthlyMicroInr: 1_000_000, dailyCalls: 10, perBuyerPerDay: 10, model: { wire: "openai", baseUrl: "http://model.test/v1", model: "m" } }, {}, () => undefined, fakeFetch)!;
-await assistant.understand({ question: "kitten", lang: "en", who: "gen" });
-if (!captured) throw new Error("the assistant made no call");
-
-const pack = {
-  langs: LANGS, categories: CATEGORIES, languageLabel: LANGUAGE_LABEL, words, style, script,
-  mcp: { versions: MCP_VERSIONS, tools: DIRECTORY_TOOLS, askTool: ASK_TOOL },
-  cards, assistant: captured,
-};
+const pack = { langs: LANGS, categories: CATEGORIES, languageLabel: LANGUAGE_LABEL, words, shopCss: CUSTOMER_CSS, paints: PAINTS, mcpVersions: MCP_VERSIONS };
 const json = JSON.stringify(pack);
 // gzip is deterministic for the same input and level, but its header carries no time (node writes zeros), so the committed bytes can be compared
 const packed = gzipSync(Buffer.from(json), { level: 9 });
@@ -149,4 +102,3 @@ if (check) {
 const font = readFileSync(join(here, "..", "..", "modules", "channels", "fonts", "baloo-2-latin-wght-normal.woff2"));
 write("words/baloo-2-latin-wght-normal.woff2", font);
 if (check) { if (stale) process.exit(1); console.log("fresh"); } else console.log(`wrote the directory pack: ${packed.length} bytes packed, ${json.length} bytes of JSON`);
-void copyFileSync;

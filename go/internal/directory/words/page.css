@@ -1,0 +1,48 @@
+/* The directory's style sheet (Go source since the TypeScript directory was deleted, 19 Nov 2026; it was modules/discovery/page.ts FONT_FACE + CSS). {{shops}} is the shops' own style sheet
+   (modules/channels/look.ts CUSTOMER_CSS, generated into pack.json.gz) and {{kinds}} the flat tile colours of the kinds (words.go kindPaints over the shops' paints). words.go removes
+   this comment before the sheet is served. */
+@font-face{font-family:"Baloo 2";font-style:normal;font-weight:400 800;font-display:swap;src:url(/search/font.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}{{shops}}
+:root{--display:"Baloo 2",system-ui,sans-serif}
+h1,h2,.btn,button,.chip{font-family:var(--display)}
+.top{background:var(--head);padding:16px 0 14px;margin-bottom:16px}
+.top h1{margin:0 0 4px;font-size:1.7rem}
+.top p{margin:0;color:var(--soft)}
+.top .langs{margin:12px 0 0}
+form.search{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px 16px;margin:0 0 18px}
+form.search label{display:block;margin:14px 0 6px;font-weight:650}
+form.search input[type=search],form.search input[type=text],form.search select{width:100%;min-height:48px;padding:10px 12px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card);color:var(--ink);font:inherit}
+form.search select{appearance:auto}
+form.search .note{margin:6px 0 0}
+details.choices{margin:6px 0 0}details.choices summary{display:list-item;padding:11px 0;min-height:44px;cursor:pointer;font-weight:650;color:var(--green)}
+form.search .pair{display:grid;gap:0 12px}
+@media (min-width:30rem){form.search .pair{grid-template-columns:1fr 1fr}}
+#near{margin-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;padding:0}
+.chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:var(--card);border:1.5px solid var(--line2);color:var(--ink);text-decoration:none;font-weight:600}
+.chip:hover{border-color:var(--ink)}
+.count{margin:0 0 12px;font-weight:650;color:var(--soft)}
+.results{display:grid;gap:14px;margin:0;padding:0}
+.res{display:grid;overflow:hidden;padding:0;margin:0}
+.ph{position:relative;aspect-ratio:4/3;background:var(--k,var(--plain-bg));display:flex;align-items:center;justify-content:center;color:var(--ki,var(--ink));font:650 1.2rem var(--display)}
+.ph.no{aspect-ratio:16/5}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.res .body{padding:12px 14px 14px}
+.res h2{margin:0 0 6px;font-size:1.25rem}
+.tag{display:inline-block;margin:0 0 8px;padding:.15em .6em;border-radius:8px;background:var(--wait-bg);color:var(--wait);font-size:.85rem}
+.price{margin:0 0 8px;font:700 1.3rem var(--display)}
+.price.ask{font-weight:600;color:var(--soft);font-size:1.1rem}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 6px}
+.stamp.ok{background:var(--ok);color:#fff}.stamp.wait{background:var(--mari);color:#2a1a00}
+.shop{margin:0 0 4px;font-weight:650}.shop span{font-weight:400;color:var(--soft)}
+.res .btn{margin-top:10px;width:100%}
+.note.why{margin:4px 0 0}
+.more{display:flex;margin:18px 0 0}
+.askline{margin:0 0 12px;font-weight:650}
+form.ask{margin-bottom:12px}
+{{kinds}}
+.state-page{margin:8px 0 18px}
+.state-page h2{margin-top:0}
+ol.order{margin:0 0 8px;padding:0 0 0 1.3rem}ol.order li{margin:0 0 .7em}
+.never{border-left:6px solid var(--ok);background:var(--ok-bg);border-radius:14px;padding:12px 14px;margin:18px 0}
+.never h2{margin:0 0 4px;font-size:1.1rem}.never p{margin:0}
+footer.foot{display:flex;flex-wrap:wrap;gap:0 18px;align-items:center}

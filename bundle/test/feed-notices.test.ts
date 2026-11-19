@@ -104,7 +104,7 @@ test("the inbox's config names the directory only on a server that has one, and 
   assert.equal(JSON.parse(inboxConfig(serverConfig(), [shop as never])).directoryUrl, undefined, "no pages domain, no directory");
   // the network rule: the runtime is on its own internal network only, and cannot call out
   const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence", home: "/srv/home" };
-  const c = composeServer(hosted, dirs, [], {});
+  const c = composeServer(hosted, dirs, [], { goImage: "geo-go:abc123def456" }); // the directory is a Go program (wave 1c): a pages server needs the programs' image
   const inbox = Object.keys((c.services.inbox.block as { networks: Record<string, unknown> }).networks).sort();
   assert.deepEqual(inbox, ["admin", "front", "pages"], "the one service on the doors' network (admin) and the directory's (pages)");
   assert.ok(Object.keys((c.services.directory.block as { networks: Record<string, unknown> }).networks).includes("pages"));

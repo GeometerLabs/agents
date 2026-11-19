@@ -52,7 +52,7 @@ The Agent Card follows the A2A specification's section 8.4 (version 1.0.1): JWS 
 
 A valid signature says: *the holder of this key wrote exactly these bytes.* It does **not** say the key is the shop's. Which key a shop may
 use is the reader's decision: a directory **pins the first key it saw** for a shop page and holds back a feed signed with another key
-(see `modules/discovery/`, "Keys"). `verifyDocument(doc, pinnedKey)` therefore also refuses a feed that carries a different key than the pinned one.
+(see `go/internal/directory`, trust.go). `verifyDocument(doc, pinnedKey)` therefore also refuses a feed that carries a different key than the pinned one.
 
 ## Security notes
 

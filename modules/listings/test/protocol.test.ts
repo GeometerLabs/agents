@@ -1,19 +1,15 @@
-// The shop's side of the open protocol (modules/listings/protocol.ts, runtime/shop-protocol.ts): the feed is signed with the shop's key and a directory's own reader accepts it (and refuses it
-// when a price is changed); a check answers from the record only (gone for anything not public, a counted listing at 0 is gone, at most ten ids, nothing about a buyer, read only), is signed and
-// stamped, and the directory's own check reader accepts it; the card is signed and refused unless it is a card for this shop; the notice is signed, comes only for a real change and at most
-// once a minute. Written, not run, in the 18 Nov build stream.
+// The shop's side of the open protocol (modules/listings/protocol.ts, runtime/shop-protocol.ts): the feed is signed with the shop's key (and its signature fails when a price is changed);
+// a check answers from the record only (gone for anything not public, a counted listing at 0 is gone, at most ten ids, nothing about a buyer, read only), is signed and stamped; the card
+// is signed and refused unless it is a card for this shop; the notice is signed, comes only for a real change and at most once a minute. That the DIRECTORY accepts the feed, the check
+// answer and the notice this code makes is tested against the directory itself, a separate process: modules/discovery/contract/shop-protocol.contract.test.ts (the TypeScript directory
+// whose reader this file used is gone: decision 61, wave 1c).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DAY } from "../../core/time.ts";
 import { fakeClock } from "../../core/clock.ts";
 import { createRecord } from "../../record/record.ts";
 import { generateSigningKey, verifyCard, verifyDocument, verifyNotice } from "../../signing/index.ts";
-import { createChecker } from "../../discovery/check.ts";
-import { readFeed } from "../../discovery/feed.ts";
-import { trustFeed } from "../../discovery/trust.ts";
 import { createShopProtocol, NOTICE_EVERY_MS, underPage } from "../../runtime/shop-protocol.ts";
-import { DirectoryIndex } from "../../discovery/index.ts";
-import { handleNotice } from "../../discovery/notices.ts";
 import { createListingsKit } from "../kit.ts";
 import type { ListingOp } from "../kit.ts";
 import { listingsOf } from "../listings.ts";
@@ -43,7 +39,7 @@ function shopWorld(visible = true) {
 }
 const feedOf = (w: ReturnType<typeof shopWorld>) => w.protocol.feed({ page: PAGE, name: "Rani Pets", languages: ["en", "ml"], chat: `${PAGE}/chat` })!;
 
-test("the feed is signed with the shop's key, names its check and card, and the directory's own reader and key check accept it", () => {
+test("the feed is signed with the shop's key and names its check and card (the directory's acceptance: modules/discovery/contract/shop-protocol.contract.test.ts)", () => {
   const w = shopWorld();
   const feed = feedOf(w) as any;
   assert.deepEqual(feed.shop.check, `${PAGE}/api/v1/check`);
@@ -54,13 +50,8 @@ test("the feed is signed with the shop's key, names its check and card, and the 
   assert.equal(feed.items[0].page.startsWith(`${PAGE}/shop#l-`), true, "an item's page is the storefront's tile");
   assert.deepEqual(feed.signature.keyId, w.key.keyId);
   assert.deepEqual(verifyDocument(feed), { ok: true, keyId: w.key.keyId });
-  // the directory's own reader (the other half of the contract) takes it, and its trust rule pins the first key then recognises it
-  const read = readFeed(JSON.parse(JSON.stringify(feed)), `${PAGE}/listings.json`);
-  assert.ok(read.ok, JSON.stringify(read));
-  assert.equal(read.feed.items.length, 2);
-  const first = trustFeed(feed, undefined);
-  assert.equal(first.state, "first");
-  assert.equal(trustFeed(feed, (first as { pin: { keyId: string; key: string } }).pin).state, "same");
+  assert.deepEqual(verifyDocument(feed, w.key.publicKey), { ok: true, keyId: w.key.keyId }, "and under the shop's own key, the one a directory pins");
+  assert.equal(feed.items.length, 2);
 });
 
 test("a changed price, a changed item or a stripped signature is refused", () => {
@@ -69,13 +60,12 @@ test("a changed price, a changed item or a stripped signature is refused", () =>
   assert.ok(verifyDocument(feed).ok);
   const cheaper = structuredClone(feed); cheaper.items[0].price.value = "1.00";
   assert.equal(verifyDocument(cheaper).ok, false);
-  assert.equal(trustFeed(cheaper, undefined).state, "refused");
   const more = structuredClone(feed); more.items.push({ ...more.items[0], id: "l-99" });
   assert.equal(verifyDocument(more).ok, false);
   const other = structuredClone(feed); other.shop.name = "Not Rani Pets";
   assert.equal(verifyDocument(other).ok, false);
   const { signature: _s, ...bare } = feed;
-  assert.equal(trustFeed(bare, undefined).state, "refused");
+  assert.equal(verifyDocument(bare).ok, false, "a stripped signature is no signature");
 });
 
 test("no feed and no card while the owner's switch is off, and a check then answers every id gone", () => {
@@ -145,27 +135,6 @@ test("the question: one to ten ids of the right shape and nothing about a buyer"
   for (const bad of [{}, { ids: [] }, { ids: "l-1" }, { ids: [1] }, { ids: ["../x"] }, { ids: ["l-1"], format: "shop-check/2" }, null, [], "l-1"]) assert.equal(checkIds(bad).ok, false, JSON.stringify(bad));
   // anything else in the question (a search, a place, who is asking) is simply not read: only ids reach the runtime
   assert.deepEqual(checkIds({ ids: ["l-1"], q: "kitten", lat: 10.5, buyer: "Asha" }), { ok: true, ids: ["l-1"] });
-});
-
-test("the directory's own check reader accepts the answer: signed by the pinned key, from just now, only the ids it asked about", async () => {
-  const w = shopWorld();
-  const answered: string[] = [];
-  const fetch = async (_url: string, init: { body?: string }) => {
-    answered.push(init.body ?? "");
-    const ids = (JSON.parse(init.body ?? "{}") as { ids: string[] }).ids;
-    return { status: 200, headers: {}, body: JSON.stringify(w.protocol.check({ page: PAGE, ids })) };
-  };
-  const checker = createChecker({ fetch: fetch as never, now: () => NOW });
-  const out = await checker.check({ page: `${PAGE}/`, check: `${PAGE}/api/v1/check`, key: w.key.publicKey }, ["l-1", "l-2", "l-9"]);
-  assert.equal(out.state, "answered");
-  if (out.state === "answered") assert.deepEqual([...out.items.values()].map((i) => [i.id, i.availability]), [["l-1", "in_stock"], ["l-2", "in_stock"], ["l-9", "gone"]]);
-  assert.deepEqual(JSON.parse(answered[0]), { format: "shop-check/1", ids: ["l-1", "l-2", "l-9"] }, "the question carries ids and nothing about the buyer");
-  // an answer older than two minutes is ignored
-  const late = createChecker({ fetch: fetch as never, now: () => NOW + 3 * 60_000 });
-  assert.equal((await late.check({ page: `${PAGE}/`, check: `${PAGE}/api/v1/check`, key: w.key.publicKey }, ["l-1"])).state, "silent");
-  // another key's answer is ignored
-  const stranger = createChecker({ fetch: fetch as never, now: () => NOW });
-  assert.equal((await stranger.check({ page: `${PAGE}/`, check: `${PAGE}/api/v1/check`, key: generateSigningKey().publicKey }, ["l-1"])).state, "silent");
 });
 
 test("the card is signed with the shop's key, and only a card for this shop is signed", () => {
@@ -242,15 +211,4 @@ test("turning the switch off after a notice went out is a change too: one notice
   assert.equal(w.protocol.notice({ page: PAGE }), undefined, "and nothing more while it stays off");
   w.run(op({ op: "shop", visible: true }, "r-on"));
   assert.ok(w.protocol.notice({ page: PAGE }), "turned on again, the feed is a change again");
-});
-
-test("the directory's own notice handler takes the shop's notice: the address and the shape follow its rules", () => {
-  const w = shopWorld();
-  const ix = new DirectoryIndex(":memory:");
-  const cfg = { index: ix, served: ["pages.example"], configured: [], now: () => NOW };
-  const notice = w.protocol.notice({ page: PAGE })!.notice;
-  assert.equal(handleNotice(cfg, notice).status, 202);
-  assert.deepEqual(ix.feeds().map((f) => f.url), [`${PAGE}/listings.json`]);
-  assert.equal(handleNotice({ ...cfg, served: ["other.example"] }, notice).status, 403, "not a domain this directory serves");
-  assert.equal(handleNotice(cfg, { ...(notice as object), sig: "x".repeat(86) }).status, 202, "an unknown shop's hint is taken (it only gets the feed read); a known shop's must verify (discovery/test/notices.test.ts)");
 });

@@ -1,24 +1,25 @@
-// Measures the SHARED process (many listings-only shops in one process), TypeScript against Go, on the same machine and the same shop folders: cold start to /readyz (the process answers; the first look at the folders may still be going), cold start until
-// every shop is held, and the process's resident memory after the start and after a few requests per shop. Not a test: it prints a table.
+// Measures the Go SHARED process (many listings-only shops in one process): cold start to /readyz (the process answers; the first look at the folders may still be going), cold start
+// until every shop is held, and the process's resident memory after the start and after a few requests per shop. Not a test: it prints a table. (Until 19 Nov 2026 it measured the
+// TypeScript shared process beside it, decision 61's figures; that runtime was deleted in wave 1b.)
 //
-//   node templates/commerce/listings/contract/measure-shared.ts                 N = 1, 10, 100, both implementations, one process at a time
-//   node templates/commerce/listings/contract/measure-shared.ts ts 10           one cell
+//   node templates/commerce/listings/contract/measure-shared.ts           N = 1, 10, 100, one process at a time
+//   node templates/commerce/listings/contract/measure-shared.ts 10        one size
 //
-// RSS is `ps -o rss=` of the shared process itself (the TypeScript worker threads live inside it, so they are counted; a Go child process of a quarantined shop would not be, and none
-// is made here). The load is light on purpose: three requests per shop, one after another. TypeScript runs with SHARED_WORKERS=4, the container's default.
+// RSS is `ps -o rss=` of the shared process itself (a child process of a quarantined shop would not be counted, and none is made here). The load is light on purpose: three requests
+// per shop, one after another.
 import { execFileSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import { haveGo, makeRoot, startHost, writeShop } from "./shared-harness.ts";
-import type { Impl, ShopFolder } from "./shared-harness.ts";
+import type { ShopFolder } from "./shared-harness.ts";
 
 const rssMb = (pid: number): number => Number(execFileSync("ps", ["-o", "rss=", "-p", String(pid)]).toString().trim()) / 1024;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function cell(impl: Impl, n: number) {
+async function cell(n: number) {
   const root = makeRoot();
   const shops: Record<string, ShopFolder> = {};
   for (let i = 0; i < n; i++) { const name = `shop-${String(i).padStart(3, "0")}`; shops[name] = writeShop(root, name); }
-  const host = await startHost(impl, root, { shops, expect: n, workers: 4, scanSeconds: 30 });
+  const host = await startHost(root, { shops, expect: n, scanSeconds: 30 });
   try {
     await sleep(1000);
     const afterStart = rssMb(host.pid);
@@ -28,17 +29,16 @@ async function cell(impl: Impl, n: number) {
       await host.call(name, "/status");
     }
     await sleep(1000);
-    return { impl, shops: n, coldToReadyzMs: Math.round(host.readyMs), coldToAllHeldMs: Math.round(host.heldMs), rssAfterStartMb: Math.round(afterStart), rssAfterRequestsMb: Math.round(rssMb(host.pid)) };
+    return { impl: "go", shops: n, coldToReadyzMs: Math.round(host.readyMs), coldToAllHeldMs: Math.round(host.heldMs), rssAfterStartMb: Math.round(afterStart), rssAfterRequestsMb: Math.round(rssMb(host.pid)) };
   } finally { await host.stop(); rmSync(root.dir, { recursive: true, force: true }); }
 }
 
-const [implArg, nArg] = process.argv.slice(2);
-const impls = (implArg ? [implArg] : ["ts", "go"]) as Impl[];
+const [nArg] = process.argv.slice(2);
 const sizes = nArg ? [Number(nArg)] : [1, 10, 100];
 const rows = [];
-for (const n of sizes) for (const impl of impls) {
-  if (impl === "go" && !haveGo()) { console.error("go/bin/listings-shared is not built; skipping Go"); continue; }
-  const r = await cell(impl, n);
+if (!haveGo()) { console.error("go/bin/listings-shared is not built (cd go && go build -o bin/listings-shared ./cmd/listings-shared)"); process.exit(1); }
+for (const n of sizes) {
+  const r = await cell(n);
   rows.push(r);
   console.log(JSON.stringify(r));
 }
