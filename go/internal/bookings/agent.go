@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"regexp"
 
+	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/calendar"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
@@ -136,7 +137,7 @@ func (a *Agent) handle(ev map[string]any) error {
 		if err := json.Unmarshal(raw, &m); err != nil {
 			return err
 		}
-		return a.OnMessage(m, MessageExtras{})
+		return a.OnMessage(m)
 	case "payment_event":
 		var e payments.PaymentEvent
 		raw, _ := json.Marshal(ev["event"])
@@ -153,6 +154,8 @@ func (a *Agent) handle(ev map[string]any) error {
 		return a.refunds.OnApprovalDecision(a.ctx, approval, decision)
 	case "channel_request":
 		return a.onChannel(ev)
+	case "chat_message":
+		return a.onChatMessage(ev)
 	}
 	return runtime.Unported("a " + kind + " event of a Bookings shop")
 }
@@ -193,4 +196,25 @@ func (a *Agent) GiveUp(ev map[string]any, service string, tell bool) error {
 	}
 	a.log(nil, phone, GuardWaitEntry, "failed", map[string]any{"event": kind, "service": service}, logMore{notes: notes, refs: map[string]string{"service": service, "event": kind}})
 	return nil
+}
+
+// onChatMessage is agent.ts onChatMessage (W1): a guest's send on the shop's page is run as the SAME step as a WhatsApp customer's message, under the guest's own conversation;
+// runtime.ChatTurn keeps the send, makes it once and caps it (modules/channels/chat.ts).
+func (a *Agent) onChatMessage(ev map[string]any) error {
+	cs := a.store.chanState()
+	now := a.now()
+	_, err := runtime.ChatTurn(runtime.ChatTurnDeps{
+		State: cs, Now: now, Day: a.c.Clock.Day, Kind: "bookings", Budget: a.c.Policy.Budget,
+		ModelCalls: func() int64 {
+			m := budget.For(&a.c.Snap.AI, a.c.Clock, a.now())
+			return m.Decision + m.Model
+		},
+		SetLanguage: func(conversation, lang string) {
+			if contains(a.settings.Languages, lang) {
+				a.store.Customer(conversation).Language = lang
+			}
+		},
+		Run: func(in runtime.ChatInbound) error { return a.OnMessage(in.InboundMessage) },
+	}, runtime.ChatMessageOf(ev))
+	return err
 }

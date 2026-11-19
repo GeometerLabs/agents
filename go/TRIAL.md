@@ -502,3 +502,35 @@ clients, books) and of go-bookings-words-19nov (the customer's words), and the f
 4. **Slice 4's rest**: the owner's page items (UPI, Money: `render.OwnerMoneySection` is on main), approvals and their decisions, the owner's notices, the assistant's Bookings skill,
    the licence's final stop.
 Findings for the contract stream: `toIntentShape` has no vectors (Go tests take model-llm.test.ts's cases); the limits page's test only tightens a limit `if` one is listed.
+
+## Wave 2: the chat and the customer's talk (19 Nov 2026, `go-bk-chat-19nov`)
+
+Slices 2 and 3 of the "What is left of wave 2 for Bookings" list, built beside the agent core (another stream) and not edited into `internal/bookings`.
+
+**The chat (slice 2).** The channel state a template keeps under `channel` (`seq`, `outbox`, `requests`, `chat`, `guests`) is typed once for every template (`runtime/chatstate.go`, in the TypeScript's own member
+order, unknown keys carried through raw, no HTML escaping); `runtime/chat.go` is `chat.ts` (a send run as the template's message step, the retry answered once, a tap checked against what the shop
+offered, the day's turns from `budget.guestTurnsPerDay` with the old 20 only when it is missing (decision 62), the 150 sends a day, the owner-ping cap, the thread read, the in-memory rates);
+`chatroutes.go` and `kitserver.go` make `GET /internal/channel/chat`, the door's 429 and `chat-voice` (a 404 while no template has a speech service); `chatidroute.go` over the new `internal/chatid` is
+`POST /internal/channel/chat-id` (keep this chat, open it on a new phone, the number and its links, delete my chat), same file and rules as `chat-identity.ts`. The words are generated
+(`scripts/gen_chat_words.ts`). Read `runtime/Explanation.md` and `Deferred.md`.
+
+**The customer's talk (slice 3).** `StepContext.CustomerTalk` (`runtime/talkcustomer.go`) is `talkToCustomer`'s first half: the gates, the metered model call, the answer read by hand, the five checks and the
+`talk` record line. The checks are `assistant.CheckTalk` in the customer's role (the owner's `CheckOwnerTalk` is now the same function with the owner's role: one checker, as `talk-check.ts` has one); the claim
+words and the never-used words are the listings package's (`ClaimKindsOf`, the new `BannedWords`), handed in, not copied; the prompt is the TypeScript's (`scripts/gen_customer_talk.ts`). Proved on 97 checks,
+20 model answers and 25 prompts the TypeScript made (`scripts/gen_customer_talk_vectors.ts`). It sits in `internal/assistant` (pure) and `internal/runtime` (the run), not `internal/understanding` as the brief
+said: the sources and the checks are the assistant's, and `understanding` is below it.
+
+**What the agent core must give, and call.**
+1. `func (a *Agent) OnMessage(m messaging.InboundMessage) error` (the template's message step: the flow, the customer's talk, the menu), which a chat send runs.
+2. In `Handle`, for `ev["kind"] == "chat_message"`: `runtime.ChatTurn(runtime.ChatTurnDeps{State: cs, ModelCalls: ..., Now: ..., Day: clock.Day, Kind: "bookings", Run: func(in runtime.ChatInbound) error { return a.OnMessage(in.InboundMessage) }, SetLanguage: ..., Budget: policy.Budget}, runtime.ChatMessageOf(ev))`.
+   `cs` is `runtime.ParseChannel(store.Channel)` held for the WHOLE step, and the store's `Channel` is `cs.Marshal()` when the step ends; the agent's say keeps every message to a chat conversation (`runtime.IsChannelConversation`) with
+   `cs.Keep(to, text, choices, now)` (and `cs.MarkMoment(id, "confirmed"|"paid")` after the record gate), and its owner-notice gate asks `runtime.ChatPingBlock`.
+3. In the message step, where the rules and the router know no answer: `c.CustomerTalk(runtime.CustomerTalkInput{...})` (`c` is the step's `*runtime.StepContext`), then, on `Sent`, the reply through its say with `Facts`, and on `NoticeDay` the owner's one-a-day notice.
+4. An optional `ChannelRaw(s KitState) json.RawMessage` on the Kit (makes the thread read cheap; without it the runtime reads the saved state's members).
+
+**Tests.** `runtime/chat_test.go` (`channels/test/chat.test.ts`'s cases over a fake step), `assistant/talkcustomer_test.go` (the vectors), `chatid/chatid_test.go` (a software passkey). The tests of the Bookings chat contract that
+wait for the agent core are listed in the final report of this branch; `scenarios-vectors.json` has none that does not run the agent's booking flow (all 14 do), so none is used here.
+
+**Measured (19 Nov, after this branch):** `go build ./...`, `go vet ./...` and `go test ./...` pass (27 packages, `internal/chatid` is new). The Bookings chat contract on Go (`chat.contract.test.ts`) is **4 of 17**: the empty and unknown thread
+and the 400s, a tap nothing offered, the 12-new-guests-an-hour 429 pass; the 13 that wait for the agent core are every one that needs the shop to answer (the send answered, the same send again, delete my chat after a
+booking, the three languages and Hinglish, the 8 a minute test (its 429 comes at the right send, but its last line counts the saved guest lines), and the five model tests). The listings contract on Go: 202 tests, 202 pass.

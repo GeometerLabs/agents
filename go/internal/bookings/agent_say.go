@@ -7,6 +7,8 @@ package bookings
 
 import (
 	"context"
+
+	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/guard"
@@ -39,6 +41,7 @@ type sayExtra struct {
 	day         string
 	dayBookings []DayBooking
 	pageLink    string
+	talk        *talkFacts // block M: a talk reply (agent_talk.go)
 }
 
 // sayOpts is tellCustomer's `more`.
@@ -70,7 +73,11 @@ func (a *Agent) sayArgs(b *Booking, phone, to string, templates []string, o sayO
 		args.Booking = b
 	}
 	if o.offer != nil {
-		args.Offer = &messaging.Offer{Kind: o.offer.kind, Body: o.offer.body}
+		kind := o.offer.kind
+		if strings.HasPrefix(kind, "talk:") {
+			kind = "talk"
+		}
+		args.Offer = &messaging.Offer{Kind: kind, Body: o.offer.body}
 	}
 	return args
 }
@@ -174,7 +181,7 @@ func (a *Agent) factsFor(sa *messaging.SayArgs, lang string) *MessageFacts {
 }
 
 // interactiveFor is agent.ts buildInteractive.
-func (a *Agent) interactiveFor(sa *messaging.SayArgs, facts *MessageFacts, lang string) (*messaging.InteractiveMessage, error) {
+func (a *Agent) interactiveFor(sa *messaging.SayArgs, facts any, lang string) (*messaging.InteractiveMessage, error) {
 	o := extraOf(sa).offer
 	ids := o.body
 	if ids == nil {
@@ -182,7 +189,7 @@ func (a *Agent) interactiveFor(sa *messaging.SayArgs, facts *MessageFacts, lang 
 	}
 	var parts []string
 	for _, id := range ids {
-		t, err := Render(id, facts)
+		t, err := renderAny(id, facts)
 		if err != nil {
 			return nil, err
 		}
@@ -201,7 +208,7 @@ func (a *Agent) interactiveFor(sa *messaging.SayArgs, facts *MessageFacts, lang 
 		}
 		return out
 	}
-	switch o.kind {
+	switch strings.TrimPrefix(o.kind, "talk:") {
 	case "services":
 		l := ServiceList(a.settings, lang)
 		m.List = &messaging.InteractiveList{Button: l.Button, Rows: conv(l.Rows)}
@@ -217,9 +224,16 @@ func (a *Agent) interactiveFor(sa *messaging.SayArgs, facts *MessageFacts, lang 
 // voice is the Bookings words for say (say.ts SayVoice): the generated templates, the Meta template a closed window needs, the outgoing check.
 type voice struct{}
 
-func (voice) Render(id string, facts any) (string, error) { return Render(id, facts.(*MessageFacts)) }
+func (voice) Render(id string, facts any) (string, error) { return renderAny(id, facts) }
 func (voice) TemplateMessage(t messaging.TemplateArgs) (messaging.TemplateMessage, error) {
-	m := MetaTemplateMessage(t.IDs, t.Facts.(*MessageFacts), t.Text, t.Generic)
+	f, ok := t.Facts.(*MessageFacts)
+	if tf, isTalk := t.Facts.(*talkFacts); isTalk {
+		f, ok = tf.MessageFacts, true
+	}
+	if !ok {
+		return messaging.TemplateMessage{Name: t.Generic, Language: t.Language, Text: t.Text}, nil
+	}
+	m := MetaTemplateMessage(t.IDs, f, t.Text, t.Generic)
 	return messaging.TemplateMessage{Name: m.Name, Language: m.Language, Text: m.Text, Parameters: m.Parameters}, nil
 }
 func (voice) GenericNames() messaging.GenericNames {
@@ -227,14 +241,8 @@ func (voice) GenericNames() messaging.GenericNames {
 	return messaging.GenericNames{Customer: g.Customer, Reminder: g.Reminder, Owner: g.Owner}
 }
 
-// Matches is limits.ts checkMessageMatchesRecord (checkRecordMatch over check.ts checkFactsOf), word for word.
-func (voice) Matches(text string, facts any) messaging.Decision {
-	problems := CheckMessage(text, facts.(*MessageFacts))
-	if len(problems) == 0 {
-		return messaging.Decision{RuleID: "message-matches-record", Verdict: "allow", Reason: "Every amount, date, time and link in the message is in the record."}
-	}
-	return messaging.Decision{RuleID: "message-matches-record", Verdict: "block", Reason: "The message does not match the record. " + strings.Join(problems, " ")}
-}
+// Matches is limits.ts checkMessageMatchesRecord (checkRecordMatch over check.ts checkFactsOf), word for word; a talk reply is read against the talk's own facts.
+func (voice) Matches(text string, facts any) messaging.Decision { return matchAny(text, facts) }
 
 // stoppedGate is agent.ts stoppedGate: in the licence's final stop nothing more is sent from here.
 var stoppedGate = Decision{"subscription_suspended", "block", "the shop's licence has reached its final stop, so nothing more is sent from here (the owner's one notice aside); the runtime's own check of the lease"}
@@ -285,12 +293,19 @@ func (a *Agent) sayDeps() messaging.SayDeps {
 		Owner:      messaging.OwnerInfo{WhatsApp: a.owner(), Language: a.settings.Owner.Language},
 		LanguageOf: func(phone string, b any) string { return a.languageOf(phone, bookingOf(b)) },
 		OptedOut:   func(phone string) bool { return a.store.Customer(phone).OptedOut },
-		FactsFor:   func(sa *messaging.SayArgs, lang string) (any, error) { return a.factsFor(sa, lang), nil },
+		FactsFor: func(sa *messaging.SayArgs, lang string) (any, error) {
+			f := a.factsFor(sa, lang)
+			if t := extraOf(sa).talk; t != nil {
+				t.MessageFacts = f
+				return t, nil
+			}
+			return f, nil
+		},
 		InteractiveFor: func(sa *messaging.SayArgs, facts any, lang string) (*messaging.InteractiveMessage, error) {
 			if extraOf(sa).offer == nil {
 				return nil, nil
 			}
-			return a.interactiveFor(sa, facts.(*MessageFacts), lang)
+			return a.interactiveFor(sa, facts, lang)
 		},
 		InputsOf: func(sa *messaging.SayArgs) map[string]any {
 			x := extraOf(sa)
@@ -316,7 +331,13 @@ func (a *Agent) sayDeps() messaging.SayDeps {
 			if a.c.Licence() == "stopped" {
 				gs = append(gs, messaging.Decision(stoppedGate))
 			}
-			// TODO(go-bk-chat-19nov): chatPingGate (what a chat guest may make the shop tell the owner is bounded per guest per day) is the chat's
+			// W1: what a chat guest may make the shop tell the owner is bounded per guest per day (chat.ts chatPingGate)
+			if sa.To != "owner" || !isChatConversation(sa.Phone) {
+				return gs // the channel block is not touched (a shop with no chat saves exactly what it did)
+			}
+			if why := runtime.ChatPingBlock(a.store.chanState(), sa.To, sa.Phone, sa.Templates, a.now(), a.c.Clock.Day); why != "" {
+				gs = append(gs, messaging.Decision{RuleID: "chat-pings-per-guest", Verdict: "block", Reason: why})
+			}
 			return gs
 		},
 		Log: func(booking any, phone, action, outcome string, inputs map[string]any, more messaging.LogMore) {
@@ -342,7 +363,7 @@ func (a *Agent) sayDeps() messaging.SayDeps {
 			}
 			return ""
 		},
-		MarkMoment: func(id, moment string) { a.store.chanState().markMoment(id, moment) },
+		MarkMoment: func(id, moment string) { a.store.chanState().MarkMoment(id, moment) },
 	}
 }
 
