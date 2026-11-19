@@ -44,11 +44,14 @@ describe("the Guard's other answers to a refund", () => {
 describe("a refund whose outcome was lost", () => {
   contract("recheck_refund reads the payments service's list and settles it: the refund that was made is found, nothing is sent again, and the builder's list is empty", async () => {
     const { s, hash } = await paid();
-    s.guards!.stub.failNext("outcome_unknown"); // the refund reaches the provider and the answer is lost
+    // the refund reaches the provider and the answer is lost; the provider's own list does not show it either (as in test/refund-held.test.ts), so the shop cannot tell
+    s.guards!.payments.answer({ status: 200, body: { entity: "collection", count: 0, items: [] } }, { match: (c) => c.method === "GET" && /\/refunds$/u.test(c.path) });
+    s.guards!.stub.failNext("outcome_unknown");
     await cancel(s, hash);
     assert.equal(s.guards!.standins.fakes.payments.refunds().length, 1, "the provider did it");
     const unsure = (await s.status()).refunds;
-    assert.ok(unsure.needBuilder.total + unsure.beingSentAgain >= 0, JSON.stringify(unsure));
+    assert.deepEqual(unsure, { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 1, unknown: 1 } }, "the shop does not know: one refund of an unknown outcome, for the builder, not the owner");
+    s.guards!.payments.clear();                                                      // the list shows the truth again
     const before = refundCalls(s).length;
     assert.equal((await s.call("/internal/recover", { body: { id: "rec-r1", case: "b-1", action: "recheck_refund" } })).status, 200);
     await s.settle();

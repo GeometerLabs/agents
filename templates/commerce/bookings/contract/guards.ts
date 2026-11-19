@@ -162,12 +162,12 @@ export interface FakeGuards {
  * Start the three fake Guards for a shop with these settings. The refund limit and the deposit in the settings make the stub Guard's threshold and bounds, as the deployer
  * generates them (src/guard-limits.ts gatewayLimitsSpec), so a refund above the owner's limit is HELD, and one above the deposit is REFUSED.
  */
-export async function startGuards(settings: Settings, o: { phoneNumberId?: string; calendarId?: string } = {}): Promise<FakeGuards> {
+export async function startGuards(settings: Settings, o: { phoneNumberId?: string; calendarId?: string; approvalTtlSeconds?: number } = {}): Promise<FakeGuards> {
   const phoneNumberId = o.phoneNumberId ?? "100000000000001";
   const agentToken = randomBytes(16).toString("hex");
   const standins = await startStandins({ clock: systemClock, razorpayWebhookSecret: "contract-rzp", whatsappAppSecret: "contract-wa", phoneNumberId, calendarId: o.calendarId ?? "shop@example.com" }, { port: 0 });
   const stub = await startStubGuard({
-    clock: systemClock, upstreamUrl: standins.url, spec: gatewayLimitsSpec(settings, { tenant: "contract", version: 1, reviewedBy: "contract" }), agentToken,
+    clock: systemClock, upstreamUrl: standins.url, spec: gatewayLimitsSpec(settings, { tenant: "contract", version: 1, reviewedBy: "contract" }, o.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: o.approvalTtlSeconds } : {}), agentToken,
     approver: { id: "owner-contract", secret: randomBytes(16).toString("hex") }, readToken: randomBytes(16).toString("hex"),
   });
   const calls: GuardCall[] = [];

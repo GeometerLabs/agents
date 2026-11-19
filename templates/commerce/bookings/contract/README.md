@@ -197,7 +197,6 @@ Contract files: **S**moke, **M**oney, **L**imits and approvals, **F**low, **O**w
 | ondc | 5 | b | the ONDC mapping (pure; owner: mapping only): vectors |
 | own-calendar | 7 | a | a shop on its own booking list: **F** |
 | owner-notices | 2 | a+b | the owner told by template outside the window: **O** |
-| owner-number-live | 1 | a | the owner's number changed with no restart: **O** |
 | owner-signin | 2 | a | the page's sign-in request through the runtime: **O** |
 | page-link | 6 | a | a private link in the UPI quote: **F** |
 | papers | 5 | d | the three papers (statement, record of a case, identity paper) |
@@ -230,7 +229,6 @@ Contract files: **S**moke, **M**oney, **L**imits and approvals, **F**low, **O**w
 | situations | 1 | d | the crash-test situations (one test each; run on the in-process agent) |
 | standins | 22 | d | the stand-ins' own contract |
 | start | 7 | a | starting a client for real: **S** |
-| step-breaker | 6 | a+b | a decision model that is down: **C** |
 | store | 8 | a+b | the durable store (a: the SQLite file's format, **R**; the JSON round trip is b) |
 | talk | 4 | a | the shop's talk model on a Bookings shop: **C** |
 | terms | 5 | a | the terms the owner agrees to on WhatsApp: **O** |
@@ -238,9 +236,6 @@ Contract files: **S**moke, **M**oney, **L**imits and approvals, **F**low, **O**w
 | understanding | 14 | b | the three-step router with stubs: vectors |
 | unknown-outcome | 4 | a | "we're checking" kept through a restart: **R** |
 | upi | 5 | a | UPI marked paid by the owner: **M** |
-| voice-note | 13 | a | a voice note's one plain reply: **C** |
-| voice-notes-shared | 0 | a | the shared cases for voice notes (generated, same as voice-notes): **C** |
-| voice-notes | 15 | a | voice notes with a speech stand-in: **C** |
 | web-demo | 14 | c | the browser build of the demo |
 | webhooks | 7 | d | webhook signatures and readers (the inbox's); their output shape is the `payment_event` / `message` of **M**/**F** |
 | without-whatsapp | 5 | a | a UPI shop with no WhatsApp: **O** |
@@ -337,7 +332,7 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
 
 ## 8. Status of the suite (TypeScript, 19 Nov 2026)
 
-**103 tests in 9 files.** `BOOKINGS_IMPL=ts node --test --test-concurrency=1 templates/commerce/bookings/contract/` (19 Nov 2026, through the heat lock): 99 pass, 2 skipped (the two
+**128 tests in 11 files (the last whole-folder run: 126 pass, 2 skipped, 0 fail; the numbers below are the first nine files' 103).** `BOOKINGS_IMPL=ts node --test --test-concurrency=1 templates/commerce/bookings/contract/` (19 Nov 2026, through the heat lock): 99 pass, 2 skipped (the two
 cross-restart cases, which need the Go binary), 2 failed on that pass; both were test mistakes (an offer asked for a date already past, a digest's form). Fixed, and the two files
 that hold them (`flow`, `record-licence`) run again: 26 of 26 pass. So: 101 pass, 2 skipped, 0 fail. `BOOKINGS_IMPL=go` with no binary: 103 tests,
 103 skipped, every one with "no Go Bookings runtime yet (wave 2)" (`grep -c` of the reason = 103). The listings contract after the shared move (`LISTINGS_IMPL=ts`, whole folder): 151
@@ -367,15 +362,6 @@ and the record's trigger), ticker (hold expiry, completion and a reminder on the
 
 | Left | Why it was not done in this stream | What it needs |
 |------|------------------------------------|---------------|
-| voice-note, voice-notes, voice-notes-shared (C) | needs a fake speech Guard (runtime.json `speech`) | a 40-line fake in `guards.ts` |
-| assistant (O): the owner's fixed phrases on WhatsApp, own words, cards by tap with the digest | only the page's talk box is covered | `inbound(OWNER_NUMBER, ...)` plus the cards in `ownerView().app` |
-| buttons (F): the exact `interactive` payload (3 buttons, 10 rows, 20-character titles) and a tap read without a model | `tap()` exists in the harness and is not used yet | assert on `s.sent()` payloads |
-| talk, terms (O/C): the talk model's answer for a customer's words; the shop terms agreed on WhatsApp | no `talk` block or terms.json written by the harness yet | `runtime.talk`, `terms.json` |
-| step-breaker (C): a decision model that is down while the language model is up (the allowance is covered in `open-cases.contract.test.ts`) | needs `runtime.decision` and the fake System One (`startFakeDecision`, shared) | a few cases |
-| refund-held (L): expiry of the approval, "no longer honoured", "a hold with no approval id goes to the builder", "the deposit lowered after a booking paid" | need a clock for the Guard's 24-hour approval (the stub Guard runs on the real clock) | the stub Guard on the test clock, or a settings spec with a short approval time |
-| unknown-outcome, restored (R): kept through a restart, a refund that went out after the snapshot is not sent twice | multi-step restart cases | stop/start with `failNext("outcome_unknown")` |
-| recovery (R): `recheck_refund`, `ask_owner_again`'s notice | | owner notices on the WhatsApp stand-in |
-| owner-number-live (O): after the owner's number changes with no restart, the next step treats a message from the new number as the owner's, the old number's as a customer's | needs `inbound(...)` from both numbers and a reply to read | the WhatsApp stand-in |
 | owner-notices (O): every notice of the agent, by template, in each language | only "outside the window is a template" is covered | `s.sent(OWNER_NUMBER)` per scenario |
 | money-clarity, upi (M): the late claim windows (48 hours, 14 days), the refund the owner owes (`refund_owed`, "kept"), a screenshot | UPI marks only | UPI shop on the test clock |
 | report-monthly (D): the owner's WhatsApp message, the certificate and signed summary files, the quiet month, the licence's final stop | only the data file's making, once, is covered | read the WhatsApp stand-in |
@@ -386,9 +372,13 @@ and the record's trigger), ticker (hold expiry, completion and a reminder on the
 The classes "b" (unit) are NOT started: their vectors (inputs and outputs made from the TypeScript) must be generated before the TypeScript is deleted; that is the port's first step per
 package. The list in section 6 is the checklist.
 
-**Added after the first pass (`open-cases.contract.test.ts`, 9 tests):** the Guard's other captured refund answers (refused_rule, provider_500, held_uncertain, unauthenticated, provider_unreachable), `recheck_refund`, the month's allowance, two chairs over HTTP, and the owner's WhatsApp sign-in link (only in the owner's open window). Still open: approval expiry (the stub Guard runs on the real clock), `owner-number-live`, the refund-after-snapshot cases, voice, the assistant's WhatsApp phrases, buttons' payloads, talk, terms, the decision model's break.
+**Added after the first pass (`open-cases.contract.test.ts`, 9 tests, and `open2.contract.test.ts`, 16 tests):** the Guard's other captured refund answers, `recheck_refund` (asserted from the state "one refund of an unknown outcome, for the builder": the provider's list is made to show nothing, as in the unit test), the month's allowance, two chairs, the WhatsApp sign-in link (only in the owner's open window); the Guard's approval running out (60 seconds, the Guard's own minimum, `ShopOptions.approvalSeconds`), a refund that went out after the snapshot (two cases), `owner-number-live` (after a sale the new number is the owner's, the old a customer's), the decision model's step-breaker, the buttons' and lists' payloads and the tap flow, the owner's assistant (the cancel card) on WhatsApp, the shop terms, the shop's talk, and voice notes through a fake speech service (`voice-guard.ts`).
 
-**Unit vectors (class b):** `go/scripts/gen_bookings_vectors.ts` writes `go/internal/bookings/testdata/` (`--check`, and a `words-fresh` entry): the rule parser on every phrase of `test/parser.test.ts` and the crash-test sentences, the limits (price, hours by half hour over a week, no double booking with units and resources, refund limit, STOP, booking-state moves, reminders), the Guard's limits spec for refund limits and deposits, `validateSettings` for 22 mutations, and the task runner's four queue cases and /readyz's store reason. NOT yet vectored: the language checks and templates (`language`, `meta-templates`), `record-decisions`, `ondc`, the understanding router, the in-memory stand-ins (`adapters`), and the report's pure parts; they stay on the checklist in section 6.
+Still open (not in the contract, still on the TypeScript unit tests until written): the assistant's other cards (a day's list, money, close a day, move a booking, a limit by card, the morning line), the second to fifth step-breaker cases (resuming after the pause), the cancel-confirmation buttons ("Talk to the owner", "Cancel booking" two-step), voice notes from the owner and the page's recording, the report's WhatsApp message.
+
+**Unit vectors (class b):** `go/scripts/gen_bookings_vectors.ts` writes `go/internal/bookings/testdata/` (`--check`, and a `words-fresh` entry), ten files: `parser-vectors` (every phrase of `test/parser.test.ts` and the crash-test sentences), `limits-vectors` (price, hours by half hour over a week, no double booking with units and resources, the refund limit, STOP, booking-state moves, reminders), `guard-spec-vectors` (the limits spec for 7 refund-limit and deposit variants), `settings-vectors` (22 cases), `templates-vectors` (every message of every template id in four languages with the outgoing check, every Meta template body and its parameters, the interactive labels, lists and buttons, a tapped id's intent, the Meta submissions), `coerce-vectors` (what a model's answer becomes after the checks, `rulesAreSure`, the shop's system prompt and answer schema), `ondc-vectors` (two shops, every state at every stage), `scenarios-vectors` (the agent on 14 scripted conversations in four languages with the in-memory stand-ins: the words sent and the record lines; this also stands for `adapters`, `record-decisions` and `language`), `report-vectors` (the busy month of the report tests made into a report: the data for three sources, the owner's lines, the page, the WhatsApp message and the monthly certificate in four languages, and the template submissions), and `runner-vectors` (the task runner's cases: a failing step tried again then failed, order, a try started when the process died, a step that fails after its work saves nothing, and /readyz's store reason).
+
+NOT vectored (the checklist in section 6 still lists them): the report's go-live certificate and its signature checks (`report-go-live`, `-certificates`' go-live part, `-sign`, `-cli`: they need a signing key and the hand check), the decision model's shared router (the AI core's), and the in-memory stand-ins' fault planning (`adapters`: the happy-path answers are in `scenarios-vectors`).
 
 ## 9. TypeScript behaviour this suite found worth knowing (nothing was changed)
 
