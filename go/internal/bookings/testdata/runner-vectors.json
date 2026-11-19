@@ -83,6 +83,28 @@
   }
  },
  {
+  "name": "a task whose only try was started when the process died is failed, not run again: it cannot loop across restarts",
+  "input": {
+   "events": [
+    "m1",
+    "m2"
+   ],
+   "retryDelaysMs": [],
+   "steps": {},
+   "restartRunning": true
+  },
+  "output": {
+   "tries": [
+    "message:m2"
+   ],
+   "counts": {
+    "pending": 0,
+    "done": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
   "name": "a task that always fails with no retries is failed after one try",
   "input": {
    "events": [
@@ -103,6 +125,24 @@
     "done": 0,
     "failed": 1
    }
+  }
+ },
+ {
+  "name": "a step that fails after its work saves nothing: no state, no record line, the task is failed",
+  "input": {
+   "retryDelaysMs": [
+    1
+   ]
+  },
+  "output": {
+   "tries": 2,
+   "counts": {
+    "pending": 0,
+    "done": 0,
+    "failed": 1
+   },
+   "snapshot": null,
+   "record": 0
   }
  },
  {
