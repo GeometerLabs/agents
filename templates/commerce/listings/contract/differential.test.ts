@@ -5,7 +5,7 @@
 // recorded before its runtime was deleted (decision 61, wave 1b), so the Go shop is now held to them.
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { PAGE, draftAnswer, makeShop, startFakeModel } from "./harness.ts";
+import { draftAnswer, makeShop, PAGE, SKIP, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 import { goldenFor } from "./golden.ts";
 
@@ -61,7 +61,7 @@ const DRAFTS: [string, string, string, string[]?][] = [
 // the shop's model on a 5-minute pause, ai-state.ts), which would change what comes after it in a shared shop; models.contract.test.ts covers the talk. ("put it on my page: 5 kg
 // rice, 60 rupees per kg" and "put it on my page: rice" once looked different only because that pause was in force; in fresh shops they are compared below.)
 
-describe("the shop answers as the TypeScript runtime did (the golden answers)", () => {
+describe("the shop answers as the TypeScript runtime did (the golden answers)", { skip: SKIP }, () => {
   test("the owner's form, the place, the public read and the signed feed's items", async () => {
     const seen = await golden("the owner's form, the place, the public read and the feed", async () => {
       const s = await makeShop(); shops.push(s); await s.start();

@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
 import type { SoftPasskey } from "../../../../modules/channels/test/soft-authenticator.ts";
 import { REMOVAL_WAIT_MS, SETUP_MS, newRecoveryCode, recoveryHash, setupHash } from "../../../../modules/channels/owner-grants.ts";
-import { OWNER_BASE, PAGE, makeShop, tinyJpeg } from "./harness.ts";
+import { makeShop, OWNER_BASE, PAGE, SKIP, tinyJpeg } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 import { goldenFor } from "./golden.ts";
 import { enablePush, startFakeGuard } from "../../../../modules/test/contract/push-harness.ts";
@@ -30,7 +30,7 @@ const op = async (s: Shop, id: string, body: Record<string, unknown>): Promise<v
 };
 const feed = async (s: Shop) => (await s.call("/internal/channel/shop-feed", { body: { page: PAGE, name: "Glow Pets", languages: ["en"] } })).body;
 
-describe("restarts on one shop folder", () => {
+describe("restarts on one shop folder", { skip: SKIP }, () => {
   test("it writes; restarted, reads and writes; restarted again, reads", async () => {
     const s = await makeShop(); shops.push(s);
     await s.start();
@@ -70,7 +70,7 @@ describe("restarts on one shop folder", () => {
   });
 });
 
-describe("the shop makes the files the TypeScript runtime made", () => {
+describe("the shop makes the files the TypeScript runtime made", { skip: SKIP }, () => {
   test("agent.db, owner-access.sqlite and push.sqlite have the TypeScript's tables, indexes, triggers, SQL text and schema version (the golden answers)", async () => {
     const dump = (dir: string, file: string): string => {
       const db = new DatabaseSync(join(dir, file), { readOnly: true });
@@ -122,7 +122,7 @@ const accessSchema = (s: Shop): string => {
   try { return JSON.stringify(db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name").all()); } finally { db.close(); }
 };
 
-describe("owner control on one folder, across restarts", () => {
+describe("owner control on one folder, across restarts", { skip: SKIP }, () => {
   test("locked, asked and codes made; restarted, it reads it all, cancels and removes a phone; restarted again, it reads that back", async () => {
     const s = await makeShop({ clock: true, owner: "+919800000001" }); shops.push(s);
     const card = newRecoveryCode();

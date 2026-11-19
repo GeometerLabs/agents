@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { canonicalJson } from "../../../../modules/record/record.ts";
 import { keyedDigest } from "../../../../modules/record/fingerprint.ts";
-import { PAGE, draftAnswer, makeShop, startFakeModel } from "./harness.ts";
+import { draftAnswer, makeShop, PAGE, SKIP, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 import { goldenFor } from "./golden.ts";
 
@@ -77,7 +77,7 @@ function savedRecord(s: Shop): { action: string; outcome: string; entry: any }[]
 }
 const recordKey = (s: Shop): Buffer => Buffer.from(readFileSync(join(s.root, "secrets", "record_key"), "utf8").trim(), "hex");
 
-describe("the Stock page needs the owner", () => {
+describe("the Stock page needs the owner", { skip: SKIP }, () => {
   test("no link, a wrong link or no channel token is refused; an empty shop has nothing to count", async () => {
     const s = await boot();
     assert.equal((await s.call(PATH)).status, 403);
@@ -92,7 +92,7 @@ describe("the Stock page needs the owner", () => {
   });
 });
 
-describe("what the owner may count", () => {
+describe("what the owner may count", { skip: SKIP }, () => {
   test("live listings are candidates, in creation order; counting one takes it off the list; a sold or removed one is not offered", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS);
@@ -130,7 +130,7 @@ describe("what the owner may count", () => {
   });
 });
 
-describe("the five ops, and what the public sees of the count", () => {
+describe("the five ops, and what the public sees of the count", { skip: SKIP }, () => {
   test("start, sold, correct, low, stop: each shows in the next read, and a counted listing shows its count on the public page", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS); await withSwitch(s);
@@ -206,7 +206,7 @@ describe("the five ops, and what the public sees of the count", () => {
 });
 
 // `bad_id` cannot be reached through the page: the shape check answers 400 for an item id that does not look like one, and the page never sends the `aliases` that are its other cause.
-describe("the rules refuse at the page (422 with a why) and the shape is checked first (400)", () => {
+describe("the rules refuse at the page (422 with a why) and the shape is checked first (400)", { skip: SKIP }, () => {
   test("bad_count, bad_low and bad_text (a count, a low mark, a name or unit too long in UTF-16 units)", async () => {
     const s = await boot();
     for (const count of [-1, 1.5, 1_000_001]) await refused(s, "x-1", { op: "start", id: L1, count }, "bad_count");
@@ -279,7 +279,7 @@ describe("the rules refuse at the page (422 with a why) and the shape is checked
   });
 });
 
-describe("a request id counts once, and a low mark speaks once per crossing", () => {
+describe("a request id counts once, and a low mark speaks once per crossing", { skip: SKIP }, () => {
   test("the same request id again changes nothing (it is a retry); a new id is a new act", async () => {
     const s = await boot();
     await stock(s, "s-1", { op: "start", id: L1, count: 10 });
@@ -342,7 +342,7 @@ describe("a request id counts once, and a low mark speaks once per crossing", ()
   });
 });
 
-describe("the record keeps a line for every op", () => {
+describe("the record keeps a line for every op", { skip: SKIP }, () => {
   test("a `stock` line per op with the item, kind, change and who; a refused step is a blocked line", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS);
@@ -380,7 +380,7 @@ describe("the record keeps a line for every op", () => {
   });
 });
 
-describe("Confirm on a listing that sold itself at 0", () => {
+describe("Confirm on a listing that sold itself at 0", { skip: SKIP }, () => {
   test("it sets the count to the quantity the owner first said, or 1, and says so in the record before the listing's own line", async () => {
     const s = await boot();
     await listingOp(s, "r-1", { ...KITTENS, qty: 3 });
@@ -416,7 +416,7 @@ describe("Confirm on a listing that sold itself at 0", () => {
   });
 });
 
-describe("the count survives", () => {
+describe("the count survives", { skip: SKIP }, () => {
   test("a restart of the same runtime", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS); await withSwitch(s);

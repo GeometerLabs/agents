@@ -3,12 +3,11 @@
 // PROCESS on a free port, and gives the tests an HTTP caller. Nothing of the runtime is imported except the pure signing and owner-link helpers used to MAKE files and CHECK
 // signatures: the runtime itself is only ever reached over HTTP.
 //
-// Which implementation runs is chosen by the environment:
-//   LISTINGS_IMPL=ts   (default)  node templates/commerce/listings/server/main.ts --client <folder>
-//   LISTINGS_IMPL=go              the built binary named by LISTINGS_GO_BIN (default <repo>/go/bin/listings) with the same arguments
-// Both read the same folder, the same token files (INTERNAL_TOKEN_FILE, CHANNEL_TOKEN_FILE, RECORD_KEY_FILE) and the same runtime.json, so one folder serves both.
+// The shop is the Go runtime: the built binary named by LISTINGS_GO_BIN (default <repo>/go/bin/listings), `--client <folder>`, with the token files (INTERNAL_TOKEN_FILE,
+// CHANNEL_TOKEN_FILE, RECORD_KEY_FILE) in its environment. Until 19 Nov 2026 LISTINGS_IMPL=ts ran the TypeScript runtime (templates/commerce/listings/server/main.ts) on the same folder;
+// it was deleted (decision 61, wave 1b) after its answers were recorded (golden.ts, golden/). Without the binary every test skips and says why (`SKIP`).
 // Every process is started and stopped through children.ts, which stops it at the end of each test and fails the run if one is still alive when the run ends.
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -27,10 +26,15 @@ import { makeTestClockFile } from "../../../../modules/test/contract/test-clock-
 const here = dirname(fileURLToPath(import.meta.url));
 /** The repository root, found from this file's own address. */
 export const REPO = join(here, "..", "..", "..", "..");
-export const IMPL = (process.env.LISTINGS_IMPL ?? "ts") as "ts" | "go";
+/** The runtime under test (golden.ts writes it into a recording). */
+export const IMPL = "go";
+/** The Go binary the shops are started from. */
+export const GO_BIN = process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings");
+/** Every test's skip: the reason when there is no binary to start (build it: cd go && go build -o bin/listings ./cmd/listings), else false. */
+export const SKIP: string | false = existsSync(GO_BIN) ? false : `there is no Go binary at ${GO_BIN} (cd go && go build -o bin/listings ./cmd/listings)`;
 export const PAGE = "https://pages.example/glow-pets";
 export const OWNER_BASE = "https://pages.example/owner";
-/** The pathway version the TS runtime pins a folder to (package.json), so a folder written here starts on both implementations. */
+/** The pathway version a folder is pinned to (templates/commerce/listings/package.json, which the deployer reads too). */
 export const VERSION = (JSON.parse(readFileSync(join(REPO, "templates", "commerce", "listings", "package.json"), "utf8")) as { version: string }).version;
 
 // The golden replay's clock (golden.ts): while a golden test runs, every shop made is put on the TEST clock with this offset, so it lives at the instant the answer was recorded, and
@@ -78,8 +82,8 @@ export interface Shop {
   call(path: string, o?: { method?: string; token?: string | null; owner?: string; session?: string; body?: unknown; raw?: Uint8Array; type?: string; headers?: Record<string, string> }): Promise<{ status: number; body: any; headers: Headers; bytes: Uint8Array }>;
   /** Stop the process (SIGTERM, then SIGKILL after 4 s) and wait for it to be gone. */
   stop(): Promise<void>;
-  /** Start it (or again) on the same folder and port. `impl` overrides LISTINGS_IMPL, for the cross-restart test that runs the two in turn on one folder. */
-  start(impl?: "ts" | "go"): Promise<void>;
+  /** Start it (or again) on the same folder and port. */
+  start(): Promise<void>;
   /** Wait until nothing is pending in the shop's queue (steps are asynchronous). */
   settle(): Promise<any>;
   /** What the process printed (stdout and stderr), for a failure message. */
@@ -152,10 +156,6 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   let running: RuntimeProcess | undefined;
   const printed = { text: "" }; // what the process printed, kept after it stops
   const url = `http://127.0.0.1:${port}`;
-  const command = (impl: "ts" | "go"): { cmd: string; args: string[] } => {
-    if (impl === "go") return { cmd: process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings"), args: ["--client", client] };
-    return { cmd: process.execPath, args: [join(REPO, "templates", "commerce", "listings", "server", "main.ts"), "--client", client] };
-  };
 
   const shop: Shop = {
     root, client, dataDir, internal, channel, owner, setup, port,
@@ -163,15 +163,14 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
       const channelRoute = path.startsWith("/internal/channel/");
       return callRuntime(url, path, { ...c, token: c.token === undefined ? (channelRoute ? channel : internal) : c.token });
     },
-    async start(impl = IMPL) {
+    async start() {
       // a start while the last process still runs would lose the only handle to it: it is stopped first
       await running?.stop(); running = undefined;
-      const { cmd, args } = command(impl);
       // the test clock only when the test asks for it; otherwise the two variables are taken out, so a shell that has them set cannot change an ordinary test
       const env: Record<string, string | undefined> = { ...process.env, INTERNAL_TOKEN_FILE: join(secrets, "internal_token"), CHANNEL_TOKEN_FILE: join(secrets, "channel_token"), RECORD_KEY_FILE: join(secrets, "record_key") };
       delete env[TEST_SWITCH]; delete env[TEST_CLOCK_FILE];
       if (clock) { env[TEST_SWITCH] = "1"; env[TEST_CLOCK_FILE] = clock.file; }
-      running = await startRuntimeProcess(cmd, args, env, url, `the ${impl} listings shop in ${root}`, printed);
+      running = await startRuntimeProcess(GO_BIN, ["--client", client], env, url, `the listings shop in ${root}`, printed);
     },
     async stop() {
       await running?.stop();

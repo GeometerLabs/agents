@@ -2,8 +2,9 @@
 // `/shared/shops` (the deployer reads `shops`, `paused` and `pausedDetail` from it), shops found and let go by looking at the folders. Every scenario starts the process as a
 // SEPARATE process on a folder layout the deployer writes (shared-harness.ts) and talks to it ONLY over HTTP.
 //
-// Both implementations run the SAME scenarios in one run: the TypeScript shared process (modules/runtime/shared.ts through templates/commerce/listings/server/shared-main.ts, with a
-// pool of worker threads) and the Go one (go/cmd/listings-shared, the binary named by LISTINGS_SHARED_GO_BIN, default go/bin/listings-shared). SHARED_IMPL=ts or go runs one only.
+// The process is the Go one (go/cmd/listings-shared, the binary named by LISTINGS_SHARED_GO_BIN, default go/bin/listings-shared). Until 19 Nov 2026 the same scenarios also ran on
+// the TypeScript shared process (templates/commerce/listings/server/shared-main.ts); each scenario asserts on the one process it starts, so nothing was compared between the two and
+// nothing needed recording when the TypeScript one was deleted (decision 61, wave 1b).
 // Assertions are on status codes and machine fields, never on English sentences.
 //
 // NOT here (no black-box way to make a shop misbehave in the shipped binary, which has no fault hooks): the strikes, quarantine, pause and the spinning shop. Those are tested with
@@ -17,9 +18,8 @@ import { join } from "node:path";
 import { verifyDocument } from "../../../../modules/signing/index.ts";
 import { PAGE } from "./harness.ts";
 import { dataFile, haveGo, makeRoot, startHost, writeShop } from "./shared-harness.ts";
-import type { Host, Impl, Root, ShopFolder } from "./shared-harness.ts";
+import type { Host, Root, ShopFolder } from "./shared-harness.ts";
 
-const impls = (process.env.SHARED_IMPL ? [process.env.SHARED_IMPL] : ["ts", "go"]) as Impl[];
 const roots: Root[] = [];
 const hosts: Host[] = [];
 after(async () => { for (const h of hosts) await h.stop(); for (const r of roots) rmSync(r.dir, { recursive: true, force: true }); });
@@ -31,23 +31,23 @@ async function until(what: string, f: () => Promise<boolean> | boolean, ms = 15_
   throw new Error(`timed out waiting until ${what}`);
 }
 
-async function boot(impl: Impl, names: string[], prepare?: (root: Root, shops: Record<string, ShopFolder>) => void, expect = names.length) {
+async function boot(names: string[], prepare?: (root: Root, shops: Record<string, ShopFolder>) => void, expect = names.length) {
   const root = makeRoot();
   roots.push(root);
   const shops: Record<string, ShopFolder> = {};
   for (const n of names) shops[n] = writeShop(root, n);
   prepare?.(root, shops);
-  const host = await startHost(impl, root, { shops, expect });
+  const host = await startHost(root, { shops, expect });
   hosts.push(host);
   const settle = async (shop: string) => { await until(`${shop}'s queue is empty`, async () => { const s = await host.call(shop, "/status"); return s.status === 200 && s.body.tasks.pending === 0; }); };
   return { root, shops, host, settle };
 }
 
-for (const impl of impls) {
-  const skip = impl === "go" && !haveGo() ? "go/bin/listings-shared is not built (cd go && go build -o bin/listings-shared ./cmd/listings-shared)" : false;
-  describe(`shared process: ${impl}`, { skip }, () => {
+{
+  const skip = !haveGo() ? "go/bin/listings-shared is not built (cd go && go build -o bin/listings-shared ./cmd/listings-shared)" : false;
+  describe("shared process", { skip }, () => {
     test("two shops in one folder layout: routing by name, and the shapes of /healthz, /readyz and /shared/shops", async () => {
-      const t = await boot(impl, ["glow-pets", "sree-cycles"]);
+      const t = await boot(["glow-pets", "sree-cycles"]);
       for (const p of ["/healthz", "/readyz"]) {
         const r = await t.host.get(p);
         assert.equal(r.status, 200);
@@ -70,7 +70,7 @@ for (const impl of impls) {
     });
 
     test("each shop has its own tokens: another shop's token is refused by the shop itself", async () => {
-      const t = await boot(impl, ["glow-pets", "sree-cycles"]);
+      const t = await boot(["glow-pets", "sree-cycles"]);
       const a = t.shops["glow-pets"]; const b = t.shops["sree-cycles"];
       assert.equal((await t.host.call("glow-pets", "/internal/channel/listings", { token: b.channel })).status, 401);
       assert.equal((await t.host.call("glow-pets", "/internal/channel/listings", { token: a.channel })).status, 200);
@@ -82,7 +82,7 @@ for (const impl of impls) {
     });
 
     test("a shop with a missing token file is skipped, the others run on, and it starts when the file appears", async () => {
-      const t = await boot(impl, ["glow-pets", "no-token", "sree-cycles"], (root) => unlinkSync(join(root.secrets, "no-token", "internal_token")), 2);
+      const t = await boot(["glow-pets", "no-token", "sree-cycles"], (root) => unlinkSync(join(root.secrets, "no-token", "internal_token")), 2);
       assert.deepEqual((await t.host.get("/shared/shops")).body.shops, ["glow-pets", "sree-cycles"]);
       assert.equal((await t.host.call("no-token", "/readyz")).status, 404);
       assert.equal((await t.host.call("glow-pets", "/readyz")).status, 200);
@@ -94,7 +94,7 @@ for (const impl of impls) {
     });
 
     test("a shop added after the start is picked up by the scan, and the others are not disturbed", async () => {
-      const t = await boot(impl, ["glow-pets"]);
+      const t = await boot(["glow-pets"]);
       const added = writeShop(t.root, "new-shop");
       t.shops["new-shop"] = added;
       await until("new-shop is held", async () => (await t.host.get("/shared/shops")).body.shops.includes("new-shop"));
@@ -105,7 +105,7 @@ for (const impl of impls) {
     });
 
     test("the owner's link and the shop's feed are read through /shop/<name>/internal/channel/...", async () => {
-      const t = await boot(impl, ["glow-pets", "sree-cycles"]);
+      const t = await boot(["glow-pets", "sree-cycles"]);
       const a = t.shops["glow-pets"];
       const publish = async (id: string, op: Record<string, unknown>) => {
         const r = await t.host.call("glow-pets", "/internal/channel/owner-listing", { owner: a.owner, body: { id, op } });
@@ -129,7 +129,7 @@ for (const impl of impls) {
     });
 
     test("a shop let go closes its store BEFORE /shared/shops stops naming it, and keeps its file", async () => {
-      const t = await boot(impl, ["glow-pets", "sree-cycles"]);
+      const t = await boot(["glow-pets", "sree-cycles"]);
       const b = t.shops["sree-cycles"];
       const r = await t.host.call("sree-cycles", "/internal/channel/owner-listing", { owner: b.owner, body: { id: "r-1", op: { op: "publish_form", category: "pets", title: "Two kittens", priceInr: 8000, photos: [] } } });
       assert.equal(r.status, 200);
@@ -166,7 +166,7 @@ describe("shared process: a quarantined shop in a process of its own (Go)", { sk
     const fingerprint = createHash("sha256").update(["settings.json", "runtime.json", "pathway.lock"].map((f) => readFileSync(join(client, f), "utf8")).join("\u0000")).digest("hex").slice(0, 16);
     mkdirSync(join(root.dir, "state"), { recursive: true });
     writeFileSync(join(root.dir, "state", "shared-strikes.json"), JSON.stringify({ "glow-pets": { fingerprint, quarantined: true } }));
-    const host = await startHost("go", root, { shops, expect: 2 });
+    const host = await startHost(root, { shops, expect: 2 });
     hosts.push(host);
     const kids = () => { try { return execFileSync("pgrep", ["-P", String(host.pid)]).toString().trim().split("\n").filter(Boolean); } catch { return []; } };
     const gone = (pid: string) => until("the child is gone", () => { try { execFileSync("kill", ["-0", pid], { stdio: "ignore" }); return false; } catch { return true; } });

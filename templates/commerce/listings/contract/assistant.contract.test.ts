@@ -12,7 +12,7 @@ import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { draftAnswer, makeShop, startFakeModel, tinyJpeg } from "./harness.ts";
+import { draftAnswer, makeShop, SKIP, startFakeModel, tinyJpeg } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 import { goldenFor } from "./golden.ts";
 
@@ -65,7 +65,7 @@ function editCards(s: Shop, edit: (card: any) => void): void {
 /** Draft the kittens and return the one card. */
 async function draft(s: Shop, id = "m-1", text = KITTENS): Promise<any> { await say(s, id, text); const c = await cards(s); assert.equal(c.length, 1, JSON.stringify(c)); return c[0]; }
 
-describe("the owner's page: who may read it, and what it shows a shop with nothing yet", () => {
+describe("the owner's page: who may read it, and what it shows a shop with nothing yet", { skip: SKIP }, () => {
   test("it needs the owner's link: no link, a wrong link and the channel token alone are refused", async () => {
     const s = await boot();
     assert.equal((await s.call("/internal/channel/owner")).status, 403);
@@ -89,7 +89,7 @@ describe("the owner's page: who may read it, and what it shows a shop with nothi
   });
 });
 
-describe("a drafted listing makes ONE card, and the owner's tap on it publishes the listing", () => {
+describe("a drafted listing makes ONE card, and the owner's tap on it publishes the listing", { skip: SKIP }, () => {
   test("the draft: a card with its id, digest and question, the owner's line in the talk, a waiting face, and the record's lines", async () => {
     const { s } = await withModel();
     const c = await draft(s);
@@ -227,7 +227,7 @@ describe("a drafted listing makes ONE card, and the owner's tap on it publishes 
   });
 });
 
-describe("owner_action: the shape is checked before the owner is, and what a listings-only shop has no use for is ignored", () => {
+describe("owner_action: the shape is checked before the owner is, and what a listings-only shop has no use for is ignored", { skip: SKIP }, () => {
   const post = (s: Shop, e: Record<string, unknown>, owner = true) => s.call("/internal/channel/events", { ...(owner ? { owner: s.owner } : {}), body: { events: [{ kind: "owner_action", id: "x-1", ...e }] } });
   const ok = { action: "card_yes", case: "c-1", digest: "a".repeat(32) };
   test("400 for a bad shape (even with no owner), 403 for a good shape with no owner, 200 with the owner", async () => {
@@ -249,7 +249,7 @@ describe("owner_action: the shape is checked before the owner is, and what a lis
   });
 });
 
-describe("the clock's beat: a card past its time closes, and a tap on it is answered", () => {
+describe("the clock's beat: a card past its time closes, and a tap on it is answered", { skip: SKIP }, () => {
   test("the tap on a card that ran out: nothing is published, the card closes as expired, the owner is told", async () => {
     const { s } = await withModel();
     const c = await draft(s);
@@ -392,7 +392,7 @@ const COMMANDS: Record<string, string[]> = {
   kn: ["ಸಹಾಯ", "ಹಿಂದಿನಂತೆ", "ನನಗೆ ಏನು ಬಾಕಿ", "ಮಿತಿ", "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್", "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್", "ಬೇರೆ ಆಪರೇಟರ್", "ಬೇರೆ ಆಪರೇಟರ್", "ಇಂದು ಎಷ್ಟು ಬಂತು", "ನಾಳೆ ಎಷ್ಟು ಬಂತು", "b-14 ರದ್ದು", "ರೀಫಂಡ್ b-3", "ನಮಸ್ಕಾರ"],
 };
 
-describe("the owner's commands are not listings, and each is answered", () => {
+describe("the owner's commands are not listings, and each is answered", { skip: SKIP }, () => {
   test("a command that says 'for sale' or 'on my page' is a command: nothing is drafted, the model is never asked", async () => {
     const { s, fake } = await withModel();
     await say(s, "c-1", "for sale: undo");
@@ -455,7 +455,7 @@ describe("the owner's commands are not listings, and each is answered", () => {
   });
 });
 
-describe("fixed scripts: what the owner reads is the TypeScript's (the golden answers), line for line, in each language", () => {
+describe("fixed scripts: what the owner reads is the TypeScript's (the golden answers), line for line, in each language", { skip: SKIP }, () => {
   for (const lang of ["en", "hi", "ml", "kn"] as const) {
     test(`the owner's commands in ${lang}`, async () => {
       const seen = await golden(`commands in ${lang}`, async () => {
@@ -578,7 +578,7 @@ describe("fixed scripts: what the owner reads is the TypeScript's (the golden an
   });
 });
 
-describe("the shop stopped and started on one folder: a card made before is answered after, with the same digest", () => {
+describe("the shop stopped and started on one folder: a card made before is answered after, with the same digest", { skip: SKIP }, () => {
   test("a card made before a restart is answered after it", async () => {
     const { s } = await withModel({}, () => draftAnswer("Kittens <b> & \"co\" \\ 🐱", "Playful kittens <i> & more."));
     const c = await draft(s);
