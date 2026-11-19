@@ -1,0 +1,2187 @@
+{
+ "parts": [
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 0,
+   "parts": {
+    "year": 1970,
+    "month": 1,
+    "day": 1,
+    "hour": 5,
+    "minute": 30,
+    "weekday": 4
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1000000000000,
+   "parts": {
+    "year": 2001,
+    "month": 9,
+    "day": 9,
+    "hour": 7,
+    "minute": 16,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1731978000000,
+   "parts": {
+    "year": 2024,
+    "month": 11,
+    "day": 19,
+    "hour": 6,
+    "minute": 30,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1735669799999,
+   "parts": {
+    "year": 2024,
+    "month": 12,
+    "day": 31,
+    "hour": 23,
+    "minute": 59,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1735669800000,
+   "parts": {
+    "year": 2025,
+    "month": 1,
+    "day": 1,
+    "hour": 0,
+    "minute": 0,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1743445199999,
+   "parts": {
+    "year": 2025,
+    "month": 3,
+    "day": 31,
+    "hour": 23,
+    "minute": 49,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1743445200000,
+   "parts": {
+    "year": 2025,
+    "month": 3,
+    "day": 31,
+    "hour": 23,
+    "minute": 50,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1762000000000,
+   "parts": {
+    "year": 2025,
+    "month": 11,
+    "day": 1,
+    "hour": 17,
+    "minute": 56,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1772303399999,
+   "parts": {
+    "year": 2026,
+    "month": 2,
+    "day": 28,
+    "hour": 23,
+    "minute": 59,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1772303400000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 1,
+    "hour": 0,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1784000000000,
+   "parts": {
+    "year": 2026,
+    "month": 7,
+    "day": 14,
+    "hour": 9,
+    "minute": 3,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1772953140000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 12,
+    "minute": 29,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1772953200000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 12,
+    "minute": 30,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1793512740000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 11,
+    "minute": 29,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1793512800000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 11,
+    "minute": 30,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1775318340000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 21,
+    "minute": 29,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1775318400000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 21,
+    "minute": 30,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1835461740000,
+   "parts": {
+    "year": 2028,
+    "month": 2,
+    "day": 29,
+    "hour": 23,
+    "minute": 59,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": -3456000000,
+   "parts": {
+    "year": 1969,
+    "month": 11,
+    "day": 22,
+    "hour": 5,
+    "minute": 30,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 0,
+   "parts": {
+    "year": 1969,
+    "month": 12,
+    "day": 31,
+    "hour": 19,
+    "minute": 0,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1000000000000,
+   "parts": {
+    "year": 2001,
+    "month": 9,
+    "day": 8,
+    "hour": 21,
+    "minute": 46,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1731978000000,
+   "parts": {
+    "year": 2024,
+    "month": 11,
+    "day": 18,
+    "hour": 20,
+    "minute": 0,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1735669799999,
+   "parts": {
+    "year": 2024,
+    "month": 12,
+    "day": 31,
+    "hour": 13,
+    "minute": 29,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1735669800000,
+   "parts": {
+    "year": 2024,
+    "month": 12,
+    "day": 31,
+    "hour": 13,
+    "minute": 30,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1743445199999,
+   "parts": {
+    "year": 2025,
+    "month": 3,
+    "day": 31,
+    "hour": 14,
+    "minute": 19,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1743445200000,
+   "parts": {
+    "year": 2025,
+    "month": 3,
+    "day": 31,
+    "hour": 14,
+    "minute": 20,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1762000000000,
+   "parts": {
+    "year": 2025,
+    "month": 11,
+    "day": 1,
+    "hour": 8,
+    "minute": 26,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1772303399999,
+   "parts": {
+    "year": 2026,
+    "month": 2,
+    "day": 28,
+    "hour": 13,
+    "minute": 29,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1772303400000,
+   "parts": {
+    "year": 2026,
+    "month": 2,
+    "day": 28,
+    "hour": 13,
+    "minute": 30,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1784000000000,
+   "parts": {
+    "year": 2026,
+    "month": 7,
+    "day": 13,
+    "hour": 23,
+    "minute": 33,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1772953140000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 1,
+    "minute": 59,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1772953200000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 3,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1793512740000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 1,
+    "minute": 59,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1793512800000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 1,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1775318340000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 11,
+    "minute": 59,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1775318400000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 12,
+    "minute": 0,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1835461740000,
+   "parts": {
+    "year": 2028,
+    "month": 2,
+    "day": 29,
+    "hour": 13,
+    "minute": 29,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": -3456000000,
+   "parts": {
+    "year": 1969,
+    "month": 11,
+    "day": 21,
+    "hour": 19,
+    "minute": 0,
+    "weekday": 5
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 0,
+   "parts": {
+    "year": 1970,
+    "month": 1,
+    "day": 1,
+    "hour": 10,
+    "minute": 0,
+    "weekday": 4
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1000000000000,
+   "parts": {
+    "year": 2001,
+    "month": 9,
+    "day": 9,
+    "hour": 11,
+    "minute": 46,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1731978000000,
+   "parts": {
+    "year": 2024,
+    "month": 11,
+    "day": 19,
+    "hour": 12,
+    "minute": 0,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1735669799999,
+   "parts": {
+    "year": 2025,
+    "month": 1,
+    "day": 1,
+    "hour": 5,
+    "minute": 29,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1735669800000,
+   "parts": {
+    "year": 2025,
+    "month": 1,
+    "day": 1,
+    "hour": 5,
+    "minute": 30,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1743445199999,
+   "parts": {
+    "year": 2025,
+    "month": 4,
+    "day": 1,
+    "hour": 5,
+    "minute": 19,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1743445200000,
+   "parts": {
+    "year": 2025,
+    "month": 4,
+    "day": 1,
+    "hour": 5,
+    "minute": 20,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1762000000000,
+   "parts": {
+    "year": 2025,
+    "month": 11,
+    "day": 1,
+    "hour": 23,
+    "minute": 26,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1772303399999,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 1,
+    "hour": 5,
+    "minute": 29,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1772303400000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 1,
+    "hour": 5,
+    "minute": 30,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1784000000000,
+   "parts": {
+    "year": 2026,
+    "month": 7,
+    "day": 14,
+    "hour": 13,
+    "minute": 33,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1772953140000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 17,
+    "minute": 59,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1772953200000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 18,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1793512740000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 16,
+    "minute": 59,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1793512800000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 17,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1775318340000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 5,
+    "hour": 2,
+    "minute": 59,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1775318400000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 5,
+    "hour": 2,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": 1835461740000,
+   "parts": {
+    "year": 2028,
+    "month": 3,
+    "day": 1,
+    "hour": 5,
+    "minute": 29,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "Australia/Sydney",
+   "ms": -3456000000,
+   "parts": {
+    "year": 1969,
+    "month": 11,
+    "day": 22,
+    "hour": 10,
+    "minute": 0,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 0,
+   "parts": {
+    "year": 1970,
+    "month": 1,
+    "day": 1,
+    "hour": 5,
+    "minute": 30,
+    "weekday": 4
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1000000000000,
+   "parts": {
+    "year": 2001,
+    "month": 9,
+    "day": 9,
+    "hour": 7,
+    "minute": 31,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1731978000000,
+   "parts": {
+    "year": 2024,
+    "month": 11,
+    "day": 19,
+    "hour": 6,
+    "minute": 45,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1735669799999,
+   "parts": {
+    "year": 2025,
+    "month": 1,
+    "day": 1,
+    "hour": 0,
+    "minute": 14,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1735669800000,
+   "parts": {
+    "year": 2025,
+    "month": 1,
+    "day": 1,
+    "hour": 0,
+    "minute": 15,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1743445199999,
+   "parts": {
+    "year": 2025,
+    "month": 4,
+    "day": 1,
+    "hour": 0,
+    "minute": 4,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1743445200000,
+   "parts": {
+    "year": 2025,
+    "month": 4,
+    "day": 1,
+    "hour": 0,
+    "minute": 5,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1762000000000,
+   "parts": {
+    "year": 2025,
+    "month": 11,
+    "day": 1,
+    "hour": 18,
+    "minute": 11,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1772303399999,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 1,
+    "hour": 0,
+    "minute": 14,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1772303400000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 1,
+    "hour": 0,
+    "minute": 15,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1784000000000,
+   "parts": {
+    "year": 2026,
+    "month": 7,
+    "day": 14,
+    "hour": 9,
+    "minute": 18,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1772953140000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 12,
+    "minute": 44,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1772953200000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 12,
+    "minute": 45,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1793512740000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 11,
+    "minute": 44,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1793512800000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 11,
+    "minute": 45,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1775318340000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 21,
+    "minute": 44,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1775318400000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 21,
+    "minute": 45,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": 1835461740000,
+   "parts": {
+    "year": 2028,
+    "month": 3,
+    "day": 1,
+    "hour": 0,
+    "minute": 14,
+    "weekday": 3
+   }
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "ms": -3456000000,
+   "parts": {
+    "year": 1969,
+    "month": 11,
+    "day": 22,
+    "hour": 5,
+    "minute": 30,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 0,
+   "parts": {
+    "year": 1970,
+    "month": 1,
+    "day": 1,
+    "hour": 0,
+    "minute": 0,
+    "weekday": 4
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1000000000000,
+   "parts": {
+    "year": 2001,
+    "month": 9,
+    "day": 9,
+    "hour": 1,
+    "minute": 46,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1731978000000,
+   "parts": {
+    "year": 2024,
+    "month": 11,
+    "day": 19,
+    "hour": 1,
+    "minute": 0,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1735669799999,
+   "parts": {
+    "year": 2024,
+    "month": 12,
+    "day": 31,
+    "hour": 18,
+    "minute": 29,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1735669800000,
+   "parts": {
+    "year": 2024,
+    "month": 12,
+    "day": 31,
+    "hour": 18,
+    "minute": 30,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1743445199999,
+   "parts": {
+    "year": 2025,
+    "month": 3,
+    "day": 31,
+    "hour": 18,
+    "minute": 19,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1743445200000,
+   "parts": {
+    "year": 2025,
+    "month": 3,
+    "day": 31,
+    "hour": 18,
+    "minute": 20,
+    "weekday": 1
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1762000000000,
+   "parts": {
+    "year": 2025,
+    "month": 11,
+    "day": 1,
+    "hour": 12,
+    "minute": 26,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1772303399999,
+   "parts": {
+    "year": 2026,
+    "month": 2,
+    "day": 28,
+    "hour": 18,
+    "minute": 29,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1772303400000,
+   "parts": {
+    "year": 2026,
+    "month": 2,
+    "day": 28,
+    "hour": 18,
+    "minute": 30,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1784000000000,
+   "parts": {
+    "year": 2026,
+    "month": 7,
+    "day": 14,
+    "hour": 3,
+    "minute": 33,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1772953140000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 6,
+    "minute": 59,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1772953200000,
+   "parts": {
+    "year": 2026,
+    "month": 3,
+    "day": 8,
+    "hour": 7,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1793512740000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 5,
+    "minute": 59,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1793512800000,
+   "parts": {
+    "year": 2026,
+    "month": 11,
+    "day": 1,
+    "hour": 6,
+    "minute": 0,
+    "weekday": 0
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1775318340000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 15,
+    "minute": 59,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1775318400000,
+   "parts": {
+    "year": 2026,
+    "month": 4,
+    "day": 4,
+    "hour": 16,
+    "minute": 0,
+    "weekday": 6
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1835461740000,
+   "parts": {
+    "year": 2028,
+    "month": 2,
+    "day": 29,
+    "hour": 18,
+    "minute": 29,
+    "weekday": 2
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": -3456000000,
+   "parts": {
+    "year": 1969,
+    "month": 11,
+    "day": 22,
+    "hour": 0,
+    "minute": 0,
+    "weekday": 6
+   }
+  }
+ ],
+ "zoned": [
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 2,
+   "mi": 30,
+   "ms": 1772917200000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 1,
+   "mi": 59,
+   "ms": 1772915340000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 1,
+   "mi": 30,
+   "ms": 1793476800000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 2,
+   "mi": 0,
+   "ms": 1793478600000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 4,
+   "d": 5,
+   "h": 2,
+   "mi": 30,
+   "ms": 1775336400000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 10,
+   "d": 4,
+   "h": 2,
+   "mi": 30,
+   "ms": 1791061200000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 1,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1767205800000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "h": 23,
+   "mi": 59,
+   "ms": 1798741740000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2026,
+   "m": 3,
+   "d": 31,
+   "h": 0,
+   "mi": 0,
+   "ms": 1774895400000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2027,
+   "m": 4,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1806517800000
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "y": 2028,
+   "m": 2,
+   "d": 29,
+   "h": 12,
+   "mi": 0,
+   "ms": 1835418600000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 2,
+   "mi": 30,
+   "ms": 1772951400000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 1,
+   "mi": 59,
+   "ms": 1772953140000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 1,
+   "mi": 30,
+   "ms": 1793511000000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 2,
+   "mi": 0,
+   "ms": 1793516400000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 4,
+   "d": 5,
+   "h": 2,
+   "mi": 30,
+   "ms": 1775370600000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 10,
+   "d": 4,
+   "h": 2,
+   "mi": 30,
+   "ms": 1791095400000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 1,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1767243600000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "h": 23,
+   "mi": 59,
+   "ms": 1798779540000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2026,
+   "m": 3,
+   "d": 31,
+   "h": 0,
+   "mi": 0,
+   "ms": 1774929600000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2027,
+   "m": 4,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1806552000000
+  },
+  {
+   "tz": "America/New_York",
+   "y": 2028,
+   "m": 2,
+   "d": 29,
+   "h": 12,
+   "mi": 0,
+   "ms": 1835456400000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 2,
+   "mi": 30,
+   "ms": 1772897400000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 1,
+   "mi": 59,
+   "ms": 1772895540000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 1,
+   "mi": 30,
+   "ms": 1793457000000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 2,
+   "mi": 0,
+   "ms": 1793458800000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 4,
+   "d": 5,
+   "h": 2,
+   "mi": 30,
+   "ms": 1775320200000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 10,
+   "d": 4,
+   "h": 2,
+   "mi": 30,
+   "ms": 1791045000000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 1,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1767186000000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "h": 23,
+   "mi": 59,
+   "ms": 1798721940000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2026,
+   "m": 3,
+   "d": 31,
+   "h": 0,
+   "mi": 0,
+   "ms": 1774875600000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2027,
+   "m": 4,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1806498000000
+  },
+  {
+   "tz": "Australia/Sydney",
+   "y": 2028,
+   "m": 2,
+   "d": 29,
+   "h": 12,
+   "mi": 0,
+   "ms": 1835398800000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 2,
+   "mi": 30,
+   "ms": 1772916300000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 1,
+   "mi": 59,
+   "ms": 1772914440000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 1,
+   "mi": 30,
+   "ms": 1793475900000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 2,
+   "mi": 0,
+   "ms": 1793477700000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 4,
+   "d": 5,
+   "h": 2,
+   "mi": 30,
+   "ms": 1775335500000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 10,
+   "d": 4,
+   "h": 2,
+   "mi": 30,
+   "ms": 1791060300000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 1,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1767204900000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "h": 23,
+   "mi": 59,
+   "ms": 1798740840000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2026,
+   "m": 3,
+   "d": 31,
+   "h": 0,
+   "mi": 0,
+   "ms": 1774894500000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2027,
+   "m": 4,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1806516900000
+  },
+  {
+   "tz": "Asia/Kathmandu",
+   "y": 2028,
+   "m": 2,
+   "d": 29,
+   "h": 12,
+   "mi": 0,
+   "ms": 1835417700000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 2,
+   "mi": 30,
+   "ms": 1772937000000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "h": 1,
+   "mi": 59,
+   "ms": 1772935140000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 1,
+   "mi": 30,
+   "ms": 1793496600000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 11,
+   "d": 1,
+   "h": 2,
+   "mi": 0,
+   "ms": 1793498400000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 4,
+   "d": 5,
+   "h": 2,
+   "mi": 30,
+   "ms": 1775356200000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 10,
+   "d": 4,
+   "h": 2,
+   "mi": 30,
+   "ms": 1791081000000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 1,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1767225600000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "h": 23,
+   "mi": 59,
+   "ms": 1798761540000
+  },
+  {
+   "tz": "UTC",
+   "y": 2026,
+   "m": 3,
+   "d": 31,
+   "h": 0,
+   "mi": 0,
+   "ms": 1774915200000
+  },
+  {
+   "tz": "UTC",
+   "y": 2027,
+   "m": 4,
+   "d": 1,
+   "h": 0,
+   "mi": 0,
+   "ms": 1806537600000
+  },
+  {
+   "tz": "UTC",
+   "y": 2028,
+   "m": 2,
+   "d": 29,
+   "h": 12,
+   "mi": 0,
+   "ms": 1835438400000
+  }
+ ],
+ "addDays": [
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "n": -40,
+   "to": {
+    "year": 2026,
+    "month": 1,
+    "day": 27
+   }
+  },
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "n": -1,
+   "to": {
+    "year": 2026,
+    "month": 3,
+    "day": 7
+   }
+  },
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "n": 0,
+   "to": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   }
+  },
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "n": 1,
+   "to": {
+    "year": 2026,
+    "month": 3,
+    "day": 9
+   }
+  },
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "n": 2,
+   "to": {
+    "year": 2026,
+    "month": 3,
+    "day": 10
+   }
+  },
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "n": 31,
+   "to": {
+    "year": 2026,
+    "month": 4,
+    "day": 8
+   }
+  },
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "n": 366,
+   "to": {
+    "year": 2027,
+    "month": 3,
+    "day": 9
+   }
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "n": -40,
+   "to": {
+    "year": 2026,
+    "month": 11,
+    "day": 21
+   }
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "n": -1,
+   "to": {
+    "year": 2026,
+    "month": 12,
+    "day": 30
+   }
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "n": 0,
+   "to": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   }
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "n": 1,
+   "to": {
+    "year": 2027,
+    "month": 1,
+    "day": 1
+   }
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "n": 2,
+   "to": {
+    "year": 2027,
+    "month": 1,
+    "day": 2
+   }
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "n": 31,
+   "to": {
+    "year": 2027,
+    "month": 1,
+    "day": 31
+   }
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "n": 366,
+   "to": {
+    "year": 2028,
+    "month": 1,
+    "day": 1
+   }
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "n": -40,
+   "to": {
+    "year": 2028,
+    "month": 1,
+    "day": 19
+   }
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "n": -1,
+   "to": {
+    "year": 2028,
+    "month": 2,
+    "day": 27
+   }
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "n": 0,
+   "to": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   }
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "n": 1,
+   "to": {
+    "year": 2028,
+    "month": 2,
+    "day": 29
+   }
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "n": 2,
+   "to": {
+    "year": 2028,
+    "month": 3,
+    "day": 1
+   }
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "n": 31,
+   "to": {
+    "year": 2028,
+    "month": 3,
+    "day": 30
+   }
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "n": 366,
+   "to": {
+    "year": 2029,
+    "month": 2,
+    "day": 28
+   }
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "n": -40,
+   "to": {
+    "year": 2025,
+    "month": 12,
+    "day": 22
+   }
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "n": -1,
+   "to": {
+    "year": 2026,
+    "month": 1,
+    "day": 30
+   }
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "n": 0,
+   "to": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   }
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "n": 1,
+   "to": {
+    "year": 2026,
+    "month": 2,
+    "day": 1
+   }
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "n": 2,
+   "to": {
+    "year": 2026,
+    "month": 2,
+    "day": 2
+   }
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "n": 31,
+   "to": {
+    "year": 2026,
+    "month": 3,
+    "day": 3
+   }
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "n": 366,
+   "to": {
+    "year": 2027,
+    "month": 2,
+    "day": 1
+   }
+  }
+ ],
+ "between": [
+  {
+   "a": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "b": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "n": 0
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "b": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "n": 298
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "b": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "n": 722
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "b": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "n": -36
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "b": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "n": -298
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "b": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "n": 0
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "b": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "n": 424
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "b": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "n": -334
+  },
+  {
+   "a": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "b": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "n": -722
+  },
+  {
+   "a": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "b": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "n": -424
+  },
+  {
+   "a": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "b": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "n": 0
+  },
+  {
+   "a": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "b": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "n": -758
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "b": {
+    "year": 2026,
+    "month": 3,
+    "day": 8
+   },
+   "n": 36
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "b": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   },
+   "n": 334
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "b": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   },
+   "n": 758
+  },
+  {
+   "a": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "b": {
+    "year": 2026,
+    "month": 1,
+    "day": 31
+   },
+   "n": 0
+  }
+ ],
+ "weekday": [
+  {
+   "y": 2026,
+   "m": 3,
+   "d": 8,
+   "w": 0
+  },
+  {
+   "y": 2026,
+   "m": 12,
+   "d": 31,
+   "w": 4
+  },
+  {
+   "y": 2028,
+   "m": 2,
+   "d": 28,
+   "w": 1
+  },
+  {
+   "y": 2026,
+   "m": 1,
+   "d": 31,
+   "w": 6
+  }
+ ]
+}
