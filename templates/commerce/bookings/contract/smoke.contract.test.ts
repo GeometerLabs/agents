@@ -1,7 +1,7 @@
 // The smoke of the Bookings contract: a shop starts from the folder the deployer writes and answers /healthz, /readyz and /status; every kind of route refuses a missing or wrong
 // credential; the routes a Bookings shop must NOT have (listings, stock, parents) are 404; the owner's routes refuse a stranger; a recovery request is checked and saved; a start from
-// a folder the runtime refuses says so in a sentence and does not listen; and the shop's data survives a stop and a start. It also proves the fake Guards are what the contract's
-// money tests rely on: a Guards-mode shop starts against them and reads nothing from them until a customer asks. Ports to Go: nothing here may be TypeScript-only.
+// a folder the runtime refuses says so in a sentence and does not listen; and the shop's data survives a stop and a start. It also checks that a Guards-mode shop starts against the fake Guards and
+// reads nothing from them until a customer asks, and that a live shop refuses the test clock. Ports to Go: nothing here may be TypeScript-only.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, writeFileSync } from "node:fs";
@@ -143,6 +143,14 @@ describe("the shop keeps its data and refuses a folder it cannot run", () => {
     await assert.rejects(s.start(), /99\.0\.0|version|pinned/iu);
     writeFileSync(join(s.client, "pathway.lock"), "listings@0.1.0\n");
     await assert.rejects(s.start(), /listings|bookings|pathway/iu);
+  });
+});
+
+describe("the test clock is for a fakes shop only", () => {
+  contract("a shop in live mode (what the panel writes for every real shop) refuses to start on a test clock, and says so", async () => {
+    const s = await makeShop({ mode: "guards", forceClock: true }); shops.push(s);
+    await assert.rejects(s.start(), /fakes|test clock/iu);
+    await assert.rejects(fetch(`http://127.0.0.1:${s.port}/healthz`), "and it is not listening");
   });
 });
 

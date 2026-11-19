@@ -40,8 +40,8 @@ Everything is `modules/runtime/http.ts` (the same server for every template); Bo
 | 11 | `GET /internal/channel/chat?handle=<64 hex>[&after=N][&cid=<id>]` | channel | a chat guest's thread (empty for an unseen guest) and where send `cid` stands |
 | 12 | `POST /internal/channel/chat-id` | channel | a guest's identity (keep this chat, a new phone, delete my chat) (`modules/channels/chat-identity-http.ts`) |
 | 13 | `POST /internal/channel/chat-voice` | channel | a guest's recording (only with a `speech` block) |
-| 14 | `GET /internal/channel/offer?service=&from=YYYY-MM-DD&days=N` | channel | the shop (name, address, hours, `takesNewWork`, the character), its services and prices, and the free starts per day (`days` at most 14); `calendarUnread: true` when the calendar cannot be read |
-| 15 | `GET /internal/channel/request?handle=<hash>` | channel | one request by its handle's hash (state, payment instructions, the booking as the customer's page shows it) |
+| 14 | `GET /internal/channel/offer?service=&from=YYYY-MM-DD&days=N` | channel | the shop (name, address, hours, `paused`, deposit, cancellation, payment kind, the character), its services and prices, and with `service` the free starts per day (`days` 1 to 31 else 400, at most 14 are answered; a start must be later than now plus the hold's minutes); `calendarUnread: true` and no days when the calendar cannot be read |
+| 15 | `GET /internal/channel/request?handle=<hash>` | channel | one request by its handle's hash: `status` is `held` (with `pay` and `holdExpiresAt`), `booked`, `checking` (a payment is being looked at), `not_held` (the time was taken or the shop would not hold it), `expired`, `cancelled`, `done`, or `refused` with a `reason` for a request that never became a booking; also `ref` ("b-1"), the service, `startMs`, `depositInr`, `canCancel`, `canSayPaid`, `claimed`, the page's `messages`, and `refund` when one is asked or owed. 404 for a hash nobody holds, 400 for a non-hash |
 | 16 | `GET /internal/channel/owner` | owner | what waits for the owner (items, cards, the assistant's app view `app`, `listen`) |
 | 17 | `GET /internal/channel/documents?handle=<hash>&lang=xx` | channel | the receipts, bills and refund notes of one page's booking, newest first |
 | 18 | `GET /internal/channel/accounting?period=2026-11\|26-27` | owner SESSION only | the accountant's files (journal CSV, documents CSV, README) |
@@ -83,14 +83,19 @@ The deployer's side is `bundle/generate/shop.ts` (`planShop`: runtime.json) and 
 
 **Written (the data folder `dataDir`):**
 
-* `agent.db` (SQLite, WAL, `synchronous=FULL`, `busy_timeout=5000`, `PRAGMA user_version`; `modules/runtime/store.ts`): tables `tasks(seq, key, state, attempts, event...)` + index
-  `tasks_by_state`, `state` (the agent's whole store as JSON, saved whole with each step), `record` (append-only, no UPDATE or DELETE: `seq, action, outcome, booking, entry...` + index
-  `record_by_booking`), `window` (the WhatsApp 24-hour window by number), `state_shape`/`state_rows` (the store's shape), `listing_photos` (unused by Bookings), `shop_key`
-  (the shop's own Ed25519 key: `loadShopKey`). A newer schema is refused, another format is refused in plain words. **The Go runtime must write the same file** (rule: both
-  runtimes read each other's data).
-* the shop's report pages under `report.pagesDir` (the monthly report, its certificate and signed summary; UPI QR pictures under random names) and, for the owner's file,
-  `owner-file` copies; chat-identity and push stores.
-* the monthly report is written as files, the record as `agent.db` lines (read back through `shop.record()` in the harness).
+* `agent.db` (SQLite, WAL, `synchronous=FULL`, `busy_timeout=5000`, `PRAGMA user_version = 5`; `modules/runtime/store.ts` MIGRATIONS, pinned by `record-licence.contract.test.ts`):
+  `tasks(seq, id, kind, payload, received_at, state pending|done|failed, attempts, last_error, waiting_on, retry_at)` + `tasks_by_state`; `record(seq, time, conversation, booking,
+  action, outcome, entry)` + `record_by_booking`, with two triggers that abort every UPDATE and DELETE with "the record is append-only"; `window(phone, last_inbound_at)`;
+  `state_shape(id=1, shape, lists, version, saved_at)` and `state_rows(list, pos, value)` (the store's whole state in pieces; the old one-row `state` table is gone);
+  `listing_photos` (unused by Bookings); `shop_key(id=1, private_key, created_at)` (the shop's own Ed25519 key, made once). A newer schema is refused, another format is refused in
+  plain words. **The Go runtime must write the same file** (a shop moves between the two runtimes and loses nothing).
+* A customer's number is in the record in ONE place: the `conversation` column and member of each line; no other member of a line holds it, and no customer words or name are in a line
+  at all (`inputsDigest` is a keyed digest of what was said when RECORD_KEY_FILE is given, and a message id is kept as a fingerprint). Pinned by `record-licence.contract.test.ts`.
+* `restored.json` beside the database (the deployer's `restore` writes it): at the next start every id counter moves on by 100000 (the next booking is `b-100002` after `b-1`), one
+  `restored` line goes into the record, and the note is renamed `restored.json.done-<time>` (modules/runtime/restored.ts).
+* the monthly report, in `report.pagesDir/<random token>/`: `report-<month>.json`, `report-<month>-<lang>.html`, `certificate-<month>.json`, `certificate-<month>-<lang>.html`,
+  `certificate-<month>-<lang>.txt`, `owner-<month>-<lang>.txt` (six files for one month in one language; made once, on the first morning after the month in the shop's zone, and only
+  for a month with something in it). UPI QR pictures go in the same folder under random names. For the owner's file, `owner-file` copies; chat-identity and push stores.
 
 ## 3. The Guards a Bookings shop calls
 
@@ -103,6 +108,8 @@ stand-ins must see NO Authorization when none is). Timeout `services.timeoutMs`.
   `GET /v1/settlements/recon/combined` (the day's rows, once a day, for the books). Guard's answers read: a link, a refund, **202 held** with an approval id (a refund above the
   threshold), 409 `already_done`, 409 other, `denied_by_approver`, `outcome_unknown`, 429/limit refusals, 5xx (`test/fixtures/guard-responses.json`, `razorpay-*.json`).
   A UPI shop (`payment.module` = `upi`) has NO payments Guard: the owner marks money by hand.
+* How Guard's "down" is read: a 503 `guard_unavailable` or `busy` (or a refused connection) makes the shop WAIT for it, up to 15 minutes, looking again after 2, 4, 8, 16 and 30 seconds;
+  a 503 whose reason is "kill switch engaged" is a person's stop and is NOT waited for; `provider_unreachable` ends at once (modules/core/faults.ts `waitsForGuard`).
 * **Calendar** (Google Calendar v3; `src/adapters/live/google-calendar.ts`): `POST /calendar/v3/calendars/{id}/events?sendUpdates=none` (tentative hold with `extendedProperties.private`
   `bookingRef`, `holdExpiresAt`), `GET .../events?privateExtendedProperty=bookingRef=..&singleEvents=true&timeMin=&timeMax=&pageToken=`, `GET/PATCH/DELETE .../events/{id}`,
   `POST /calendar/v3/freeBusy`. A shop on its own booking list (`calendar.module: own`) has none.
@@ -145,7 +152,7 @@ between the two runtimes and lose nothing.
 * **a** contract: seen over HTTP or files; covered by this suite (file named, status in section 8).
 * **b** unit: a pure function (or a module); becomes a Go unit test with vectors made from the TypeScript (the vector file is made BEFORE the TypeScript is deleted).
 * **c** demo: used only by the public demo build (`templates/commerce/bookings/demo`); stays TypeScript.
-* **d** other component: not the shop runtime (the inbox, the approvals relay, the stand-ins, the scripts, the sell guides, the report command line). It is listed so nothing is
+* **d** other component (the fourth class, added because 20 of the 85 files test something that is not the shop's runtime): not the shop runtime (the inbox, the approvals relay, the stand-ins, the scripts, the sell guides, the report command line). It is listed so nothing is
   dropped; it stays TypeScript with its component, and is deleted only if that component is.
 
 Contract files: **S**moke, **M**oney, **L**imits and approvals, **F**low, **O**wner, **C**hat, **R**ecovery, **D** record, report and licence (`*.contract.test.ts`).
@@ -242,7 +249,8 @@ Contract files: **S**moke, **M**oney, **L**imits and approvals, **F**low, **O**w
 
 ## 6b. The named checks: money, limit, approval, licence, recovery, owner control
 
-Each ends in **a** (a contract test, file named) or **b** (a unit with vectors); none is dropped. Names are the test titles (shortened) of the unit tests.
+Each ends in **a** (a contract test, file named) or **b** (a unit with vectors); none is dropped. Names are the test titles (shortened) of the unit tests. **W** after a check = written in
+this suite and passing on TypeScript; **N** = assigned and NOT written yet (section 8 lists each with what it needs). A check marked **b** has no vectors yet either.
 
 **Money.** refund within the limit goes straight through Guard and the customer is told, nobody asked (refund-held) a **L**; the deposit is the settings' deposit, a link for any other amount
 is refused (guard-limits) a **M**; one deposit per booking, a second payment is refunded (limits, payment-events) a **M** + b; `payment.captured` with no link id still finds its booking, one
@@ -252,10 +260,14 @@ after a booking paid the old one: Guard refuses the larger refund (refund-held) 
 a **L**; amounts are never changed by the model or a page (money-clarity, channels: a channel booking carries no price) a **M**; UPI: the owner marks money, a mark with another amount, a replayed
 code (upi) a **M**; the money lines of a booking's documents (money-clarity, accounting-pages) a **D**; the books (accounting-figures) b.
 
+*Status.* W: the deposit-only link, the paid webhook checked at the provider, a repeat, a forged or unknown event, a second payment refunded, a refund straight through within the limit, 409 already_done and another 409, a refund answered 504 not sent again, amounts a page or a model cannot change, the UPI mark and the customer's claim, a booking's documents. N: a refund that already exists is looked for before it is sent (only the link's look-first is covered), a provider 5xx (500) on a refund, "outcome unknown after the owner approved", "already_done after the owner approved", "the deposit lowered after a booking paid the old one", the UPI replayed code and the refund the owner owes, the books' figures (b).
+
 **Limits.** price at or above the list, within hours (open days, edges, closing time, the slot grid), no double booking with units, confirm only when recorded (the calendar AND the deposit read
 back), one deposit per booking, refund limit, no message after STOP, message matches the record, strictest decision wins (limits) b, and over HTTP: hours/slot grid and the last slot a **F**, the
 refund limit a **L**, STOP a **F**; capacity (capacity) b + a **F**; "limits, tightened by a tap" (limits-runtime) a **L**; the chat's per-guest, per-shop and new-guest rates and the day's caps
 (chat) a **C**; the model's day and month caps (ai-mode) a **C**.
+
+*Status.* W over HTTP: the hours, the grid and the last start, no double booking and the buffer (one unit), the last slot for two customers, STOP, the refund limit's boundary, the chat's per-minute and new-guest rates, "limits, tightened by a tap". N: units and resources (capacity), the model's day and month caps, the pure rules themselves (b vectors: price at or above list, confirm only when recorded, one deposit per booking, message matches record, strictest decision wins).
 
 **Approvals.** a refund above the limit is held, the customer told, the agent does not ask the owner (refund-held) a **L**; held, approved, sent again with the same bytes, confirmed once, asked
 exactly once a **L**; the same answer twice, an approval for something else, and time send nothing more a **L**; no blind retry of a held refund on a timer a **L**; a forged approve event makes the
@@ -263,20 +275,28 @@ agent ask Guard once and nothing else a **L**; deny is final a **L**; Guard's re
 stays the agent's question (owner asked once), above the limit the relay's a **L**; the `approval_decision` event's check and refund-context endpoint (approvals-runtime) a **L**; the relay itself
 (approvals-relay, -card, -group, -guard-binary) d; the owner's cards bound to a digest, one use (assistant) a **O**.
 
+*Status.* W: hold, approve and resend of the same bytes, the same answer twice and an approval for another case, no retry on a timer, a forged approve, deny is final, the late cancellation asked of the owner on their page by digest (approve, refuse, a stale digest, a stranger), the `approval_decision` event's check, the refund-context endpoint. N: the approval running out and "no longer honoured", "Guard's record of a no wins over the relay's word", "a hold with no approval id goes to the builder", the WhatsApp card and ask (the relay, class d), a late cancellation within the limit asked on WhatsApp.
+
 **Licence.** wind-down: a booking request is answered "paused" with no hold, no link, nothing kept; a deposit paid from an earlier link still books and a cancellation still refunds; a request
 waiting for "yes" is not held; back to normal takes new bookings; the final stop closes open deposit links once and sends nothing more; the runtime reads `licence.json` by its modified time
 and a missing or bad file never restricts; Guard refusing for the licence while the file says "in order"; the final stop's refusal of a send is recorded once as blocked; the report of a month with
 a wind-down (licence) a **D**; the words in four languages b.
+
+*Status.* W: the wind-down (page paused, request refused with no hold, WhatsApp words), a link sent before it still books and a cancellation still refunds, back to normal, the final stop closes the open link once, the owner's notice once and again for a new `paid_through`, a torn file keeps the last good reading, Guard's own 402. N: a request waiting for "yes" at the wind-down, the final stop's refused send recorded once as blocked, the month's report across a wind-down, the words in four languages (b).
 
 **Recovery.** retry_booking, ask_owner_again, recheck_payment, recheck_refund, a mismatched action refused (recovery) a **R**; the recovery endpoint's token and shape a **S**/**R**; a task saved
 but never run runs at the next start, a step cut off runs again and finds its own calendar event and link, a running task found dead is marked failed, one at a time in order, a failing step is tried
 again then failed, a step that fails after the work saves nothing (runtime) a **R**; the Guards down (guard-outage) a **R**; a shop restored from a snapshot (restored) a **R**; two customers for the last
 slot (last-slot) a **F**; the case number kept (unknown-outcome) a **R**.
 
+*Status.* W: a payments Guard down, a Guard stopped on purpose (not waited for), the calendar down while a payment arrives, the WhatsApp Guard down, the process killed while a link is made, killed with a request saved and not run, a lost reply looked for before it is repeated, `recheck_payment`, `retry_booking`, a mismatched or unknown action refused, a restore moves the ids on and writes one line, two customers for the last time. N: `ask_owner_again`'s notice, `recheck_refund`, a Guard down past the 15-minute bound with the customer told, a refund that went out after the snapshot not sent twice, a task found running when the process died marked failed, steps one at a time in order, a failing step tried again then failed, a step that fails after its work saves nothing (these four are the task runner: **b** for the Go runner, as `aroundStep` is in-process only), the case number kept after a thrown-away step.
+
 **Owner control.** the owner's number is read at every step (owner-number-live) a **O**; sign-in link used once, the session opens the reads and goes into the record (owner-signin) a **O**; the
 full owner-control rules (the lock, QR and card, the 48-hour and one-day waits, Geometer's reset, a restore keeps the lock, the alerts) are the SHARED runtime's (`modules/channels`), proved for the
 listings shop by `templates/commerce/listings/contract/owner-control.contract.test.ts`; Bookings mounts the same code, and **O** repeats the lock, the request wait and a sale's number change on a
 Bookings shop; owner notices outside the window go by template (owner-notices) a **O**; the owner's own words are read (assistant) a **O**; a shop with no WhatsApp (without-whatsapp) a **O**.
+
+*Status.* W (on a Bookings shop): the lock with the first passkey, the Operator's QR and card after it (back-dated too), a changed number as a 48-hour request and a sale, the accountant's files by session only, the owner told outside the window by template, a shop with no WhatsApp. N here, proved for the shared code by the listings contract: the one-day cool-down, the owner's own codes, removing a phone, the Operator's request to remove every phone, Geometer's reset, a restore keeping the lock, the owner's alerts. N for Bookings: `owner-number-live` (a message from the NEW number is the owner's, the old number's is a customer's), the WhatsApp-link sign-in, the assistant's fixed phrases and own words on WhatsApp.
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -296,6 +316,11 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
   answer from test/fixtures/guard-responses.json>)`, `drop`, `loseReply`, `delay`). Payment webhooks are read as the inbox reads them (`parseRazorpayEvent`).
 * The fake model, the process starter and tracker (`children.ts`: no process outlives a run), the test-clock file, the fake push Guard and the owner-control helpers are shared
   with the listings contract from `modules/test/contract/`.
+* The harness imports these TypeScript files of the template and of the modules, so a deletion wave must keep them: `templates/commerce/bookings/standins/` (the stand-ins),
+  `src/settings.ts` (`parseSettings`), `src/guard-limits.ts` (`gatewayLimitsSpec`), `crash-test/says.ts` (`SAYS`, the chat tests' sentences), `test/fixtures/` (the providers'
+  samples and Guard's captured answers), `modules/standins/guard.ts` (the stub Guard), `modules/payments/providers/razorpay/{standin,webhook}.ts` and `modules/payments/guard-model.ts`,
+  `modules/channels/{handle,owner-link,owner-grants,owner-access}.ts` and `modules/channels/test/soft-authenticator.ts` (making files and handles, soft passkeys),
+  `modules/runtime/test-clock.ts` (the two variables' names), `modules/core/time.ts`, `modules/language/format.ts` and `modules/test/contract/`.
 * **Every test goes through `contract()`** (harness.ts): with `BOOKINGS_IMPL=go` and no binary every test is skipped with "no Go Bookings runtime yet (wave 2)".
 
 | File | Group | Shop | What it holds the runtime to |
@@ -316,9 +341,8 @@ RESULT_PLACEHOLDER
 
 **Written and passing on TypeScript (the class "a" files they stand for):** accounting-pages (the documents route, the accountant's files route), approvals-runtime, channels, chat, guard-outage,
 last-slot (two customers for one time), licence (wind-down, the paid-before link, final stop, the owner's notice, Guard's 402, a torn file), limits-runtime, model-llm (the OpenAI
-wire request and the untrusted answer), owner-number-live (the 48-hour rule), page-link, payment-events, recovery, refund-held, restored (the id gap), server, store (the file's format
-and the record's trigger), ticker (hold expiry, completion and a reminder on the beat), unknown-outcome (the 504), upi (the owner's mark; the customer's claim), own-calendar, record-decisions
-(no customer words in the record).
+wire request and the untrusted answer), page-link, payment-events, recovery, refund-held, restored (the id gap), server, store (the file's format
+and the record's trigger), ticker (hold expiry, completion and a reminder on the beat), unknown-outcome (the 504), upi (the owner's mark; the customer's claim), own-calendar. (record-decisions is class b; the record's privacy is checked in `record-licence.contract.test.ts`.)
 
 **Class "a" still to WRITE before the TypeScript unit tests are deleted (a later wave's first task; nothing here is lost until then, because the TypeScript tests still exist):**
 
@@ -334,13 +358,14 @@ and the record's trigger), ticker (hold expiry, completion and a reminder on the
 | refund-held (L): expiry of the approval, "no longer honoured", "a hold with no approval id goes to the builder", "the deposit lowered after a booking paid" | need a clock for the Guard's 24-hour approval (the stub Guard runs on the real clock) | the stub Guard on the test clock, or a settings spec with a short approval time |
 | unknown-outcome, restored (R): kept through a restart, a refund that went out after the snapshot is not sent twice | multi-step restart cases | stop/start with `failNext("outcome_unknown")` |
 | recovery (R): `recheck_refund`, `ask_owner_again`'s notice | | owner notices on the WhatsApp stand-in |
+| owner-number-live (O): after the owner's number changes with no restart, the next step treats a message from the new number as the owner's, the old number's as a customer's | needs `inbound(...)` from both numbers and a reply to read | the WhatsApp stand-in |
 | owner-notices (O): every notice of the agent, by template, in each language | only "outside the window is a template" is covered | `s.sent(OWNER_NUMBER)` per scenario |
 | owner-signin (O): the WhatsApp link route (`owner_signin` event, `/internal/channel/owner-signin` GET and POST with `x-owner-signin`) | the passkey route is covered, the link route is not | `channelEvents([{kind:"owner_signin"}])` and the link read from the WhatsApp stand-in |
 | money-clarity, upi (M): the late claim windows (48 hours, 14 days), the refund the owner owes (`refund_owed`, "kept"), a screenshot | UPI marks only | UPI shop on the test clock |
 | report-monthly (D): the owner's WhatsApp message, the certificate and signed summary files, the quiet month, the licence's final stop | only the data file's making, once, is covered | read the WhatsApp stand-in |
 | runtime (R): steps one at a time in order, a failing step tried again then failed, a step that fails after its work saves nothing | the step seam is in-process only (`aroundStep`); no HTTP route makes a step throw | **unit** (the task runner of `modules/runtime/core.ts`: vectors), listed here so it is not dropped |
 | server (S): "readyz turns 503 when the store cannot be read" | needs a store that fails | **unit** for the Go store |
-| web push (route 24), chat identity (route 12), `owner-voice`, `chat-voice`, `owner-file`: | shared with the listings contract (push, owner-file) or need speech | the listings contract proves the shared code; run it against the Bookings shop in the port |
+| web push (route 24), chat identity (route 12), `owner-voice`, `chat-voice`, `owner-file`: | shared with the listings contract (push, owner-file) or need speech | the listings contract covers the shared code; run it against the Bookings shop in the port |
 
 The classes "b" (unit) are NOT started: their vectors (inputs and outputs made from the TypeScript) must be generated before the TypeScript is deleted; that is the port's first step per
 package. The list in section 6 is the checklist.
