@@ -4,7 +4,8 @@ package assistant
 // the assistant answers as a conversation, from the shop's notes and its public listings only, in sentences that each name the sources they rest on. The model's answer is
 // untrusted: ReadTalkAnswer takes it from `any` with its types checked by hand, and CheckOwnerTalk runs the checks the owner's turn has (talk-check.ts, in its order: every source
 // named is in scope; no word saying something was done; every number, percentage and number word is one its sources state, through the outgoing check; no link and no phone
-// number but the shop's own, the length, the owner's language). The checks a CUSTOMER's turn adds (claims, the pets' health words) are not here: this runtime has no customers.
+// number but the shop's own, the length, the owner's language). The checks a CUSTOMER's turn adds (claims, the pets' health words) are in CheckTalk's customer role (a customer's talk,
+// talkcustomer.go, uses the same function: one checker for both, as talk-check.ts has one).
 //
 // The prompt is the TypeScript's own, rendered per language and character by go/scripts/gen_words.ts; only the sources' lines are written here (talk-prompt.ts `sourceLines`).
 
@@ -13,6 +14,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/language"
 )
@@ -29,6 +31,7 @@ const (
 type TalkSource struct {
 	ID, Kind, Text string
 	AmountsInr     []float64
+	MomentsMs      []int64 // moments the source states (free times): the reply may state them formatted the way every other message does
 	Literals       []string
 }
 
@@ -44,6 +47,7 @@ type TalkAnswer struct {
 	NoteKind  string // a note the model proposes (the owner's page makes no proposal: carried only)
 	NoteText  string
 	Limit     string // a declared limit the owner means, by id (never a value)
+	AskOwner  bool   // a customer's turn: the owner should be asked (the template offers its way to the owner and never says the owner will do anything)
 }
 
 var collapse = regexp.MustCompile(`[` + language.JSSpace + `]+`)
@@ -83,6 +87,36 @@ func HistoryText(lines []TalkLine) string {
 // ReadTalkAnswer is talk-types.ts `readTalkAnswer` for the owner's turn: 1 to 8 sentences, each with non-blank text and a list of string ids (null or absent: none), ids made
 // unique in order; a note when its kind and text are strings; a limit when it is a non-empty string. Anything else is nil.
 func ReadTalkAnswer(raw any) *TalkAnswer {
+	out := readSentences(raw)
+	if out == nil {
+		return nil
+	}
+	o := raw.(map[string]any)
+	if n, ok := o["note"].(map[string]any); ok {
+		k, kok := n["kind"].(string)
+		t, tok := n["text"].(string)
+		if kok && tok {
+			out.NoteKind, out.NoteText = k, t
+		}
+	}
+	if l, ok := o["limit"].(string); ok && l != "" {
+		out.Limit = l
+	}
+	return out
+}
+
+// ReadCustomerAnswer is `readTalkAnswer(raw, "customer")`: the same sentences, and `ask_owner` when it is exactly true. A customer's answer has no note and no limit: the customer
+// schema does not ask for them and a reply that carries them has them dropped, so a customer's words can never lead to a proposed note or a limit change.
+func ReadCustomerAnswer(raw any) *TalkAnswer {
+	out := readSentences(raw)
+	if out != nil {
+		out.AskOwner = raw.(map[string]any)["ask_owner"] == true
+	}
+	return out
+}
+
+// readSentences reads the sentences of a model's answer (decoded to `any`: it is untrusted, so every type is checked by hand).
+func readSentences(raw any) *TalkAnswer {
 	o, ok := raw.(map[string]any)
 	if !ok {
 		return nil
@@ -121,16 +155,6 @@ func ReadTalkAnswer(raw any) *TalkAnswer {
 		}
 		out.Sentences = append(out.Sentences, TalkSentence{Text: language.TrimJS(text), Sources: ids})
 	}
-	if n, ok := o["note"].(map[string]any); ok {
-		k, kok := n["kind"].(string)
-		t, tok := n["text"].(string)
-		if kok && tok {
-			out.NoteKind, out.NoteText = k, t
-		}
-	}
-	if l, ok := o["limit"].(string); ok && l != "" {
-		out.Limit = l
-	}
 	return out
 }
 
@@ -151,13 +175,19 @@ func numbersOf(text string) []float64 {
 
 // TalkFacts is what the outgoing check reads for a set of sources (talk-check.ts `factsFor`): their amounts and every number their words state; the shop's literals and theirs.
 func TalkFacts(sources []TalkSource, literals []string) language.Facts {
-	f := language.Facts{Literals: append([]string{}, literals...)}
+	return TalkFactsFor(sources, literals, nil, nil)
+}
+
+// TalkFactsFor is TalkFacts with the shop's own links (the only links a reply may carry) and the zone the free times are read in.
+func TalkFactsFor(sources []TalkSource, literals, links []string, loc *time.Location) language.Facts {
+	f := language.Facts{Literals: append([]string{}, literals...), Links: links, Loc: loc}
 	var numbers []float64
 	for _, s := range sources {
 		numbers = append(numbers, numbersOf(s.Text)...)
 	}
 	for _, s := range sources {
 		f.AmountsInr = append(f.AmountsInr, s.AmountsInr...)
+		f.MomentsMs = append(f.MomentsMs, s.MomentsMs...)
 	}
 	f.AmountsInr = append(f.AmountsInr, numbers...)
 	f.Counts = numbers
@@ -176,10 +206,40 @@ type TalkCheck struct {
 	Why   string
 }
 
-// CheckOwnerTalk is talk-check.ts `checkTalk` for the owner's turn.
+// CheckOwnerTalk is talk-check.ts `checkTalk` for the owner's turn: the owner's own limit on the length, and no link of the shop's own (a listings shop's talk has none).
 func CheckOwnerTalk(a *TalkAnswer, scope []TalkSource, speakerText, speakerLanguage string, literals []string) TalkCheck {
+	return CheckTalk(TalkInput{Role: "owner", Answer: a, Scope: scope, SpeakerText: speakerText, SpeakerLanguage: speakerLanguage, Literals: literals, MaxChars: OwnerChars})
+}
+
+// TalkInput is talk-check.ts CheckInput. `ClaimKinds`, `Banned` and `HealthClaim` are the shared word lists of a customer's check 3 (the promise, speaking-for-the-owner and money-off words,
+// the words the shop's documents never use, the pets' health words), handed in by the caller from the packages that hold them, so this package keeps no copy of any list.
+type TalkInput struct {
+	Role            string // "owner" or "customer"
+	Answer          *TalkAnswer
+	Scope           []TalkSource // every source the prompt listed: a sentence naming an id outside it fails check 1
+	SpeakerText     string       // the speaker's own words (redacted or not: only their script is read), for the language check
+	SpeakerLanguage string
+	Loc             *time.Location
+	Links           []string // the shop's own links
+	Literals        []string // names and numbers a reply may repeat (the shop's name and its own phone number)
+	MaxChars        int
+	ClaimKinds      func(text string) []string
+	Banned          func(text string) bool
+	HealthClaim     func(text string) bool
+}
+
+// CheckTalk is talk-check.ts `checkTalk`: the five checks, in this order, and the first that fails stops the reply (the record keeps which one failed):
+//
+//  1. every source a sentence names exists and is in the speaker's scope;
+//  4. completion words ("booked", "paid", "sent": the shop's own messages, written from the record, say that) are refused whatever they rest on, checked before the numbers;
+//  3. (a customer's turn) claims and commitments need a note for everyone or a setting that says the same kind of thing; the shop's never-used words are refused; and, where the shop lists
+//     animals, a health claim needs a listing that says it;
+//  2. numbers, amounts, dates, times, percentages and number words are only what the sentence's own sources state;
+//  5. no link and no phone number but the shop's own, the length cap, and the speaker's language.
+func CheckTalk(in TalkInput) TalkCheck {
+	a := in.Answer
 	byID := map[string]TalkSource{}
-	for _, s := range scope {
+	for _, s := range in.Scope {
 		byID[s.ID] = s
 	}
 	fail := func(n int, why string) TalkCheck { return TalkCheck{Check: n, Why: why} }
@@ -200,6 +260,52 @@ func CheckOwnerTalk(a *TalkAnswer, scope []TalkSource, speakerText, speakerLangu
 	for _, s := range a.Sentences {
 		if language.P("talk.completion").Test(norm(s.Text)) {
 			return fail(4, "a sentence says that something was done; only the shop's own messages, written from the record, say that")
+		}
+	}
+	if in.Role == "customer" {
+		// 3. claims and commitments: each needs a note for everyone or a setting that says the same kind of thing
+		for _, s := range a.Sentences {
+			t := norm(s.Text)
+			if in.Banned != nil && in.Banned(t) {
+				return fail(3, "a sentence uses a word the shop's documents never use (a safety, guarantee or earnings claim)")
+			}
+			if in.ClaimKinds == nil {
+				continue
+			}
+			for _, kind := range in.ClaimKinds(t) {
+				backed := false
+				for _, id := range s.Sources {
+					if src := byID[id]; src.Kind != "record" && has(in.ClaimKinds(src.Text), kind) {
+						backed = true
+					}
+				}
+				if !backed {
+					return fail(3, fmt.Sprintf("a sentence makes a %s claim that no note for everyone and no setting says", claimName(kind)))
+				}
+			}
+		}
+		// 3b. pets (block S): where the shop lists animals, a reply never says an animal is healthy, vaccinated or of a pure breed unless a listing it names says so
+		if in.HealthClaim != nil {
+			pets := false
+			for _, x := range in.Scope {
+				pets = pets || (strings.HasPrefix(x.ID, "s:l-") && strings.Contains(x.Text, "Category: pets"))
+			}
+			if pets {
+				for _, s := range a.Sentences {
+					if !in.HealthClaim(s.Text) {
+						continue
+					}
+					named := false
+					for _, id := range s.Sources {
+						if src := byID[id]; src.Kind != "record" && in.HealthClaim(src.Text) {
+							named = true
+						}
+					}
+					if !named {
+						return fail(3, "a sentence says an animal is healthy, vaccinated or of a pure breed, which no listing says")
+					}
+				}
+			}
 		}
 	}
 	// 2. numbers, amounts, percentages and number words: only what the sentence's own sources state
@@ -223,34 +329,73 @@ func CheckOwnerTalk(a *TalkAnswer, scope []TalkSource, speakerText, speakerLangu
 				return fail(2, fmt.Sprintf(`a sentence uses the number word "%s", which none of its sources uses`, m.Group(0)))
 			}
 		}
-		if problems := language.CheckText(s.Text, TalkFacts(sources, literals)); len(problems) > 0 {
+		if problems := language.CheckText(s.Text, TalkFactsFor(sources, in.Literals, in.Links, in.Loc)); len(problems) > 0 {
 			return fail(2, strings.Join(problems, " "))
 		}
 	}
-	// 5. no link and no phone number but the shop's own (a listings shop's talk has no links of its own), the length, the language
+	// 5. the shop's own links and number only, the length, and the speaker's language
 	shown := language.Plain(text)
-	for _, l := range literals {
+	for _, l := range in.Literals {
 		if l != "" {
 			shown = strings.ReplaceAll(shown, language.Plain(l), " ")
 		}
 	}
 	for _, m := range language.P("talk.link").All(shown) {
-		return fail(5, fmt.Sprintf(`the reply has the link "%s", which is not one of the shop's own`, m.Group(0)))
+		if !ownLink(in.Links, m.Group(0)) {
+			return fail(5, fmt.Sprintf(`the reply has the link "%s", which is not one of the shop's own`, m.Group(0)))
+		}
 	}
 	for _, m := range language.P("talk.long_digits").All(shown) {
 		if len(digitsOnly(m.Group(0))) >= 7 {
 			return fail(5, "the reply has a phone number that is not the shop's own")
 		}
 	}
-	if n := language.UTF16Len(text); n > OwnerChars {
-		return fail(5, fmt.Sprintf("the reply is %d characters, over the %d the talk allows", n, OwnerChars))
+	if n := language.UTF16Len(text); n > in.MaxChars {
+		return fail(5, fmt.Sprintf("the reply is %d characters, over the %d the talk allows", n, in.MaxChars))
 	}
-	spoke, answered := language.LanguageOfScript(speakerText), language.LanguageOfScript(text)
+	spoke, answered := language.LanguageOfScript(in.SpeakerText), language.LanguageOfScript(text)
 	if (spoke != "en" && answered != spoke) || (spoke == "en" && answered != "en") {
 		return fail(5, "the reply is not in the language the speaker wrote in")
 	}
-	_ = speakerLanguage
-	return TalkCheck{OK: true, Text: text, Facts: TalkFacts(usedSources(a, byID), literals)}
+	return TalkCheck{OK: true, Text: text, Facts: TalkFactsFor(usedSources(a, byID), in.Literals, in.Links, in.Loc)}
+}
+
+func has(xs []string, x string) bool {
+	for _, v := range xs {
+		if v == x {
+			return true
+		}
+	}
+	return false
+}
+
+// claimName is `kind.replace(/_/gu, " ")` for the kinds' names as the claim lists give them.
+func claimName(kind string) string {
+	switch kind {
+	case "Assure":
+		return "assure"
+	case "SpeaksForOwner":
+		return "speaks for owner"
+	case "MoneyOff":
+		return "money off"
+	}
+	return kind
+}
+
+var scheme = regexp.MustCompile(`(?i)^https?://`)
+var trailing = regexp.MustCompile(`[.,;:!?]+$`)
+
+// ownLink is check 5's test of one link in a reply: it is the shop's own when some link of the shop's starts with it (the scheme and the trailing punctuation left off both) or contains it.
+func ownLink(links []string, found string) bool {
+	f := strings.ToLower(found)
+	short := trailing.ReplaceAllString(scheme.ReplaceAllString(f, ""), "")
+	for _, l := range links {
+		ll := scheme.ReplaceAllString(strings.ToLower(l), "")
+		if strings.HasPrefix(ll, short) || strings.Contains(f, ll) {
+			return true
+		}
+	}
+	return false
 }
 
 func digitsOnly(s string) string {

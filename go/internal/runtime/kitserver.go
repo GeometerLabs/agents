@@ -125,6 +125,21 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 		return true, nil
 	case "/internal/channel/events":
 		return true, s.kitChannelEvents(w, r)
+	case "/internal/channel/chat":
+		if ch == nil {
+			return true, nothing
+		}
+		return true, s.chatRead(w, r)
+	case "/internal/channel/chat-voice":
+		if ch == nil {
+			return true, nothing
+		}
+		return true, s.chatVoice(w, r)
+	case "/internal/channel/chat-id":
+		if ch == nil {
+			return true, nothing
+		}
+		return true, s.chatID(w, r)
 	case "/internal/channel/offer":
 		if err := only(r, "GET"); err != nil {
 			return true, err
@@ -269,6 +284,7 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 
 // kitChannelEvents is http.ts /internal/channel/events: 1 to 10 events, checked whole; an owner's kind needs the owner, checked here against the runtime's own files.
 func (s *Server) kitChannelEvents(w http.ResponseWriter, r *http.Request) error {
+	ch := s.rt.o.Kit.Channel()
 	if err := only(r, "POST"); err != nil {
 		return err
 	}
@@ -293,13 +309,8 @@ func (s *Server) kitChannelEvents(w http.ResponseWriter, r *http.Request) error 
 			send(w, 403, errBody(ownerRefused))
 			return nil
 		}
-		if ev["kind"] == "chat_message" {
-			// a parent's link opens nothing on a Bookings shop (no Fees: http.ts with no chat identity). The chat's rates (429) are not ported yet: a guest's send is saved,
-			// and its task ends failed as not ported (Deferred.md)
-			if _, parent := ev["parent"]; parent {
-				send(w, 403, errBody("That link opens nothing now."))
-				return nil
-			}
+		if ev["kind"] == "chat_message" && ch != nil && !s.chatDoor(w, ev) {
+			return nil // a guest's send is counted before anything is saved, so a flood saves no task and costs no step (http.ts)
 		}
 		events = append(events, ev)
 	}
