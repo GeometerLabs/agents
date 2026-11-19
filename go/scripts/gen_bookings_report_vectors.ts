@@ -421,7 +421,7 @@ function goLiveReadings(): unknown {
     { name: "no-pathway", settings: gateway, text: cert(gateway, { ...handCheck, ranOn: policyDigest(gateway) }, KEY, (d) => { delete d.pathway; }) },
     { name: "bad-counts", settings: gateway, text: cert(gateway, { ...handCheck, ranOn: policyDigest(gateway) }, KEY, (d) => { (d.checks as Record<string, unknown>).held = -1; }) },
   ];
-  const missing = join(tmpdir(), "bookings-report-no-such-file.json");
+  const missing = "/nonexistent/go-live-certificate.json"; // a fixed path that is not there: the vectors must not carry a machine's own paths
   return {
     cases: cases.map((c) => ({ name: c.name, settings: asJson(c.settings), text: c.text, reading: readGoLiveCertificate(c.text, c.settings) })),
     paths: { none: readGoLive(undefined, gateway), empty: readGoLive("", gateway), missing: { path: missing, reading: readGoLive(missing, gateway) } },

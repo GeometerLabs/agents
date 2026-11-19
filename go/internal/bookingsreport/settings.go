@@ -5,10 +5,12 @@
 // kept and digested with report.CanonicalJSON, the same bytes as the TypeScript's canonicalJson.
 //
 // IMPORTANT, the caller's duty: the TypeScript digests the settings AS VALIDATED (validateSettings fills defaults: the time zone, `bufferMinutes` 0, `languages`, trims the name, reads
-// each service and the payment block), not as the file was written. validateSettings is NOT ported here (the Bookings runtime's settings loader owns it). So the tree handed in must be
-// the validated settings serialised as JSON (what the TypeScript runtime and the panel write to settings.json); a hand-written file that leaves a default out would give another digest,
-// and a go-live certificate of the same settings would then be read as "different". The generator's vectors hold both: they digest the validated settings and the same settings after a
-// JSON round trip, and fail when they differ (they do not for Glow Salon and the variants used).
+// each service and the payment block), not as the file was written. validateSettings is NOT ported here, and the file on disk is NOT always the validated tree: `geometer deploy`
+// (bundle/geometer.ts) checks the settings file and then ships its text as the owner wrote it, and only the TypeScript runtime validates on load. So the tree handed in must be what
+// validateSettings returns, as JSON; a raw file that leaves a default out or pads the name gives another digest, and a go-live certificate of the same settings (which the CLI makes
+// from the validated settings) would then be read as "different" instead of "own". Until the Bookings runtime has its own validateSettings port (Deferred.md), this is the one
+// known way for Go and TypeScript to disagree about a shop. The generator's vectors hold both digests (`policies.raw`) and fail when the validated settings' digest changes when they go
+// through JSON (it does not, for the settings used).
 //
 // Where Go differs: an undefined value inside the settings is "null" in canonicalJson but absent after a JSON round trip; a validated tree has none.
 package bookingsreport
