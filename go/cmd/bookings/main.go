@@ -97,6 +97,39 @@ func run(folder string) error {
 		return err
 	}
 	kit.Settings, kit.Now = client.Settings.Own.(*bookings.Settings), now
+	// the services (services.ts buildServices): the stand-ins in fakes mode, made once here so they keep what they were told while the process runs; the live clients in live mode
+	var rt *runtime.Runtime
+	ports, err := bookings.BuildPorts(client.Config, kit.Settings, bookings.PortsOptions{Now: now, Window: st, Say: log})
+	if err != nil {
+		return err
+	}
+	// item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push alone for a shop with no WhatsApp: push.ts ownerRoute)
+	ports.PushOwner = func(text string) []string {
+		p := rt.Push()
+		if p == nil || !p.On {
+			return nil
+		}
+		ids, _ := p.Owner(text, "")
+		return ids
+	}
+	ports.OwnerRoute = func(hasWhatsApp bool) string {
+		phones := 0
+		p := rt.Push()
+		if p != nil && p.On {
+			phones = p.OwnerPhones()
+		}
+		switch {
+		case !hasWhatsApp && phones > 0:
+			return "push"
+		case !hasWhatsApp:
+			return "none"
+		case phones == 0:
+			return "whatsapp"
+		}
+		return p.Choice()
+	}
+	kit.Ports = ports
+	kit.Router = runtime.RouterFor[bookings.Intent](&client.Config, bookings.Reading{S: kit.Settings}, log)
 	var acc *access.Access
 	if channelToken != "" {
 		if acc, err = access.Open(filepath.Join(client.Config.DataDir, access.OwnerAccessFile)); err != nil {
@@ -104,7 +137,7 @@ func run(folder string) error {
 		}
 		defer acc.Close()
 	}
-	rt, err := runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: understanding.NewModel(client.Config.Talk, log, "The talk is off", understanding.TalkTimeoutMs, understanding.TalkMaxTokens), RecordKey: key, Log: log, Now: now, Kit: kit})
+	rt, err = runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: understanding.NewModel(client.Config.Talk, log, "The talk is off", understanding.TalkTimeoutMs, understanding.TalkMaxTokens), RecordKey: key, Log: log, Now: now, Kit: kit})
 	if err != nil {
 		return err
 	}

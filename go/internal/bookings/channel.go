@@ -8,6 +8,7 @@ package bookings
 // (the books, go/internal/accounting), and the assistant's app view.
 
 import (
+	"fmt"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -80,8 +81,24 @@ func (k *channelKit) Offer(st runtime.KitState, q runtime.OfferQuery) (any, erro
 	if q.ServiceID == "" || s.ServiceByID(q.ServiceID) == nil {
 		return ordered2(base...), nil
 	}
-	// the free starts read the calendar through its port, which is not wired yet: the TypeScript's answer when its calendar cannot be read
-	return ordered2(append(base, "serviceId", q.ServiceID, "days", []any{}, "calendarUnread", true)...), nil
+	// runtime.ts channel.offer: the agent's own freeStarts over the last saved state (the shop's holds) and the calendar (a read, not watched: nothing here is saved)
+	var from *LocalDate
+	if q.FromDate != "" {
+		var y, m, d int
+		if _, err := fmt.Sscanf(q.FromDate, "%d-%d-%d", &y, &m, &d); err == nil {
+			from = &LocalDate{Year: y, Month: m, Day: d}
+		}
+	}
+	days := q.Days
+	if days == 0 {
+		days = 7
+	}
+	a := k.kit.readAgent(st.(*Store))
+	out, err := a.FreeStarts(q.ServiceID, from, min(days, 14))
+	if err != nil {
+		return ordered2(append(base, "serviceId", q.ServiceID, "days", []any{}, "calendarUnread", true)...), nil
+	}
+	return ordered2(append(base, "serviceId", q.ServiceID, "days", out)...), nil
 }
 
 // publicStatus is channel.ts STATUS: a booking's state as its page says it.
@@ -229,8 +246,8 @@ func (k *channelKit) View(kst runtime.KitState, hash string) any {
 	}
 	o.put("messages", messages)
 	for _, p := range b.Pending {
-		if p.Kind == "refund" {
-			o.put("refund", ordered2("state", "asked", "amountInr", p.AmountInr))
+		if r := OwnerRefundOf(p); r != nil {
+			o.put("refund", ordered2("state", "asked", "amountInr", r.AmountInr))
 			break
 		}
 	}
@@ -271,10 +288,10 @@ func (k *channelKit) Owner(kst runtime.KitState, _ *runtime.Snap, _ []store.Entr
 		}
 		p := b.Pending[0]
 		kv := []any{}
-		switch {
-		case p.Kind == "refund":
-			kv = []any{"kind", "late_refund", "case", b.ID, "digest", digestOf("late_refund", b.ID, p.PaymentID, p.AmountInr*100), "actions", []string{"approve", "deny"}, "amountPaise", p.AmountInr * 100, "customer", customer(b), "channel", channel(b)}
-		case p.Kind == "calendar" && b.DepositInr != nil:
+		switch r := OwnerRefundOf(p); {
+		case r != nil:
+			kv = []any{"kind", "late_refund", "case", b.ID, "digest", digestOf("late_refund", b.ID, r.PaymentID, r.AmountInr*100), "actions", []string{"approve", "deny"}, "amountPaise", r.AmountInr * 100, "customer", customer(b), "channel", channel(b)}
+		case p.PendingKind() == "calendar" && b.DepositInr != nil:
 			var start int64
 			if b.StartMs != nil {
 				start = *b.StartMs
