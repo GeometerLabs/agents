@@ -4,7 +4,7 @@
 // Guards (guards.ts), which can be made down, slow, or to lose a reply. Expected values from test/guard-outage, runtime, recovery, last-slot, unknown-outcome, restored.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, rmSync } from "node:fs";
+import { cpSync, existsSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { contract, makeShop, openStart, sleep } from "./harness.ts";
 import type { Shop } from "./harness.ts";
@@ -41,6 +41,18 @@ describe("a Guard that is down", () => {
     const view = (await s.request(hash)).body;
     assert.equal(view.status, "held");
     assert.equal(view.messages.length, 1, "one answer");
+  });
+
+  contract("a Guard a person stopped on purpose (the kill switch) is not waited for: the step ends at once, the slot is let go, and nothing is kept waiting", async () => {
+    const s = await boot();
+    s.guards!.payments.stopped();
+    const { hash } = await s.book();
+    const st = await s.status();
+    assert.equal(st.tasks.pending, 0);
+    assert.equal(st.waitingForGuard, null);
+    assert.equal(link(s), undefined, "no link was made");
+    assert.equal(s.guards!.of("calendar", "DELETE").length, 1, "the hold is let go");
+    assert.notEqual((await s.request(hash)).body.status, "held");
   });
 
   contract("the calendar Guard down while a payment arrives: the deposit waits, and when it is back the booking is confirmed once and the customer told once", async () => {
@@ -176,11 +188,15 @@ describe("a shop put back from last night's snapshot", () => {
     await s.book({ name: "Ravi", phone: "+919822222222", startMs: openStart(Date.now(), 6) }); // b-2, after it: its hold and link exist at the Guards
     await s.stop();
     rmSync(s.dataDir, { recursive: true, force: true });
-    cpSync(`${s.dataDir}-snapshot`, s.dataDir, { recursive: true });   // the restore: the shop has no memory of b-2
+    cpSync(`${s.dataDir}-snapshot`, s.dataDir, { recursive: true });   // the restore (the deployer's `restore`): the shop has no memory of b-2, and a note is left beside the database
+    writeFileSync(join(s.dataDir, "restored.json"), JSON.stringify({ snapshot: "20261119T013000Z", restoredAt: new Date().toISOString(), lastSeq: null }));
     await s.start();
     const third = await s.book({ name: "Meera", phone: "+919833333333", startMs: openStart(Date.now(), 7) });
     const view = (await s.request(third.hash)).body;
-    assert.notEqual(view.ref, "b-2", "b-2 belongs to the customer the snapshot did not know");
+    assert.equal(view.ref, "b-100002", "every counter moved on by 100000: b-2 belongs to the customer the snapshot did not know");
+    assert.equal(s.record().filter((r) => r.action === "restored").length, 1, "one line in the record says the data was put back");
+    assert.ok(!existsSync(join(s.dataDir, "restored.json")), "the note is done with: kept under another name");
+    assert.ok(readdirSync(s.dataDir).some((f) => f.startsWith("restored.json.done-")));
     assert.equal(view.status, "held");
     const refs = events(s).map((e) => e.bookingRef);
     assert.equal(new Set(refs).size, refs.length, `every calendar event has its own booking: ${refs.join(",")}`);

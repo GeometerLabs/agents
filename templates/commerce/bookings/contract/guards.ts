@@ -65,8 +65,10 @@ export interface Recorder {
   delay(ms: number, o?: { times?: number; match?: Plan["match"] }): void;
   /** Take every planned fault away (down, an answer, a delay, a lost reply). */
   clear(): void;
-  /** Down: every call answers 503 (Guard's captured kill-switch answer) until `up()`. */
+  /** Down: every call answers 503 with Guard's captured "busy" answer (nothing was sent, try again) until `up()`: a Guard that is restarting, which the shop WAITS for. */
   down(): void;
+  /** Stopped on purpose: every call answers Guard's captured kill-switch answer until `up()`: a person stopped the shop, so the shop does NOT wait. */
+  stopped(): void;
   up(): void;
   close(): Promise<void>;
 }
@@ -83,7 +85,7 @@ const interesting = (h: IncomingHttpHeaders): GuardCall["headers"] => ({
 
 async function recorder(service: Service, target: string, calls: GuardCall[]): Promise<Recorder> {
   const plans: Plan[] = [];
-  let isDown = false;
+  let isDown: "busy" | "kill_switch" | false = false;
   const server: Server = createServer(async (req, res) => {
     const raw = await readBody(req);
     const url = new URL(req.url ?? "/", "http://guard");
@@ -93,7 +95,7 @@ async function recorder(service: Service, target: string, calls: GuardCall[]): P
     try { body = text === "" ? "" : JSON.parse(text); } catch { /* the text */ }
     const entry: GuardCall = { service, method, path: url.pathname, query: Object.fromEntries(url.searchParams), headers: interesting(req.headers), body, status: 0, reply: "" };
     calls.push(entry);
-    const down = () => { const a = fixture("guard-responses.json").kill_switch as CapturedAnswer; return a; };
+    const down = (): CapturedAnswer => fixture("guard-responses.json")[isDown === "kill_switch" ? "kill_switch" : "busy"] as CapturedAnswer;
     const plan = plans.find((p) => p.times > 0 && p.match({ method, path: url.pathname }));
     if (plan) plan.times -= 1;
     const respond = (a: CapturedAnswer): void => {
@@ -129,7 +131,7 @@ async function recorder(service: Service, target: string, calls: GuardCall[]): P
     loseReply: (o) => add({ kind: "delay", ms: 0 }, o, { lose: true }),
     delay: (ms, o) => add({ kind: "delay", ms }, o),
     clear: () => { plans.length = 0; isDown = false; },
-    down: () => { isDown = true; }, up: () => { isDown = false; },
+    down: () => { isDown = "busy"; }, stopped: () => { isDown = "kill_switch"; }, up: () => { isDown = false; },
     close: () => new Promise<void>((r) => { server.closeAllConnections(); server.close(() => r()); }),
   };
 }
