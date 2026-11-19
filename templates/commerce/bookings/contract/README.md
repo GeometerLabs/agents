@@ -370,16 +370,13 @@ and the record's trigger), ticker (hold expiry, completion and a reminder on the
 | voice-note, voice-notes, voice-notes-shared (C) | needs a fake speech Guard (runtime.json `speech`) | a 40-line fake in `guards.ts` |
 | assistant (O): the owner's fixed phrases on WhatsApp, own words, cards by tap with the digest | only the page's talk box is covered | `inbound(OWNER_NUMBER, ...)` plus the cards in `ownerView().app` |
 | buttons (F): the exact `interactive` payload (3 buttons, 10 rows, 20-character titles) and a tap read without a model | `tap()` exists in the harness and is not used yet | assert on `s.sent()` payloads |
-| capacity (F): two chairs / resources over HTTP, a move | needs settings with `resources` | a settings override |
 | talk, terms (O/C): the talk model's answer for a customer's words; the shop terms agreed on WhatsApp | no `talk` block or terms.json written by the harness yet | `runtime.talk`, `terms.json` |
-| step-breaker, ai-mode (C): a decision model that is down, the month's allowance | needs a second fake model and `allowance` in runtime.json | `runtime.decision`, `runtime.allowance` |
-| guard-responses (L, R): unauthenticated 401, provider_unreachable 502, provider 500, replayed, refused_rule, held_uncertain, denied_by_approver | the fixtures are there (`CapturedAnswer`), each needs its case | `payments.answer(fixture(...))` |
+| step-breaker (C): a decision model that is down while the language model is up (the allowance is covered in `open-cases.contract.test.ts`) | needs `runtime.decision` and the fake System One (`startFakeDecision`, shared) | a few cases |
 | refund-held (L): expiry of the approval, "no longer honoured", "a hold with no approval id goes to the builder", "the deposit lowered after a booking paid" | need a clock for the Guard's 24-hour approval (the stub Guard runs on the real clock) | the stub Guard on the test clock, or a settings spec with a short approval time |
 | unknown-outcome, restored (R): kept through a restart, a refund that went out after the snapshot is not sent twice | multi-step restart cases | stop/start with `failNext("outcome_unknown")` |
 | recovery (R): `recheck_refund`, `ask_owner_again`'s notice | | owner notices on the WhatsApp stand-in |
 | owner-number-live (O): after the owner's number changes with no restart, the next step treats a message from the new number as the owner's, the old number's as a customer's | needs `inbound(...)` from both numbers and a reply to read | the WhatsApp stand-in |
 | owner-notices (O): every notice of the agent, by template, in each language | only "outside the window is a template" is covered | `s.sent(OWNER_NUMBER)` per scenario |
-| owner-signin (O): the WhatsApp link route (`owner_signin` event, `/internal/channel/owner-signin` GET and POST with `x-owner-signin`) | the passkey route is covered, the link route is not | `channelEvents([{kind:"owner_signin"}])` and the link read from the WhatsApp stand-in |
 | money-clarity, upi (M): the late claim windows (48 hours, 14 days), the refund the owner owes (`refund_owed`, "kept"), a screenshot | UPI marks only | UPI shop on the test clock |
 | report-monthly (D): the owner's WhatsApp message, the certificate and signed summary files, the quiet month, the licence's final stop | only the data file's making, once, is covered | read the WhatsApp stand-in |
 | runtime (R): steps one at a time in order, a failing step tried again then failed, a step that fails after its work saves nothing | the step seam is in-process only (`aroundStep`); no HTTP route makes a step throw | **unit** (the task runner of `modules/runtime/core.ts`: vectors), listed here so it is not dropped |
@@ -388,6 +385,10 @@ and the record's trigger), ticker (hold expiry, completion and a reminder on the
 
 The classes "b" (unit) are NOT started: their vectors (inputs and outputs made from the TypeScript) must be generated before the TypeScript is deleted; that is the port's first step per
 package. The list in section 6 is the checklist.
+
+**Added after the first pass (`open-cases.contract.test.ts`, 9 tests):** the Guard's other captured refund answers (refused_rule, provider_500, held_uncertain, unauthenticated, provider_unreachable), `recheck_refund`, the month's allowance, two chairs over HTTP, and the owner's WhatsApp sign-in link (only in the owner's open window). Still open: approval expiry (the stub Guard runs on the real clock), `owner-number-live`, the refund-after-snapshot cases, voice, the assistant's WhatsApp phrases, buttons' payloads, talk, terms, the decision model's break.
+
+**Unit vectors (class b):** `go/scripts/gen_bookings_vectors.ts` writes `go/internal/bookings/testdata/` (`--check`, and a `words-fresh` entry): the rule parser on every phrase of `test/parser.test.ts` and the crash-test sentences, the limits (price, hours by half hour over a week, no double booking with units and resources, refund limit, STOP, booking-state moves, reminders), the Guard's limits spec for refund limits and deposits, `validateSettings` for 22 mutations, and the task runner's four queue cases and /readyz's store reason. NOT yet vectored: the language checks and templates (`language`, `meta-templates`), `record-decisions`, `ondc`, the understanding router, the in-memory stand-ins (`adapters`), and the report's pure parts; they stay on the checklist in section 6.
 
 ## 9. TypeScript behaviour this suite found worth knowing (nothing was changed)
 
