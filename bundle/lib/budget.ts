@@ -61,6 +61,9 @@ export function planBudget(plan: string | null | undefined, list: BudgetRates, b
   const owner = count("ai.daily.owner-talk");
   const perThousandCustomer = count("ai.daily.customer-talk");
   const perThousandRouter = count("ai.daily.router");
+  // one chat guest's own daily model answers (decision 62: it moved here from a constant in modules/channels/chat.ts). A list from before 20 Nov has no such entry: then the key is left
+  // out, and the chat uses its own fallback (channels/chat.ts GUEST_TURNS_BEFORE_62), never a number made up here.
+  const perGuest = count("ai.daily.customer-talk.per-guest");
   if (allowance === undefined || allowance < 1 || owner === undefined || perThousandCustomer === undefined || perThousandRouter === undefined) return undefined;
   // messages bought are whole and never negative; anything else is ignored rather than guessed at
   const raw = Number.isSafeInteger(bought) && bought > 0 ? bought : 0;
@@ -72,7 +75,7 @@ export function planBudget(plan: string | null | undefined, list: BudgetRates, b
   const scaled = (perThousand: number) => Math.max(1, Math.ceil((perThousand * messages) / 1000));
   // monthly = the plan's budget x messages / allowance, rounded up: with nothing bought this is the list's number exactly (integer micro-rupees divide exactly)
   const scaledMonthly = extra === 0 ? monthly : Math.ceil((monthly * messages) / allowance);
-  return { monthlyMicroInr: scaledMonthly, daily: { owner_talk: owner, listing_draft: draft, customer_talk: scaled(perThousandCustomer), router: scaled(perThousandRouter) } };
+  return { monthlyMicroInr: scaledMonthly, daily: { owner_talk: owner, listing_draft: draft, customer_talk: scaled(perThousandCustomer), router: scaled(perThousandRouter) }, ...(perGuest !== undefined ? { guestTurnsPerDay: perGuest } : {}) };
 }
 
 /**

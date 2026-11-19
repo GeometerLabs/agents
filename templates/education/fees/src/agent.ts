@@ -1368,7 +1368,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (const due of open.slice(0, 3)) await tellCustomer(due, chat, ["fee_menu"], { offer: { kind: "buttons", buttons: ["owner"] } });
   }
   async function onChatMessage(e: ChatMessage): Promise<void> {
-    await chatTurn({ state: (store.channel ??= emptyChannelState()), ai: store, now: clock.now(), timeZone: settings.timezone, kind: "fees", run: onChatTurn, ...(deps.chatAudio ? { audio: deps.chatAudio } : {}), setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
+    await chatTurn({ state: (store.channel ??= emptyChannelState()), ai: store, now: clock.now(), timeZone: settings.timezone, kind: "fees", run: onChatTurn, ...(policy.budget ? { budget: policy.budget } : {}), ...(deps.chatAudio ? { audio: deps.chatAudio } : {}), setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
   }
 
   async function handle(event: AgentEvent): Promise<void> {

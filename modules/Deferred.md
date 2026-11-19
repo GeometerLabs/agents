@@ -443,3 +443,5 @@ The design and what was weighed are in [Explanation.md](Explanation.md#shop-memo
 | **A phone's alert subscription is not tied to the phone's sign-in.** Removing a phone ends its sessions, not its web push subscription. | The subscription belongs to the alerts box and carries no session. | A subscription ends with the session that made it. |
 | **Times on the phones page and in the alerts are India's time.** | The runtime reads no per-shop time zone for the owner's view. | The view reads the shop's `timezone`. |
 | **Hindi, Malayalam and Kannada words for the phones page and its alerts are machine-written** (review sheets, ids `phones.*`). | Waiting for the native readers. | They have said yes. |
+
+| **`GUEST_TURNS_BEFORE_62` (20) still a constant in `channels/chat.ts`** (decision 62, 19 Nov) | The per-guest daily model turns now come from the price list (`ai.daily.customer-talk.per-guest`, `budget.guestTurnsPerDay`). The 20 Nov list holding it is only proposed, and the 19 Nov list in force cannot be edited, so a shop with no such number still needs a fallback. Remove the constant (and make the key required) once the list in force has the entry. |
