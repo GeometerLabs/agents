@@ -26,6 +26,11 @@ export const GO_PROGRAMS = ["listings", "listings-shared"] as const;
 export const GO_IMAGE_REPO = "geo-go";
 /** The named volume that keeps Go's module and build cache between builds. Mounted at /go in the builder: the image's own /go is open to every user, so the empty volume starts open too. */
 export const GO_CACHE_VOLUME = "geo-go-cache";
+/**
+ * The compile's memory wall, in MB, and its settings to stay under it. A full server (25 shops on a 4 GB e2-medium) cannot give the compiler the whole machine: `-p 1` builds one package at a
+ * time, GOMAXPROCS=1 runs one thread, GOGC=50 collects sooner. The wall is a Docker memory limit (swap off), so an overrun stops the BUILD (exit 137), never the shops; the message says so.
+ */
+export const GO_BUILD_MEMORY_MB = 1536;
 /** The user the shop containers run as (the node image's `node` user, bundle/generate/compose.ts nodeUser), so a data volume made by the node image keeps its owner. */
 export const GO_RUN_USER = "1000:1000";
 
@@ -119,13 +124,16 @@ export async function ensureGoRuntimes(ctx: GoBuildContext): Promise<GoBuild> {
     mkdirSync(join(root, "home", "node"), { recursive: true });
     const user = typeof process.getuid === "function" ? `${process.getuid()}:${process.getgid?.() ?? 0}` : GO_RUN_USER;
     // one loop, so a program added to GO_PROGRAMS is built by the same command; `set -e` stops at the first failure
-    const script = 'set -e; for p in "$@"; do go build -trimpath -mod=readonly -buildvcs=false -ldflags "-s -w" -o "/out/$p" "./cmd/$p"; done';
+    const script = 'set -e; for p in "$@"; do go build -p 1 -trimpath -mod=readonly -buildvcs=false -ldflags "-s -w" -o "/out/$p" "./cmd/$p"; done';
     const compiled = await ctx.runner.run(ctx.docker, [
       "run", "--rm", "--user", user,
-      "-e", "CGO_ENABLED=0", "-e", "GOTOOLCHAIN=local", "-e", "GOPATH=/go", "-e", "GOCACHE=/go/build-cache", "-e", "HOME=/tmp",
+      "--memory", `${GO_BUILD_MEMORY_MB}m`, "--memory-swap", `${GO_BUILD_MEMORY_MB}m`,
+      "-e", "CGO_ENABLED=0", "-e", "GOTOOLCHAIN=local", "-e", "GOMAXPROCS=1", "-e", "GOGC=50", "-e", "GOPATH=/go", "-e", "GOCACHE=/go/build-cache", "-e", "HOME=/tmp",
       "-v", `${join(ctx.appDir, "go")}:/src:ro`, "-v", `${root}:/out`, "-v", `${GO_CACHE_VOLUME}:/go`, "-w", "/src",
       builder.ref, "sh", "-c", script, "sh", ...GO_PROGRAMS,
     ], { timeoutMs: 20 * 60_000 });
+    // 137 is a process killed by the memory wall (the kernel's out-of-memory kill, or Docker's)
+    if (compiled.code === 137) return { ok: false, reason: `The Go shop programs could not be built: the build was stopped at its memory limit of ${GO_BUILD_MEMORY_MB} MB so the shops keep running. Free some memory (stop what is not needed, or use a larger server) and run it again. Nothing was changed.` };
     if (compiled.code !== 0) return { ok: false, reason: `The Go shop programs could not be built (${lastLines(compiled)}). Nothing was changed.` };
     const missing = GO_PROGRAMS.filter((p) => !existsSync(join(root, p)));
     if (missing.length > 0) return { ok: false, reason: `The build finished but did not make ${missing.join(", ")}. Nothing was changed.` };
@@ -141,4 +149,25 @@ export async function ensureGoRuntimes(ctx: GoBuildContext): Promise<GoBuild> {
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
+}
+
+// ---- old images ------------------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Remove the `geo-go:<tag>` images nothing needs any more. Kept: this checkout's, the image of every container (running or stopped) and every image the deployed compose file names (a shop
+ * on a kept version, a rollback's way back). `dryRun` only lists. Never throws; a removal Docker refuses is said and left.
+ */
+export async function pruneGoImages(ctx: GoBuildContext, o: { dryRun?: boolean; composeText?: string } = {}): Promise<{ removed: string[]; kept: string[] }> {
+  const all = (await ctx.runner.run(ctx.docker, ["image", "ls", GO_IMAGE_REPO, "--format", "{{.Repository}}:{{.Tag}}"])).stdout.split("\n").map((l) => l.trim()).filter((l) => l.startsWith(`${GO_IMAGE_REPO}:`) && !l.endsWith(":<none>"));
+  const used = new Set<string>([goImageFor(ctx.appDir)]);
+  for (const l of (await ctx.runner.run(ctx.docker, ["ps", "-a", "--format", "{{.Image}}"])).stdout.split("\n")) if (l.trim().startsWith(`${GO_IMAGE_REPO}:`)) used.add(l.trim());
+  for (const m of (o.composeText ?? "").matchAll(/geo-go:[A-Za-z0-9._-]+/gu)) used.add(m[0]);
+  const kept = all.filter((i) => used.has(i));
+  const removed: string[] = [];
+  for (const image of all.filter((i) => !used.has(i))) {
+    if (o.dryRun) { removed.push(image); continue; }
+    if ((await ctx.runner.run(ctx.docker, ["image", "rm", image])).code === 0) removed.push(image); else kept.push(image);
+  }
+  if (removed.length > 0) ctx.log(`${o.dryRun ? "Would remove" : "Removed"} old shop-program images: ${removed.join(", ")}.`);
+  return { removed, kept };
 }

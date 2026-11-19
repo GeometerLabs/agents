@@ -15,14 +15,14 @@
 // where it stopped when the same command is run again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished.
 // A deploy that is refused puts that client's earlier pin back and stops the rollout there (one client at most is affected); the rest wait for the next run.
 // Agents someone else wrote have no template and no hand check yet: they are skipped, with a plain note.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { listAgents } from "./agent/folder.ts";
 import { updateAgent } from "./agent/update.ts";
-import { Refused, deploy } from "./deploy.ts";
+import { Refused, composeFile, deploy } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { compare, runHandCheck, savedDataLayout } from "./handcheck.ts";
-import { ensureGoRuntimes, goRuntimeOf } from "./lib/go-build.ts";
+import { ensureGoRuntimes, goRuntimeOf, pruneGoImages } from "./lib/go-build.ts";
 import { appliedPathwayDir, checkoutDirOf, keptDirFor, pathwayDirFor } from "./lib/pathways.ts";
 import { listShops, readShop, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
@@ -108,7 +108,11 @@ export async function runUpdate(ctx: Context, opts: UpdateOptions = {}): Promise
   const dryRun = opts.dryRun === true;
   const run = start(ctx, "update", { to: opts.to ?? null, shops: opts.shops ? names : null }, names, dryRun);
   if (dryRun) run.dryRun = true;
-  return walk(ctx, run, dryRun, (shop, earlier, save) => updateOne(ctx, shop, opts, earlier, save));
+  const done = await walk(ctx, run, dryRun, (shop, earlier, save) => updateOne(ctx, shop, opts, earlier, save));
+  // after the shops have moved: the old shop-program images nothing uses are removed (a dry run lists them); an image a container or the deployed compose file names is never one of them
+  const composePath = composeFile(ctx.dir);
+  await pruneGoImages(ctx, { dryRun, composeText: existsSync(composePath) ? readFileSync(composePath, "utf8") : "" });
+  return done;
 }
 
 async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlier: Step | undefined, save: Save): Promise<Outcome> {
