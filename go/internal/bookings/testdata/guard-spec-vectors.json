@@ -1,0 +1,1127 @@
+[
+ {
+  "name": "refund limit 50",
+  "input": {
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 50
+   }
+  },
+  "output": {
+   "numbers": {
+    "depositPaise": 20000,
+    "refundThresholdPaise": 5000,
+    "caps": {
+     "refundPaisePerDay": 500000,
+     "refundsPerDay": 20,
+     "linksPerHour": 60
+    },
+    "approvalTtlSeconds": 86400
+   },
+   "spec": {
+    "schema": 1,
+    "tenant": "vectors",
+    "tool": "razorpay",
+    "name": "vectors-razorpay",
+    "version": 1,
+    "reviewed_by": "vectors",
+    "approval_ttl_seconds": 86400,
+    "routes": [
+     {
+      "method": "POST",
+      "path": "/v1/payment_links",
+      "operation": "create_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links",
+      "operation": "list_links"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links/{id}",
+      "operation": "read_link"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payment_links/{id}/cancel",
+      "operation": "cancel_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operation": "read_payment"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payments/{payment_id}/refund",
+      "operation": "refund"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}/refunds",
+      "operation": "list_refunds"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/settlements/recon/combined",
+      "operation": "read_settlements"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payouts",
+      "operation": "payout"
+     }
+    ],
+    "rules": [
+     {
+      "id": "deposit-amount",
+      "kind": "argument_bound",
+      "operation": "create_link",
+      "field": "amount",
+      "min": "20000",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-at-most-deposit",
+      "kind": "argument_bound",
+      "operation": "refund",
+      "field": "amount",
+      "min": "1",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-needs-owner",
+      "kind": "call_bound_approval",
+      "operation": "refund",
+      "amount_field": "amount",
+      "threshold": "5000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "refund"
+     },
+     {
+      "id": "no-payouts",
+      "kind": "forbidden_call",
+      "operation": "payout"
+     }
+    ],
+    "limits": [
+     {
+      "id": "refund-paise-per-day",
+      "kind": "spend",
+      "operation": "refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "500000",
+      "window_seconds": 86400
+     },
+     {
+      "id": "refunds-per-day",
+      "kind": "count",
+      "operation": "refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+     },
+     {
+      "id": "links-per-hour",
+      "kind": "count",
+      "operation": "create_link",
+      "scope": [],
+      "cap": "60",
+      "window_seconds": 3600
+     }
+    ],
+    "intents": [
+     {
+      "operation": "refund",
+      "key_fields": [
+       "payment_id"
+      ],
+      "idempotency_header": "X-Refund-Idempotency",
+      "derive_key": true
+     }
+    ],
+    "fail_policy": []
+   }
+  }
+ },
+ {
+  "name": "refund limit 100",
+  "input": {
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 100
+   }
+  },
+  "output": {
+   "numbers": {
+    "depositPaise": 20000,
+    "refundThresholdPaise": 10000,
+    "caps": {
+     "refundPaisePerDay": 500000,
+     "refundsPerDay": 20,
+     "linksPerHour": 60
+    },
+    "approvalTtlSeconds": 86400
+   },
+   "spec": {
+    "schema": 1,
+    "tenant": "vectors",
+    "tool": "razorpay",
+    "name": "vectors-razorpay",
+    "version": 1,
+    "reviewed_by": "vectors",
+    "approval_ttl_seconds": 86400,
+    "routes": [
+     {
+      "method": "POST",
+      "path": "/v1/payment_links",
+      "operation": "create_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links",
+      "operation": "list_links"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links/{id}",
+      "operation": "read_link"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payment_links/{id}/cancel",
+      "operation": "cancel_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operation": "read_payment"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payments/{payment_id}/refund",
+      "operation": "refund"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}/refunds",
+      "operation": "list_refunds"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/settlements/recon/combined",
+      "operation": "read_settlements"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payouts",
+      "operation": "payout"
+     }
+    ],
+    "rules": [
+     {
+      "id": "deposit-amount",
+      "kind": "argument_bound",
+      "operation": "create_link",
+      "field": "amount",
+      "min": "20000",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-at-most-deposit",
+      "kind": "argument_bound",
+      "operation": "refund",
+      "field": "amount",
+      "min": "1",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-needs-owner",
+      "kind": "call_bound_approval",
+      "operation": "refund",
+      "amount_field": "amount",
+      "threshold": "10000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "refund"
+     },
+     {
+      "id": "no-payouts",
+      "kind": "forbidden_call",
+      "operation": "payout"
+     }
+    ],
+    "limits": [
+     {
+      "id": "refund-paise-per-day",
+      "kind": "spend",
+      "operation": "refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "500000",
+      "window_seconds": 86400
+     },
+     {
+      "id": "refunds-per-day",
+      "kind": "count",
+      "operation": "refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+     },
+     {
+      "id": "links-per-hour",
+      "kind": "count",
+      "operation": "create_link",
+      "scope": [],
+      "cap": "60",
+      "window_seconds": 3600
+     }
+    ],
+    "intents": [
+     {
+      "operation": "refund",
+      "key_fields": [
+       "payment_id"
+      ],
+      "idempotency_header": "X-Refund-Idempotency",
+      "derive_key": true
+     }
+    ],
+    "fail_policy": []
+   }
+  }
+ },
+ {
+  "name": "refund limit 199",
+  "input": {
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 199
+   }
+  },
+  "output": {
+   "numbers": {
+    "depositPaise": 20000,
+    "refundThresholdPaise": 19900,
+    "caps": {
+     "refundPaisePerDay": 500000,
+     "refundsPerDay": 20,
+     "linksPerHour": 60
+    },
+    "approvalTtlSeconds": 86400
+   },
+   "spec": {
+    "schema": 1,
+    "tenant": "vectors",
+    "tool": "razorpay",
+    "name": "vectors-razorpay",
+    "version": 1,
+    "reviewed_by": "vectors",
+    "approval_ttl_seconds": 86400,
+    "routes": [
+     {
+      "method": "POST",
+      "path": "/v1/payment_links",
+      "operation": "create_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links",
+      "operation": "list_links"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links/{id}",
+      "operation": "read_link"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payment_links/{id}/cancel",
+      "operation": "cancel_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operation": "read_payment"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payments/{payment_id}/refund",
+      "operation": "refund"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}/refunds",
+      "operation": "list_refunds"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/settlements/recon/combined",
+      "operation": "read_settlements"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payouts",
+      "operation": "payout"
+     }
+    ],
+    "rules": [
+     {
+      "id": "deposit-amount",
+      "kind": "argument_bound",
+      "operation": "create_link",
+      "field": "amount",
+      "min": "20000",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-at-most-deposit",
+      "kind": "argument_bound",
+      "operation": "refund",
+      "field": "amount",
+      "min": "1",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-needs-owner",
+      "kind": "call_bound_approval",
+      "operation": "refund",
+      "amount_field": "amount",
+      "threshold": "19900",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "refund"
+     },
+     {
+      "id": "no-payouts",
+      "kind": "forbidden_call",
+      "operation": "payout"
+     }
+    ],
+    "limits": [
+     {
+      "id": "refund-paise-per-day",
+      "kind": "spend",
+      "operation": "refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "500000",
+      "window_seconds": 86400
+     },
+     {
+      "id": "refunds-per-day",
+      "kind": "count",
+      "operation": "refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+     },
+     {
+      "id": "links-per-hour",
+      "kind": "count",
+      "operation": "create_link",
+      "scope": [],
+      "cap": "60",
+      "window_seconds": 3600
+     }
+    ],
+    "intents": [
+     {
+      "operation": "refund",
+      "key_fields": [
+       "payment_id"
+      ],
+      "idempotency_header": "X-Refund-Idempotency",
+      "derive_key": true
+     }
+    ],
+    "fail_policy": []
+   }
+  }
+ },
+ {
+  "name": "refund limit 200",
+  "input": {
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   }
+  },
+  "output": {
+   "numbers": {
+    "depositPaise": 20000,
+    "refundThresholdPaise": 20000,
+    "caps": {
+     "refundPaisePerDay": 500000,
+     "refundsPerDay": 20,
+     "linksPerHour": 60
+    },
+    "approvalTtlSeconds": 86400
+   },
+   "spec": {
+    "schema": 1,
+    "tenant": "vectors",
+    "tool": "razorpay",
+    "name": "vectors-razorpay",
+    "version": 1,
+    "reviewed_by": "vectors",
+    "approval_ttl_seconds": 86400,
+    "routes": [
+     {
+      "method": "POST",
+      "path": "/v1/payment_links",
+      "operation": "create_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links",
+      "operation": "list_links"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links/{id}",
+      "operation": "read_link"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payment_links/{id}/cancel",
+      "operation": "cancel_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operation": "read_payment"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payments/{payment_id}/refund",
+      "operation": "refund"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}/refunds",
+      "operation": "list_refunds"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/settlements/recon/combined",
+      "operation": "read_settlements"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payouts",
+      "operation": "payout"
+     }
+    ],
+    "rules": [
+     {
+      "id": "deposit-amount",
+      "kind": "argument_bound",
+      "operation": "create_link",
+      "field": "amount",
+      "min": "20000",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-at-most-deposit",
+      "kind": "argument_bound",
+      "operation": "refund",
+      "field": "amount",
+      "min": "1",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-needs-owner",
+      "kind": "call_bound_approval",
+      "operation": "refund",
+      "amount_field": "amount",
+      "threshold": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "refund"
+     },
+     {
+      "id": "no-payouts",
+      "kind": "forbidden_call",
+      "operation": "payout"
+     }
+    ],
+    "limits": [
+     {
+      "id": "refund-paise-per-day",
+      "kind": "spend",
+      "operation": "refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "500000",
+      "window_seconds": 86400
+     },
+     {
+      "id": "refunds-per-day",
+      "kind": "count",
+      "operation": "refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+     },
+     {
+      "id": "links-per-hour",
+      "kind": "count",
+      "operation": "create_link",
+      "scope": [],
+      "cap": "60",
+      "window_seconds": 3600
+     }
+    ],
+    "intents": [
+     {
+      "operation": "refund",
+      "key_fields": [
+       "payment_id"
+      ],
+      "idempotency_header": "X-Refund-Idempotency",
+      "derive_key": true
+     }
+    ],
+    "fail_policy": []
+   }
+  }
+ },
+ {
+  "name": "deposit 100",
+  "input": {
+   "deposit": {
+    "amountInr": 100,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 100
+   }
+  },
+  "output": {
+   "numbers": {
+    "depositPaise": 10000,
+    "refundThresholdPaise": 10000,
+    "caps": {
+     "refundPaisePerDay": 500000,
+     "refundsPerDay": 20,
+     "linksPerHour": 60
+    },
+    "approvalTtlSeconds": 86400
+   },
+   "spec": {
+    "schema": 1,
+    "tenant": "vectors",
+    "tool": "razorpay",
+    "name": "vectors-razorpay",
+    "version": 1,
+    "reviewed_by": "vectors",
+    "approval_ttl_seconds": 86400,
+    "routes": [
+     {
+      "method": "POST",
+      "path": "/v1/payment_links",
+      "operation": "create_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links",
+      "operation": "list_links"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links/{id}",
+      "operation": "read_link"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payment_links/{id}/cancel",
+      "operation": "cancel_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operation": "read_payment"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payments/{payment_id}/refund",
+      "operation": "refund"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}/refunds",
+      "operation": "list_refunds"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/settlements/recon/combined",
+      "operation": "read_settlements"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payouts",
+      "operation": "payout"
+     }
+    ],
+    "rules": [
+     {
+      "id": "deposit-amount",
+      "kind": "argument_bound",
+      "operation": "create_link",
+      "field": "amount",
+      "min": "10000",
+      "max": "10000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-at-most-deposit",
+      "kind": "argument_bound",
+      "operation": "refund",
+      "field": "amount",
+      "min": "1",
+      "max": "10000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-needs-owner",
+      "kind": "call_bound_approval",
+      "operation": "refund",
+      "amount_field": "amount",
+      "threshold": "10000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "refund"
+     },
+     {
+      "id": "no-payouts",
+      "kind": "forbidden_call",
+      "operation": "payout"
+     }
+    ],
+    "limits": [
+     {
+      "id": "refund-paise-per-day",
+      "kind": "spend",
+      "operation": "refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "500000",
+      "window_seconds": 86400
+     },
+     {
+      "id": "refunds-per-day",
+      "kind": "count",
+      "operation": "refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+     },
+     {
+      "id": "links-per-hour",
+      "kind": "count",
+      "operation": "create_link",
+      "scope": [],
+      "cap": "60",
+      "window_seconds": 3600
+     }
+    ],
+    "intents": [
+     {
+      "operation": "refund",
+      "key_fields": [
+       "payment_id"
+      ],
+      "idempotency_header": "X-Refund-Idempotency",
+      "derive_key": true
+     }
+    ],
+    "fail_policy": []
+   }
+  }
+ },
+ {
+  "name": "deposit 200",
+  "input": {
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   }
+  },
+  "output": {
+   "numbers": {
+    "depositPaise": 20000,
+    "refundThresholdPaise": 20000,
+    "caps": {
+     "refundPaisePerDay": 500000,
+     "refundsPerDay": 20,
+     "linksPerHour": 60
+    },
+    "approvalTtlSeconds": 86400
+   },
+   "spec": {
+    "schema": 1,
+    "tenant": "vectors",
+    "tool": "razorpay",
+    "name": "vectors-razorpay",
+    "version": 1,
+    "reviewed_by": "vectors",
+    "approval_ttl_seconds": 86400,
+    "routes": [
+     {
+      "method": "POST",
+      "path": "/v1/payment_links",
+      "operation": "create_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links",
+      "operation": "list_links"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links/{id}",
+      "operation": "read_link"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payment_links/{id}/cancel",
+      "operation": "cancel_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operation": "read_payment"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payments/{payment_id}/refund",
+      "operation": "refund"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}/refunds",
+      "operation": "list_refunds"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/settlements/recon/combined",
+      "operation": "read_settlements"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payouts",
+      "operation": "payout"
+     }
+    ],
+    "rules": [
+     {
+      "id": "deposit-amount",
+      "kind": "argument_bound",
+      "operation": "create_link",
+      "field": "amount",
+      "min": "20000",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-at-most-deposit",
+      "kind": "argument_bound",
+      "operation": "refund",
+      "field": "amount",
+      "min": "1",
+      "max": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-needs-owner",
+      "kind": "call_bound_approval",
+      "operation": "refund",
+      "amount_field": "amount",
+      "threshold": "20000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "refund"
+     },
+     {
+      "id": "no-payouts",
+      "kind": "forbidden_call",
+      "operation": "payout"
+     }
+    ],
+    "limits": [
+     {
+      "id": "refund-paise-per-day",
+      "kind": "spend",
+      "operation": "refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "500000",
+      "window_seconds": 86400
+     },
+     {
+      "id": "refunds-per-day",
+      "kind": "count",
+      "operation": "refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+     },
+     {
+      "id": "links-per-hour",
+      "kind": "count",
+      "operation": "create_link",
+      "scope": [],
+      "cap": "60",
+      "window_seconds": 3600
+     }
+    ],
+    "intents": [
+     {
+      "operation": "refund",
+      "key_fields": [
+       "payment_id"
+      ],
+      "idempotency_header": "X-Refund-Idempotency",
+      "derive_key": true
+     }
+    ],
+    "fail_policy": []
+   }
+  }
+ },
+ {
+  "name": "deposit 250",
+  "input": {
+   "deposit": {
+    "amountInr": 250,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 250
+   }
+  },
+  "output": {
+   "numbers": {
+    "depositPaise": 25000,
+    "refundThresholdPaise": 25000,
+    "caps": {
+     "refundPaisePerDay": 500000,
+     "refundsPerDay": 20,
+     "linksPerHour": 60
+    },
+    "approvalTtlSeconds": 86400
+   },
+   "spec": {
+    "schema": 1,
+    "tenant": "vectors",
+    "tool": "razorpay",
+    "name": "vectors-razorpay",
+    "version": 1,
+    "reviewed_by": "vectors",
+    "approval_ttl_seconds": 86400,
+    "routes": [
+     {
+      "method": "POST",
+      "path": "/v1/payment_links",
+      "operation": "create_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links",
+      "operation": "list_links"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payment_links/{id}",
+      "operation": "read_link"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payment_links/{id}/cancel",
+      "operation": "cancel_link"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operation": "read_payment"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payments/{payment_id}/refund",
+      "operation": "refund"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/payments/{id}/refunds",
+      "operation": "list_refunds"
+     },
+     {
+      "method": "GET",
+      "path": "/v1/settlements/recon/combined",
+      "operation": "read_settlements"
+     },
+     {
+      "method": "POST",
+      "path": "/v1/payouts",
+      "operation": "payout"
+     }
+    ],
+    "rules": [
+     {
+      "id": "deposit-amount",
+      "kind": "argument_bound",
+      "operation": "create_link",
+      "field": "amount",
+      "min": "25000",
+      "max": "25000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-at-most-deposit",
+      "kind": "argument_bound",
+      "operation": "refund",
+      "field": "amount",
+      "min": "1",
+      "max": "25000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-needs-owner",
+      "kind": "call_bound_approval",
+      "operation": "refund",
+      "amount_field": "amount",
+      "threshold": "25000",
+      "units": {
+       "amount": "paise"
+      }
+     },
+     {
+      "id": "refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "refund"
+     },
+     {
+      "id": "no-payouts",
+      "kind": "forbidden_call",
+      "operation": "payout"
+     }
+    ],
+    "limits": [
+     {
+      "id": "refund-paise-per-day",
+      "kind": "spend",
+      "operation": "refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "500000",
+      "window_seconds": 86400
+     },
+     {
+      "id": "refunds-per-day",
+      "kind": "count",
+      "operation": "refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+     },
+     {
+      "id": "links-per-hour",
+      "kind": "count",
+      "operation": "create_link",
+      "scope": [],
+      "cap": "60",
+      "window_seconds": 3600
+     }
+    ],
+    "intents": [
+     {
+      "operation": "refund",
+      "key_fields": [
+       "payment_id"
+      ],
+      "idempotency_header": "X-Refund-Idempotency",
+      "derive_key": true
+     }
+    ],
+    "fail_policy": []
+   }
+  }
+ }
+]

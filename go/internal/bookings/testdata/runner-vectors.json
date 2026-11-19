@@ -1,0 +1,120 @@
+[
+ {
+  "name": "a failing step is tried again, then failed, and the queue moves on",
+  "input": {
+   "events": [
+    "m1",
+    "m2"
+   ],
+   "retryDelaysMs": [
+    1,
+    1
+   ],
+   "steps": {
+    "message:m1": "fail"
+   },
+   "restartRunning": false
+  },
+  "output": {
+   "tries": [
+    "message:m1",
+    "message:m1",
+    "message:m1",
+    "message:m2"
+   ],
+   "counts": {
+    "pending": 0,
+    "done": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "name": "tasks run one at a time in the order they arrived",
+  "input": {
+   "events": [
+    "m1",
+    "m2",
+    "m3"
+   ],
+   "retryDelaysMs": [
+    1
+   ],
+   "steps": {},
+   "restartRunning": false
+  },
+  "output": {
+   "tries": [
+    "message:m1",
+    "message:m2",
+    "message:m3"
+   ],
+   "counts": {
+    "pending": 0,
+    "done": 3,
+    "failed": 0
+   }
+  }
+ },
+ {
+  "name": "a task whose try was started when the process died is tried again (the try was counted first), and the queue finishes",
+  "input": {
+   "events": [
+    "m1",
+    "m2"
+   ],
+   "retryDelaysMs": [
+    1,
+    1
+   ],
+   "steps": {},
+   "restartRunning": true
+  },
+  "output": {
+   "tries": [
+    "message:m1",
+    "message:m2"
+   ],
+   "counts": {
+    "pending": 0,
+    "done": 2,
+    "failed": 0
+   }
+  }
+ },
+ {
+  "name": "a task that always fails with no retries is failed after one try",
+  "input": {
+   "events": [
+    "m1"
+   ],
+   "retryDelaysMs": [],
+   "steps": {
+    "message:m1": "fail"
+   },
+   "restartRunning": false
+  },
+  "output": {
+   "tries": [
+    "message:m1"
+   ],
+   "counts": {
+    "pending": 0,
+    "done": 0,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "name": "readyz: the store cannot be read",
+  "input": {
+   "closed": true
+  },
+  "output": {
+   "whileOpen": "ok",
+   "whenClosed": "error",
+   "reasonStartsWith": "The store cannot be read: ",
+   "status": 503
+  }
+ }
+]
