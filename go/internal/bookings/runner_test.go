@@ -23,13 +23,15 @@ import (
 type stepKit struct {
 	*Kit
 	mu    sync.Mutex
-	tries []string
-	fail  map[string]bool
+	tries        []string
+	fail         map[string]bool
+	workThenFail bool
 }
 
 type stepAgent struct {
 	runtime.Agent
 	k *stepKit
+	c *runtime.StepContext
 }
 
 func (a stepAgent) Handle(ev map[string]any) error {
@@ -37,6 +39,13 @@ func (a stepAgent) Handle(ev map[string]any) error {
 	a.k.mu.Lock()
 	a.k.tries = append(a.k.tries, key)
 	a.k.mu.Unlock()
+	if a.k.workThenFail {
+		// the step's work is done in memory (a booking registered, a record line written), then it throws: nothing of it may be saved
+		st := a.c.State.(*Store)
+		st.Register(NewDraft("+919811111111", "en"))
+		a.c.Rec.Append(runtime.NewLine{Conversation: "+919811111111", Action: "receive_message", Outcome: "confirmed", Language: "en"})
+		return errors.New("this step fails after its work")
+	}
 	if a.k.fail[key] {
 		return errors.New("this step fails (the case says so)")
 	}
@@ -44,7 +53,7 @@ func (a stepAgent) Handle(ev map[string]any) error {
 }
 
 func (k *stepKit) NewAgent(c *runtime.StepContext) runtime.Agent {
-	return stepAgent{Agent: k.Kit.NewAgent(c), k: k}
+	return stepAgent{Agent: k.Kit.NewAgent(c), k: k, c: c}
 }
 
 func testRuntime(t *testing.T, kit runtime.Kit, s *Settings, dir string, delays []time.Duration) (*runtime.Runtime, *store.Store) {
@@ -105,6 +114,11 @@ func TestRunnerVectors(t *testing.T) {
 				}
 				return
 			}
+			workThenFail := len(v.Input.Events) == 0
+			kit.workThenFail = workThenFail
+			if workThenFail {
+				v.Input.Events = []string{"m1"}
+			}
 			var events []map[string]any
 			for _, id := range v.Input.Events {
 				events = append(events, map[string]any{"kind": "message", "message": map[string]any{"id": id, "from": "+919811111111", "text": "hi", "timestamp": float64(1)}})
@@ -131,6 +145,15 @@ func TestRunnerVectors(t *testing.T) {
 			rt.Close()
 			counts, _ := st.TaskCounts()
 			got, _ := json.Marshal(map[string]any{"tries": kit.tries, "counts": counts})
+			if workThenFail {
+				// the case's output: how many tries, the queue, and that no snapshot and no record line were saved
+				snap, entries, _ := st.LoadState()
+				var saved any
+				if snap != "" {
+					saved = snap
+				}
+				got, _ = json.Marshal(map[string]any{"tries": len(kit.tries), "counts": counts, "snapshot": saved, "record": len(entries)})
+			}
 			var want, have any
 			_ = json.Unmarshal(v.Output, &want)
 			_ = json.Unmarshal(got, &have)

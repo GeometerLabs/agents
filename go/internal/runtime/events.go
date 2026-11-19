@@ -43,8 +43,8 @@ var (
 
 var paymentEvents = []string{"request.paid", "payment.received", "refund.done"}
 
-// LANGUAGES is modules/language/languages.ts LANGUAGES, in its order.
-var LANGUAGES = []string{"en", "hi", "ml", "kn"}
+// LANGUAGES is modules/language/languages.ts LANGUAGES, in its order (the order every sentence that lists them uses).
+var LANGUAGES = []string{"hi", "en", "ml", "kn"}
 
 func isText(v any) bool {
 	s, ok := v.(string)
@@ -517,7 +517,7 @@ func CheckChannelEvent(raw any) (map[string]any, string) {
 	}
 	lang, _ := e["language"].(string)
 	if !contains(LANGUAGES, lang) {
-		return nil, "A booking's language is one of en, hi, ml, kn."
+		return nil, "A booking's language is one of hi, en, ml, kn."
 	}
 	base["op"], base["serviceId"], base["startMs"], base["name"], base["phone"], base["language"] = "book", sid, start, name, phone, lang
 	return base, ""
@@ -530,7 +530,7 @@ func checkChat(e map[string]any, id string) (map[string]any, string) {
 	}
 	lang, _ := e["language"].(string)
 	if !contains(LANGUAGES, lang) {
-		return nil, "A chat_message's language is one of en, hi, ml, kn."
+		return nil, "A chat_message's language is one of hi, en, ml, kn."
 	}
 	rawText, hasText := e["text"].(string)
 	text := ""
@@ -642,7 +642,7 @@ func checkOrder(e, base map[string]any) (map[string]any, string) {
 	}
 	lang, _ := e["language"].(string)
 	if !contains(LANGUAGES, lang) {
-		return nil, "An order's language is one of en, hi, ml, kn."
+		return nil, "An order's language is one of hi, en, ml, kn."
 	}
 	out := map[string]any{}
 	for k, v := range base {
