@@ -380,3 +380,8 @@ owner's own change from the page), and a template declares its limits through `K
 from `modules/limits/chat-limit-kinds.ts` by `go/scripts/gen_limit_words.ts`. The limits page and `/internal/limit-changes` now answer what TypeScript answers: the three limits tests
 pass on Go and on TypeScript, the Bookings contract on Go is 25 of 128, the listings contract on Go 202 of 202. What the agent reads in force (the refund limit before a refund) is
 wired with the refunds, which wait for the payments package.
+
+**Slice 4, first part: a customer's intent (19 Nov).** `internal/bookings/intent.go`: a model's answer checked by hand (`coerceIntent`: 34 cases of `coerce-vectors.json`, equal) and a
+tapped button or row read with no model (`intentFromReply`: the 13 `reply` cases of `templates-vectors.json`, equal). Not ported yet, with no Go test: the rule parser
+(`parser-vectors.json`, the coerce file's `sure`, `prompt`, `schema`), the customer's words (`templates-vectors.json` render, meta, labels, lists, buttons: they need a generator over
+`src/language/templates.ts` and the four languages' date, time, rupee and phone formats), the agent's scenarios, ONDC, the report.
