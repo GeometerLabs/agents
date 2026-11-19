@@ -98,15 +98,22 @@ const PERIOD_WORD_LISTS = {
   evening: ["शाम", "shaam", "sham", "evening", ...inBoth((w) => w.evening)],
   night: ["रात", "raat", "night", "tonight", ...inBoth((w) => w.night)],
 };
-const PERIODS = (Object.entries(PERIOD_WORD_LISTS) as ["morning" | "afternoon" | "evening" | "night", string[]][]).map(([kind, words]) => ({ re: wordRe(words), kind }));
+export const PERIODS = (Object.entries(PERIOD_WORD_LISTS) as ["morning" | "afternoon" | "evening" | "night", string[]][]).map(([kind, words]) => ({ re: wordRe(words), kind }));
 const PERIOD_WORDS = Object.values(PERIOD_WORD_LISTS).flat().map(canon).sort((a, b) => b.length - a.length).map(escapeRe).join("|");
 
 // "6 മണി" / "6 ಗಂಟೆ": the hour is followed by a word for "o'clock". Not "6 മണിക്കൂർ" (6 hours): a word ends where letters end.
 const CLOCK_WORDS = inBoth((w) => w.oclock).map(canon).sort((a, b) => b.length - a.length).map((w) => `${escapeRe(w)}(?![\\p{L}\\p{M}])`).join("|");
-const HOUR_BEFORE_CLOCK_WORD = new RegExp(`(?<![\\d:.])(\\d{1,2})(?::(\\d{2}))?\\s*(?:बजे|baje|bje|o'?clock|${CLOCK_WORDS})`, "u");
+export const HOUR_BEFORE_CLOCK_WORD = new RegExp(`(?<![\\d:.])(\\d{1,2})(?::(\\d{2}))?\\s*(?:बजे|baje|bje|o'?clock|${CLOCK_WORDS})`, "u");
 // Kannada "6ಕ್ಕೆ" (at 6): only hours 1-12 (a bigger number with ಕ್ಕೆ is a price, "300ಕ್ಕೆ").
-const KANNADA_AT_HOUR = /(?<![\d:.])(1[0-2]|[1-9])(?::(\d{2}))?\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ])(?![\p{L}\p{M}])/u;
-const GREETING_WITH_TIME_RE = phraseRe(["good morning", "good afternoon", "good evening", "good night", "सुप्रभात", "शुभ रात्रि", ...inBoth((w) => w.greetingsWithTime)], "gu"); // a greeting is not a time
+export const KANNADA_AT_HOUR = /(?<![\d:.])(1[0-2]|[1-9])(?::(\d{2}))?\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ])(?![\p{L}\p{M}])/u;
+export const GREETING_WITH_TIME_RE = phraseRe(["good morning", "good afternoon", "good evening", "good night", "सुप्रभात", "शुभ रात्रि", ...inBoth((w) => w.greetingsWithTime)], "gu"); // a greeting is not a time
+
+// The other time patterns findTimePhrase tries, in its order (named and exported so go/scripts/gen_patterns.ts hands the Go runtime these exact sources).
+export const CLOCK_TIME_RE = /(?<![\d:.])(\d{1,2}):(\d{2})(?!\d)\s*(am|pm|a\.m\.|p\.m\.)?/u; // "6:30 pm", "18:00"
+export const HOUR_AMPM_RE = /(?<![\d:.])(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)(?![\p{L}])/u; // "6pm"
+export const PERIOD_THEN_HOUR_RE = new RegExp(`(?:${PERIOD_WORDS})\\s*(?:को\\s*|ko\\s*|at\\s*)?(\\d{1,2})(?::(\\d{2}))?(?![\\d])`, "u"); // "शाम 6", "evening at 6"
+export const HOUR_THEN_PERIOD_RE = new RegExp(`(?<![\\d:.])(\\d{1,2})\\s*(?:in the |at )?(?:${PERIOD_WORDS})`, "u"); // "6 in the evening"
+export const AT_HOUR_RE = /(?<![\d:.])\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\d)/u; // "at 6"
 
 // ---- finding phrases in a message -----------------------------------------------------------------------------
 
@@ -169,18 +176,18 @@ export function findTimePhrase(rawText: string): TimePhrase | undefined {
   const text = canon(rawText);
   let found: { hour: number; minute: number; period?: "am" | "pm" } | undefined;
 
-  let m = /(?<![\d:.])(\d{1,2}):(\d{2})(?!\d)\s*(am|pm|a\.m\.|p\.m\.)?/u.exec(text);
+  let m = CLOCK_TIME_RE.exec(text);
   if (m) found = { hour: Number(m[1]), minute: Number(m[2]), period: m[3] ? (m[3].startsWith("a") ? "am" : "pm") : undefined };
   if (!found) {
-    m = /(?<![\d:.])(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)(?![\p{L}])/u.exec(text);
+    m = HOUR_AMPM_RE.exec(text);
     if (m) found = { hour: Number(m[1]), minute: 0, period: m[2][0] === "a" ? "am" : "pm" };
   }
   if (!found) {
     m = HOUR_BEFORE_CLOCK_WORD.exec(text)
       ?? KANNADA_AT_HOUR.exec(blankWrittenDate(text)) // "ನವೆಂಬರ್ 10ಕ್ಕೆ" is the 10th, not ten o'clock
-      ?? new RegExp(`(?:${PERIOD_WORDS})\\s*(?:को\\s*|ko\\s*|at\\s*)?(\\d{1,2})(?::(\\d{2}))?(?![\\d])`, "u").exec(text)
-      ?? new RegExp(`(?<![\\d:.])(\\d{1,2})\\s*(?:in the |at )?(?:${PERIOD_WORDS})`, "u").exec(text)
-      ?? /(?<![\d:.])\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\d)/u.exec(text);
+      ?? PERIOD_THEN_HOUR_RE.exec(text)
+      ?? HOUR_THEN_PERIOD_RE.exec(text)
+      ?? AT_HOUR_RE.exec(text);
     if (m) found = { hour: Number(m[1]), minute: m[2] ? Number(m[2]) : 0 };
   }
   if (!found || found.hour > 23 || found.minute > 59) return undefined;

@@ -101,11 +101,29 @@ func TestBacktrackingIntoTheEdge(t *testing.T) {
 	if re3.Test("free time") || !re3.Test("free gift") || !re3.Test("Free") {
 		t.Fatal("free(?! ...)")
 	}
-	if _, err := Compile(`(?:a|ab)(?!cd)`, "u"); err == nil {
-		t.Fatal("a long look-ahead after a choice must be refused")
+	// "ends" mode, the shape the price patterns have: a long look-ahead after a greedy repetition. JavaScript gives "for 1" in "for 10am" (it backtracks into [\d,]*: "0am"
+	// is not "am"), nothing in "for 6:30", and "for 300" in "for 300 please"
+	re4 := MustCompile(`\bfor\s*(\d[\d,]*)(?!\s*(?::|am\b))`, "u")
+	for text, want := range map[string]string{"for 10am": "1", "for 6:30": "", "for 300 please": "300", "xfor 300": ""} {
+		m := re4.Find(text)
+		if (m == nil) != (want == "") || (m != nil && m.Group(1) != want) {
+			t.Fatalf("%s: %+v", text, m)
+		}
 	}
+	// and a one-character look-ahead in the middle: "12:345" is not a time, "12:34 pm" is, with the part after it
+	re5 := MustCompile(`(\d{1,2}):(\d{2})(?!\d)\s*(am|pm)?`, "u")
+	if m := re5.Find("12:345"); m != nil {
+		t.Fatalf("12:345: %v", m.Group(0))
+	}
+	if m := re5.Find("at 12:34 pm"); m == nil || m.Group(0) != "12:34 pm" || m.Group(3) != "pm" {
+		t.Fatalf("12:34 pm: %+v", m)
+	}
+	// still refused: a positive look-ahead, and a look-ahead inside a group that does not end the pattern
 	if _, err := Compile(`a(?=b)c`, "u"); err == nil {
-		t.Fatal("a look-ahead in the middle must be refused")
+		t.Fatal("a positive look-ahead must be refused")
+	}
+	if _, err := Compile(`a(?:b(?!c)d)e`, "u"); err == nil {
+		t.Fatal("a look-ahead inside a group must be refused")
 	}
 }
 

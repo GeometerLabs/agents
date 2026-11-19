@@ -4,8 +4,8 @@ package language
 // the record holds (Facts). Anything the record cannot explain fails the check, and a message that fails is not sent (fail closed). The patterns are check.ts's own sources
 // (patterns.json). The problems are check.ts's sentences, word for word, because the record keeps them.
 //
-// Not here: the moments a message may state (`shownMs`, `momentsMs`), which only a booking's or a free-time list's messages carry; the owner's talk of a listings-only shop has none,
-// so every date or time in it is unexplained, as it is in TypeScript with no moments.
+// The moments a message may state (`shownMs`, `momentsMs`) are the booking's start and a list's free times: Facts carries them (ShownMs, MomentsMs, with the zone and the
+// language the problem is worded in); the owner's talk of a listings-only shop has none, so every date or time in it is unexplained, as it is in TypeScript with no moments.
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Facts is CheckFacts without the moments.
@@ -22,6 +23,11 @@ type Facts struct {
 	Counts     []float64
 	Links      []string
 	Literals   []string
+	// The moments (check.ts shownMs and momentsMs): the one date and time the conversation is about, and more a message may state. Each is read in Loc (nil is UTC) and allowed in
+	// every language; ShownMs also names how the record shows it in the problem's own sentence.
+	ShownMs   *int64
+	MomentsMs []int64
+	Loc       *time.Location
 }
 
 // CheckText returns the problems (none: the text may go).
@@ -77,11 +83,39 @@ func CheckText(final string, f Facts) []string {
 	}
 	text = mask(text, links)
 	dates, times := P("check.date").All(text), P("check.time").All(text)
+	okDates, okTimes, shown := map[string]bool{}, map[string]bool{}, map[string][2]string{}
+	loc := f.Loc
+	if loc == nil {
+		loc = time.UTC
+	}
+	for _, l := range []string{"en", "hi", "ml", "kn"} {
+		fm := Formats(l)
+		if f.ShownMs != nil {
+			date, tm := fm.SlotDate(*f.ShownMs, loc), fm.SlotTime(*f.ShownMs, loc)
+			shown[l] = [2]string{date, tm}
+			okDates[normaliseDate(date)], okTimes[normaliseTime(tm)] = true, true
+		}
+		for _, ms := range f.MomentsMs {
+			okDates[normaliseDate(fm.SlotDate(ms, loc))], okTimes[normaliseTime(fm.SlotTime(ms, loc))] = true, true
+		}
+	}
 	for _, d := range dates {
-		problems = append(problems, fmt.Sprintf(`The message says the date "%s", but the record has no date for this conversation.`, d.Group(0)))
+		if !okDates[normaliseDate(d.Group(0))] {
+			record := "no date for this conversation"
+			if s, ok := shown[LanguageOfScript(d.Group(0))]; ok {
+				record = s[0]
+			}
+			problems = append(problems, fmt.Sprintf(`The message says the date "%s", but the record has %s.`, d.Group(0), record))
+		}
 	}
 	for _, t := range times {
-		problems = append(problems, fmt.Sprintf(`The message says the time "%s", but the record has no time for this conversation.`, t.Group(0)))
+		if !okTimes[normaliseTime(t.Group(0))] {
+			record := "no time for this conversation"
+			if s, ok := shown[LanguageOfScript(t.Group(0))]; ok {
+				record = s[1]
+			}
+			problems = append(problems, fmt.Sprintf(`The message says the time "%s", but the record has %s.`, t.Group(0), record))
+		}
 	}
 	text = mask(text, append(dates, times...))
 	money := P("check.amount").All(text)
@@ -148,30 +182,55 @@ func dedupe(xs []string) []string {
 }
 
 // FormatInr is format.ts `formatInr`: "₹" and JavaScript's toLocaleString("en-IN") (Indian grouping: the last three digits, then pairs; at most three decimals, rounded half away
-// from zero as ICU does, trailing zeros dropped).
+// from zero as ICU does, trailing zeros dropped). This is the one rupee text of the Go runtimes: the owner's assistant, the Bookings words, the books and the report all use it
+// (an amount in paise is FormatInr(paise / 100), as the TypeScript callers divide).
 func FormatInr(rupees float64) string {
 	neg := rupees < 0
 	r := math.Abs(rupees)
 	s := strconv.FormatFloat(math.Round(r*1000)/1000, 'f', 3, 64)
 	whole, frac, _ := strings.Cut(s, ".")
-	frac = strings.TrimRight(frac, "0")
-	var g string
-	if len(whole) <= 3 {
-		g = whole
-	} else {
-		g = whole[len(whole)-3:]
-		rest := whole[:len(whole)-3]
-		for len(rest) > 2 {
-			g = rest[len(rest)-2:] + "," + g
-			rest = rest[:len(rest)-2]
-		}
-		g = rest + "," + g
-	}
-	if frac != "" {
+	g := GroupIN(whole)
+	if frac = strings.TrimRight(frac, "0"); frac != "" {
 		g += "." + frac
 	}
 	if neg {
 		g = "-" + g
 	}
 	return "₹" + g
+}
+
+// FormatInrWhole is FormatInr of a whole number of rupees, by integer arithmetic, so a number past 2^53 / 1000 is still written exactly as toLocaleString writes an integer
+// ("₹1,25,000", "₹-5").
+func FormatInrWhole(rupees int64) string {
+	if rupees < 0 {
+		return "₹-" + GroupIN(strconv.FormatInt(-rupees, 10))
+	}
+	return "₹" + GroupIN(strconv.FormatInt(rupees, 10))
+}
+
+// GroupIN is the en-IN grouping of a run of digits: the last three, then pairs (12,34,567). The one grouping of the Go runtimes (the directory's page uses it too).
+func GroupIN(digits string) string {
+	if len(digits) <= 3 {
+		return digits
+	}
+	g, rest := digits[len(digits)-3:], digits[:len(digits)-3]
+	for len(rest) > 2 {
+		g = rest[len(rest)-2:] + "," + g
+		rest = rest[:len(rest)-2]
+	}
+	return rest + "," + g
+}
+
+// normaliseDate and normaliseTime are check.ts's: whitespace, commas and case vary in what is written, the values do not. JavaScript's `\s+` is JSSpace, so the runs are collapsed
+// by IsJSSpace; toLowerCase of these scripts is strings.ToLower's.
+func collapse(s string) string { return strings.Join(strings.FieldsFunc(s, IsJSSpace), " ") }
+
+func normaliseDate(s string) string {
+	return collapse(strings.ReplaceAll(strings.ToLower(Plain(s)), ",", " "))
+}
+
+var meridiem = regexp.MustCompile(`(\d) ?(am|pm)$`)
+
+func normaliseTime(s string) string {
+	return TrimJS(meridiem.ReplaceAllString(collapse(strings.ToLower(Plain(s))), "$1 $2"))
 }

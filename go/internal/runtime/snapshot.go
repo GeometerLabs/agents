@@ -6,6 +6,7 @@ package runtime
 // `assistant` (limitChanges, memory, and any member a later version adds) is carried through as raw JSON, so a shop that is run by the TypeScript runtime again loses nothing by a spell in Go.
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -28,6 +29,8 @@ type Snap struct {
 	hasList   bool
 	Stock     *listings.Stock
 	AI        *budget.AI
+	// T is a template's own store (template.go KitState), nil for the listings shop. Its members are the snapshot's top-level members other than format, assistant and ai.
+	T KitState
 }
 
 // ensureA makes the assistant's state on first use, as the TypeScript runtime's `assistantOf` does (the empty state, with its list of limit changes).
@@ -87,6 +90,137 @@ func ParseSnap(text string) (*Snap, error) {
 	return s, nil
 }
 
+// ParseSnapKit reads a template's snapshot: the shared parts (the owner's assistant, the AI counts) as ParseSnap reads them, and every other top-level member, in its order, to
+// the template. "" is a fresh store. With no kit it is ParseSnap.
+func ParseSnapKit(text string, kit Kit) (*Snap, error) {
+	if kit == nil {
+		return ParseSnap(text)
+	}
+	s := &Snap{Listings: listings.Empty()}
+	if text == "" {
+		t, err := kit.ParseState(nil)
+		s.T = t
+		return s, err
+	}
+	pairs, ok := topMembers([]byte(text))
+	unreadable := fmt.Errorf("the saved state is not in a format this version can read. It was probably written by another version of the pathway")
+	if !ok {
+		return nil, unreadable
+	}
+	var own []Member
+	format := false
+	for _, p := range pairs {
+		switch p.Name {
+		case "format":
+			var f int
+			if json.Unmarshal(p.Raw, &f) != nil || f != Format {
+				return nil, unreadable
+			}
+			format = true
+		case "ai":
+			// snapshot.ts optional-ai: anything but an object is left out
+			var ai budget.AI
+			if isObject(p.Raw) && json.Unmarshal(p.Raw, &ai) == nil {
+				s.AI = &ai
+			}
+		case "assistant":
+			var members map[string]json.RawMessage
+			if isObject(p.Raw) && json.Unmarshal(p.Raw, &members) == nil {
+				s.A = assistant.FromMembers(members)
+				s.assistant = s.A.Rest
+			}
+		default:
+			own = append(own, p)
+		}
+	}
+	if !format {
+		return nil, unreadable
+	}
+	t, err := kit.ParseState(own)
+	if err != nil {
+		return nil, err
+	}
+	s.T = t
+	return s, nil
+}
+
+// isObject: the raw member is a JSON object (snapshot.ts takes an optional member only when it is one).
+func isObject(raw json.RawMessage) bool {
+	for _, c := range raw {
+		switch c {
+		case ' ', '\t', '\n', '\r':
+			continue
+		}
+		return c == '{'
+	}
+	return false
+}
+
+// topMembers is a JSON object's members in the order they were written (encoding/json's maps lose it).
+func topMembers(raw []byte) ([]Member, bool) {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	if t, err := dec.Token(); err != nil || t != json.Delim('{') {
+		return nil, false
+	}
+	var out []Member
+	for dec.More() {
+		kt, err := dec.Token()
+		if err != nil {
+			return nil, false
+		}
+		var v json.RawMessage
+		if err := dec.Decode(&v); err != nil {
+			return nil, false
+		}
+		out = append(out, Member{Name: kt.(string), Raw: v})
+	}
+	return out, true
+}
+
+// serializeKit writes a template's snapshot in the codec's order: the format, then the template's members, with the AI counts and the owner's assistant where its codec puts
+// them (snapshot.ts writes an optional member only when it is set).
+func (s *Snap) serializeKit() (string, error) {
+	members, err := s.T.Members()
+	if err != nil {
+		return "", err
+	}
+	var b bytes.Buffer
+	b.WriteString(`{"format":1`)
+	put := func(name string, raw []byte) {
+		k, _ := json.Marshal(name)
+		b.WriteByte(',')
+		b.Write(k)
+		b.WriteByte(':')
+		b.Write(raw)
+	}
+	for _, m := range members {
+		switch m.Name {
+		case "ai":
+			if s.AI != nil {
+				raw, err := signing.Marshal(s.AI)
+				if err != nil {
+					return "", err
+				}
+				put("ai", raw)
+			}
+		case "assistant":
+			if s.A != nil {
+				raw, err := signing.Marshal(s.A.Members())
+				if err != nil {
+					return "", err
+				}
+				put("assistant", raw)
+			}
+		default:
+			if m.Raw != nil {
+				put(m.Name, m.Raw)
+			}
+		}
+	}
+	b.WriteByte('}')
+	return b.String(), nil
+}
+
 // Touch makes the shop's assistant state and its listings, as the TypeScript `listingsOf(store.assistant ??= ...)` does on first use.
 func (s *Snap) Touch() *listings.State {
 	s.ensureA()
@@ -96,6 +230,9 @@ func (s *Snap) Touch() *listings.State {
 
 // Serialize writes the state as the codec does: the format, then the assistant and the AI counts when there are any.
 func (s *Snap) Serialize() (string, error) {
+	if s.T != nil {
+		return s.serializeKit()
+	}
 	out := struct {
 		Format    int                        `json:"format"`
 		Assistant map[string]json.RawMessage `json:"assistant,omitempty"`

@@ -8,8 +8,7 @@ package assistant
 // shops holds at most four copies, and a shop in English never pays for Malayalam). The word lists of the owner's commands (rules.json.gz) are unpacked the same way, and the regular
 // expressions made from them are compiled the first time an owner's message is read (rules.go).
 //
-// The formatters a message needs are here, and small: the rupee grouping (en-IN: 12,34,567), the date (weekday and month names come from the pack), the time of day (24 forms in
-// the pack, the day-part words of each hour) and the moment an owner-control alert carries (owner-phones.ts dayAndTime: the month names and 24 forms in the pack). The tests prove
+// The rupee, the date and the time of day are language's (FormatInr, Formats: the one writing every Go runtime shares); what is here is the moment an owner-control alert carries (owner-phones.ts dayAndTime: the month names and 24 forms in the pack). The tests prove
 // each of them equal to Node's.
 
 import (
@@ -22,6 +21,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/GeometerLabs/agents/go/internal/language"
 )
 
 //go:embed words/en.json.gz words/hi.json.gz words/ml.json.gz words/kn.json.gz words/rules.json.gz
@@ -29,14 +30,10 @@ var packed embed.FS
 
 // Pack is one language's messages.
 type Pack struct {
-	M    map[string]string `json:"m"`
-	Date struct {
-		Weekdays []string `json:"weekdays"`
-		Months   []string `json:"months"`
-		Comma    bool     `json:"comma"`
-	} `json:"date"`
-	Time map[string]string `json:"time"`
-	Cat  map[string]string `json:"cat"`
+	M   map[string]string `json:"m"`
+	Cat map[string]string `json:"cat"`
+	// lang is the pack's language: dates and times are written by language.Formats, the one table the Go runtimes share (formats.json)
+	lang string
 	// Stamp is owner-phones.ts dayAndTime as data: the months' short names, and per hour the whole moment with {d}, {mon} and {mm} slots (gen_words.ts stampOf)
 	Stamp struct {
 		Months []string          `json:"months"`
@@ -75,7 +72,7 @@ func Words(lang string) *Pack {
 		s = packs["en"]
 	}
 	s.once.Do(func() {
-		p := &Pack{}
+		p := &Pack{lang: strings.TrimSuffix(lang2file(lang), ".json.gz")}
 		if err := json.Unmarshal(gunzip(lang2file(lang)), p); err != nil {
 			panic("the packed words are not JSON: " + lang)
 		}
@@ -125,53 +122,17 @@ func slotPairs(vals []string) []string {
 // Has is whether the pack has a message.
 func (p *Pack) Has(key string) bool { _, ok := p.M[key]; return ok }
 
-// INR is formatters.ts formatInr over paise: "₹8,000", "₹120.5", "₹12,34,567" (JavaScript's toLocaleString("en-IN"): the last three digits, then pairs; up to two decimals, trailing zeros dropped).
-func INR(paise int64) string {
-	neg := paise < 0
-	if neg {
-		paise = -paise
-	}
-	whole, frac := paise/100, paise%100
-	s := strconv.FormatInt(whole, 10)
-	if len(s) > 3 {
-		head, tail := s[:len(s)-3], s[len(s)-3:]
-		var groups []string
-		for len(head) > 2 {
-			groups = append([]string{head[len(head)-2:]}, groups...)
-			head = head[:len(head)-2]
-		}
-		if head != "" {
-			groups = append([]string{head}, groups...)
-		}
-		s = strings.Join(groups, ",") + "," + tail
-	}
-	if frac != 0 {
-		f := strconv.FormatInt(frac+100, 10)[1:]
-		s += "." + strings.TrimRight(f, "0")
-	}
-	if neg {
-		s = "-" + s
-	}
-	return "₹" + s
-}
+// INR is format.ts formatInr over paise, as the TypeScript callers write it (formatInr(paise / 100)): language.FormatInr, the one rupee text.
+func INR(paise int64) string { return language.FormatInr(float64(paise) / 100) }
 
-// DateText is formatters.ts formatDate: "Wed 18 Nov", or "बुधवार, 18 नवंबर" (a comma after the weekday in the other languages).
+// DateText is format.ts formatDate: "Wed 18 Nov", or "बुधवार, 18 नवंबर".
 func (p *Pack) DateText(year, month, day int) string {
-	wd := time.Date(year, time.Month(month), day, 12, 0, 0, 0, time.UTC).Weekday()
-	comma := ""
-	if p.Date.Comma {
-		comma = ","
-	}
-	return p.Date.Weekdays[wd] + comma + " " + strconv.Itoa(day) + " " + p.Date.Months[month-1]
+	return language.Formats(p.lang).Date(year, month, day)
 }
 
-// TimeOfDay is formatters.ts formatTime: "6:05 pm", "शाम 6:05 बजे".
+// TimeOfDay is format.ts formatTime: "6:05 pm", "शाम 6:05 बजे".
 func (p *Pack) TimeOfDay(hour, minute int) string {
-	mm := strconv.Itoa(minute)
-	if minute < 10 {
-		mm = "0" + mm
-	}
-	return strings.Replace(p.Time[strconv.Itoa(hour)], "{mm}", mm, 1)
+	return language.Formats(p.lang).TimeOfDay(hour, minute)
 }
 
 // india is India's time, the one owner-phones.ts writes every moment in (Asia/Kolkata has had no summer time since 1945, so a fixed zone is the same zone and needs no tz database).

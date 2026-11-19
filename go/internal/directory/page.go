@@ -12,6 +12,8 @@ import (
 	"math"
 	"strconv"
 	"strings"
+
+	"github.com/GeometerLabs/agents/go/internal/language"
 )
 
 // FormValues is what the form shows (the buyer's own request, as typed).
@@ -50,22 +52,7 @@ func esc(s string) string { return escaper.Replace(s) }
 func rupees(value string) string {
 	n, _ := strconv.ParseFloat(value, 64)
 	whole := math.Trunc(n)
-	digits := strconv.FormatFloat(whole, 'f', 0, 64)
-	var grouped string
-	if len(digits) > 3 {
-		head, tail := digits[:len(digits)-3], digits[len(digits)-3:]
-		var parts []string
-		for len(head) > 2 {
-			parts = append([]string{head[len(head)-2:]}, parts...)
-			head = head[:len(head)-2]
-		}
-		if head != "" {
-			parts = append([]string{head}, parts...)
-		}
-		grouped = strings.Join(parts, ",") + "," + tail
-	} else {
-		grouped = digits
-	}
+	grouped := language.GroupIN(strconv.FormatFloat(whole, 'f', 0, 64))
 	if n == whole {
 		return "₹" + grouped
 	}

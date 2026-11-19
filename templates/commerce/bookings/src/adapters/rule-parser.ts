@@ -9,10 +9,10 @@ import { findDatePhrase, findTimePhrase, phraseRe, wordRe } from "../../../../..
 import { inBoth } from "../../../../../modules/language/words.ts";
 import type { Intent, IntentParser, ParseContext } from "./model.ts";
 
-const CANCEL_RE = wordRe(["cancel", "cancelled", "canceled", "cancellation", "कैंसल", "रद्द", "रद", "निरस्त", "radd", "cancle", ...inBoth((w) => w.cancel)]);
-const RESCHEDULE_RE = new RegExp(nfc("(?:re-?schedul|postpone|change\\s+(?:the\\s+|my\\s+)?(?:time|date|slot|booking|appointment)|move\\s+(?:it|my\\s+(?:booking|appointment))|समय\\s+बदल|तारीख\\s+बदल|दिन\\s+बदल|रीशेड्यूल|रीसेट|time\\s+badal|date\\s+badal)"), "u");
-const RESCHEDULE_DRAVIDIAN_RE = phraseRe(inBoth((w) => w.reschedule));
-const BOOK_RE = wordRe(["book", "booking", "appointment", "slot", "reserve", "बुक", "बुकिंग", "अपॉइंटमेंट", "चाहिए", "करवाना", "कटवाना", "chahiye", "karwana", "available", ...inBoth((w) => w.book)]);
+export const CANCEL_RE = wordRe(["cancel", "cancelled", "canceled", "cancellation", "कैंसल", "रद्द", "रद", "निरस्त", "radd", "cancle", ...inBoth((w) => w.cancel)]);
+export const RESCHEDULE_RE = new RegExp(nfc("(?:re-?schedul|postpone|change\\s+(?:the\\s+|my\\s+)?(?:time|date|slot|booking|appointment)|move\\s+(?:it|my\\s+(?:booking|appointment))|समय\\s+बदल|तारीख\\s+बदल|दिन\\s+बदल|रीशेड्यूल|रीसेट|time\\s+badal|date\\s+badal)"), "u");
+export const RESCHEDULE_DRAVIDIAN_RE = phraseRe(inBoth((w) => w.reschedule));
+export const BOOK_RE = wordRe(["book", "booking", "appointment", "slot", "reserve", "बुक", "बुकिंग", "अपॉइंटमेंट", "चाहिए", "करवाना", "कटवाना", "chahiye", "karwana", "available", ...inBoth((w) => w.book)]);
 
 function findService(t: string, context: ParseContext): string | undefined {
   let best: { id: string; length: number } | undefined;

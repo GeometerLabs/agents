@@ -212,6 +212,11 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 	if strings.HasPrefix(path, "/internal/channel/") {
 		return s.channelRoute(w, r, path)
 	}
+	if s.rt.o.Kit != nil {
+		if handled, err := s.kitRoute(w, r, path); handled {
+			return err
+		}
+	}
 	switch path {
 	case "/healthz":
 		if err := only(r, "GET"); err != nil {
@@ -355,6 +360,11 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		return nil
 	}
 	rt := s.rt
+	if rt.o.Kit != nil {
+		if handled, err := s.kitChannelRoute(w, r, path); handled {
+			return err
+		}
+	}
 	switch path {
 	case "/internal/channel/events":
 		return s.events(w, r)
