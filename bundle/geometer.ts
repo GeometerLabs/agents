@@ -96,6 +96,7 @@
 //                                owner's age key, which is kept off the server: bring it for the restore and take it away after. The shop is then up to a day behind:
 //                                before it sends anything it moves its ids on and looks at the payment service and the calendar. For an agent someone else wrote,
 //                                its Guards' stores, its record and its key go back (the Guards are stopped only after the snapshot has been checked and tried)
+//   go-build                                    build the Go shop programs from this checkout into the image geo-go:<commit> (install.sh does this; update and deploy do it when needed)
 //   update [--to V] [--shops a,b] [--dry-run]   move clients to a new template version, one at a time, each hand-checked on its own settings first; a client with any situation
 //                                that held before and fails now is held back with the reason. Stopped half-way, the same command again carries on. --dry-run changes nothing.
 //   rollback [<shop> | --shops a,b]   back to the previous pathway.lock, deployed through the same checks; with no name, the clients the last update moved
@@ -142,6 +143,7 @@ import { runFingerprints } from "./backup/fingerprints.ts";
 import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
+import { ensureGoRuntimes } from "./lib/go-build.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeModelKey, writeSecretFile, writeSpeechKey, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
@@ -213,6 +215,12 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     if (!command || command === "--help" || command === "help") { console.log(readFileSync(new URL(import.meta.url), "utf8").split("\n").filter((l) => l.startsWith("//")).map((l) => l.slice(3)).join("\n")); return command ? 0 : 2; }
 
     if (command === "init") return await init(positionals[0], values as Record<string, string | boolean | undefined>);
+    // wave 1b: build the Go shop programs from this checkout (install.sh runs it; `geometer update` and `deploy` do the same when they need it). Needs Docker, no server folder.
+    if (command === "go-build") {
+      const built = await ensureGoRuntimes({ appDir: APP_DIR, runner: realRunner, docker: process.env.GEOMETER_DOCKER ?? "docker", log: (line) => console.log(line) });
+      console.log(built.ok ? (built.built ? `Built ${built.image}.` : `${built.image} is already built.`) : built.reason);
+      return built.ok ? 0 : 1;
+    }
     if (command === "pair") return await pair(positionals[0], str("fleet-url"));
 
     // packing a built Streetlist site happens on the owner's machine, with no server folder
