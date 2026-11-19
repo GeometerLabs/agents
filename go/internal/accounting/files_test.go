@@ -5,8 +5,13 @@ package accounting
 
 import (
 	"encoding/json"
+	"reflect"
+	"sort"
 	"strconv"
 	"testing"
+
+	"golang.org/x/text/collate"
+	"golang.org/x/text/language"
 )
 
 type fileOut struct {
@@ -106,6 +111,10 @@ func TestAccountantFiles(t *testing.T) {
 
 func TestMisc(t *testing.T) {
 	var m struct {
+		Collation struct {
+			IDs    []string `json:"ids"`
+			Sorted []string `json:"sorted"`
+		} `json:"collation"`
 		XML    []struct{ Text, Out string } `json:"xml"`
 		CSV    []struct{ Text, Out string } `json:"csv"`
 		Rupees []struct {
@@ -131,6 +140,13 @@ func TestMisc(t *testing.T) {
 		} `json:"docMisc"`
 	}
 	loadVec(t, "misc", &m)
+	// the order the settlements sheet and the obligations sort by (JavaScript's localeCompare): collate with the English tailoring gives the order Node's ICU gives
+	ids := append([]string(nil), m.Collation.IDs...)
+	coll := collate.New(language.English)
+	sort.SliceStable(ids, func(a, b int) bool { return coll.CompareString(ids[a], ids[b]) < 0 })
+	if !reflect.DeepEqual(ids, m.Collation.Sorted) {
+		t.Errorf("collate order differs from localeCompare:\n go %q\n ts %q", ids, m.Collation.Sorted)
+	}
 	for _, c := range m.XML {
 		if got := XML(c.Text); got != c.Out {
 			t.Errorf("XML(%q) = %q, ts %q", c.Text, got, c.Out)

@@ -1,0 +1,884 @@
+{
+ "node": "v26.10.0",
+ "collation": {
+  "ids": [
+   "setl_a",
+   "setl_A",
+   "setl-1",
+   "setl_10",
+   "setl_9",
+   "setl_1",
+   "Setl_b",
+   "SETL_B",
+   "setl b",
+   "setl.1",
+   "1",
+   "10",
+   "9",
+   "a",
+   "B",
+   "é",
+   "e",
+   "f",
+   "Z",
+   "z",
+   "_x",
+   "-x",
+   "x_",
+   "ക",
+   "क",
+   "setl_ä",
+   "ä",
+   "ab",
+   "aB",
+   "Ab",
+   "AB",
+   "a-b",
+   "a_b",
+   "a b",
+   "a.b",
+   "upi-3",
+   "upr-10",
+   "upr-5",
+   "upr-1",
+   "2026-11-09T05:00:00.000Z",
+   "2026-11-09T05:00:00.001Z",
+   "2026-11-10T00:00:00.000Z",
+   "",
+   " ",
+   "a1",
+   "a10",
+   "a2"
+  ],
+  "sorted": [
+   "",
+   " ",
+   "_x",
+   "-x",
+   "1",
+   "10",
+   "2026-11-09T05:00:00.000Z",
+   "2026-11-09T05:00:00.001Z",
+   "2026-11-10T00:00:00.000Z",
+   "9",
+   "a",
+   "ä",
+   "a b",
+   "a_b",
+   "a-b",
+   "a.b",
+   "a1",
+   "a10",
+   "a2",
+   "ab",
+   "aB",
+   "Ab",
+   "AB",
+   "B",
+   "e",
+   "é",
+   "f",
+   "setl b",
+   "setl_1",
+   "setl_10",
+   "setl_9",
+   "setl_a",
+   "setl_A",
+   "setl_ä",
+   "Setl_b",
+   "SETL_B",
+   "setl-1",
+   "setl.1",
+   "upi-3",
+   "upr-1",
+   "upr-10",
+   "upr-5",
+   "x_",
+   "z",
+   "Z",
+   "क",
+   "ക"
+  ]
+ },
+ "xml": [
+  {
+   "text": "plain",
+   "out": "plain"
+  },
+  {
+   "text": "a & b < c > d \"e\" 'f'",
+   "out": "a &amp; b &lt; c &gt; d &quot;e&quot; &apos;f&apos;"
+  },
+  {
+   "text": "tab\there\nnew\rline",
+   "out": "tab\there\nnew\rline"
+  },
+  {
+   "text": "nul\u0000x",
+   "out": "nul x"
+  },
+  {
+   "text": "\u000b\f",
+   "out": "  "
+  },
+  {
+   "text": "bell\u0007",
+   "out": "bell "
+  },
+  {
+   "text": "space   ok",
+   "out": "space   ok"
+  },
+  {
+   "text": "퟿�￾￿",
+   "out": "퟿�  "
+  },
+  {
+   "text": "emoji 😀 and 𐀀 and 􏿿",
+   "out": "emoji 😀 and 𐀀 and 􏿿"
+  },
+  {
+   "text": "  ",
+   "out": "  "
+  },
+  {
+   "text": "é ñ ಕ ക क",
+   "out": "é ñ ಕ ക क"
+  },
+  {
+   "text": "&amp; already",
+   "out": "&amp;amp; already"
+  },
+  {
+   "text": "<![CDATA[x]]>",
+   "out": "&lt;![CDATA[x]]&gt;"
+  },
+  {
+   "text": "",
+   "out": ""
+  },
+  {
+   "text": "\u001f ",
+   "out": "  "
+  },
+  {
+   "text": "a😀b",
+   "out": "a😀b"
+  }
+ ],
+ "csv": [
+  {
+   "text": "plain",
+   "out": "plain"
+  },
+  {
+   "text": "a,b",
+   "out": "\"a,b\""
+  },
+  {
+   "text": "a\"b",
+   "out": "\"a\"\"b\""
+  },
+  {
+   "text": "a\nb",
+   "out": "\"a\nb\""
+  },
+  {
+   "text": "a\rb",
+   "out": "\"a\rb\""
+  },
+  {
+   "text": "",
+   "out": ""
+  },
+  {
+   "text": " lead",
+   "out": " lead"
+  },
+  {
+   "text": "tr ail ",
+   "out": "tr ail "
+  },
+  {
+   "text": "é",
+   "out": "é"
+  },
+  {
+   "text": "1,5",
+   "out": "\"1,5\""
+  },
+  {
+   "text": "'",
+   "out": "'"
+  }
+ ],
+ "rupees": [
+  {
+   "paise": 0,
+   "out": {
+    "value": "0.00"
+   }
+  },
+  {
+   "paise": 1,
+   "out": {
+    "value": "0.01"
+   }
+  },
+  {
+   "paise": 9,
+   "out": {
+    "value": "0.09"
+   }
+  },
+  {
+   "paise": 10,
+   "out": {
+    "value": "0.10"
+   }
+  },
+  {
+   "paise": 99,
+   "out": {
+    "value": "0.99"
+   }
+  },
+  {
+   "paise": 100,
+   "out": {
+    "value": "1.00"
+   }
+  },
+  {
+   "paise": 101,
+   "out": {
+    "value": "1.01"
+   }
+  },
+  {
+   "paise": 12345,
+   "out": {
+    "value": "123.45"
+   }
+  },
+  {
+   "paise": 99999,
+   "out": {
+    "value": "999.99"
+   }
+  },
+  {
+   "paise": 100000,
+   "out": {
+    "value": "1000.00"
+   }
+  },
+  {
+   "paise": 123456789,
+   "out": {
+    "value": "1234567.89"
+   }
+  },
+  {
+   "paise": -1,
+   "out": {
+    "value": "-0.01"
+   }
+  },
+  {
+   "paise": -100,
+   "out": {
+    "value": "-1.00"
+   }
+  },
+  {
+   "paise": -12345,
+   "out": {
+    "value": "-123.45"
+   }
+  },
+  {
+   "paise": 9007199254740991,
+   "out": {
+    "value": "90071992547409.91"
+   }
+  },
+  {
+   "paise": -9007199254740991,
+   "out": {
+    "value": "-90071992547409.91"
+   }
+  },
+  {
+   "paise": 9007199254740992,
+   "out": {
+    "error": "9007199254740992 is not a whole number of paise"
+   }
+  }
+ ],
+ "formatPaise": [
+  {
+   "paise": 0,
+   "out": {
+    "value": "₹0"
+   }
+  },
+  {
+   "paise": 1,
+   "out": {
+    "value": "₹0.01"
+   }
+  },
+  {
+   "paise": 99,
+   "out": {
+    "value": "₹0.99"
+   }
+  },
+  {
+   "paise": 100,
+   "out": {
+    "value": "₹1"
+   }
+  },
+  {
+   "paise": 101,
+   "out": {
+    "value": "₹1.01"
+   }
+  },
+  {
+   "paise": 1050,
+   "out": {
+    "value": "₹10.50"
+   }
+  },
+  {
+   "paise": 45000,
+   "out": {
+    "value": "₹450"
+   }
+  },
+  {
+   "paise": 45050,
+   "out": {
+    "value": "₹450.50"
+   }
+  },
+  {
+   "paise": 99999,
+   "out": {
+    "value": "₹999.99"
+   }
+  },
+  {
+   "paise": 100000,
+   "out": {
+    "value": "₹1,000"
+   }
+  },
+  {
+   "paise": 100001,
+   "out": {
+    "value": "₹1,000.01"
+   }
+  },
+  {
+   "paise": 123456789,
+   "out": {
+    "value": "₹12,34,567.89"
+   }
+  },
+  {
+   "paise": 1234567890,
+   "out": {
+    "value": "₹1,23,45,678.90"
+   }
+  },
+  {
+   "paise": 100000000000,
+   "out": {
+    "value": "₹1,00,00,00,000"
+   }
+  },
+  {
+   "paise": 9007199254740991,
+   "out": {
+    "value": "₹9,00,71,99,25,47,409.91"
+   }
+  },
+  {
+   "paise": -1,
+   "out": {
+    "error": "An amount is a whole number of paise, 0 or more (got -1)."
+   }
+  },
+  {
+   "paise": -100,
+   "out": {
+    "error": "An amount is a whole number of paise, 0 or more (got -100)."
+   }
+  },
+  {
+   "paise": 9007199254740992,
+   "out": {
+    "error": "An amount is a whole number of paise, 0 or more (got 9007199254740992)."
+   }
+  }
+ ],
+ "yesterdays": [
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1794286800000,
+   "out": {
+    "year": 2026,
+    "month": 11,
+    "day": 9
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1774981740000,
+   "out": {
+    "year": 2026,
+    "month": 3,
+    "day": 30
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1774981800000,
+   "out": {
+    "year": 2026,
+    "month": 3,
+    "day": 31
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1798761600000,
+   "out": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1835483400000,
+   "out": {
+    "year": 2028,
+    "month": 2,
+    "day": 29
+   }
+  },
+  {
+   "tz": "Asia/Kolkata",
+   "ms": 1793505600000,
+   "out": {
+    "year": 2026,
+    "month": 10,
+    "day": 31
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1794286800000,
+   "out": {
+    "year": 2026,
+    "month": 11,
+    "day": 9
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1774981740000,
+   "out": {
+    "year": 2026,
+    "month": 3,
+    "day": 30
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1774981800000,
+   "out": {
+    "year": 2026,
+    "month": 3,
+    "day": 30
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1798761600000,
+   "out": {
+    "year": 2026,
+    "month": 12,
+    "day": 31
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1835483400000,
+   "out": {
+    "year": 2028,
+    "month": 2,
+    "day": 29
+   }
+  },
+  {
+   "tz": "UTC",
+   "ms": 1793505600000,
+   "out": {
+    "year": 2026,
+    "month": 10,
+    "day": 31
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1794286800000,
+   "out": {
+    "year": 2026,
+    "month": 11,
+    "day": 9
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1774981740000,
+   "out": {
+    "year": 2026,
+    "month": 3,
+    "day": 30
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1774981800000,
+   "out": {
+    "year": 2026,
+    "month": 3,
+    "day": 30
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1798761600000,
+   "out": {
+    "year": 2026,
+    "month": 12,
+    "day": 30
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1835483400000,
+   "out": {
+    "year": 2028,
+    "month": 2,
+    "day": 28
+   }
+  },
+  {
+   "tz": "America/New_York",
+   "ms": 1793505600000,
+   "out": {
+    "year": 2026,
+    "month": 10,
+    "day": 31
+   }
+  }
+ ],
+ "docMisc": [
+  {
+   "status": "composition",
+   "language": "hi",
+   "docs": [
+    {
+     "doc": {
+      "number": "RCT/26-27/0001",
+      "series": "RCT",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 1,
+      "at": "2026-11-02T05:00:00.000Z",
+      "case": "b-1",
+      "kind": "received",
+      "amountPaise": 45050,
+      "evidence": "provider",
+      "paymentId": "p1",
+      "method": "gateway"
+     },
+     "out": {
+      "language": "hi",
+      "kind": "receipt",
+      "number": "RCT/26-27/0001",
+      "at": "2026-11-02T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 45050,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": true,
+      "whatFor": "Haircut for <b-1> & more (hi)",
+      "person": "Anita Sharma <A&B>",
+      "method": "gateway",
+      "evidence": "provider"
+     }
+    },
+    {
+     "doc": {
+      "number": "CN/26-27/0001",
+      "series": "CN",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 2,
+      "at": "2026-11-03T05:00:00.000Z",
+      "case": "b-1",
+      "kind": "refund_made",
+      "amountPaise": 100,
+      "evidence": "owner_mark",
+      "paymentId": "p1",
+      "method": "upi"
+     },
+     "out": {
+      "language": "hi",
+      "kind": "refund_note",
+      "number": "CN/26-27/0001",
+      "at": "2026-11-03T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 100,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": true,
+      "whatFor": "Haircut for <b-1> & more (hi)",
+      "person": "Anita Sharma <A&B>",
+      "method": "upi",
+      "evidence": "owner_mark",
+      "cites": {
+       "number": "RCT/26-27/0001",
+       "at": "2026-11-02T05:00:00.000Z"
+      }
+     }
+    },
+    {
+     "doc": {
+      "number": "CN/26-27/0002",
+      "series": "CN",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 3,
+      "at": "2026-11-03T05:00:00.000Z",
+      "case": "b-2",
+      "kind": "refund_made",
+      "amountPaise": 100,
+      "evidence": "owner_mark",
+      "paymentId": "p1",
+      "method": "upi"
+     },
+     "out": {
+      "language": "hi",
+      "kind": "refund_note",
+      "number": "CN/26-27/0002",
+      "at": "2026-11-03T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 100,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": true,
+      "whatFor": "Haircut for <b-2> & more (hi)",
+      "method": "upi",
+      "evidence": "owner_mark"
+     }
+    },
+    {
+     "doc": {
+      "number": "CN/26-27/0003",
+      "series": "CN",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 4,
+      "at": "2026-11-03T05:00:00.000Z",
+      "case": null,
+      "kind": "refund_made",
+      "amountPaise": 100,
+      "evidence": "owner_mark",
+      "method": "upi"
+     },
+     "out": {
+      "language": "hi",
+      "kind": "refund_note",
+      "number": "CN/26-27/0003",
+      "at": "2026-11-03T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 100,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": true,
+      "whatFor": "",
+      "method": "upi",
+      "evidence": "owner_mark"
+     }
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "docs": [
+    {
+     "doc": {
+      "number": "RCT/26-27/0001",
+      "series": "RCT",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 1,
+      "at": "2026-11-02T05:00:00.000Z",
+      "case": "b-1",
+      "kind": "received",
+      "amountPaise": 45050,
+      "evidence": "provider",
+      "paymentId": "p1",
+      "method": "gateway"
+     },
+     "out": {
+      "language": "en",
+      "kind": "receipt",
+      "number": "RCT/26-27/0001",
+      "at": "2026-11-02T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 45050,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": false,
+      "whatFor": "Haircut for <b-1> & more (en)",
+      "person": "Anita Sharma <A&B>",
+      "method": "gateway",
+      "evidence": "provider"
+     }
+    },
+    {
+     "doc": {
+      "number": "CN/26-27/0001",
+      "series": "CN",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 2,
+      "at": "2026-11-03T05:00:00.000Z",
+      "case": "b-1",
+      "kind": "refund_made",
+      "amountPaise": 100,
+      "evidence": "owner_mark",
+      "paymentId": "p1",
+      "method": "upi"
+     },
+     "out": {
+      "language": "en",
+      "kind": "refund_note",
+      "number": "CN/26-27/0001",
+      "at": "2026-11-03T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 100,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": false,
+      "whatFor": "Haircut for <b-1> & more (en)",
+      "person": "Anita Sharma <A&B>",
+      "method": "upi",
+      "evidence": "owner_mark",
+      "cites": {
+       "number": "RCT/26-27/0001",
+       "at": "2026-11-02T05:00:00.000Z"
+      }
+     }
+    },
+    {
+     "doc": {
+      "number": "CN/26-27/0002",
+      "series": "CN",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 3,
+      "at": "2026-11-03T05:00:00.000Z",
+      "case": "b-2",
+      "kind": "refund_made",
+      "amountPaise": 100,
+      "evidence": "owner_mark",
+      "paymentId": "p1",
+      "method": "upi"
+     },
+     "out": {
+      "language": "en",
+      "kind": "refund_note",
+      "number": "CN/26-27/0002",
+      "at": "2026-11-03T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 100,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": false,
+      "whatFor": "Haircut for <b-2> & more (en)",
+      "method": "upi",
+      "evidence": "owner_mark"
+     }
+    },
+    {
+     "doc": {
+      "number": "CN/26-27/0003",
+      "series": "CN",
+      "fy": "26-27",
+      "n": 1,
+      "seq": 4,
+      "at": "2026-11-03T05:00:00.000Z",
+      "case": null,
+      "kind": "refund_made",
+      "amountPaise": 100,
+      "evidence": "owner_mark",
+      "method": "upi"
+     },
+     "out": {
+      "language": "en",
+      "kind": "refund_note",
+      "number": "CN/26-27/0003",
+      "at": "2026-11-03T05:00:00.000Z",
+      "timeZone": "Asia/Kolkata",
+      "amountPaise": 100,
+      "shop": {
+       "name": "Anita's <Salon> & \"Spa\"",
+       "address": "12 MG Road, Kochi\n682001",
+       "phone": "+91 98765 43210"
+      },
+      "legend": false,
+      "whatFor": "",
+      "method": "upi",
+      "evidence": "owner_mark"
+     }
+    }
+   ]
+  }
+ ],
+ "css": {
+  "customer": 8698,
+  "doc": 853
+ }
+}

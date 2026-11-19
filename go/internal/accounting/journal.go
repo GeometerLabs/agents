@@ -207,7 +207,7 @@ type Journal struct {
 
 // NewJournal is `new Journal(legacy)`.
 func NewJournal(legacy LegacyMap) *Journal {
-	return &Journal{identities: map[string]int{}, balance: map[string]int64{}, owed: map[string]*owedRefund{}, bySeq: map[int][]Line{}, legacy: legacy}
+	return &Journal{Lines: []Line{}, Documents: []DocRef{}, Problems: []Problem{}, identities: map[string]int{}, balance: map[string]int64{}, owed: map[string]*owedRefund{}, bySeq: map[int][]Line{}, legacy: legacy}
 }
 
 // BuildJournal is `journal(entries, legacy)`: the whole record, read once.

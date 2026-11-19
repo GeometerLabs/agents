@@ -163,8 +163,8 @@ func settlementRows(entries []Entry, inRange func(ms int64) bool, timeZone strin
 		}
 		return a
 	}
-	// int is `Number(v ?? 0)` kept only if it is a safe integer, else 0
-	int := func(refs map[string]string, key string) int64 {
+	// num is `Number(v ?? 0)` kept only if it is a safe integer, else 0
+	num := func(refs map[string]string, key string) int64 {
 		v, ok := refs[key]
 		if !ok {
 			return 0
@@ -180,7 +180,7 @@ func settlementRows(entries []Entry, inRange func(ms int64) bool, timeZone strin
 		var atMs int64
 		atOK := true
 		if r[RefSettledAt] != "" {
-			atMs = int(r, RefSettledAt) * 1000
+			atMs = num(r, RefSettledAt) * 1000
 		} else {
 			atMs, atOK = ParseISO(e.Time)
 		}
@@ -191,19 +191,19 @@ func settlementRows(entries []Entry, inRange func(ms int64) bool, timeZone strin
 			if r[RefRowType] == "refund" {
 				typ = "refund"
 			}
-			check := CheckSettlementRow(SettlementFigures{Type: typ, Amount: int(r, RefAmount), Fee: int(r, RefFee), Tax: int(r, RefTax), Credit: int(r, RefCredit), Debit: int(r, RefDebit)})
+			check := CheckSettlementRow(SettlementFigures{Type: typ, Amount: num(r, RefAmount), Fee: num(r, RefFee), Tax: num(r, RefTax), Credit: num(r, RefCredit), Debit: num(r, RefDebit)})
 			if !check.OK {
 				continue // the journal already lists it as a problem; a row that does not add up is not summed
 			}
 			a := take(undef(r, RefSettlement), undef(r, RefUTR), atMs, atOK)
 			if typ == "payment" {
-				a.gross += int(r, RefAmount)
+				a.gross += num(r, RefAmount)
 				a.fee += check.FeePaise
 				a.gst += check.GSTPaise
-				a.net += int(r, RefCredit)
+				a.net += num(r, RefCredit)
 			} else {
-				a.refunds += int(r, RefAmount)
-				a.net -= int(r, RefAmount)
+				a.refunds += num(r, RefAmount)
+				a.net -= num(r, RefAmount)
 			}
 		case e.Action == SettlementListed && (r["why"] == "unknown_payment" || r["why"] == "problem" || r["why"] == "other") && r["settlementId"] != "":
 			any = true
@@ -211,7 +211,7 @@ func settlementRows(entries []Entry, inRange func(ms int64) bool, timeZone strin
 		case e.Action == SettlementListed && r["why"] == "adjustment" && r["settlementId"] != "":
 			any = true
 			a := take(r["settlementId"], r["utr"], atMs, atOK)
-			taken := int(r, RefDebit) - int(r, RefCredit) // an adjustment that takes money off the settlement is positive
+			taken := num(r, RefDebit) - num(r, RefCredit) // an adjustment that takes money off the settlement is positive
 			a.adjustments += taken
 			a.net -= taken
 		}

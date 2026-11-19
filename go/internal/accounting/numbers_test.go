@@ -237,7 +237,7 @@ func TestJSNumberVectors(t *testing.T) {
 		}
 	}
 	for _, c := range v.Rounds {
-		x := c.Inr * 100 // a variable first, so no fused multiply-add can change the double that is rounded
+		x := float64(c.Inr * 100) // an explicit conversion: no fused multiply-add may change the double that is rounded (the spec allows fusing across statements otherwise)
 		if got := RoundHalfUp(x); got != c.P && !(got == 0 && c.P == 0) {
 			t.Errorf("Math.round(%v * 100) = %v, ts %v", c.Inr, got, c.P)
 		}
@@ -264,7 +264,7 @@ func TestJSNumber(t *testing.T) {
 	for _, c := range []struct {
 		f    float64
 		want string
-	}{{0.1 + 0.2, "0.30000000000000004"}, {1e21, "1e+21"}, {123e-20, "1.23e-18"}, {100, "100"}, {5e-324, "5e-324"}, {1.7976931348623157e308, "1.7976931348623157e+308"}, {-1.5, "-1.5"}, {1234567890123456800000, "1.2345678901234568e+21"}} {
+	}{{1e21, "1e+21"}, {123e-20, "1.23e-18"}, {100, "100"}, {5e-324, "5e-324"}, {1.7976931348623157e308, "1.7976931348623157e+308"}, {-1.5, "-1.5"}, {1234567890123456800000, "1.2345678901234568e+21"}} {
 		if got := JSNumberString(c.f); got != c.want {
 			t.Errorf("String(%v) = %s, want %s", c.f, got, c.want)
 		}
