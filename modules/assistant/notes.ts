@@ -44,13 +44,16 @@ export interface NotesDeps {
 const noteLang = (text: string): NoteLang => languageOfScript(text);
 
 /** "remember for customers: ..." makes a note customers' answers may use (kind public); otherwise a fact for the owner's talks only. Said in the four languages. */
-const FOR_CUSTOMERS = /^\s*(?:for customers|customers (?:can|may) be told|tell customers|ग्राहकों के लिए|ग्राहकों को बताना|ഉപഭോക്താക്കൾക്ക്|ಗ್ರಾಹಕರಿಗೆ)\s*[:,\-–]?\s*/iu;
+export const FOR_CUSTOMERS = /^\s*(?:for customers|customers (?:can|may) be told|tell customers|ग्राहकों के लिए|ग्राहकों को बताना|ഉപഭോക്താക്കൾക്ക്|ಗ್ರಾಹಕರಿಗೆ)\s*[:,\-–]?\s*/iu;
+/** A note that names a goal, and one that tells the assistant how to behave. (These three are exported for go/scripts/gen_patterns.ts: the Go runtime reads notes with them.) */
+export const GOAL_WORDS = /^\s*(?:my goal|goal|lakshya|लक्ष्य|ലക്ഷ്യം|ಗುರಿ)\b/iu;
+export const INSTRUCTION_WORDS = /^\s*(?:always|never|offer|do not|don't|please)\b|^\s*(?:हमेशा|कभी नहीं)/iu;
 
 /** What a note's kind and audience are, from the owner's words, by rule: a public one if they said it is for customers; a goal if they say so; otherwise a fact for themselves. */
 export function noteFromWords(words: string): NoteInput {
   const forCustomers = FOR_CUSTOMERS.exec(words);
   const text = forCustomers ? words.slice(forCustomers[0].length).trim() : words.trim();
-  const kind: NoteKind = forCustomers ? "public" : /^\s*(?:my goal|goal|lakshya|लक्ष्य|ലക്ഷ്യം|ಗುರಿ)\b/iu.test(text) ? "goal" : /^\s*(?:always|never|offer|do not|don't|please)\b|^\s*(?:हमेशा|कभी नहीं)/iu.test(text) ? "instruction" : "fact";
+  const kind: NoteKind = forCustomers ? "public" : GOAL_WORDS.test(text) ? "goal" : INSTRUCTION_WORDS.test(text) ? "instruction" : "fact";
   return { kind, text, lang: noteLang(text), ...(forCustomers ? { audience: "everyone" as const } : {}) };
 }
 

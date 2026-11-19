@@ -13,6 +13,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/listings"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
 // talkOff: why this feature may not ask a model right now, or "" when it may. The model is asked only when this says "", so a feature over a cap costs nothing.
@@ -106,38 +107,7 @@ func (c *conv) listingFromWords(text, key string) (bool, error) {
 	}
 	read := listings.ReadListingWords(text)
 	system, schema := listings.Prompt(r.o.Client.Settings.Name, nil)
-	got := r.o.Model.Ask(system, text, schema, "listing")
-	// the call is counted in the month's AI spend whether or not the answer is usable (a call whose answer was unusable still cost tokens), and against the feature's daily cap
-	month := budget.For(&snap.AI, r.clock, now)
-	month.Model++
-	// priced from the dated rate table the TypeScript way (rates.ts): a call with no usage counts 0, one with usage and no price is "unpriced" (counted at the budget's assumed price),
-	// one with a price adds its cost to the month. A builder's own rate (runtime.json parser.rate) is one more line, for provider "self-hosted".
-	var cost *int64
-	rateDate := ""
-	if !got.HasUsage {
-		zero := int64(0)
-		cost = &zero
-	} else {
-		var extra []budget.Rate
-		if cfg := r.o.Model.cfg; cfg.Rate != nil {
-			extra = append(extra, budget.SelfHostedRate(cfg.Model, *cfg.Rate, time.UnixMilli(now).UTC().Format("2006-01-02")))
-		}
-		rate := budget.RateFor(r.o.Model.Provider, r.o.Model.cfg.Model, time.UnixMilli(now).UTC().Format("2006-01-02"), extra...)
-		if cost = budget.CostMicroInr(rate, got.InputTokens, got.OutputTokens, 0); cost == nil {
-			month.Unpriced++
-		} else {
-			month.CostMicroInr += *cost
-			rateDate = rate.From
-		}
-	}
-	budget.Record(&snap.AI, r.policy.Budget, "listing_draft", cost, key, r.clock, now)
-	meter := map[string]string{"step": "model", "provider": r.o.Model.Provider, "model": r.o.Model.cfg.Model, "inputTokens": strconv.FormatInt(got.InputTokens, 10), "outputTokens": strconv.FormatInt(got.OutputTokens, 10)}
-	if cost != nil {
-		meter["costMicroInr"] = strconv.FormatInt(*cost, 10)
-	}
-	if rateDate != "" {
-		meter["rateDate"] = rateDate
-	}
+	got, meter, month := c.askMetered("listing_draft", key, understanding.Call{System: system, User: text, Schema: schema, Name: "listing"})
 	logLine := func(result string) {
 		refs := map[string]string{"result": result}
 		for k, v := range meter {

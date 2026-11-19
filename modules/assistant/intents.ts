@@ -62,12 +62,12 @@ const KIND_WORDS: readonly [OwnerKind, readonly string[]][] = [
   ["money", ["money", "collected", "came in", "how much", "takings", "पैसे", "पैसा", "paisa", "paise", "kitna aaya", "कितना आया", "പണം", "എത്ര കിട്ടി", "ಹಣ", "ಎಷ್ಟು ಬಂತು"]],
   ["day", ["bookings", "booking", "appointments", "appointment", "list", "schedule", "who is coming", "बुकिंग", "लिस्ट", "kaun aa raha", "ബുക്കിംഗ്", "ബുക്കിങ്", "ലിസ്റ്റ്", "ಬುಕಿಂಗ್", "ಪಟ್ಟಿ"]],
 ];
-const KIND_RES: readonly [OwnerKind, RegExp][] = KIND_WORDS.map(([kind, words]) => [kind, wordRe([...words], "iu")]);
+export const KIND_RES: readonly [OwnerKind, RegExp][] = KIND_WORDS.map(([kind, words]) => [kind, wordRe([...words], "iu")]);
 
 /** A case reference: a letter the templates use, a hyphen and digits. Bookings b-, Fees f- and q- (a request to the owner), Orders o-, and (17 Nov 2026) g- for a chat guest ("Chat guest 3" is g-3), who has no booking but may be answered. */
-const REF_RE = /(?<![\p{L}\p{N}])([bfqog])-(\d{1,6})(?![\p{N}])/iu;
+export const REF_RE = /(?<![\p{L}\p{N}])([bfqog])-(\d{1,6})(?![\p{N}])/iu;
 /** The owner says "chat guest 3" as the pages and messages call them; the rules read it as g-3, so every later step sees one kind of reference. */
-const GUEST_WORDS = /(?<![\p{L}\p{N}])chat\s+guest\s+(\d{1,6})(?![\p{N}])/giu;
+export const GUEST_WORDS = /(?<![\p{L}\p{N}])chat\s+guest\s+(\d{1,6})(?![\p{N}])/giu;
 
 /** An amount with a rupee sign or word before or after it. Without one a number is never read as money: "close 16" must not be ₹16. */
 const AMOUNT_RE = /(?:₹|rs\.?|inr|रु\.?|रुपये|रुपए)\s*(\d{1,3}(?:,\d{2,3})+|\d+)(?:\.(\d{1,2}))?|(\d{1,3}(?:,\d{2,3})+|\d+)(?:\.(\d{1,2}))?\s*(?:₹|rs\b|rupees?\b|रुपये|रुपए|രൂപ|ರೂಪಾಯ|ರೂ\.?)/iu;
@@ -138,8 +138,8 @@ export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent
   return { kind: "unknown", ...base };
 }
 
-/** What each kind means, for the decision model's question and the language model's prompt. */
-const KIND_MEANING: Record<Exclude<OwnerKind, "unknown">, string> = {
+/** What each kind means, for the decision model's question and the language model's prompt. (KIND_MEANING, RULES_ONLY and WANT_INSTRUCTIONS are exported for go/scripts/gen_words.ts.) */
+export const KIND_MEANING: Record<Exclude<OwnerKind, "unknown">, string> = {
   day: "see the list of bookings for a day",
   owes: "see who still owes fees",
   open_orders: "see the orders that are still open",
@@ -162,7 +162,10 @@ const KIND_MEANING: Record<Exclude<OwnerKind, "unknown">, string> = {
 };
 
 /** Only the rules read these: a model is never asked whether the owner wants something written to, or taken out of, the shop's memory, or wants their shop's file or another Operator. */
-const RULES_ONLY: readonly OwnerKind[] = ["remember", "notes", "forget", "leave_file", "leave_operator"];
+export const RULES_ONLY: readonly OwnerKind[] = ["remember", "notes", "forget", "leave_file", "leave_operator"];
+
+/** The decision model's one question about the owner's words. */
+export const WANT_INSTRUCTIONS = "A shop owner wrote this to their shop's assistant. What do they want?";
 
 const offered = (context: OwnerContext): Exclude<OwnerKind, "unknown">[] => OWNER_KINDS.filter((k) => context.kinds.includes(k) && !RULES_ONLY.includes(k));
 
@@ -212,7 +215,7 @@ export const ownerReading: Reading<OwnerIntent, OwnerContext, ParseOptionsBase> 
   async decision(context, ruled): Promise<DecisionPlan<OwnerIntent>> {
     const kinds = offered(context);
     return {
-      questions: { want: { type: "choice", instructions: "A shop owner wrote this to their shop's assistant. What do they want?", criteria: Object.fromEntries(kinds.map((k) => [k, KIND_MEANING[k]])) } },
+      questions: { want: { type: "choice", instructions: WANT_INSTRUCTIONS, criteria: Object.fromEntries(kinds.map((k) => [k, KIND_MEANING[k]])) } },
       read(answers, threshold) {
         const a = answers.want;
         if (!a || a.type !== "choice" || chosenProbability(a) < threshold || !(kinds as string[]).includes(a.choice)) return null;

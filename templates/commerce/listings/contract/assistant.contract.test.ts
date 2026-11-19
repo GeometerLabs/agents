@@ -377,7 +377,7 @@ async function observe(s: Shop): Promise<any> {
     talk: v.app.talk.map((l: any) => [l.from, l.text]),
     cards: v.app.cards.map((c: any) => [c.id, c.digest, c.skill, c.kind, c.case, c.amountPaise, c.who, c.hasNo, c.question]),
     mood: [v.app.mood, v.app.face, v.app.closedToday],
-    record: record(s).filter((e) => keep.includes(e.action) && !(e.action === "listing" && e.notes.startsWith("the Operator's place"))).map((e) => [e.action, e.outcome, { ...e.refs, ...(e.refs.ask ? { ask: "ask_" } : {}) }, e.notes, e.language, e.conversation === "owner" ? "owner" : "number"]),
+    record: record(s).filter((e) => keep.includes(e.action)).map((e) => [e.action, e.outcome, { ...e.refs, ...(e.refs.ask ? { ask: "ask_" } : {}) }, e.notes, e.language, e.conversation === "owner" ? "owner" : "number"]),
     public: (await publicListings(s)).map((l: any) => l.id),
     owner: (await ownerListings(s)).map((l: any) => [l.id, l.state]),
     ai: (await s.call("/status")).body.ai.messages,
@@ -543,11 +543,51 @@ describe("the same script on a TypeScript shop and a Go shop: what the owner rea
     assert.ok(seen.ts.record.some((r: any) => r[0] === "send_message"));
   });
 
-  test("what is not in the Go runtime says so rather than pretend: notes (remember, what do you remember, forget) and a money question about a weekday or a written date", BOTH, async () => {
-    const s = await boot({}, "go");
-    const asked = ["remember we close at six", "what do you remember?", "forget 3", "money on 16 nov", "money monday", "പണം ഞായറാഴ്ച", "ಹಣ ನವೆಂಬರ್ 10", "money इतवार", "money 3 may"];
-    for (const [i, t] of asked.entries()) { await say(s, `g-${i}`, t); assert.equal(await lastSaid(s), "This shop's assistant doesn't handle that.", t); }
-    assert.deepEqual(lines(s, "owner_assistant").map((e) => e.refs.intent), ["remember", "notes", "forget", "money", "money", "money", "money", "money", "money"]);
+  test("the shop's memory: remember, the list, forget, undo and the refusals say and record the same on both runtimes, and the page shows the same notes", BOTH, async () => {
+    const asked = ["remember we close at 6 on Saturdays", "remember for customers: we deliver on Sundays", "remember my goal is ten sales a day", "please remember that always greet in Malayalam",
+      "what do you remember?", "forget n-1", "forget 9", "forget n-1", "undo", "notes", "remember", `remember ${"long words ".repeat(30)}`, "ഓർത്തുവെക്കൂ ഞായർ അവധി", "ನೆನಪಿಡಿ ಭಾನುವಾರ ರಜೆ", "യാദ് രഖോ", "yaad rakho ki kal chutti hai", "क्या याद है", "undo", "undo"];
+    const seen: Record<string, any> = {};
+    for (const impl of ["ts", "go"] as const) {
+      const s = await boot({}, impl);
+      const said = await sayAll(s, asked, "n");
+      const memory = record(s).filter((e) => e.action === "memory").map((e) => [e.outcome, e.refs, e.notes]);
+      seen[impl] = { said, memory, notes: (await page(s)).app.notes, intents: lines(s, "owner_assistant").map((e) => e.refs.intent) };
+    }
+    assert.deepEqual(seen.go, seen.ts);
+    assert.ok(seen.ts.said.some(([, t]: [string, string]) => t.startsWith("Remembered (n-1)")), "a note is said back");
+    assert.ok(seen.ts.memory.length >= 6, "the record has the memory lines");
+    assert.ok(seen.ts.notes.length >= 2, "the page lists the open notes");
+  });
+
+  test("notes saved by one runtime are listed, forgotten and undone by the other", BOTH, async () => {
+    for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
+      const s = await boot({}, first);
+      await say(s, "a-1", "remember we close at 6 on Saturdays"); await say(s, "a-2", "remember for customers: parking is free behind the shop");
+      await s.stop(); await s.start(second);
+      await say(s, "a-3", "what do you remember?");
+      assert.match(await lastSaid(s), /n-1 \[you only\] we close at 6 on Saturdays\n• n-2 \[customers too\] parking is free behind the shop/u, `${second} lists what ${first} saved`);
+      await say(s, "a-4", "undo");
+      assert.equal(await lastSaid(s), "Undone: I no longer remember n-2.");
+      await say(s, "a-5", "forget 1");
+      await s.stop(); await s.start(first);
+      await say(s, "a-6", "notes");
+      assert.match(await lastSaid(s), /^I do not remember anything yet/u, `${first} sees what ${second} forgot`);
+      await say(s, "a-7", "remember the third one");
+      assert.match(await lastSaid(s), /^Remembered \(n-3\)/u, "the numbering goes on");
+    }
+  });
+
+  test("a money question about a weekday or a written date is answered for that day, the same on both runtimes", BOTH, async () => {
+    // both shops run at once, so the same clock decides "next Tuesday" for both
+    const ts = await boot({}, "ts"); const go = await boot({}, "go");
+    const asked = ["money on 16 nov", "money monday", "money next tuesday", "money this friday", "money sunday", "പണം ഞായറാഴ്ച", "ಹಣ ನವೆಂಬರ್ 10", "money इतवार", "money 3 may", "money 31 nov",
+      "money 29 feb", "money nov 16", "अगले मंगलवार कितना आया", "इस शनिवार कितना आया", "അടുത്ത ചൊവ്വാഴ്ച പണം", "ಮುಂದಿನ ಮಂಗಳವಾರ ಹಣ", "money yesterday and monday"];
+    for (const [i, t] of asked.entries()) {
+      await say(ts, `d-${i}`, t); await say(go, `d-${i}`, t);
+      assert.equal(await lastSaid(go), await lastSaid(ts), t);
+      assert.match(await lastSaid(ts), /^Nothing recorded on \w+ \d+ \w+ yet\.$/u, t);
+    }
+    assert.deepEqual(lines(go, "owner_assistant").map((e) => e.refs), lines(ts, "owner_assistant").map((e) => e.refs));
   });
 });
 

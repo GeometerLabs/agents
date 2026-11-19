@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 	_ "time/tzdata" // the zone database inside the binary: a small server image has none
 )
 
@@ -55,18 +56,8 @@ type Settings struct {
 	}
 }
 
-// ModelConfig is runtime.json's `parser` (or `talk`): which model writes a listing's words, reached through the model Guard.
-type ModelConfig struct {
-	Wire           string `json:"wire"`
-	BaseURL        string `json:"baseUrl"`
-	Model          string `json:"model"`
-	TimeoutMs      int    `json:"timeoutMs"`
-	AgentTokenFile string `json:"agentTokenFile"`
-	Provider       string `json:"provider"`
-	KeyEnv         string `json:"keyEnv"`
-	// Rate is a builder's own price for a model they host, for provider "self-hosted" (runtime.json parser.rate).
-	Rate *budget.BuilderRate `json:"rate"`
-}
+// ModelConfig is runtime.json's `parser` (or `talk`): understanding.ModelConfig.
+type ModelConfig = understanding.ModelConfig
 
 // Runtime is runtime.json, checked.
 type Config struct {
@@ -75,7 +66,9 @@ type Config struct {
 	Port        int
 	DataDir     string
 	TickSeconds float64
-	Talk        *ModelConfig // `talk`, or `parser` when there is no talk
+	Talk        *ModelConfig                  // `talk`, or `parser` when there is no talk
+	Parser      *ModelConfig                  // `parser`: the router's language step (step 2)
+	Decision    *understanding.DecisionConfig // `decision`: the router's decision model (step 1)
 	Budget      *budget.Config
 	PauseMin    int64
 	AllowMsgs   *int64
@@ -335,6 +328,29 @@ func (c *Client) readRuntime(in map[string]any) error {
 		}
 		if cfg.Talk == nil || key == "talk" {
 			cfg.Talk = &m
+		}
+		if key == "parser" {
+			p := m
+			cfg.Parser = &p
+		}
+	}
+	if raw, present := in["decision"]; present {
+		// modules/runtime/config.ts readDecision: the same object, checked for what a decision model needs (the TypeScript's sentences)
+		m, ok := raw.(map[string]any)
+		var d understanding.DecisionConfig
+		b, _ := json.Marshal(raw)
+		switch {
+		case !ok || json.Unmarshal(b, &d) != nil:
+			errs = append(errs, `"decision" must be an object like {"provider": "laya", "baseUrl": "http://127.0.0.1:8080", "model": "laya"}. Leave it out and no decision model is asked.`)
+		case d.Provider != "laya" && d.Provider != "jev" && d.Provider != "system-one":
+			errs = append(errs, `decision.provider must be "laya" (on the shop's own server), "jev" (hosted) or "system-one" (any other server that speaks the same API).`)
+		case !strings.HasPrefix(d.BaseURL, "http://") && !strings.HasPrefix(d.BaseURL, "https://"):
+			errs = append(errs, "decision.baseUrl must be the address of the decision model, starting with http:// or https://.")
+		case d.Model == "":
+			errs = append(errs, "decision.model must be the name the server serves the model under, for example laya.")
+		default:
+			_ = m
+			cfg.Decision = &d
 		}
 	}
 	if b, present := in["budget"]; present {

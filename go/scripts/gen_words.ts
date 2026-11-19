@@ -26,9 +26,12 @@ import { formatDate, formatTime } from "../../modules/language/format.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
-import { WORDS } from "../../modules/language/words.ts";
 import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT, dayAndTime } from "../../modules/channels/owner-phones.ts";
 import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../modules/channels/owner-signin.ts";
+import { KIND_MEANING, OWNER_KINDS, RULES_ONLY, WANT_INSTRUCTIONS, ownerReading } from "../../modules/assistant/intents.ts";
+import type { OwnerKind } from "../../modules/assistant/intents.ts";
+import { ownerPrompt } from "../../modules/assistant/talk-prompt.ts";
+import { MORNING_TEMPLATE_OF, morningFacts, render, templateNameOf } from "../../modules/assistant/templates.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "..");
@@ -116,6 +119,18 @@ function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag; st
   if (!some.includes("₹1,23,456")) throw new Error(`the amount is not in: ${some}`);
   m["money_in.some"] = some.replace("₹1,23,456", "{inr}");
   m["talk_fallback"] = say(l, "talk_fallback", { waiting: N });
+  // the shop's memory (words-memory.ts): a saved note in each audience, with and without the undo hint; the list as its head, one line per audience and its foot
+  for (const audience of ["owner", "everyone"] as const) for (const undoable of [true, false]) m[`note_saved.${audience}.${undoable ? "undo" : "plain"}`] = say(l, "note_saved", { id: S("id"), text: S("text"), audience, undoable });
+  for (const id of ["note_forgotten", "note_undone", "note_unknown"] as const) m[id] = say(l, id, { id: S("id") });
+  m.note_full = say(l, "note_full", { max: N });
+  m.note_too_long = say(l, "note_too_long", { max: N });
+  m.note_need_words = say(l, "note_need_words", {});
+  m["notes_list.zero"] = say(l, "notes_list", { notes: [] });
+  // N notes, of which the two shown are one of each audience: the list's own map is called on these two, so each line's form is the real function's
+  const two = [{ id: S("id"), text: S("text"), kind: "fact", audience: "owner" as const }, { id: S("id"), text: S("text"), kind: "public", audience: "everyone" as const }];
+  const listed = say(l, "notes_list", { notes: { length: N, map: (f: (n: unknown) => string) => two.map(f) } as never }).split("\n");
+  if (listed.length !== 4) throw new Error(`the notes list is not head, two lines and foot: ${listed.join(" / ")}`);
+  [m["notes_list.head"], m["notes_list.line.owner"], m["notes_list.line.everyone"], m["notes_list.foot"]] = listed;
   // the listing lines
   for (const line of ["published", "confirmed", "sold"] as const) m[`listing_line.${line}`] = say(l, "listing_line", { line, title: S("title") });
   for (const line of ["dropped", "need_model", "need_photo", "unknown", "gone", "model_failed"] as const) m[`listing_line.${line}`] = say(l, "listing_line", { line });
@@ -155,6 +170,22 @@ function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag; st
   for (let h = 0; h < 24; h++) time[String(h)] = formatTime({ hour: h, minute: 59 }, l).replace(":59", ":{mm}");
   const cat: Bag = {};
   for (const [k, v] of Object.entries(LISTING_WORDS[l].categories)) cat[k] = v;
+  // the owner's talk: the system prompt (talk-prompt.ts ownerPrompt) for each personality, with and without the character's name; the sources' lines are a slot (no sources: "(none)")
+  for (const p of PERSONALITIES) for (const named of [true, false]) {
+    const shop = { name: S("shop"), character: { ...(named ? { name: S("name") } : {}), personality: p } };
+    const { system } = ownerPrompt({ shop, language: l, sources: [{ id: "SRC", kind: "note", text: "SRC" }], limits: [] });
+    if (!system.endsWith("\n[SRC] SRC")) throw new Error("the sources are not the prompt's last lines");
+    m[`talk.system.${p}.${named ? "named" : "plain"}`] = slots(system.slice(0, -"[SRC] SRC".length)) + "{sources}";
+  }
+  // the morning line (morning.ts, templates.ts): each personality's template filled with slots; "nothing" and the running-low part as morningFacts writes them; the template's name
+  for (const p of PERSONALITIES) {
+    const id = MORNING_TEMPLATE_OF[p];
+    m[`morning.${p}`] = slots(render(id, { language: l, values: { shop: S("shop"), date: S("date"), today: S("today"), money: S("money"), waiting: S("waiting") }, check: undefined as never }));
+    m[`morning.${p}.name`] = templateNameOf(id);
+  }
+  const quiet = morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [], moneyPaise: 0, waiting: 0 }).values as Bag;
+  m["morning.nothing"] = quiet.today;
+  m["morning.low"] = slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ low: N }], moneyPaise: 0, waiting: 0 }).values as Bag).today);
   alerts(l, m);
   return { m, date: { weekdays, months, comma }, time, cat, stamp: stampOf(l) };
 }
@@ -169,22 +200,19 @@ function listAfter(src: string, marker: string, end: string): string[] {
 }
 
 function rules(): unknown {
-  const dates = readFileSync(join(ROOT, "modules", "language", "dates.ts"), "utf8");
-  // every word dates.ts reads as a weekday or a month (its English and Hindi literals, taken from the source, and the Malayalam and Kannada lists of modules/language/words.ts)
-  const weekdays = (listAfter(dates, "const WEEKDAY_WORDS: string[][] = [", "\n];") as unknown as string[][]).flat().concat(WORDS.ml.weekdays.flat(), WORDS.kn.weekdays.flat());
-  const months = (listAfter(dates, "const MONTH_WORDS: string[][] = [", "\n];") as unknown as string[][]).flat().concat(WORDS.ml.months.flat(), WORDS.kn.months.flat());
-  const intents = readFileSync(join(ROOT, "modules", "assistant", "intents.ts"), "utf8");
+  // the kinds' and the dates' patterns are not lists here: go/scripts/gen_patterns.ts hands the Go runtime the TypeScript's built patterns themselves
   const leave = readFileSync(join(ROOT, "modules", "assistant", "intents-leave.ts"), "utf8");
   const memory = readFileSync(join(ROOT, "modules", "assistant", "intents-memory.ts"), "utf8");
-  const kinds = listAfter(intents, "const KIND_WORDS: readonly [OwnerKind, readonly string[]][] = [", "\n];") as unknown as [string, string[]][];
+  // the router's reading of the owner's words for this shop's kinds (intents.ts ownerReading): the language model's prompt and schema, and the decision model's question
+  const context = { kinds: KINDS as OwnerKind[] };
+  const offered = OWNER_KINDS.filter((k) => KINDS.includes(k) && !RULES_ONLY.includes(k));
   return {
-    kinds,
+    router: { prompt: ownerReading.prompt(context), schema: ownerReading.schema(context), instructions: WANT_INSTRUCTIONS, criteria: offered.map((k) => [k, KIND_MEANING[k as Exclude<OwnerKind, "unknown">]]) },
+    talkSchema: ownerPrompt({ shop: { name: "x" }, language: "en", sources: [], limits: [] }).schema,
     leaveFile: listAfter(leave, "const FILE = new RegExp([", "\n].join"),
     leaveOperator: listAfter(leave, "const OPERATOR = new RegExp([", "\n].join"),
     remember: new Function(`return ${memory.slice(memory.indexOf("const REMEMBER = [") + "const REMEMBER = ".length, memory.indexOf("].join", memory.indexOf("const REMEMBER")) + 1)}`)() as string[],
     list: listAfter(memory, "const LIST = new RegExp([", "\n].join"),
-    // the Malayalam and Kannada words for today, tomorrow, the day after and yesterday (modules/language/words.ts): the Hindi and English ones are in dates.ts's own patterns
-    dates: { today: [...WORDS.ml.today, ...WORDS.kn.today], tomorrow: [...WORDS.ml.tomorrow, ...WORDS.kn.tomorrow], dayAfter: [...WORDS.ml.dayAfterTomorrow, ...WORDS.kn.dayAfterTomorrow], yesterday: [...WORDS.ml.yesterday, ...WORDS.kn.yesterday], weekdays, months },
   };
 }
 
