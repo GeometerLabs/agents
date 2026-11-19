@@ -189,7 +189,7 @@ func FormatInr(rupees float64) string {
 	r := math.Abs(rupees)
 	s := strconv.FormatFloat(math.Round(r*1000)/1000, 'f', 3, 64)
 	whole, frac, _ := strings.Cut(s, ".")
-	g := groupIN(whole)
+	g := GroupIN(whole)
 	if frac = strings.TrimRight(frac, "0"); frac != "" {
 		g += "." + frac
 	}
@@ -203,13 +203,13 @@ func FormatInr(rupees float64) string {
 // ("₹1,25,000", "₹-5").
 func FormatInrWhole(rupees int64) string {
 	if rupees < 0 {
-		return "₹-" + groupIN(strconv.FormatInt(-rupees, 10))
+		return "₹-" + GroupIN(strconv.FormatInt(-rupees, 10))
 	}
-	return "₹" + groupIN(strconv.FormatInt(rupees, 10))
+	return "₹" + GroupIN(strconv.FormatInt(rupees, 10))
 }
 
-// groupIN is the en-IN grouping of a run of digits: the last three, then pairs (12,34,567).
-func groupIN(digits string) string {
+// GroupIN is the en-IN grouping of a run of digits: the last three, then pairs (12,34,567). The one grouping of the Go runtimes (the directory's page uses it too).
+func GroupIN(digits string) string {
 	if len(digits) <= 3 {
 		return digits
 	}

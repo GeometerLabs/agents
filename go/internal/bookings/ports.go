@@ -1,13 +1,11 @@
 package bookings
 
-// The services a Bookings step calls. They are NOT defined here: the guards stream (branch go-guards-19nov) writes them as Go packages with the TypeScript's method sets and wire
-// structs (go/internal/calendar `Calendar`, go/internal/payments `Payments`; messaging and the in-memory stand-ins are still to come there), and the books stream writes the books
-// (go/internal/accounting, go-books-19nov). An interface typed here first would be a second copy of theirs ("no duplicates", decision 61), so no domain code of this package calls
-// a service yet: every step that would ends its task with runtime.Unported and its sentence (agent.go, Deferred.md).
-//
-// When those packages are on main, Ports gains one field per service, typed with THEIR interfaces (calendar.Calendar, payments.Payments, the messaging package's Messaging, the
-// books' poster), cmd/bookings hands in the live client or the stand-in by runtime.json's mode, and a nil field stays "this shop has no such service" (no WhatsApp: `services: {}`;
-// no Google Calendar: `calendar.module` "own"; a UPI shop: no payments Guard).
+// The services a Bookings step calls. They are NOT defined here: they are the shared packages, on this branch since the merge of main (19 Nov): go/internal/calendar `Calendar`,
+// go/internal/payments `Payments` (and its stand-in `NewFake`), go/internal/messaging `Messaging` (and `NewStandIn`), and the books (go/internal/accounting, report,
+// bookingsreport). An interface typed here would be a second copy of theirs ("no duplicates", decision 61). What is missing is the WIRING (TRIAL.md, "What is left of wave 2"):
+// Ports gains one field per service typed with their interfaces, cmd/bookings hands in the live client or the stand-in by runtime.json's mode, a nil field stays "this shop has no
+// such service" (no WhatsApp: `services: {}`; no Google Calendar: `calendar.module` "own"; a UPI shop: no payments Guard), and agent.ts's steps are ported over them. Until then
+// every step that would call one ends its task with runtime.Unported and its sentence (agent.go, Deferred.md).
 
-// Ports are the services of one shop (empty until the service packages are on main; see above).
+// Ports are the services of one shop (empty until they are wired; see above).
 type Ports struct{}
