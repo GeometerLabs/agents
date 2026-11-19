@@ -138,7 +138,7 @@ async function runWorld(def: WorldDef): Promise<Run> {
     const nowMs = Date.parse(job.nowIso);
     r.clock.set(nowMs);
     const asked: string[] = [];
-    const payments = {
+    const payments = job.noRead ? { capabilities: { readsSettlements: false } } : {
       capabilities: { readsSettlements: true },
       readSettlements: async (day: { year: number; month: number; day: number }) => {
         const key = dayKeyOf(day);
@@ -151,7 +151,7 @@ async function runWorld(def: WorldDef): Promise<Run> {
     };
     const before = r.entries().length;
     const result = await readSettlementsOnce({ payments: payments as never, accounting: acc, record: r.record, conversation: DEFAULT_CONVERSATION, language: "en", nowMs, timeZone: def.timezone });
-    jobs.push({ nowMs, scripted: job.days, result, asked, written: r.entries().length - before });
+    jobs.push({ nowMs, noRead: job.noRead ?? false, scripted: job.days, result, asked, written: r.entries().length - before });
   }
   return { def, steps, entries: [...r.entries()], labels, jobs };
 }
@@ -235,7 +235,7 @@ function derive(run: Run): { core: unknown; files: unknown; pages: unknown } {
   };
 
   // ---- the accountant's files ----
-  const periods = [...new Set([...ranges.map((r) => r.name).filter((n) => n !== "whole"), "2026-13", "26-28", "", "2026-1", "00-01"])];
+  const periods = [...new Set([...ranges.map((r) => r.name).filter((n) => n !== "whole"), "2026-10", "2026-12", "2026-13", "26-28", "", "2026-1", "00-01"])];
   const tallies: { name: string; tally: unknown }[] = [{ name: "none", tally: undefined }, { name: "empty", tally: {} }, { name: "company", tally: { company: "Acme & Co <Test> \"q\" 'x'", ledgerNames: { cash: "Cash A/c", "revenue:haircut": "Hair & Co", upi: "  Bank UPI  " } } }];
   if (def.name === "bookings") { tallies.push({ name: "empty name", tally: { ledgerNames: { cash: "   " } } }, { name: "two groups", tally: { ledgerNames: { cash: "Same", upi: "Same" } } }); }
   if (def.oldDue) tallies.push({ name: "own old due", tally: { company: "X", oldDueOf: { "1": "2026-01", "2": "2026-02" } } });

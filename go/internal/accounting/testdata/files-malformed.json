@@ -3,6 +3,8 @@
  "periods": [
   "2026-05",
   "26-27",
+  "2026-10",
+  "2026-12",
   "2026-13",
   "26-28",
   "",
@@ -209,6 +211,188 @@
      {
       "name": "README.txt",
       "content": "Files for the period 26-27 (one financial year, 1 April to 31 March), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-26-27.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-26-27.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\nsettlements-26-27.csv: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-10",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-10.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-10.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "settlements-2026-10.csv",
+      "content": "settlement_id,utr,settled_on,gross,fee_without_gst,gst_on_fee,refunds,adjustments,net,rows_left_out\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-10 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-10.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-10.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\nsettlements-2026-10.csv: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-10",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-10.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-10.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "settlements-2026-10.csv",
+      "content": "settlement_id,utr,settled_on,gross,fee_without_gst,gst_on_fee,refunds,adjustments,net,rows_left_out\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-10 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-10.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-10.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\nsettlements-2026-10.csv: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company you want them in (the file names no company, so it goes into the open one). 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-10",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-10.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-10.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "settlements-2026-10.csv",
+      "content": "settlement_id,utr,settled_on,gross,fee_without_gst,gst_on_fee,refunds,adjustments,net,rows_left_out\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-10 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-10.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-10.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\nsettlements-2026-10.csv: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-12",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-12.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-12.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "settlements-2026-12.csv",
+      "content": "settlement_id,utr,settled_on,gross,fee_without_gst,gst_on_fee,refunds,adjustments,net,rows_left_out\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-12 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-12.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-12.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\nsettlements-2026-12.csv: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-12",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-12.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-12.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "settlements-2026-12.csv",
+      "content": "settlement_id,utr,settled_on,gross,fee_without_gst,gst_on_fee,refunds,adjustments,net,rows_left_out\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-12 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-12.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-12.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\nsettlements-2026-12.csv: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company you want them in (the file names no company, so it goes into the open one). 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-12",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-12.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-12.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "settlements-2026-12.csv",
+      "content": "settlement_id,utr,settled_on,gross,fee_without_gst,gst_on_fee,refunds,adjustments,net,rows_left_out\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-12 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-12.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-12.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\nsettlements-2026-12.csv: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
      }
     ]
    }

@@ -43,6 +43,7 @@ type stepVec struct {
 
 type jobVec struct {
 	NowMs    int64                      `json:"nowMs"`
+	NoRead   bool                       `json:"noRead"`
 	Scripted map[string]json.RawMessage `json:"scripted"`
 	Result   json.RawMessage            `json:"result"`
 	Asked    []string                   `json:"asked"`
@@ -151,11 +152,12 @@ func (w *worldVec) shop() Shop {
 
 // scriptedPayments is the fake provider of a job tick: the rows (or the error) scripted for each day, and the days it was asked for.
 type scriptedPayments struct {
-	days  map[string]json.RawMessage
-	asked []string
+	days   map[string]json.RawMessage
+	asked  []string
+	noRead bool // an adapter whose provider cannot read settlements (a UPI shop's)
 }
 
-func (p *scriptedPayments) ReadsSettlements() bool { return true }
+func (p *scriptedPayments) ReadsSettlements() bool { return !p.noRead }
 func (p *scriptedPayments) ReadSettlements(day zone.Date) ([]SettlementRow, error) {
 	key := dayKey(day)
 	p.asked = append(p.asked, key)
@@ -245,7 +247,7 @@ func TestWorldsReplay(t *testing.T) {
 			}
 			for k, job := range w.Jobs {
 				rec.now = job.NowMs
-				pay := &scriptedPayments{days: job.Scripted}
+				pay := &scriptedPayments{days: job.Scripted, noRead: job.NoRead}
 				got := ReadSettlementsOnce(SettlementsInput{Payments: pay, Accounting: acc, Record: rec, Conversation: "919800000001", Language: "en", NowMs: job.NowMs, TimeZone: w.Def.Timezone})
 				sameJSON(t, fmt.Sprintf("job %d result", k), got, job.Result)
 				if !reflect.DeepEqual(append([]string{}, pay.asked...), append([]string{}, job.Asked...)) {

@@ -34,7 +34,7 @@ export interface RowDef {
   onHold: boolean; settled: boolean; settlementId: string | null; utr: string | null; settledAt: number | null;
 }
 /** One tick of the job: the time, and for each day the rows the provider gives (or the error it throws). */
-export interface JobDef { nowIso: string; days: Record<string, RowDef[] | { error: string }> }
+export interface JobDef { nowIso: string; days: Record<string, RowDef[] | { error: string }>; /** The payments adapter has no settlement read at all (a UPI shop's). */ noRead?: boolean }
 
 export const FEES_LEGACY: LegacyMap = { received: [{ action: "record_payment", outcome: "confirmed", for: "fee" }], feeCharged: "open_fee", lateFee: "add_late_fee", discount: "waive_fee" };
 
@@ -43,8 +43,10 @@ const post = (at: string, event: StepDef["event"], line: Step["line"], label?: s
 const raw = (at: string, line: Step["line"], label?: string): StepDef => ({ at, op: "raw", line, label });
 const L = (action: string, outcome: Step["line"]["outcome"], booking: string | null, refs: Record<string, string> = {}, extra: Partial<Step["line"]> = {}): Step["line"] => ({ action, outcome, booking, refs, ...extra });
 
+/** Epoch seconds of an ISO time, as the provider's rows carry them. */
+const secs = (iso: string): number => Math.floor(Date.parse(iso) / 1000);
 const row = (o: Partial<RowDef> & { entityId: string; amount: number }): RowDef =>
-  ({ type: "payment", paymentId: null, fee: 0, tax: 0, debit: 0, credit: 0, onHold: false, settled: true, settlementId: "setl_1", utr: "UTR0001", settledAt: 1_762_900_000, ...o });
+  ({ type: "payment", paymentId: null, fee: 0, tax: 0, debit: 0, credit: 0, onHold: false, settled: true, settlementId: "setl_1", utr: "UTR0001", settledAt: secs("2026-11-10T04:00:00Z"), ...o });
 
 // ---- Bookings: deposits, a second payment, refunds in every way, marks by hand, a person's word, a kept deposit, corrections, and the read-back errors ----
 const bookings: WorldDef = {
@@ -147,8 +149,8 @@ const settlements: WorldDef = {
   name: "settlements", timezone: "Asia/Kolkata", legacy: BOOKINGS_LEGACY,
   nows: ["2026-11-10T05:00:00Z", "2026-11-12T05:00:00Z", "2026-11-14T05:00:00Z", "2026-11-17T05:00:00Z", "2026-11-18T05:00:00Z", "2026-11-23T05:00:00Z"],
   steps: [
-    ...[["b-1", "pay_a", 50000], ["b-2", "pay_b", 20000], ["b-3", "pay_c", 100000], ["b-4", "pay_d", 15000], ["b-5", "pay_e", 7000], ["b-6", "pay_f", 3000], ["b-7", "pay_g", 8000]].map(([c, p, a], i) =>
-      post(`2026-11-0${i + 1}T05:00:00Z`, () => money("received", { case: c, paymentId: p, amountPaise: a, method: "gateway", evidence: "provider", for: "advance" }), L("record_deposit", "confirmed", c as string, { paymentId: p as string }))),
+    ...[["b-1", "pay_a", 50000], ["b-2", "pay_b", 20000], ["b-3", "pay_c", 100000], ["b-4", "pay_d", 15000], ["b-5", "pay_e", 7000], ["b-6", "pay_f", 3000], ["b-7", "pay_g", 8000], ["b-10", "pay_h", 4000], ["b-11", "pay_i", 6000], ["b-12", "pay_j", 2500], ["b-13", "pay_k", 3500]].map(([c, p, a], i) =>
+      post(`2026-11-0${(i % 7) + 1}T05:${10 + i}:00Z`, () => money("received", { case: c, paymentId: p, amountPaise: a, method: "gateway", evidence: "provider", for: "advance" }), L("record_deposit", "confirmed", c as string, { paymentId: p as string }))),
     post("2026-11-09T05:00:00Z", () => money("refund_owed", { case: "b-3", owed: "b-3:pay_c", paymentId: "pay_c", amountPaise: 30000 }), L("refund", "held_for_owner", "b-3")),
     post("2026-11-09T06:00:00Z", () => money("refund_made", { case: "b-3", owed: "b-3:pay_c", paymentId: "pay_c", amountPaise: 30000, method: "gateway", evidence: "provider", refundId: "rf_c" }), L("refund", "confirmed", "b-3", { paymentId: "pay_c", refundId: "rf_c" })),
     // a UPI claim the owner has not marked: a request, then the customer's claim
@@ -157,29 +159,35 @@ const settlements: WorldDef = {
     raw("2026-11-09T08:00:00Z", L("upi_refund_owed", "held_for_owner", "b-9", { refundId: "upr-4", paymentId: "upi-x", amountPaise: "2500" })),
   ],
   jobs: [
-    // Tuesday 10 November, 10:30 in India: yesterday is Monday the 9th (the first read: only yesterday)
+    // a payments adapter that cannot read settlements (a UPI shop's): the one sentence, nothing written, nothing asked
+    { nowIso: "2026-11-09T05:00:00Z", days: {}, noRead: true },
+    // Tuesday 10 November, 10:30 in India: yesterday is Monday the 9th (the first read: only yesterday). The settlement ids tie on the day and differ in case, "_" and "-".
     { nowIso: "2026-11-10T05:00:00Z", days: { "2026-11-09": [
       row({ entityId: "pay_a", amount: 50000, fee: 1180, tax: 212, credit: 48608, paymentId: null }),
-      row({ entityId: "pay_b", amount: 20000, fee: 1392, tax: 252, credit: 18608, settlementId: "setl_1", utr: "UTR0001" }), // fee with GST
-      row({ entityId: "rf_c", type: "refund", paymentId: "pay_c", amount: 30000, debit: 30000 }),
+      row({ entityId: "pay_b", amount: 20000, fee: 1392, tax: 252, credit: 18608, settlementId: "setl_B", utr: "UTR0B" }), // fee with GST
+      row({ entityId: "rf_c", type: "refund", paymentId: "pay_c", amount: 30000, debit: 30000, settlementId: "setl_b", utr: "UTR0b" }),
       row({ entityId: "pay_d", amount: 15000, onHold: true, settled: false, settlementId: null, utr: null, fee: 0, credit: 0 }),
       row({ entityId: "pay_unknown", amount: 9000, fee: 200, tax: 36, credit: 8764 }),
       row({ entityId: "adj_1", type: "adjustment", amount: 500, debit: 500 }),
       row({ entityId: "tr_1", type: "transfer", amount: 700 }),
       row({ entityId: "pay_e", amount: 7000, fee: 100, tax: 18, credit: 5000 }), // fits neither way
       row({ entityId: "pay_f", amount: 3000, settlementId: null, utr: null, credit: 3000 }),
-      row({ entityId: "pay_g", amount: 8000, fee: 0, tax: 0, credit: 8000, settledAt: null }),
+      row({ entityId: "pay_g", amount: 8000, fee: 0, tax: 0, credit: 8000, settledAt: null, settlementId: "setl-1", utr: "UTR0g" }), // no settled time: the record's own time stands in
     ] } },
     // the same day read again by a later tick (already read: nothing), then Wednesday's tick finds Tuesday's rows with a repeat of one row
     { nowIso: "2026-11-10T09:00:00Z", days: { "2026-11-09": [] } },
     { nowIso: "2026-11-11T05:00:00Z", days: { "2026-11-10": [
-      row({ entityId: "pay_a", amount: 50000, fee: 1180, tax: 212, credit: 48608, settlementId: "setl_2", utr: "UTR0002" }), // repeats pay_a under another settlement
-      row({ entityId: "pay_d", amount: 15000, fee: 300, tax: 54, credit: 14646, settlementId: "setl_2", utr: "UTR0002" }), // the held row, now settled
+      row({ entityId: "pay_a", amount: 50000, fee: 1180, tax: 212, credit: 48608, settlementId: "setl_2", utr: "UTR0002", settledAt: secs("2026-11-11T04:00:00Z") }), // repeats pay_a under another settlement
+      row({ entityId: "pay_d", amount: 15000, fee: 300, tax: 54, credit: 14646, settlementId: "setl_10", utr: "UTR0010", settledAt: secs("2026-11-11T04:00:00Z") }), // the held row, now settled
+      row({ entityId: "pay_i", amount: 6000, fee: 118, tax: 18, credit: 5864, settlementId: "setl_9", utr: "UTR0009", settledAt: secs("2026-11-11T04:00:00Z") }), // ties with setl_10 on the day
+      row({ entityId: "pay_h", amount: 4000, onHold: true, settled: false, settlementId: null, utr: null, fee: 0, credit: 0 }), // held, and never settled
+      row({ entityId: "pay_j", amount: 2500, fee: 59, tax: 9, credit: 2432, settlementId: "setl_oct", utr: "UTR0oct", settledAt: secs("2026-10-31T18:29:59Z") }), // the last second of October in India
+      row({ entityId: "pay_k", amount: 3500, fee: 82, tax: 15, credit: 3403, settlementId: "setl_nov", utr: "UTR0nov", settledAt: secs("2026-10-31T18:30:00Z") }), // the first of November
       row({ entityId: "adj_1", type: "adjustment", amount: 500, debit: 500 }), // listed once only
     ] } },
     // the agent was off for days: the next tick reads the missed ones (Thursday to Sunday), and Saturday fails first
     { nowIso: "2026-11-15T05:00:00Z", days: { "2026-11-11": [], "2026-11-12": [], "2026-11-13": { error: "the provider said 503" }, "2026-11-14": [] } },
-    { nowIso: "2026-11-15T06:00:00Z", days: { "2026-11-11": [], "2026-11-12": [], "2026-11-13": [row({ entityId: "pay_f", amount: 3000, fee: 59, tax: 11, credit: 2930, settlementId: "setl_3", utr: "UTR0003" })], "2026-11-14": [], "2026-11-15": [] } },
+    { nowIso: "2026-11-15T06:00:00Z", days: { "2026-11-11": [], "2026-11-12": [], "2026-11-13": [row({ entityId: "pay_f", amount: 3000, fee: 59, tax: 11, credit: 2930, settlementId: "setl_3", utr: "UTR0003", settledAt: secs("2026-11-14T05:00:00Z") })], "2026-11-14": [], "2026-11-15": [] } },
   ],
 };
 
