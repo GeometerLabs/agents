@@ -44,7 +44,8 @@ async function observe(s: Shop, model: FakeModel, decision?: FakeModel): Promise
   return {
     talk: page.app.talk.map((l: any) => [l.from, l.text]),
     record: record(s).filter((e) => keep.includes(e.action)).map((e) => [e.action, e.outcome, e.refs, e.notes ?? "", e.language]),
-    ai: (await s.call("/status")).body.ai,
+    // the decision model's pause is a moment: the two shops run a few milliseconds apart, so only whether it is paused is compared
+    ai: ((a) => ({ ...a, paused: { decision: a.paused?.decision ? "paused" : null } }))((await s.call("/status")).body.ai),
     calls: model.requests.map((r) => [callName(r.body), r.body.messages?.find((m: any) => m.role === "user")?.content]),
     decisions: decision?.requests.map((r) => [r.body.state, Object.keys(r.body.questions ?? {})]) ?? [],
   };
@@ -73,7 +74,7 @@ const talkSays = (sentences: { text: string; sources: string[] }[], extra: Recor
 describe("the router's language model chooses only the kind; the rules give every value", () => {
   test("a kind the model chose is answered with the rules' date; a kind this shop does not take is unknown", BOTH, async () => {
     const seen = await both({ answer: (owner, body) => (callName(body) === "intent" ? { kind: /tuesday/u.test(owner) ? "money" : /holiday/u.test(owner) ? "close_day" : /pending/u.test(owner) ? "waiting" : "unknown" } : { sentences: [{ text: "Hello!", sources: [] }], ask_owner: null, note: null, limit: null }) }, async (s) => {
-      for (const [i, t] of ["how did we do next tuesday", "take a holiday", "anything pending for me today", "ok then"].entries()) await say(s, `r-${i}`, t);
+      for (const [i, t] of ["what did the shop bring in on the coming tuesday please", "take a holiday", "anything pending for me today", "ok then"].entries()) await say(s, `r-${i}`, t);
     });
     assert.deepEqual(seen.go, seen.ts);
     assert.ok(seen.ts.record.some((r: any) => r[0] === "owner_assistant" && r[2].step === "model" && r[2].intent === "money"), "the model's kind is the intent");
@@ -81,16 +82,19 @@ describe("the router's language model chooses only the kind; the rules give ever
   });
 
   test("untrusted answers: malformed JSON, wrong types, extra members, an HTTP error and a model that does not answer in time are read by the rules, and the record says why", BOTH, async () => {
-    const replies: Record<string, unknown> = {
-      "q one": rawReply("not json {"), "q two": { kind: 7 }, "q three": { kind: "waiting", extra: { deep: [1, 2] }, words: 12 }, "q four": statusReply(500), "q five": slowReply(1500, { kind: "waiting" }),
-      "q six": { kind: "fly_to_moon" }, "q seven": [{ kind: "waiting" }], "q eight": rawReply("```json\n{\"kind\": \"help\"}\n```"), "q nine": rawReply("<think>hmm</think>{\"kind\":\"undo\"}"), "q ten": { kind: "remember" },
-    };
-    const seen = await both({ parser: { timeoutMs: 600 }, answer: (owner, body) => (callName(body) === "intent" ? replies[owner] ?? { kind: "unknown" } : rawReply("{")) }, async (s) => {
-      for (const t of Object.keys(replies)) await say(s, t, t);
-    });
-    assert.deepEqual(seen.go, seen.ts);
-    const notes = seen.ts.record.filter((r: any) => r[0] === "owner_assistant").map((r: any) => r[3]);
-    assert.ok(notes.some((n: string) => n.includes("its answer was not JSON")) && notes.some((n: string) => n.includes("no answer within 600 ms")) && notes.some((n: string) => n.includes("HTTP 500")), notes.join(" | "));
+    // each in a shop of its own: a model step that fails puts the shop in the fault pause, and the next words would be read by the rules alone
+    const replies: [string, unknown][] = [
+      ["not json", rawReply("not json {")], ["kind is a number", { kind: 7 }], ["extra members", { kind: "waiting", extra: { deep: [1, 2] }, words: 12 }], ["http 500", statusReply(500)],
+      ["too slow", slowReply(1500, { kind: "waiting" })], ["no such kind", { kind: "fly_to_moon" }], ["an array", [{ kind: "waiting" }]], ["fenced", rawReply("```json\n{\"kind\": \"help\"}\n```")],
+      ["thinks first", rawReply("<think>hmm</think>{\"kind\":\"undo\"}")], ["rules only kind", { kind: "remember" }],
+    ];
+    const notes: string[] = [];
+    for (const [name, reply] of replies) {
+      const seen = await both({ listing: false, parser: { timeoutMs: 600 }, answer: (_owner, body) => (callName(body) === "intent" ? reply : rawReply("{")) }, async (s) => { await say(s, "u-1", `the words are ${name}`); });
+      assert.deepEqual(seen.go, seen.ts, name);
+      notes.push(...seen.ts.record.filter((r: any) => r[0] === "owner_assistant").map((r: any) => r[3]));
+    }
+    assert.ok(notes.some((n) => n.includes("its answer was not JSON")) && notes.some((n) => n.includes("no answer within 600 ms")) && notes.some((n) => n.includes("HTTP 500")) && notes.some((n) => n.includes("not a valid intent")), notes.join(" | "));
   });
 });
 
@@ -101,7 +105,7 @@ describe("the decision model: a sure answer is the kind, an unsure one goes on t
       answer: (owner, body) => (callName(body) === "intent" ? { kind: "help" } : rawReply("{")),
       decide: (state) => (state.includes("one") ? probs("money", 0.9) : state.includes("two") ? probs("waiting", 0.5) : state.includes("three") ? { model: "laya", answers: { other: {} } } : state.includes("four") ? statusReply(503) : probs("undo", 0.95)),
     }, async (s) => {
-      for (const t of ["words one", "words two", "words three", "words four", "words five four four", "words four again", "my number is 9811111111 one"]) await say(s, t.replace(/\s/gu, "-"), t);
+      for (const [i, t] of ["words one", "my number is 9811111111 one", "words two", "words three", "words four", "words five four four", "words four again", "words one again"].entries()) await say(s, `d-${i}`, t);
     });
     assert.deepEqual(seen.go, seen.ts);
     assert.ok(seen.ts.decisions.some((d: any) => d[0].includes("[number]")), "the number is taken out before the decision model sees the words");
@@ -141,7 +145,7 @@ describe("the owner's talk: words still unknown are answered from the shop's not
   test("the talk model fails: malformed JSON, an HTTP error, no answer in time; the fixed line, and the fault pause", BOTH, async () => {
     const replies: Record<string, unknown> = { "one?": rawReply("{oops"), "two?": statusReply(502), "three?": slowReply(1500, { sentences: [{ text: "late", sources: [] }] }) };
     const seen = await both({ parser: { timeoutMs: 600 }, answer: (owner, body) => (callName(body) === "intent" ? { kind: "unknown" } : replies[owner.split("\n").at(-1) ?? ""] ?? rawReply("{")) }, async (s) => {
-      for (const t of Object.keys(replies)) await say(s, t, t);
+      for (const [i, t] of Object.keys(replies).entries()) await say(s, `f-${i}`, t);
     });
     assert.deepEqual(seen.go, seen.ts);
   });
