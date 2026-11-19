@@ -1,17 +1,16 @@
-// The TypeScript service and the Go service in turn on ONE data folder, so the files are proved interchangeable: the index (directory.sqlite: feeds, pinned keys, key changes, the shops
-// and items) and the signing key (directory.key, so the Agent Card keeps its key id). Needs the Go binary (skipped, with the reason, when there is none): it is the one test that is about
-// the two together.
+// The directory stopped and started again on ONE data folder keeps what it had: the index (directory.sqlite: the feeds, the pinned keys, a held key change, the shops and their items, so
+// the same shops are found at once, with no feed read), the key change a person accepted while it was stopped, and its signing key (directory.key, so the Agent Card keeps its key id).
+// Until 19 Nov 2026 this test ran the TypeScript service and the Go one in turn on the folder (so a server moving to Go kept its volume: proved then, both ways); since the TypeScript
+// directory was deleted (decision 61, wave 1c) it is the directory against itself across restarts.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
-import { GO_BIN, directoryWith, fakeShop, until } from "./harness.ts";
+import { SKIP, directoryWith, fakeShop, until } from "./harness.ts";
 import type { FakeDoor } from "./harness.ts";
 
-const SKIP_BOTH = existsSync(GO_BIN) ? false : `there is no Go binary at ${GO_BIN} (build it: cd go && go build -o bin/directory ./cmd/directory)`;
 const doors: FakeDoor[] = [];
 after(async () => { for (const d of doors) await d.close(); });
 
-test("the index, the pinned keys, a held key change and the signing key move between the two services both ways", { skip: SKIP_BOTH }, async () => {
+test("the index, the pinned keys, a held key change, an accepted change and the signing key are kept across restarts on one folder", { skip: SKIP }, async () => {
   const a = fakeShop("alpha-pets", { name: "Alpha Pets" }), b = fakeShop("beta-pets", { name: "Beta Pets", town: "Kochi" });
   const { d, door } = await directoryWith([a, b]);
   doors.push(door);
@@ -19,27 +18,33 @@ test("the index, the pinned keys, a held key change and the signing key move bet
   const kid = async () => JSON.parse(Buffer.from((await d.call("/.well-known/agent-card.json")).body.signatures[0].protected, "base64url").toString("utf8")).kid;
   assert.deepEqual(await found(), ["Alpha Pets", "Beta Pets"]);
   const key = await kid();
-  // Go on the TypeScript service's folder: the same shops at once (no feed is due), the same key, the same pins
+  const reads = a.hits.feed + b.hits.feed;
+  // started again: the same shops at once (no feed is due, so none is read), the same key, the same pins
   await d.stop();
-  await d.start("go");
+  await d.start();
   assert.deepEqual(await found(), ["Alpha Pets", "Beta Pets"]);
+  assert.equal(a.hits.feed + b.hits.feed, reads, "nothing was read again: the index was kept");
   assert.equal(await kid(), key);
   assert.equal(d.db().prepare("SELECT COUNT(*) AS n FROM pins").get()?.n, 2);
-  // a feed signed by another key is held by Go (the pin the TypeScript service wrote is believed), listed, and accepted
+  // a feed signed by another key is held (the pin written before the restart is believed), listed, and accepted while the service is stopped
   await d.stop();
   a.rekey();
   d.makeDue(a.feedUrl);
-  await d.start("go");
+  await d.start();
   await until("the change to be held", () => d.db().prepare("SELECT COUNT(*) AS n FROM key_changes").get()?.n === 1);
   assert.deepEqual(await found(), ["Beta Pets"]);
+  await d.stop();
+  await d.start();
+  assert.deepEqual(await found(), ["Beta Pets"], "a held change is still held after a restart");
   assert.ok((await d.cli("changes")).out.includes(a.page));
   await d.stop();
   assert.equal((await d.cli("accept", a.page)).code, 0);
-  // back to TypeScript: it reads Go's accepted pin and the shop is listed again; the key is still the same
+  // started again: the accepted pin is read and the shop is listed again; the key is still the same
   d.makeDue(a.feedUrl);
-  await d.start("ts");
+  await d.start();
   await until("the shop to be listed again", async () => (await found()).length === 2);
   assert.equal(await kid(), key);
   assert.equal((d.db().prepare("SELECT key_id FROM pins WHERE page = ?").get(a.page) as any).key_id, a.key.keyId);
   assert.equal(d.db().prepare("SELECT COUNT(*) AS n FROM key_changes").get()?.n, 0);
+  await d.stop();
 });

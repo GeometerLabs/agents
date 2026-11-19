@@ -10,6 +10,10 @@
 //	CONFIG=/etc/geometer/directory.json PORT=8799 HOST=0.0.0.0 directory          the service
 //	directory changes                                                              the key changes that wait for a person
 //	directory accept <shop page>                                                   accept one
+//	directory health <url>                                                         one GET of the address (the container's health check: the image has no wget); exit 0 on a 200
+//
+// Since wave 1c's switch (19 Nov 2026) this is THE directory: the deployer runs it as the `directory` container from the programs' image (bundle/generate/compose.ts), and the TypeScript
+// service it replaced is gone. The person's commands are `docker exec <directory> /directory changes` and `... /directory accept <shop page>`.
 //
 // Every DIRECTORY_TICK_MS (20 s) it reads the feeds that are due: hinted by a notice (at most once a minute per feed), never read, or not read for six hours.
 package main
@@ -31,7 +35,10 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/directory"
+	"github.com/GeometerLabs/agents/go/internal/health"
 	"github.com/GeometerLabs/agents/go/internal/signing"
+	"github.com/GeometerLabs/agents/go/internal/testclock"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
 // config is the directory's config file (bundle/generate/configs.ts directoryConfig writes it).
@@ -47,12 +54,12 @@ type config struct {
 	} `json:"provider"`
 	Area      string `json:"area"`
 	Assistant *struct {
-		MonthlyMicroInr float64                `json:"monthlyMicroInr"`
-		DailyCalls      float64                `json:"dailyCalls"`
-		PerBuyerPerDay  float64                `json:"perBuyerPerDay"`
-		Model           *directory.ModelConfig `json:"model"`
-		AgentTokenFile  string                 `json:"agentTokenFile"`
-		Provider        string                 `json:"provider"`
+		MonthlyMicroInr float64                    `json:"monthlyMicroInr"`
+		DailyCalls      float64                    `json:"dailyCalls"`
+		PerBuyerPerDay  float64                    `json:"perBuyerPerDay"`
+		Model           *understanding.ModelConfig `json:"model"`
+		AgentTokenFile  string                     `json:"agentTokenFile"`
+		Provider        string                     `json:"provider"`
 	} `json:"assistant"`
 }
 
@@ -82,7 +89,7 @@ func loadKey(dataDir string) (*signing.Key, error) {
 }
 
 // assistantFrom is the assistant the config describes, or nil (and a plain line to say why) when it cannot be one. Off is the safe answer.
-func assistantFrom(c *config) *directory.Assistant {
+func assistantFrom(c *config, now func() int64) *directory.Assistant {
 	a := c.Assistant
 	if a == nil {
 		return nil
@@ -104,7 +111,7 @@ func assistantFrom(c *config) *directory.Assistant {
 	}
 	cfg := directory.AssistantConfig{
 		Budget:         &budget.Config{MonthlyMicroInr: int64(a.MonthlyMicroInr), Daily: map[string]int64{"buyer": int64(a.DailyCalls)}},
-		PerBuyerPerDay: int(a.PerBuyerPerDay), Provider: a.Provider, Bearer: bearer, Log: logLine,
+		PerBuyerPerDay: int(a.PerBuyerPerDay), Provider: a.Provider, Bearer: bearer, Log: logLine, Now: now,
 	}
 	if a.Model != nil {
 		if a.Model.Wire != "openai" {
@@ -116,7 +123,29 @@ func assistantFrom(c *config) *directory.Assistant {
 	return directory.NewAssistant(cfg)
 }
 
+// clockFrom is the directory's clock: the machine's, or, for the directory CONTRACT only (modules/discovery/contract: its golden answers are replayed at the instant they were
+// recorded), internal/testclock's (the machine's clock plus an offset read from a file). A test clock asked for anywhere else STOPS THE START with a sentence, never quietly ignored:
+// it needs GEOMETER_TEST=1, no NODE_ENV=production, and a service that listens on 127.0.0.1 only. The deployer sets HOST=0.0.0.0 and writes the container's environment in full
+// (CONFIG, PORT, HOST and nothing else; a bundle test pins it), so a deployed directory can never run on one.
+func clockFrom(getenv func(string) string) (func() int64, error) {
+	if getenv(testclock.File) == "" {
+		return func() int64 { return time.Now().UnixMilli() }, nil
+	}
+	if host := getenv("HOST"); host != "" && host != "127.0.0.1" {
+		return nil, testclock.Refused{Msg: fmt.Sprintf("%s is set for a directory that listens on %s: a test clock is for the contract tests only, on 127.0.0.1, so the directory does not start.", testclock.File, host)}
+	}
+	return testclock.FromEnv(getenv, "fakes")
+}
+
 func main() {
+	// the container's health check comes first: it must not read the config or open the index every ten seconds
+	if len(os.Args) == 3 && os.Args[1] == "health" {
+		os.Exit(health.Check(os.Args[2], logLine))
+	}
+	now, err := clockFrom(os.Getenv)
+	if err != nil {
+		log.Fatalf("directory: %v", err)
+	}
 	file := env("CONFIG", "/etc/geometer/directory.json")
 	raw, err := os.ReadFile(file)
 	if err != nil {
@@ -150,17 +179,17 @@ func main() {
 		if len(os.Args) > 2 {
 			page = os.Args[2]
 		}
-		if index.AcceptKeyChange(page, time.Now().UnixMilli()) {
+		if index.AcceptKeyChange(page, now()) {
 			fmt.Println("Accepted: the shop's feed is read again within a minute.")
 			return
 		}
 		fmt.Println("No key change waits for that shop page.")
 		os.Exit(1)
 	}
-	now := time.Now().UnixMilli()
+	started := now()
 	for _, u := range c.Feeds {
 		if directory.FeedAllowed(u, c.Served, c.Feeds) {
-			index.AddFeed(u, "config", now)
+			index.AddFeed(u, "config", started)
 		} else {
 			logLine("directory: " + u + " is not a feed address it will read")
 		}
@@ -170,14 +199,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("directory: the signing key: %v", err)
 	}
-	assistant := assistantFrom(&c)
+	assistant := assistantFrom(&c, now)
 	card, err := directory.DirectoryCard(directory.CardOptions{Origin: c.Origin, Organization: c.Provider.Organization, ProviderURL: c.Provider.URL, Area: c.Area, Assistant: assistant != nil, Key: key})
 	if err != nil {
 		log.Fatalf("directory: the card: %v", err)
 	}
 	handler := directory.NewHandler(directory.HTTPDeps{
-		Search: directory.SearchDeps{Index: index, Checker: directory.NewChecker(fetch, nil), Origin: c.Origin}, Origin: c.Origin,
-		Card: func() map[string]any { return card }, Served: c.Served, Config: c.Feeds, Assistant: assistant, Log: logLine,
+		Search: directory.SearchDeps{Index: index, Checker: directory.NewChecker(fetch, now), Origin: c.Origin, Now: now}, Origin: c.Origin,
+		Card: func() map[string]any { return card }, Served: c.Served, Config: c.Feeds, Assistant: assistant, Log: logLine, Now: now,
 	})
 	port, _ := strconv.Atoi(env("PORT", "8799"))
 	server := &http.Server{Addr: fmt.Sprintf("%s:%d", env("HOST", "127.0.0.1"), port), Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second}
@@ -198,7 +227,7 @@ func main() {
 			}
 			running = true
 			defer func() { running = false }()
-			done := directory.RefreshDue(directory.ReadDeps{Index: index, Fetch: fetch}, 4)
+			done := directory.RefreshDue(directory.ReadDeps{Index: index, Fetch: fetch, Now: now}, 4)
 			// what a person needs to hear: a held shop, a refused feed, a dropped one (a feed address is public; nothing about a buyer is ever here)
 			for u, result := range done {
 				if result != "held" && result != "refused" && result != "dropped" {

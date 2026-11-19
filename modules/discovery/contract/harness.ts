@@ -33,6 +33,15 @@ export const ORIGIN = `https://${DOMAIN}`;
 export const SKIP: string | false = IMPL === "go" && !existsSync(GO_BIN) ? `DIRECTORY_IMPL=go but there is no binary at ${GO_BIN} (build it: cd go && go build -o bin/directory ./cmd/directory)` : false;
 
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * The fake shops' clock: the machine's plus an offset. 0 except in the differential test, which replays answers recorded at an earlier instant: it sets the offset so the shops
+ * stamp their feeds, check answers and notices at that instant's time, and starts the directory on the same clock (`clock: true`, the directory's test clock). Everything a page
+ * says about time (the day the order turns on, "Confirmed today", a check answer "from just now") then comes out as it did when it was recorded.
+ */
+let offsetMs = 0;
+export const now = (): number => Date.now() + offsetMs;
+export const setClockOffset = (ms: number): void => { offsetMs = ms; };
 /** Poll until `fn` gives a truthy value (or throw with `what` after `ms`). */
 export async function until<T>(what: string, fn: () => T | Promise<T>, ms = 15_000): Promise<NonNullable<T>> {
   const end = Date.now() + ms;
@@ -78,7 +87,7 @@ export function item(page: string, id: string, over: Partial<Item> = {}): Item {
     title: { en: "Persian kitten", hi: "फ़ारसी बिल्ली का बच्चा", ml: "പേർഷ്യൻ പൂച്ചക്കുട്ടി", kn: "ಪರ್ಷಿಯನ್ ಬೆಕ್ಕಿನ ಮರಿ" },
     text: { en: "Two kittens, vaccinated by the vet, from our own cat.", ml: "രണ്ട് പൂച്ചക്കുട്ടികൾ" },
     ownerLanguage: "ml", machineWritten: ["en", "hi", "kn"], price: { value: "8000.00", currency: "INR", note: "each" }, quantity: 2,
-    photos: [{ url: `${page}photo/ph-9.jpg`, type: "image/jpeg", width: 1200, height: 900 }], availability: "in_stock", confirmed: new Date(Date.now() - 3_600_000).toISOString(), ...over,
+    photos: [{ url: `${page}photo/ph-9.jpg`, type: "image/jpeg", width: 1200, height: 900 }], availability: "in_stock", confirmed: new Date(now() - 3_600_000).toISOString(), ...over,
   };
 }
 
@@ -90,12 +99,12 @@ export function fakeShop(slug: string, o: { name?: string; town?: string; lat?: 
     feed(over = {}) {
       const place: Record<string, unknown> = { town: s.town, ...(o.lat ? { lat: o.lat, lon: o.lon ?? "76.214435" } : {}), ...over.place };
       return signFeed({
-        format: "shop-feed/1", updated: over.updated ?? new Date(Date.now() - 600_000).toISOString(),
+        format: "shop-feed/1", updated: over.updated ?? new Date(now() - 600_000).toISOString(),
         shop: { name: over.name ?? s.name, page, trade: "pet shop", languages: ["ml", "en"], place, chat: `${page}chat`, check: `${page}api/v1/check`, agentCard: `${page}agent-card.json`, ...over.shop },
         items: over.items ?? s.items,
       }, over.key ?? s.key) as unknown as Record<string, unknown>;
     },
-    notice(over = {}, key = s.key) { return signNotice({ format: "shop-feed-changed/1", feed: s.feedUrl, updated: new Date().toISOString(), ...over }, key) as unknown as Record<string, unknown>; },
+    notice(over = {}, key = s.key) { return signNotice({ format: "shop-feed-changed/1", feed: s.feedUrl, updated: new Date(now()).toISOString(), ...over }, key) as unknown as Record<string, unknown>; },
     rekey() { s.key = generateSigningKey(); },
   };
   return s;
@@ -128,7 +137,7 @@ export async function startFakeDoor(...initial: FakeShop[]): Promise<FakeDoor> {
       shop.hits.check++; shop.hits.checkBodies.push(body);
       let ids: string[] = [];
       try { ids = (JSON.parse(body) as { ids: string[] }).ids; } catch { /* a bad question */ }
-      const at = new Date().toISOString();
+      const at = new Date(now()).toISOString();
       const a = shop.checkAnswer ? shop.checkAnswer(ids, at) : signAnswer({ format: "shop-check/1", page: shop.page, at, items: ids.map((id) => ({ id, availability: "in_stock" })) }, shop.key);
       if (a === null) return; // never answered: the directory's timeout ends it
       if (a && typeof a === "object" && "status" in a && "body" in a) return send((a as { status: number }).status, (a as { body: string }).body);
@@ -142,12 +151,17 @@ export async function startFakeDoor(...initial: FakeShop[]): Promise<FakeDoor> {
 }
 
 /** Sign a check answer for a shop (the harness's own helper, so a test can write a wrong one). */
-export const answerFor = (shop: FakeShop, items: Said[], at = new Date().toISOString(), key = shop.key): Record<string, unknown> =>
+export const answerFor = (shop: FakeShop, items: Said[], at = new Date(now()).toISOString(), key = shop.key): Record<string, unknown> =>
   signAnswer({ format: "shop-check/1", page: shop.page, at, items }, key) as unknown as Record<string, unknown>;
 
 // ---- a fake OpenAI-compatible model --------------------------------------------------------------------------------------------------------------------------
 
-export interface FakeModel { port: number; calls: number; requests: { url: string; authorization: string | undefined; body: any }[]; replies: unknown[]; mode: "ok" | "http500" | "refuse" | "cut" | "text" | "fence"; close(): Promise<void> }
+export interface FakeModel {
+  port: number; calls: number; requests: { url: string; authorization: string | undefined; body: any }[]; replies: unknown[]; mode: "ok" | "http500" | "refuse" | "cut" | "text" | "fence";
+  /** When set, the answer to a call is chosen by the user message's text (what the directory sent), else `replies` in turn: so a test's answers do not depend on the order of calls. */
+  replyFor?: (user: string) => unknown;
+  close(): Promise<void>;
+}
 
 /** The typed search a good model gives back (assistant.ts TYPED_SEARCH_SCHEMA). */
 export const typed = (o: Partial<{ words: string[]; words_en: string[]; category: string; place: string; town: string; radius_km: number | null; max_price: number | null }> = {}): Record<string, unknown> =>
@@ -165,7 +179,7 @@ export async function startFakeModel(replies: unknown[] = [typed()]): Promise<Fa
       try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { /* leave empty */ }
       fake.requests.push({ url: req.url ?? "", authorization: req.headers.authorization, body });
       if (fake.mode === "http500") { res.writeHead(500); return void res.end("{}"); }
-      const answer = fake.replies[Math.min(n, fake.replies.length - 1)];
+      const answer = fake.replyFor ? fake.replyFor(String(body?.messages?.[1]?.content ?? "")) : fake.replies[Math.min(n, fake.replies.length - 1)];
       const text = fake.mode === "text" ? "I think you want a kitten." : fake.mode === "fence" ? `<think>hmm</think>\n\`\`\`json\n${JSON.stringify(answer)}\n\`\`\`` : typeof answer === "string" ? answer : JSON.stringify(answer);
       const message = fake.mode === "refuse" ? { role: "assistant", content: null, refusal: "no" } : { role: "assistant", content: text };
       res.writeHead(200, { "content-type": "application/json" });
@@ -191,6 +205,8 @@ export interface DirectoryOptions {
   tickMs?: number;
   /** An existing data folder (to start again on it, or on it with the other runtime). */
   dataDir?: string;
+  /** Run the directory on the fake shops' clock (`now()`, the machine's plus the offset): GEOMETER_TEST=1 and GEOMETER_TEST_CLOCK_FILE, the Go directory's test clock. */
+  clock?: boolean;
 }
 
 export interface Directory {
@@ -247,7 +263,12 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
   const base = `http://127.0.0.1:${port}`;
   const command = (impl: "ts" | "go", args: string[] = []): { cmd: string; args: string[] } =>
     impl === "go" ? { cmd: GO_BIN, args } : { cmd: process.execPath, args: [join(REPO, "bundle", "services", "directory.ts"), ...args] };
-  const env = (): Record<string, string | undefined> => ({ ...process.env, CONFIG: configFile, PORT: String(port), HOST: "127.0.0.1", DIRECTORY_TICK_MS: String(o.tickMs ?? 200) });
+  const clockFile = join(root, "clock");
+  if (o.clock) writeFileSync(clockFile, String(offsetMs));
+  const env = (): Record<string, string | undefined> => ({
+    ...process.env, CONFIG: configFile, PORT: String(port), HOST: "127.0.0.1", DIRECTORY_TICK_MS: String(o.tickMs ?? 200),
+    ...(o.clock ? { GEOMETER_TEST: "1", GEOMETER_TEST_CLOCK_FILE: clockFile } : {}),
+  });
 
   const d: Directory = {
     root, dataDir, port, base, configFile,

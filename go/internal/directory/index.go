@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"regexp"
 	"strconv"
 	"strings"
@@ -664,7 +665,7 @@ func (x *Index) Candidates(q IndexQuery) []Hit {
 	}
 	buyerTown := ""
 	if q.Town != "" {
-		buyerTown = jsTrim(normal(q.Town))
+		buyerTown = language.TrimJS(normal(q.Town))
 	}
 	buyerSkeleton := ""
 	if buyerTown != "" {

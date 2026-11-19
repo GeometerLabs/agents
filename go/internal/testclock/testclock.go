@@ -9,6 +9,9 @@
 //  2. a shop the panel makes is "mode": "live", and a test clock asked for in a live shop, or with NODE_ENV=production, or without GEOMETER_TEST=1, STOPS THE START with a
 //     sentence: it is never quietly ignored, and never quietly honoured;
 //  3. it is read only by the single-shop command line (cmd/listings), at start, and only when the file variable is set; otherwise the runtime's clock is the machine's.
+//
+// The directory (cmd/directory) reads it too, for the directory contract's golden answers, which are replayed at the instant they were recorded: there the third guard is that the
+// directory listens on 127.0.0.1 only (the deployer gives it HOST=0.0.0.0), and the first two are the same.
 package testclock
 
 import (
