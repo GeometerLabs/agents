@@ -33,6 +33,14 @@ export const OWNER_BASE = "https://pages.example/owner";
 /** The pathway version the TS runtime pins a folder to (package.json), so a folder written here starts on both implementations. */
 export const VERSION = (JSON.parse(readFileSync(join(REPO, "templates", "commerce", "listings", "package.json"), "utf8")) as { version: string }).version;
 
+// The golden replay's clock (golden.ts): while a golden test runs, every shop made is put on the TEST clock with this offset, so it lives at the instant the answer was recorded, and
+// the files the harness dates (the owner's link, the setup grant) are dated in the shop's time. undefined: the machine's clock (unless a test asks for `clock`).
+let goldenOffset: number | undefined;
+/** Set (or clear, with undefined) the offset of the shops made from now on; golden.ts's only. */
+export const setGoldenClock = (ms: number | undefined): void => { goldenOffset = ms; };
+/** The time of a shop made now: the machine's clock plus the golden offset (for a test that computes an hour or a day in the shop's time before the shop exists). */
+export const now = (): number => Date.now() + (goldenOffset ?? 0);
+
 export interface ShopOptions {
   /** The shop's model budget (runtime.json `budget`). */
   budget?: { monthlyMicroInr: number; daily: Record<string, number> };
@@ -123,14 +131,17 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   if (o.decision) { const { port: dp, ...rest } = o.decision; runtime.decision = { provider: "laya", baseUrl: `http://127.0.0.1:${dp}`, model: "laya", ...rest }; }
   if (o.budget) runtime.budget = o.budget;
   writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime));
-  writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));
+  const offset = goldenOffset;
+  const made = Date.now() + (offset ?? 0); // the shop's time: a golden replay's shop lives at the recorded instant, and its files are dated then
+  writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date(made))));
   writeFileSync(join(client, "pages.json"), JSON.stringify({ schema: 1, base: PAGE, ownerBase: OWNER_BASE, slug: "glow-pets", url: PAGE }));
-  const now = Date.now();
-  writeFileSync(join(client, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setup), createdAt: new Date(now).toISOString(), expiresAt: new Date(now + SETUP_MS).toISOString() } }));
+  writeFileSync(join(client, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setup), createdAt: new Date(made).toISOString(), expiresAt: new Date(made + SETUP_MS).toISOString() } }));
   writeFileSync(join(client, "pathway.lock"), `listings@${VERSION}\n`); // written last, as the deployer does
 
   // the test clock's file (modules/test/contract/test-clock-file.ts): one integer, the milliseconds added to the machine's clock
-  const clock = o.clock ? makeTestClockFile(join(root, "clock")) : undefined;
+  // (a golden test's shop is always on it, starting at the golden offset)
+  const clock = o.clock || offset !== undefined ? makeTestClockFile(join(root, "clock")) : undefined;
+  if (clock && offset) clock.advance(offset);
   /** A file in the client folder, written whole as the deployer does (a rename), or removed. */
   const put = (name: string, value: unknown): void => {
     const file = join(client, name);

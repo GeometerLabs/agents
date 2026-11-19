@@ -1,6 +1,7 @@
 // The CONTRACT of four routes a listings-only shop answers besides the ones in listings.contract.test.ts: the owner's limits page and the deployer's limit-changes, "Get my shop's
-// file" (leave with your shop), and web push. Same rules as that file: the shop is a separate process (harness.ts), the only way in is HTTP, LISTINGS_IMPL=ts|go picks the runtime,
-// it must pass on TypeScript first, and assertions are on statuses and machine fields, not on English sentences. The push tests turn push on through modules/test/contract/push-harness.ts (a fake push
+// file" (leave with your shop), and web push. Same rules as that file: the shop is a separate process (harness.ts), the only way in is HTTP, and assertions are on statuses and
+// machine fields, not on English sentences. (Until 19 Nov 2026 the owner's file and push were also run with the TypeScript and Go runtimes in turn on one folder; since the TypeScript
+// runtime was deleted, decision 61 wave 1b, those are the shop restarted on its folder.) The push tests turn push on through modules/test/contract/push-harness.ts (a fake push
 // Guard and a browser that opens what it is sent).
 //
 // Where TypeScript and Go are asked to differ from each other: nowhere in this file. (The one difference it once marked `todo`, TypeScript writing the session's token into the
@@ -14,7 +15,7 @@ import { gzipSync } from "node:zlib";
 import { DatabaseSync } from "node:sqlite";
 import { newSoftPasskey, softRegister } from "../../../../modules/channels/test/soft-authenticator.ts";
 import { newOwnerFileId } from "../../../../modules/channels/owner-file.ts";
-import { IMPL, OWNER_BASE, REPO, makeShop } from "./harness.ts";
+import { OWNER_BASE, makeShop } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 import { GUARD_TOKEN, enablePush, softBrowser, startFakeGuard, vapidChecks } from "../../../../modules/test/contract/push-harness.ts";
 import type { FakeGuard } from "../../../../modules/test/contract/push-harness.ts";
@@ -23,17 +24,15 @@ const shops: Shop[] = [];
 const guards: FakeGuard[] = [];
 after(async () => { for (const s of shops) { await s.stop(); s.cleanup(); } for (const g of guards) await g.close(); });
 
-const bin = process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings");
 const rp = { rpId: new URL(OWNER_BASE).hostname, origin: new URL(OWNER_BASE).origin };
-const OTHER = IMPL === "ts" ? "go" : "ts";
 
 async function boot(o: Parameters<typeof makeShop>[0] = {}): Promise<Shop> { const s = await makeShop(o); shops.push(s); await s.start(); return s; }
-/** A shop with push on (a fake Guard named in runtime.json), started as `impl`. */
-async function bootPush(impl: "ts" | "go" = IMPL): Promise<{ shop: Shop; guard: FakeGuard }> {
+/** A shop with push on (a fake Guard named in runtime.json), started. */
+async function bootPush(): Promise<{ shop: Shop; guard: FakeGuard }> {
   const shop = await makeShop(); shops.push(shop);
   const guard = await startFakeGuard(); guards.push(guard);
   enablePush(shop, guard);
-  await shop.start(impl);
+  await shop.start();
   return { shop, guard };
 }
 
@@ -301,33 +300,31 @@ describe("\"Get my shop's file\": GET /internal/channel/owner-file", () => {
 });
 
 
-// TypeScript and Go take turns on one folder (as cross-restart.test.ts does): the used list one wrote is the other's, and a session one made is good for the other.
-describe("the owner's file across a change of runtime", { skip: !existsSync(bin) && `no Go binary at ${bin}` }, () => {
-  for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
-    test(`taken at ${first}, still taken at ${second}; a file left untaken at ${first} is taken at ${second} once`, async () => {
-      const s = await makeShop(); shops.push(s);
-      await s.start(first);
-      const { session } = await passkeySession(s);
-      const one = leaveWithFile(s);
-      assert.equal((await take(s, one.meta.id, { session })).status, 200);
-      await s.settle();
-      await s.stop();
-      await s.start(second);
-      assert.deepEqual((await s.call("/internal/channel/owner-file", { session })).body, { state: "taken" }, "the used list is one file");
-      assert.equal((await take(s, one.meta.id, { session })).status, 404);
-      const two = leaveWithFile(s);
-      await s.stop();
-      await s.start(first);
-      assert.equal((await s.call("/internal/channel/owner-file", { session })).body.state, "ready");
-      await s.stop();
-      await s.start(second);
-      const got = await take(s, two.meta.id, { session });
-      assert.equal(got.status, 200); assert.deepEqual(Buffer.from(got.bytes), two.body);
-      assert.deepEqual(JSON.parse(readFileSync(join(s.dataDir, "owner-file-used.json"), "utf8")), [one.meta.id, two.meta.id]);
-      await s.settle();
-      assert.deepEqual(record(s).filter((l) => l.action === "owner_file_taken").map((l) => l.refs.ask), [one.meta.ask, two.meta.ask]);
-    });
-  }
+// The shop stopped and started on one folder (as cross-restart.test.ts does): the used list is kept, and a session made before a restart is good after it.
+describe("the owner's file across restarts", () => {
+  test("taken, still taken after a restart; a file left untaken is taken after a restart once", async () => {
+    const s = await makeShop(); shops.push(s);
+    await s.start();
+    const { session } = await passkeySession(s);
+    const one = leaveWithFile(s);
+    assert.equal((await take(s, one.meta.id, { session })).status, 200);
+    await s.settle();
+    await s.stop();
+    await s.start();
+    assert.deepEqual((await s.call("/internal/channel/owner-file", { session })).body, { state: "taken" }, "the used list is one file");
+    assert.equal((await take(s, one.meta.id, { session })).status, 404);
+    const two = leaveWithFile(s);
+    await s.stop();
+    await s.start();
+    assert.equal((await s.call("/internal/channel/owner-file", { session })).body.state, "ready");
+    await s.stop();
+    await s.start();
+    const got = await take(s, two.meta.id, { session });
+    assert.equal(got.status, 200); assert.deepEqual(Buffer.from(got.bytes), two.body);
+    assert.deepEqual(JSON.parse(readFileSync(join(s.dataDir, "owner-file-used.json"), "utf8")), [one.meta.id, two.meta.id]);
+    await s.settle();
+    assert.deepEqual(record(s).filter((l) => l.action === "owner_file_taken").map((l) => l.refs.ask), [one.meta.ask, two.meta.ask]);
+  });
 });
 
 // ---- web push ------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -527,23 +524,21 @@ describe("web push: the sender drains what was queued to the Guard", () => {
   }
 });
 
-describe("web push across a change of runtime", { skip: !existsSync(bin) && `no Go binary at ${bin}` }, () => {
-  for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
-    test(`a subscription and the choice made at ${first} are the shop's at ${second}, with the same key`, async () => {
-      const { shop: s } = await bootPush(first);
-      const { session } = await passkeySession(s);
-      const key = (await push(s, { op: "key" }, {})).body.publicKey;
-      const a = softBrowser(), b = softBrowser("updates.push.services.mozilla.com");
-      assert.equal((await push(s, { op: "owner_subscribe", subscription: a.subscription }, { session })).body.phones, 1);
-      assert.equal((await push(s, { op: "owner_subscribe", subscription: b.subscription }, { session })).body.phones, 2);
-      await s.stop(); await s.start(second);
-      assert.equal((await push(s, { op: "key" }, {})).body.publicKey, key, "the VAPID key is the one in the store");
-      assert.deepEqual((await push(s, { op: "owner_state" }, { session })).body, { on: true, whatsapp: false, choice: "push", phones: 2 });
-      assert.equal((await statusOf(s)).ownerAccess.alertPhones, 2);
-      assert.equal((await push(s, { op: "owner_unsubscribe", endpoint: a.subscription.endpoint }, { session })).body.phones, 1, "ends the other runtime's subscription");
-      await s.stop(); await s.start(first);
-      assert.equal((await push(s, { op: "owner_state" }, { session })).body.phones, 1);
-      assert.equal((await push(s, { op: "owner_subscribe", subscription: b.subscription }, { session })).body.phones, 1, "the same address is still one phone");
-    });
-  }
+describe("web push across restarts", () => {
+  test("a subscription and the choice made before a restart are the shop's after it, with the same key", async () => {
+    const { shop: s } = await bootPush();
+    const { session } = await passkeySession(s);
+    const key = (await push(s, { op: "key" }, {})).body.publicKey;
+    const a = softBrowser(), b = softBrowser("updates.push.services.mozilla.com");
+    assert.equal((await push(s, { op: "owner_subscribe", subscription: a.subscription }, { session })).body.phones, 1);
+    assert.equal((await push(s, { op: "owner_subscribe", subscription: b.subscription }, { session })).body.phones, 2);
+    await s.stop(); await s.start();
+    assert.equal((await push(s, { op: "key" }, {})).body.publicKey, key, "the VAPID key is the one in the store");
+    assert.deepEqual((await push(s, { op: "owner_state" }, { session })).body, { on: true, whatsapp: false, choice: "push", phones: 2 });
+    assert.equal((await statusOf(s)).ownerAccess.alertPhones, 2);
+    assert.equal((await push(s, { op: "owner_unsubscribe", endpoint: a.subscription.endpoint }, { session })).body.phones, 1, "ends a subscription made before the restart");
+    await s.stop(); await s.start();
+    assert.equal((await push(s, { op: "owner_state" }, { session })).body.phones, 1);
+    assert.equal((await push(s, { op: "owner_subscribe", subscription: b.subscription }, { session })).body.phones, 1, "the same address is still one phone");
+  });
 });
