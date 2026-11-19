@@ -342,14 +342,21 @@ and talk, the owner's side for Bookings, the assistant's Bookings skill, the lim
   pass, 105 fail**. The 23: all 12 of `smoke` (health, readyz, status, every token refusal, 405s, 404s for the listings and Fees routes, the recovery and events checks, the status
   reports, the data across a restart, the folder refusals, a live shop refusing the test clock, a Guards shop that calls no Guard at start), the shared owner control on a Bookings
   shop (the lock with the first passkey, the Operator's QR and card refused after it, the 48-hour number change and a sale, the limits page), a newer schema refused, the shop's key
-  kept across restarts, a torn licence file, a malformed chat or approval event refused, a stranger's "approve". Every one of the 105 needs a step that calls a service (above).
+  kept across restarts, a torn licence file, a malformed chat or approval event refused, a stranger's "approve". Three of them pass because nothing happens on Go (STOP with a
+  voice note, a stranger's "approve", the torn licence file: the step ends failed as not ported, and the test only checks that nothing went out), so they are not evidence yet;
+  and the limits page's test passes with Go's `limits: []` because it only tightens a limit `if` one is listed (a weak test: reported to the contract stream below). The 105
+  failures, read by their first error: no payment link or booking was made (the booking flow), the free starts (`calendarUnread`), the chat's thread and rates, the customer's
+  words and the model, the owner's assistant, the licence notices and the report: every one a step or a read that is not ported (Deferred.md), none a wrong answer of a ported part.
   On TypeScript `smoke` is 12 of 12 (unchanged: no TypeScript was touched).
 * The listings contract on Go after the seam: **202 of 202** (the same command as before; one test more than the baseline of 201, from main).
 * "Loses nothing", by a scratch check (not a contract file): a TypeScript Guards shop books and pays and stops; the Go runtime starts on the folder, reads the booking as
   `booked`, counts it, takes one `message_status` (which rewrites the whole state in the Go codec's text) and stops; the TypeScript runtime starts again and the page's read, the
   record line for line and the queue are what they were, and a cancellation goes on to one refund. `cross-restart.test.ts` itself needs the Go booking flow and fails until it lands.
+* The record lines are the TypeScript's, by a scratch check on one folder (the same record key): a recovery for a booking that is not there and a status report for a message
+  no line sent, written by TypeScript and then by Go, are equal member for member (the recovery's `inputsDigest` too), in a fakes shop and a Guards shop.
 * Go unit tests (`go test ./internal/bookings`): the limits vectors (1,718 cases: hours, double booking, refund limit, STOP, moves, reminders, price), the settings vectors (22,
-  word for word), the task runner vectors (6), on the TypeScript's own inputs.
+  word for word), the task runner vectors (6). The other vector files on main (templates, coerce, ondc, scenarios, report, parser, guard-spec) have no Go test yet: their
+  functions are not ported (the customer's words, the rule parser, the agent, the report), on the TypeScript's own inputs.
 
 **Memory, one idle Bookings shop** (a fakes shop from the contract's harness, `ps -o rss=`, as the listings trial measured, one run each):
 
@@ -361,6 +368,9 @@ and talk, the owner's side for Bookings, the assistant's Bookings skill, the lim
 
 The Go shop does less than the TypeScript one yet (no in-memory stand-ins, no booking flow), so its number will grow as the services land; the listings shop's 18.5 MB is the floor
 the shared runtime itself costs.
+
+**Contract findings (for the contract stream; nothing changed there).** `owner.contract.test.ts` "a passkey session reads the limits ..." checks the tightening only `if` the view
+lists a limit, so a runtime that declares none passes it; Bookings declares CHAT_LIMITS, so the test could assert the list is not empty.
 
 **TypeScript findings.** None that change behaviour. Noted for the port: the contract's `smoke` passes a `message` step on Go by ending the task failed (not ported); the test does
 not look at the outcome, so it cannot tell a handled message from an unhandled one.

@@ -4,7 +4,7 @@
 // pieces, the record), so a shop can move between the two runtimes and lose nothing.
 //
 // What is ported is said in go/TRIAL.md ("Wave 2: the Bookings runtime") and, with the reason for each part that is not, in this package's Deferred.md. The services a step calls
-// (payments, messaging, calendar, the books) are the ports in ports.go: interfaces the domain code is written against, wired to the packages the other streams write.
+// (payments, messaging, calendar, the books) are the other streams' packages; ports.go says how they will be handed in.
 package bookings
 
 import (

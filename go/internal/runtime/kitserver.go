@@ -294,7 +294,8 @@ func (s *Server) kitChannelEvents(w http.ResponseWriter, r *http.Request) error 
 			return nil
 		}
 		if ev["kind"] == "chat_message" {
-			// the chat (W1) is not ported yet: a parent's link opens nothing here (no Fees), and a guest's send is refused before anything is saved
+			// a parent's link opens nothing on a Bookings shop (no Fees: http.ts with no chat identity). The chat's rates (429) are not ported yet: a guest's send is saved,
+			// and its task ends failed as not ported (Deferred.md)
 			if _, parent := ev["parent"]; parent {
 				send(w, 403, errBody("That link opens nothing now."))
 				return nil
