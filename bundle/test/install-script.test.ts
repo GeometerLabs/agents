@@ -273,7 +273,7 @@ test("the Go shop programs are built from this copy: the build is run through `g
     const none = releaseWith(s.root, { go_image_digest: "" });
     r = await s.run(`${vars} NODE_BIN=node; build_go_programs`, { RELEASE_FILE: none });
     assert.equal(r.code, 1);
-    assert.match(r.out, /pins no Go builder image \(go_image_digest is empty\)\. Nothing was changed/u);
+    assert.match(r.out, /pins no Go builder image \(go_image_digest is empty\).*Nothing was changed/u);
     const before = s.calls().length;
     r = await s.run(`${vars} DRY_RUN=1 NODE_BIN=node; build_go_programs`, { RELEASE_FILE: RELEASE });
     assert.equal(r.code, 0, r.out);

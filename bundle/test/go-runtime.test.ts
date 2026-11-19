@@ -247,7 +247,7 @@ test("update to a Go version whose programs are already built moves the shop ont
     const compose = readFileSync(join(w.root, "generated", "compose.yaml"), "utf8");
     const rt = /\n  rt-glow-salon:\n([\s\S]*?)\n  [a-z]/u.exec(compose)![1];
     assert.match(rt, new RegExp(`image: "${goImageFor(w.ctx.appDir).replace(".", "\\.")}"`, "u"));
-    assert.match(rt, /command:\s+- \/listings\s+- --client\s+- \/client/u);
+    assert.match(rt, /command:\s+- "\/listings"\s+- "--client"\s+- "\/client"/u);
     assert.ok(!rt.includes("/pathway"), "no template code is mounted for a Go program");
   } finally { w.done(); }
 });
