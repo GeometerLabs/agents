@@ -4,20 +4,21 @@ package bookings
 // no-double-booking, no-message-after-stop, one-deposit-per-booking's shape), agent.ts freeOnDay, modules/reminders/reminders.ts and the time helpers of modules/core/time.ts. Each
 // rule returns a Decision {ruleId, verdict, reason} with the TypeScript's words: the record keeps the decisions, and a line written by either runtime reads the same.
 //
-// Where Go and JavaScript differ: a local time is Go's time package over the zone database the binary carries (time/tzdata), where time.ts asks Intl; zonedToMs is time.Date, which
-// for a time a summer-time change skips picks the instant Go picks, where time.ts's two passes may pick the other side. Every shop is in India (no summer time since 1945), so the
-// two agree on every instant a shop can name; a zone with summer time is not supported by the deployer either.
+// The time helpers are internal/zone's (the one Go copy of core/time.ts): a local time is Go's time package over the zone database the binary carries, where time.ts asks Intl, and
+// zonedToMs makes time.ts's own two passes, so even a time a summer-time change skips lands where the TypeScript puts it.
 
 import (
 	"encoding/json"
 	"fmt"
-	"time"
+
+	"github.com/GeometerLabs/agents/go/internal/language"
+	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
 // Minute and Hour in milliseconds (time.ts).
 const (
-	Minute = int64(60_000)
-	Hour   = 60 * Minute
+	Minute = zone.Minute
+	Hour   = zone.Hour
 	Day    = 24 * Hour
 )
 
@@ -37,57 +38,35 @@ func (d Decision) Blocked() bool { return d.Verdict == "block" }
 // JSON is the decision as the record keeps it.
 func (d Decision) JSON() json.RawMessage { b, _ := json.Marshal(d); return b }
 
-// LocalDate is time.ts LocalDate.
-type LocalDate struct{ Year, Month, Day int }
+// LocalDate and LocalParts are core/time.ts's, from internal/zone, the one Go copy of time.ts (its zonedToMs two-pass guess included, so a booking's minute in a zone with summer
+// time is the TypeScript's).
+type (
+	LocalDate  = zone.Date
+	LocalParts = zone.Parts
+)
 
-// LocalParts is time.ts localParts: the date, the time of day and the weekday (0 = Sunday) of an instant in the zone.
-type LocalParts struct {
-	LocalDate
-	Hour, Minute, Weekday int
-}
-
-// Local is time.ts localParts.
-func Local(ms int64, loc *time.Location) LocalParts {
-	t := time.UnixMilli(ms).In(loc)
-	return LocalParts{LocalDate{t.Year(), int(t.Month()), t.Day()}, t.Hour(), t.Minute(), int(t.Weekday())}
-}
-
-// ZonedToMs is time.ts zonedToMs: the instant of a date and time of day in the zone.
-func ZonedToMs(d LocalDate, hour, minute int, loc *time.Location) int64 {
-	return time.Date(d.Year, time.Month(d.Month), d.Day, hour, minute, 0, 0, loc).UnixMilli()
-}
-
-// AddDays is time.ts addDays (UTC date arithmetic: month ends and leap days roll over).
-func AddDays(d LocalDate, days int) LocalDate {
-	t := time.Date(d.Year, time.Month(d.Month), d.Day+days, 0, 0, 0, 0, time.UTC)
-	return LocalDate{t.Year(), int(t.Month()), t.Day()}
-}
-
-// Weekday is time.ts weekdayOf.
-func Weekday(d LocalDate) int { return int(time.Date(d.Year, time.Month(d.Month), d.Day, 0, 0, 0, 0, time.UTC).Weekday()) }
-
-// ISO is the date as "2026-11-16" (the key a day the owner closed is kept under).
-func (d LocalDate) ISO() string { return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day) }
+// isoDate is the date as "2026-11-16" (the key a day the owner closed is kept under).
+func isoDate(d LocalDate) string { return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day) }
 
 // HoursOn is settings.ts hoursOn: the opening window of a weekday, or nil when closed.
 func (s *Settings) HoursOn(weekday int) *Hours { return s.OpeningHours[weekday] }
 
 // CheckWithinHours is limits.ts checkWithinHours: never book outside opening hours (and only on the slot grid). closedDays are the dates the owner closed through the assistant.
 func CheckWithinHours(s *Settings, sv *Service, startMs int64, closedDays []string) Decision {
-	start := Local(startMs, s.Loc)
-	end := Local(startMs+sv.DurationMinutes*Minute, s.Loc)
+	start := zone.LocalParts(startMs, s.Timezone)
+	end := zone.LocalParts(startMs+sv.DurationMinutes*Minute, s.Timezone)
 	hours := s.HoursOn(start.Weekday)
 	if hours == nil {
 		return block("within-hours", "The business is closed that day.")
 	}
-	if contains(closedDays, start.ISO()) {
+	if contains(closedDays, isoDate(start.Date)) {
 		return block("within-hours", "The owner closed the business that day.")
 	}
 	startMin, endMin := start.Hour*60+start.Minute, end.Hour*60+end.Minute
 	if startMin < hours.Open {
 		return block("within-hours", "That is before opening time.")
 	}
-	if start.LocalDate != end.LocalDate || endMin > hours.Close {
+	if start.Date != end.Date || endMin > hours.Close {
 		return block("within-hours", fmt.Sprintf("%d minutes from then would run past closing time.", sv.DurationMinutes))
 	}
 	if int64(startMin)%s.SlotMinutes != 0 {
@@ -212,14 +191,14 @@ func HeldByBookings(st *Store, s *Settings, exceptID string) []BusyEvent {
 // FreeOnDay is agent.ts freeOnDay: every start on the slot grid, on one day, free for this service: inside its hours, clear of everything busy (the calendar and the shop's own
 // holds), and far enough ahead that the customer has the hold's time to pay. The one place free times are worked out.
 func FreeOnDay(s *Settings, sv *Service, date LocalDate, others []BusyEvent, nowMs int64, closedDays []string) []int64 {
-	hours := s.HoursOn(Weekday(date))
-	if hours == nil || contains(closedDays, date.ISO()) {
+	hours := s.HoursOn(zone.WeekdayOf(date))
+	if hours == nil || contains(closedDays, isoDate(date)) {
 		return []int64{}
 	}
 	grid := int(s.SlotMinutes)
 	free := []int64{}
 	for m := (hours.Open + grid - 1) / grid * grid; m+int(sv.DurationMinutes) <= hours.Close; m += grid {
-		start := ZonedToMs(date, m/60, m%60, s.Loc)
+		start := zone.ZonedToMs(date, m/60, m%60, s.Timezone)
 		if start <= nowMs+s.Deposit.HoldMinutes*Minute {
 			continue // the customer needs the hold's time to pay before it starts
 		}
@@ -265,7 +244,7 @@ func TakeDue(rs []Reminder, nowMs int64) (due bool, atMs int64) {
 func hold(rule, reason string) Decision { return Decision{rule, "hold_for_owner", reason} }
 
 // inr is format.ts formatInr over whole rupees ("₹1,200", en-IN grouping), the words every limit's reason writes.
-func inr(rupees int64) string { return assistantINR(rupees * 100) }
+func inr(rupees int64) string { return language.FormatInrWhole(rupees) }
 
 // CheckPriceAtOrAboveList is limits.ts checkPriceAtOrAboveList: never quote or agree below the price list.
 func CheckPriceAtOrAboveList(serviceName string, listInr, proposedInr int64) Decision {

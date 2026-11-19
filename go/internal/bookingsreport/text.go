@@ -12,14 +12,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GeometerLabs/agents/go/internal/locale"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/report"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
 // whenText is `${formatDate(d, language)} ${d.year}`.
 func whenText(d zone.Date, lang string) string {
-	return fmt.Sprintf("%s %d", locale.FormatDate(d, lang), d.Year)
+	return fmt.Sprintf("%s %d", language.Formats(lang).Date(d.Year, d.Month, d.Day), d.Year)
 }
 
 // GoLiveLines is goLiveLines: what a monthly document says about the go-live checks, as sentences in the shop's language: no certificate was given, one was given and could not be

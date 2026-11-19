@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
 // IntentKinds is model.ts KINDS, in its order.
@@ -120,7 +121,7 @@ func IntentFromReply(id string, s *Settings) *Intent {
 		if err != nil || ms > 9007199254740991 {
 			return nil
 		}
-		p := Local(ms, s.Loc)
+		p := zone.LocalParts(ms, s.Timezone)
 		hour, period := p.Hour%12, "am"
 		if hour == 0 {
 			hour = 12

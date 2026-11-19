@@ -475,3 +475,13 @@ TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refun
 is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`
 last; `invariants.ts` privacy faults depend on refs insertion order; `fitText` folds whitespace before stripping zero-width characters (so a name can turn a signed summary into the older link); `settledWho` slices at
 UTF-16 and can leave half an emoji; `workOf` leaves a refund settled by a person's word "waiting for owner" in every later month unless an `owner_decision` follows; a rule id like `constructor` would throw in `STOP_SITES`.
+
+**The formatting join (19 Nov, after merging main and go-bookings-words-19nov).** Three copies wrote the same dates, times and rupees: `internal/locale` (books stream), `language/format.go`
+with `formats.json` (words branch) and the assistant's packed date and time tables with its own `INR`. Their tables were identical (checked month for month, weekday for weekday, hour for
+hour), so there is now ONE: `language.Formats(lang).Date / TimeOfDay`, `language.FormatInr` and its exact integer twin `FormatInrWhole`, with one en-IN grouping. `internal/locale` is
+deleted (its callers in accounting, render, report and bookingsreport use language; owner-money-render's own `inr` moved to `accounting/render`, its only user; its vectors are
+`language/testdata/locale-vectors.json`, still written by gen_locale.ts), the assistant's packs no longer carry date and time tables (gen_words.ts), `assistant.INR` is one line over
+`language.FormatInr`, and `internal/bookings` has no time helpers of its own: `LocalDate` and `LocalParts` are `zone`'s, and a booking's minute is `zone.ZonedToMs` (time.ts's two
+passes; before, `time.Date`, which could differ in a summer-time gap). Kept apart, with the reason: `calendar`'s `zonedMidnight` (Date.UTC's years 0 to 99 and its fall back to UTC
+for a zone Intl refuses, where `zone` panics on a zone the settings check already refused: different inputs, different answers), and `slots.Fill` (the positional `{0}` filler of the
+books' and the report's words: not a format, and no other copy of it exists; the Meta `{{1}}` filler and the assistant's `{name}` filler are other syntaxes).

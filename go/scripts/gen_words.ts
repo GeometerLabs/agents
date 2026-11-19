@@ -97,7 +97,7 @@ function alerts(l: Language, m: Bag): void {
 }
 
 /** One language's messages. */
-function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag; stamp: { months: string[]; hours: Bag } } {
+function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; hours: Bag } } {
   const m: Bag = {};
   const D = { year: 2026, month: 11, day: 18 }; // a date to be found again in the text and turned into {date}
   const dateText = formatDate(D, l);
@@ -160,14 +160,7 @@ function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag; st
   if (!priced.includes(priceText)) throw new Error(`the price is not in: ${priced}`);
   m["card.listing.priced"] = priced.replace(priceText, "{price}");
   m["card.listing_ask"] = slots(cardQuestion({ ...cardBase, kind: "listing_ask", who: "", what: S("title"), amountPaise: 0 }, l, TZ));
-  // dates: names and the order, found by writing a date for each weekday and month
-  const weekdays: string[] = [];
-  const months: string[] = [];
-  let comma = false;
-  for (let i = 0; i < 7; i++) { const x = /^(.*?)(,)? 15 (.*)$/u.exec(formatDate({ year: 2026, month: 11, day: 15 + i }, l).replace(/ \d+ /u, " 15 ")); weekdays.push(x![1]); comma = x![2] === ","; }
-  for (let mo = 1; mo <= 12; mo++) { const x = /^(.*?),? 10 (.*)$/u.exec(formatDate({ year: 2026, month: mo, day: 10 }, l)); months.push(x![2]); }
-  const time: Bag = {};
-  for (let h = 0; h < 24; h++) time[String(h)] = formatTime({ hour: h, minute: 59 }, l).replace(":59", ":{mm}");
+  // dates and times are not here: the Go runtimes write them with internal/language/formats.json (gen_bookings_words.ts), one table for every template
   const cat: Bag = {};
   for (const [k, v] of Object.entries(LISTING_WORDS[l].categories)) cat[k] = v;
   // the owner's talk: the system prompt (talk-prompt.ts ownerPrompt) for each personality, with and without the character's name; the sources' lines are a slot (no sources: "(none)")
@@ -187,7 +180,7 @@ function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag; st
   m["morning.nothing"] = quiet.today;
   m["morning.low"] = slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ low: N }], moneyPaise: 0, waiting: 0 }).values as Bag).today);
   alerts(l, m);
-  return { m, date: { weekdays, months, comma }, time, cat, stamp: stampOf(l) };
+  return { m, cat, stamp: stampOf(l) };
 }
 
 /** The word lists the rules read the owner's commands from, taken out of the TypeScript source (they are `const`s that are not exported, and the TypeScript is not changed for this). */
