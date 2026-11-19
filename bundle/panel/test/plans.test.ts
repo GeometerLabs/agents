@@ -54,7 +54,7 @@ test("a proposed list never prices the running costs: the 5 Nov proposal is skip
   const c = monthlyCost({ settings: glowSalon() }, live);
   assert.equal(c.priceList.date, live.date);
   assert.equal(c.lines.find((l) => l.id === "geometer")!.paise, live.rates["plan.business.fee"].micro! / 10_000, "Glow Salon takes a deposit: Business, at the list's price");
-  assert.equal(latestProposedPriceList(), null, "nothing newer than the list in force is waiting: the 18 Nov proposal (the model budget and its daily caps, decision 60) was approved and is in force as the 19 Nov list");
+  assert.equal(latestProposedPriceList()?.date, "2026-11-20", "only the 20 Nov proposal (higher chat caps, decision 62) waits: the 18 Nov proposal was approved and is in force as the 19 Nov list; no plan price moves in the 20 Nov one");
   assert.equal(loadPriceList(new URL("2026-11-18.json", PRICES_DIR).pathname).status, "proposed", "the 18 Nov file stays what it was: a proposal, now superseded, that never priced or capped anything");
   const dir = mkdtempSync(join(tmpdir(), "geo-prices-"));
   copyFileSync(new URL("2026-11-04.json", PRICES_DIR).pathname, join(dir, "2026-11-04.json"));
