@@ -257,3 +257,48 @@ refuse (the deployer writes them).
 **TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
 sees ASCII letters, so a goal written in those scripts is filed as a fact unless an ASCII letter follows; `historyText` cuts at 300 UTF-16 units and can leave a lone surrogate
 (Go drops the half character); `COMPLETION` holds `बुक ചെയ്തു` (Devanagari and Malayalam mixed), carried as it is.
+
+**Not ported (wave 1b cannot delete these TypeScript parts yet):** the owner-talk model's answer for words no rule reads; the router's decision and language models; memory
+writes (remember, notes, forget); the morning line and with it the licence's final stop; voice; date phrases in money questions (flagged, not answered); first-step seeding of the
+Operator's town; `limitChanges` compaction.
+
+## Wave 1c (19 Nov 2026): the directory of local shops in Go
+
+`cmd/directory` + `internal/directory` (6.0k lines of Go with the tests, 5.7k without; `internal/signing` gained the reading side, 146 lines) do what `bundle/services/directory.ts` does: read and
+check the shops' signed feeds, keep the index (the TypeScript's own `directory.sqlite`, FTS5 with the same tokenizer through `modernc.org/sqlite`), ask the shops about the ten results,
+the fair order, search, the pages in four languages, the MCP endpoint, the signed Agent Card, the buyer's assistant. Words, style sheet, tool definitions, card text, the assistant's prompt
+and the Latin-fold tables are GENERATED from the TypeScript (`scripts/gen_directory.ts`); read `internal/directory/Explanation.md` and `Deferred.md`.
+
+**The contract** (`modules/discovery/contract/`, README there): 34 tests, 34 pass on TypeScript and 34 pass on Go (`DIRECTORY_IMPL=ts|go`, one at a time under the heat lock). They include the
+two that need both runtimes: `differential.test.ts` (the same requests over the same shops: every page state in four languages, the JSON, the MCP answers, the assistant's answers,
+compared whole) and `cross-restart.test.ts` (TypeScript then Go then TypeScript on one folder: the index, the pins, a held key change, the key and so the card's key id). Unit tests with
+vectors made from the TypeScript (`internal/directory/vectors_test.go`, 356 lines): the Latin fold, text helpers, the order and its hash, the address reader, dates, numbers, the buyer's
+request, cleaning and the patterns, a model's typed answer. `go build ./... && go vet ./... && go test ./...` pass.
+
+| 40 shops of 20 listings (800 items), measured with `contract/measure.ts` | TypeScript (Node 26) | Go 1.27 |
+| --- | --- | --- |
+| idle RSS, feeds read | 133.3 MB | **29.5 MB** |
+| RSS after 200 searches / after 500 | 171.3 / 168.6 MB | **30.9 / 31.7 MB** |
+| cold start, fresh folder (spawn to `/healthz`), median of 5 | 161 ms | **55 ms** |
+| search (10 shops asked), p50 / p95 of 300 | **6.2 / 7.4 ms** | 14.0 / 15.1 ms |
+| binary | `node` + 4.3k lines of TypeScript | 18.5 MB (one file) |
+
+The Go search is slower because each search opens a connection to every shop it asks (the checker's client does not keep connections); not tuned.
+
+**What the deployer switch will change** (not done: how the Go binaries reach a server is the owner's decision). In `bundle/generate/compose.ts` the `directory` block (`add("directory", node([...]))`):
+the service becomes `goProgram(["/directory"], ...)` in the programs' image (the wave 1b `features.goImage`, which then also needs `directory` built into it: `go build -o bin/directory ./cmd/directory`); the
+health check `healthWget(DIRECTORY_PORT, "/healthz")` becomes `healthGo("directory", DIRECTORY_PORT, "/healthz")` with the `health` subcommand (`internal/health` of the deploy-switch branch: `cmd/directory/main.go` takes it at the merge); the user stays `nodeUser`
+but the image has no `/home/node`: the volume `directory-data` mounted at `/home/node` needs that folder, owned by that user, in the image (or the data folder moves); no `appVolume` mount (the program has its code inside); the environment
+(`CONFIG`, `PORT`, `HOST`), the config file (`directoryConfig`, unchanged: the Go service reads the same JSON) and the networks (`pages`, `egress`, `assistant`) stay. The model's wire must be "openai"
+(a server whose model speaks "anthropic" runs the directory with the assistant off and a line saying so). `docker exec <directory> node /app/bundle/services/directory.ts changes|accept` becomes `docker exec <directory> /directory changes|accept <page>`
+(docs and `bundle/Explanation.md`).
+**What the switch deletes**, in the same change: `bundle/services/directory.ts`; `modules/discovery/` except `words.ts` (the review sheet `bundle/panel/review.ts` still reads `DIRECTORY_WORDS` and
+`DIRECTORY_SAMPLES`; and `gen_directory.ts` reads `words.ts`, `page.ts`, `mcp.ts`, `card.ts`, `assistant.ts`, `romanise.ts` to make the packed files: after the switch the generated files in
+`go/internal/directory` become the source, the generator and `words-fresh.test.ts` go, and the review sheet reads the packed words, or `words.ts` stays as the words' source and is the one file kept);
+`modules/discovery/test/` (10 files, 1,676 lines: each is a contract test or a Go unit test above); `bundle/test/directory-service.test.ts` and `directory-assistant.test.ts` (their compose and config
+parts move to `go-runtime.test.ts`; their directory-behaviour parts are the contract); the `DIRECTORY_TICK_MS` line in nothing (it goes with the file). The contract keeps `modules/signing` (it signs the fake shops) and
+`templates/commerce/listings/contract/children.ts`. What stays TypeScript and is not touched: the shops' own MCP endpoint (`modules/channels/mcp.ts`, `shop-card.ts`) and `modules/channels/look.ts` (the shops' pages).
+
+**TypeScript findings** (nothing changed): a feed's `updated` is never judged for age; `lang=` on `/search` falls back silently, so the `lang must be en, hi, ml or kn` refusal exists only over MCP;
+`rebuildIndex` has no caller; `Date.parse` of a date-time with no zone is local time (the container runs in UTC, so equal in production).
+**Found while porting** (Go, fixed): a response with a second, differently spelled `Content-Length` is refused by Node's client (curl accepts it).
