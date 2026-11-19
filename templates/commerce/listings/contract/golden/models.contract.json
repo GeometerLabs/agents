@@ -1,0 +1,3254 @@
+{
+ "about": "What models.contract.test.ts saw, recorded by golden.ts (LISTINGS_GOLDEN=write); masked: signatures, ISO instants, epoch ms.",
+ "impl": "ts",
+ "commit": "b253982ec2fd479af935472d9c1769855c1d58b0",
+ "entries": {
+  "router: the kinds": {
+   "at": 1795076398311,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "what did the shop bring in on the coming tuesday please"
+     ],
+     [
+      "assistant",
+      "Nothing recorded on Tue 24 Nov yet."
+     ],
+     [
+      "owner",
+      "take a holiday"
+     ],
+     [
+      "assistant",
+      "Hello!"
+     ],
+     [
+      "owner",
+      "anything pending for me today"
+     ],
+     [
+      "assistant",
+      "Nothing needs you right now."
+     ],
+     [
+      "owner",
+      "ok then"
+     ],
+     [
+      "assistant",
+      "Hello!"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 2,
+      "decision": 0,
+      "model": 4
+     },
+     "costMicroInr": 0,
+     "unpriced": 4,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 400000,
+      "basisPoints": 80,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 2,
+        "cap": 20,
+        "calls": 2,
+        "micro": 200000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 2,
+        "cap": 50,
+        "calls": 2,
+        "micro": 200000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "what did the shop bring in on the coming tuesday please"
+     ],
+     [
+      "talk",
+      "take a holiday"
+     ],
+     [
+      "intent",
+      "ok then"
+     ],
+     [
+      "talk",
+      "Earlier in this talk:\nOwner: take a holiday\nAssistant: Hello!\n\nNow the owner says:\nok then"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: not json": {
+   "at": 1795076398768,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are not json"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model",
+       "failed": "model"
+      },
+      "the model could not be used (its answer was not JSON), so the rule parser read the message",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 1,
+      "decision": 0,
+      "model": 0
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "buttons",
+     "reason": "fault",
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are not json"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: kind is a number": {
+   "at": 1795076399117,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are kind is a number"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model",
+       "failed": "model"
+      },
+      "the model could not be used (its answer was not a valid intent), so the rule parser read the message",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 1,
+      "decision": 0,
+      "model": 0
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "buttons",
+     "reason": "fault",
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are kind is a number"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: extra members": {
+   "at": 1795076399465,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are extra members"
+     ],
+     [
+      "assistant",
+      "Nothing needs you right now."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 1
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are extra members"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: http 500": {
+   "at": 1795076399815,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are http 500"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "tried": "rules+model",
+       "failed": "model"
+      },
+      "the model could not be used (the model answered HTTP 500), so the rule parser read the message",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 1,
+      "decision": 0,
+      "model": 0
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "buttons",
+     "reason": "fault",
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are http 500"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: too slow": {
+   "at": 1795076400166,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are too slow"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "tried": "rules+model",
+       "failed": "model"
+      },
+      "the model could not be used (no answer within 600 ms), so the rule parser read the message",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 1,
+      "decision": 0,
+      "model": 0
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "buttons",
+     "reason": "fault",
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are too slow"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: no such kind": {
+   "at": 1795076401111,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are no such kind"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model",
+       "failed": "model"
+      },
+      "the model could not be used (its answer was not a valid intent), so the rule parser read the message",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 1,
+      "decision": 0,
+      "model": 0
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "buttons",
+     "reason": "fault",
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are no such kind"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: an array": {
+   "at": 1795076401462,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are an array"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model",
+       "failed": "model"
+      },
+      "the model could not be used (its answer was not a valid intent), so the rule parser read the message",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 1,
+      "decision": 0,
+      "model": 0
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "buttons",
+     "reason": "fault",
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are an array"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: fenced": {
+   "at": 1795076401812,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are fenced"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 1
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are fenced"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: thinks first": {
+   "at": 1795076402158,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are thinks first"
+     ],
+     [
+      "assistant",
+      "There is nothing to undo."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "undo",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 1
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are thinks first"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "untrusted: rules only kind": {
+   "at": 1795076402508,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "the words are rules only kind"
+     ],
+     [
+      "assistant",
+      "What shall I remember? For example: remember we close at 6 on Saturdays."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "remember",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 1
+     },
+     "costMicroInr": 0,
+     "unpriced": 1,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 100000,
+      "basisPoints": 20,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "the words are rules only kind"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "decision model": {
+   "at": 1795076402943,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "words one"
+     ],
+     [
+      "assistant",
+      "Nothing recorded on Thu 19 Nov yet."
+     ],
+     [
+      "owner",
+      "my number is 9811111111 one"
+     ],
+     [
+      "assistant",
+      "Nothing recorded on Thu 19 Nov yet."
+     ],
+     [
+      "owner",
+      "words two"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "words three"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "words four"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "words five four four"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "words four again"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "words one again"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "decision",
+       "provider": "laya",
+       "model": "laya",
+       "inputTokens": "40",
+       "outputTokens": "2",
+       "costMicroInr": "0",
+       "rateDate": "2026-11-07",
+       "tried": "rules+decision"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "decision",
+       "provider": "laya",
+       "model": "laya",
+       "inputTokens": "40",
+       "outputTokens": "2",
+       "costMicroInr": "0",
+       "rateDate": "2026-11-07",
+       "tried": "rules+decision"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "140",
+       "outputTokens": "52",
+       "tried": "rules+decision+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+decision+model",
+       "failed": "decision"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+decision+model",
+       "failed": "decision"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+decision+model",
+       "failed": "decision"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model",
+       "skipped": "decision"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model",
+       "skipped": "decision"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 2,
+      "model": 6
+     },
+     "costMicroInr": 0,
+     "unpriced": 6,
+     "paused": {
+      "decision": "paused"
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 600000,
+      "basisPoints": 120,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 6,
+        "cap": 50,
+        "calls": 6,
+        "micro": 600000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "words two"
+     ],
+     [
+      "intent",
+      "words three"
+     ],
+     [
+      "intent",
+      "words four"
+     ],
+     [
+      "intent",
+      "words five four four"
+     ],
+     [
+      "intent",
+      "words four again"
+     ],
+     [
+      "intent",
+      "words one again"
+     ]
+    ],
+    "decisions": [
+     [
+      "words one",
+      [
+       "want"
+      ]
+     ],
+     [
+      "my number is [number] one",
+      [
+       "want"
+      ]
+     ],
+     [
+      "words two",
+      [
+       "want"
+      ]
+     ],
+     [
+      "words three",
+      [
+       "want"
+      ]
+     ],
+     [
+      "words four",
+      [
+       "want"
+      ]
+     ],
+     [
+      "words five four four",
+      [
+       "want"
+      ]
+     ]
+    ]
+   }
+  },
+  "talk: a reply that passes": {
+   "at": 1795076403533,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "remember we close at 6 on Saturdays"
+     ],
+     [
+      "assistant",
+      "Remembered (n-1): \"we close at 6 on Saturdays\". Only I use it, when I talk with you. Say \"undo\" within a day, or \"forget n-1\"."
+     ],
+     [
+      "owner",
+      "how is the shop doing?"
+     ],
+     [
+      "assistant",
+      "Your Persian kittens are on your page at ₹8,000. You asked me to close at 6 on Saturdays."
+     ],
+     [
+      "owner",
+      "and the kittens?"
+     ],
+     [
+      "assistant",
+      "Your Persian kittens are on your page at ₹8,000. You asked me to close at 6 on Saturdays."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "remember",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en"
+     ],
+     [
+      "memory",
+      "confirmed",
+      {
+       "note": "n-1",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 1,
+      "decision": 0,
+      "model": 4
+     },
+     "costMicroInr": 0,
+     "unpriced": 4,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 400000,
+      "basisPoints": 80,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 2,
+        "cap": 20,
+        "calls": 2,
+        "micro": 200000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 2,
+        "cap": 50,
+        "calls": 2,
+        "micro": 200000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "how is the shop doing?"
+     ],
+     [
+      "talk",
+      "how is the shop doing?"
+     ],
+     [
+      "intent",
+      "and the kittens?"
+     ],
+     [
+      "talk",
+      "Earlier in this talk:\nOwner: how is the shop doing?\nAssistant: Your Persian kittens are on your page at ₹8,000. You asked me to close at 6 on Saturdays.\n\nNow the owner says:\nand the kittens?"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: a number no source states (check 2)": {
+   "at": 1795076403939,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "refused",
+       "check": "2",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply failed check 2 and was not sent: The message has the number 12, which is not in the record for this conversation.",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: a word that says something was done (check 4)": {
+   "at": 1795076404302,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "refused",
+       "check": "4",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply failed check 4 and was not sent: a sentence says that something was done; only the shop's own messages, written from the record, say that",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: a source the speaker may not see (check 1)": {
+   "at": 1795076404661,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "refused",
+       "check": "1",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply failed check 1 and was not sent: a sentence names the source \"n-99\", which is not one this speaker may see",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: a link (check 5)": {
+   "at": 1795076405025,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "refused",
+       "check": "5",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply failed check 5 and was not sent: the reply has the link \"shop.example.com\", which is not one of the shop's own",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: a number word no source uses (check 2)": {
+   "at": 1795076405386,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "refused",
+       "check": "2",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply failed check 2 and was not sent: a sentence uses the number word \"Half\", which none of its sources uses",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: the wrong shape: no sentences": {
+   "at": 1795076405746,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "refused",
+       "check": "1",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk model's answer was not the shape asked for; the fixed answer was used",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: the wrong types: a sentence's text is a number": {
+   "at": 1795076406109,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "refused",
+       "check": "1",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk model's answer was not the shape asked for; the fixed answer was used",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: extra members are dropped": {
+   "at": 1795076406473,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "Hello there."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk check: a limit is named: which limit?": {
+   "at": 1795076406836,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "tell me about my shop please"
+     ],
+     [
+      "assistant",
+      "Which limit do you mean? I can tighten: . For anything else, I'll keep it as a note instead."
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "tell me about my shop please"
+     ],
+     [
+      "talk",
+      "tell me about my shop please"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk model fails": {
+   "at": 1795076407196,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "one?"
+     ],
+     [
+      "assistant",
+      "I could not answer that just now. Waiting for you: 0. Say \"help\" to see what I can do."
+     ],
+     [
+      "owner",
+      "two?"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "three?"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "no_answer",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk model could not be used (its answer was not JSON); the fixed answer was used",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 2,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "buttons",
+     "reason": "fault",
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 200000,
+      "basisPoints": 40,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 20,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": 20,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "one?"
+     ],
+     [
+      "talk",
+      "one?"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk: the day's cap": {
+   "at": 1795076407567,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "first words"
+     ],
+     [
+      "assistant",
+      "Hello there."
+     ],
+     [
+      "owner",
+      "second words"
+     ],
+     [
+      "assistant",
+      "I have talked as much as I can for today. Buttons and my fixed answers still work; I am back tomorrow."
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "third words"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 0,
+      "decision": 0,
+      "model": 4
+     },
+     "costMicroInr": 0,
+     "unpriced": 4,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 50000000,
+      "usedMicroInr": 400000,
+      "basisPoints": 80,
+      "level": "ok",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 1,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 3,
+        "cap": 50,
+        "calls": 3,
+        "micro": 300000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "first words"
+     ],
+     [
+      "talk",
+      "first words"
+     ],
+     [
+      "intent",
+      "second words"
+     ],
+     [
+      "intent",
+      "third words"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "talk: the month's budget": {
+   "at": 1795076407984,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "first words"
+     ],
+     [
+      "assistant",
+      "Hello there."
+     ],
+     [
+      "owner",
+      "second words"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "third words"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "record": [
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50",
+       "tried": "rules+model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "talk",
+      "confirmed",
+      {
+       "role": "owner",
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "skipped": "model"
+      },
+      "",
+      "en"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "skipped": "model"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "ai": {
+     "month": "2026-11",
+     "messages": {
+      "rules": 2,
+      "decision": 0,
+      "model": 2
+     },
+     "costMicroInr": 0,
+     "unpriced": 2,
+     "paused": {
+      "decision": null
+     },
+     "allowance": {
+      "messages": null,
+      "costMicroInr": null
+     },
+     "mode": "ai",
+     "reason": null,
+     "budget": {
+      "monthlyMicroInr": 150000,
+      "usedMicroInr": 200000,
+      "basisPoints": 10000,
+      "level": "full",
+      "features": {
+       "owner_talk": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "customer_talk": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "listing_draft": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       },
+       "router": {
+        "today": 1,
+        "cap": 50,
+        "calls": 1,
+        "micro": 100000
+       },
+       "buyer": {
+        "today": 0,
+        "cap": null,
+        "calls": 0,
+        "micro": 0
+       }
+      }
+     }
+    },
+    "calls": [
+     [
+      "intent",
+      "first words"
+     ],
+     [
+      "talk",
+      "first words"
+     ]
+    ],
+    "decisions": []
+   }
+  },
+  "no model": {
+   "at": 1795076408362,
+   "value": [
+    "tell me about my shop please",
+    "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+   ]
+  }
+ }
+}

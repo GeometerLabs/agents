@@ -9,6 +9,7 @@ package directory
 
 import (
 	"encoding/json"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"strconv"
 	"sync"
 	"time"
@@ -86,7 +87,7 @@ func readCheckedItem(raw any, asked map[string]bool) (CheckedItem, bool) {
 			return CheckedItem{}, false
 		}
 		price := &Price{Value: val, Currency: "INR"}
-		if note, ok := p["note"].(string); ok && utf16Len(note) <= 40 {
+		if note, ok := p["note"].(string); ok && language.UTF16Len(note) <= 40 {
 			price.Note = note
 		}
 		out.HasPrice, out.Price = true, price
@@ -97,7 +98,7 @@ func readCheckedItem(raw any, asked map[string]bool) (CheckedItem, bool) {
 		out.Quantity = &q
 	}
 	if c, ok := r["confirmed"].(string); ok {
-		if _, ok := jsDateParse(c); ok {
+		if _, ok := language.ParseJSDate(c); ok {
 			out.Confirmed = c
 		}
 	}
@@ -144,7 +145,7 @@ func (c *Checker) Check(shop CheckTarget, ids []string) CheckOutcome {
 	if err != nil {
 		return bad(err.Error())
 	}
-	if res.Status != 200 || utf16Len(res.Body) > MaxAnswerBytes {
+	if res.Status != 200 || language.UTF16Len(res.Body) > MaxAnswerBytes {
 		return bad("the shop answered " + strconv.Itoa(res.Status))
 	}
 	var doc any
@@ -163,7 +164,7 @@ func (c *Checker) Check(shop CheckTarget, ids []string) CheckOutcome {
 	}
 	at := int64(-1 << 62)
 	if s, ok := d["at"].(string); ok {
-		if v, ok := jsDateParse(s); ok {
+		if v, ok := language.ParseJSDate(s); ok {
 			at = v
 		}
 	}

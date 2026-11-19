@@ -20,7 +20,7 @@ import { changeNotice, checkAnswer, feedFingerprint, shopFacts, signedFeed } fro
 
 /**
  * Is `value` an address inside the shop's page: https, the same origin, no user or password, and a path at or under the page's own path? Parsed with URL, so `<page>/../other` and
- * `<page>.evil.example` are what they really are (the same rule discovery/feed.ts `under` applies to a feed).
+ * `<page>.evil.example` are what they really are (the same rule the directory's feed reader, go/internal/directory feed.go `under`, applies to a feed).
  */
 export function underPage(page: string, value: unknown): boolean {
   if (typeof value !== "string") return false;

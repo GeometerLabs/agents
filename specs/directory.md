@@ -4,7 +4,7 @@
 
 A directory reads shop feeds ([shop-feed.md](shop-feed.md)), keeps a search index, and answers searches from people and from AI
 assistants. Anyone may run one. Geometer runs one on its server, beside the door that serves the shops' pages; its code is
-`modules/discovery/` and the service that runs it in the bundle.
+`go/internal/directory/` and `go/cmd/directory`, the service that runs it in the bundle (the TypeScript `modules/discovery/` was the first; it was replaced by the Go one on 19 Nov 2026).
 
 ## Which feeds it reads
 
@@ -36,7 +36,7 @@ The index is a cache. It holds only what the feeds say, and it can be thrown awa
   place, availability, the confirmed date and the price.
 - Words match in any of the four languages, because each listing carries its words in all of them (the owner's own, and the ones an
   assistant wrote). "billi", "poocha", "bekku" and "cat" find the same kitten: the feed carries native script, so the index also keeps
-  a rough Latin spelling of every word (`modules/discovery/romanise.ts`: long vowels short, doubled letters one, "kh" as "k") and a search
+  a rough Latin spelling of every word (`go/internal/directory/romanise.go`: long vowels short, doubled letters one, "kh" as "k") and a search
   typed in Latin letters is turned into the same spelling. It is deliberately loose; the shop's own words and the shop's confirmation do
   the exact work. A word matches by its start, so a word with an ending still matches.
 - Distance from the shop's `lat` and `lon` when it has them (haversine); otherwise the town. A shop with no map point counts as near
@@ -57,7 +57,7 @@ Results are in this order, and in no other:
    has at most 3 items in the first 10.
 
 **Never** by payment, plan, Operator, advertising, the shop's size or how often it is searched. This is the owner's rule of
-16 November 2026, and the code in `modules/discovery/order.ts` is the only place the order is made. The page that states the rule in
+16 November 2026, and the code in `go/internal/directory/order.go` is the only place the order is made. The page that states the rule in
 plain words is linked from every search page.
 
 ## Search: asking the index, then the shops

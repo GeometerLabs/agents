@@ -1,0 +1,3 @@
+/* The search page's one script (Go source since 19 Nov 2026; it was modules/discovery/page.ts NEAR_SCRIPT): it shows "Use my location", and on a tap fills the two hidden fields
+   (about a kilometre of detail) and sends the form. words.go removes this comment before the script is served. */
+(function(){var b=document.getElementById("near");if(!b||!navigator.geolocation)return;b.hidden=false;b.addEventListener("click",function(){b.disabled=true;navigator.geolocation.getCurrentPosition(function(p){var f=b.form;f.elements.lat.value=p.coords.latitude.toFixed(2);f.elements.lon.value=p.coords.longitude.toFixed(2);f.submit()},function(){b.disabled=false},{timeout:10000,maximumAge:600000})})})();

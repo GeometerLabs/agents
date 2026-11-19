@@ -1,5 +1,5 @@
 // Search, the order, the pages, the Agent Card, the MCP endpoint and the per-address limits as the directory's outside sees them. The directory is a separate process
-// (DIRECTORY_IMPL=ts|go); the shops are fakes behind a fake door. The order rotates by day, so the tests check the order's PROPERTIES (fit, distance bands, in stock first, shops
+// (the Go directory, go/cmd/directory); the shops are fakes behind a fake door. The order rotates by day, so the tests check the order's PROPERTIES (fit, distance bands, in stock first, shops
 // taking turns, at most three of one shop in the first ten, the same answer twice), never a fixed sequence.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
@@ -227,6 +227,7 @@ test("the Agent Card is the directory's own, signed with the key it keeps in its
   const rawKey = Buffer.from(pub, "base64url").subarray(-32);
   assert.equal(header.kid, createHash("sha256").update(rawKey).digest("base64url"));
   assert.ok(cardSignatureOk(card, pub), "the signature checks against the spec's own rule");
+  assert.ok(!cardSignatureOk({ ...card, description: "x" }, pub), "a card changed after it was signed does not check (mcp.test.ts carried over)");
   await d.stop();
   await d.start();
   assert.equal((await d.call("/.well-known/agent-card.json")).body.signatures[0].protected, card.signatures[0].protected);

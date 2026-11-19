@@ -14,7 +14,7 @@ language for code that runs inside a shop **if this trial passes**. This file is
 
 ## The contract
 
-`templates/commerce/listings/contract/`: starts the shop as a **separate process** in a temp folder written as the deployer writes it, and talks to it only over HTTP. `LISTINGS_IMPL=ts|go`
+`templates/commerce/listings/contract/`: starts the shop as a **separate process** in a temp folder written as the deployer writes it, and talks to it only over HTTP. `LISTINGS_IMPL=ts|go` (until 19 Nov 2026; the contract runs Go only since the TypeScript runtime was deleted)
 picks the runtime. It covers `/healthz` `/readyz` `/status`, the token refusals (401), the public read and the offer, the owner's listing ops with the rules' refusals (422 and a `why`),
 photos, the signed feed, the signed check answer, the Agent Card and the feed notice (all verified with the **TypeScript** signing module, so Go must write byte-identical RFC 8785 JSON
 signed with Ed25519), the owner's passkey set-up and sign-in with the soft authenticator (ES256 and EdDSA), sessions, a listing drafted through a fake OpenAI-compatible model server
@@ -307,6 +307,76 @@ and a `get <url>` subcommand (`internal/health`) because that image has no shell
 server") and `go/README.md`. **Not done in this stream:** the TypeScript listings runtime is still in the repository (kept versions run on it; the differential test needs it); the deletion follows the port
 of the last AI parts. TypeScript finding: `bundle/deploy.ts` used `HOME_DIR` in the check "is a new listings shop's name already in the shared volume" without importing it, so the first deploy of a new
 listings-only shop would have stopped on a ReferenceError; the check now asks the data volume itself (`sharedHasFolder`, `bundle/lib/listings-move.ts`) and the name is gone.
+
+## Waves 1b and 1c finished (19 Nov 2026, `go-wave1b-finish-19nov`)
+
+### The directory (wave 1c): switched, joined, deleted
+
+**Deployer.** The `directory` service runs `/directory` from the programs' image (`GO_PROGRAMS` gained `directory`), with `/directory health` as its check, user 1000:1000, the same config,
+networks and credential folder, no `/app`; its volume stays at `/home/node` (the image carries that folder owned by 1000:1000), so an existing server's index and key are read as they are. Its
+environment is exactly `CONFIG`, `PORT`, `HOST` (pinned by a bundle test). A server with a pages domain and fleet always has the directory, so `deploy` makes (and `bringUp` checks) the image
+there even with no Go shop. **Found while switching:** the scratch image had no certificate authorities, and the directory reads builders' feeds over https (Node carries its own list; Go reads
+the system's), so every configured remote feed would have failed; the build now copies the pinned builder image's `/etc/ssl/certs/ca-certificates.crt` into the image. The person's commands are
+`docker exec <directory> /directory changes|accept <shop page>` (`bundle/Explanation.md`, `bundle/Deferred.md`). **One real build** (19 Nov, this Mac, the pinned golang image and module cache already here, `GOPROXY=off`, the full-server settings): the three programs built, the certificate file copied
+(182 KB), the image **45.9 MB** (was 32.7 MB with two programs; `directory` is 12.5 MB stripped); the directory started read-only, all capabilities dropped, as 1000:1000 on a fresh volume:
+`/directory health` exit 0, `/directory changes` answered, and the volume's `directory/` folder, index and key (0600) belong to 1000:1000.
+
+**Joined.** The directory's `AskJSON` is gone: `understanding.Model` is the one call (`Open` for a caller that read its own credential, `AskContext` for the caller's context; the defaults of each
+use are options), now writing the body in model-llm.ts's member order without HTML escaping, the schema as given (the directory's raw JSON keeps its order) and reading cached input tokens
+(model-llm.ts does). The directory's `redact` is `understanding.Redact` (vector-proven); its `CleanQuestion` stays the directory's (`clean.go`: the address patterns are only its). UTF-16
+slicing with U+FFFD at a cut pair (three copies: directory, access, listings), `LowerJS`, `NFC`, TextDecoder's reading and `Date.parse` (access's and the directory's) are one each in
+`internal/language/js.go`. Behaviour: the vectors and the contract pass unchanged; the directory now also reads the date forms V8 reads that its own copy refused (a lower-case t, a space
+for the T, an offset without a colon), and a model reply with a member of the wrong type is read by hand as model-llm.ts reads it instead of failing struct decoding.
+
+**Search speed.** The brief's guess (a new connection to every shop per search) was half of it: the fetcher now keeps connections (32 idle a host, 4 s, under the door's 5), but the
+measurement did not move (13.9 ms). A probe showed a search with no match takes 0.4 ms and one of 800 candidates 13.8 ms with every check answered from memory: the time went into reading each
+candidate with its own query, which database/sql over modernc compiles every time. The candidates are now read 500 to a query and the shop read is a prepared statement.
+
+| 40 shops of 20 listings, `contract/measure.ts`, HEAVY_FAST, same machine and hour | Go before | Go after | TypeScript (last run) |
+| --- | --- | --- | --- |
+| search p50 / p95 of 300 | 13.9 / 14.7 ms | **6.3 / 6.7 ms** | 6.2 / 7.4 ms (wave 1c's figure; under background priority today TS 46.3 ms against Go 100.4 ms before) |
+| idle RSS / after 500 searches | 29.5 / 32.0 MB | 28.9 / 32.8 MB | 133.3 / 168.6 MB |
+| cold start, median of 5 | 54.9 ms | 54.9 ms | 161 ms |
+
+**Deleted:** `bundle/services/directory.ts` and `modules/discovery/` but `words.ts` (the words' source for the generator and the review sheet) and `types.ts` (cut to the languages and kinds),
+its ten unit-test files, `bundle/test/directory-service.test.ts` and `directory-assistant.test.ts`, `go/scripts/gen_directory_vectors.ts`: **4,327 lines of TypeScript** (plus 241 of the
+module's README and 52 of `types.ts`). Before deleting, every check was given a place (the table in `modules/discovery/contract/README.md`): the TypeScript's answers to 456 requests were
+recorded (`contract/golden/differential.json.gz`, recorded twice and identical, both runtimes matched it; replayed at the recorded instant on the directory's test clock, which refuses to start
+unless it listens on 127.0.0.1), the TypeScript reader's answers to a good feed and 46 changes (`testdata/feeds.json.gz`) and its pages in every state and language (`testdata/pages.json.gz`)
+became Go tests, the cross-runtime restart test became a Go restart test, `modules/listings/test/protocol.test.ts`'s four checks with the directory's reader became
+`contract/shop-protocol.contract.test.ts` (the shops' own protocol code against the directory), the deployer's checks moved to `bundle/test/go-runtime.test.ts`, and the TypeScript tests' rules
+that need a clock or a network became `fetcher_test.go`, `check_test.go`, `limits_test.go`, `refresh_test.go`, `notices_test.go` and `cmd/directory/main_test.go`. The generator keeps only
+what still has a TypeScript source (the words, the shops' style sheet and paints, the MCP versions, the font); the page's own style, its script, the MCP tools, the card bodies, the
+assistant's prompt and the fold tables are Go source now (`internal/directory/words/`, `romanise_tables.go`), cut byte for byte from what it made.
+
+**Found (Go, left, Deferred.md):** a lone surrogate written as `\ud800` in a feed is read by Go's JSON decoder as U+FFFD, so the Go reader keeps a name the TypeScript refused; the shops' Go
+`Model.Cost` prices cached input tokens at the full rate where the TypeScript prices them at the cached rate (one line, left to the shop runtime's owner: it changes what a shop is charged).
+
+### The listings shop (wave 1b): the TypeScript runtime deleted
+
+**Deleted:** `templates/commerce/listings/server/` main.ts, runtime.ts, shared-main.ts, shared-start.ts, start.ts, store.ts, back-soon.ts; `src/` agent.ts, assistant.ts, channel.ts (only
+the runtime used them); the TypeScript shared process and its pool (`modules/runtime/shared.ts`, `shared-pool.ts`, `shared-worker.ts`) and their tests (`modules/runtime/test/shared.test.ts`,
+`shared-pool.test.ts`, `pool-fake-shop.ts`, `templates/commerce/listings/test/shared-pool.test.ts`, `shared-shops.test.ts`): **1,630 lines**; and the compose code of the Node shared block
+with `SHARED_POOL` (`bundle/generate/compose.ts`, `shop.ts`). Kept, because what stays TypeScript reads them: `server/config.ts` (bundle/lib/kinds.ts), `server/snapshot.ts` and `src/state.ts`
+(bundle/lib/listings-carry.ts), `src/settings.ts` and `src/chat-limits.ts` (kinds, the panel), `package.json`. Listings-only shops always run on the checkout's template, so the shared process
+is always Go; a checkout whose template names no shared program is refused when the compose file is written. Older kept versions of a single shop still run through the generic Node block.
+
+**The contract re-anchored before the deletion** (`templates/commerce/listings/contract/`, its README has the table): every test that compared the TypeScript shop with the Go shop now compares
+the Go shop with golden answers recorded from the TypeScript (`contract/golden/`, 49 answers from models, assistant, morning, differential, stock and cross-restart; recorded twice with no
+difference, and once more 37 days earlier to prove the replay at the recorded instant on the test clock really moves the dates); the turn-taking tests (TypeScript then Go on one folder) are
+Go restart tests, and the "same files" check is a golden of the three SQLite schemas. Before the change the whole folder passed 203 of 203 on TypeScript in a clean checkout (every turn-taking
+test passing both ways: the proof that Go reads TypeScript's files, since a TypeScript-written fixture would hold the shop's private key and is not committed); with the goldens in place
+196 of 196 on TypeScript and on Go; after `LISTINGS_IMPL=ts` went, **190 of 190 on Go** (7 turn-taking pairs became one restart test each, and the shared process's 6 scenarios no longer run
+a second time on TypeScript). No Go-versus-TypeScript difference was found. The listings unit tests that went: `shared-pool.test.ts` and `shared-shops.test.ts` (routing, another shop's
+token refused, a shop let go, the back-soon page: `contract/shared.contract.test.ts` and `go/internal/shared/host_test.go`; a listing and a photo staying in their own shop's feed and file: a new
+scenario in `shared.contract.test.ts`; the back-soon language order: `go/internal/shared/backsoon_lang_test.go`; the back-off's doubling has no Go test yet, bundle/Deferred.md); `modules/runtime/test/shared*.test.ts` (the TypeScript pool:
+`host_test.go` holds the Go host's strikes, quarantine, pause and restarts). `first-signin.test.ts` and `settings.test.ts` stay (they test `src/settings.ts`, which stays).
+
+**TypeScript behaviour the goldens pin** (reported, not changed): asked on Thu 19 Nov, "money on 16 nov" is answered for 16 Nov of next year, not three days ago; Go does the same.
+
+**Size of the two phases** (this branch's own commits, the main merge left out): Go +1,651 / -596 lines (+546 / -569 outside tests: the joins removed more than the switch added; +1,105 of
+tests); TypeScript -4,556 / +596 for the directory and -2,253 / +656 for the listings shop (the contract re-anchoring is most of the TypeScript added): **about 5,560 lines of TypeScript
+fewer**.
 
 ## Wave 2 preparation (19 Nov 2026): the Bookings contract, before any Go
 

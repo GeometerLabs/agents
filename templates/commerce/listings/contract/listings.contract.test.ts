@@ -1,13 +1,11 @@
 // The CONTRACT of a listings-only shop's runtime, as the outside sees it: the routes the shop's front (modules/channels/backend.ts), the directory and the inbox use, and nothing else.
-// Every test starts the shop as a separate process (harness.ts) and talks to it ONLY over HTTP. The runtime to test is picked by LISTINGS_IMPL=ts|go. It must pass against the
-// TypeScript runtime first (that proves the contract is right) and then against any other implementation: the same folder, the same token files, the same answers.
+// Every test starts the shop as a separate process (harness.ts) and talks to it ONLY over HTTP. Until 19 Nov 2026 it ran against the TypeScript runtime first (that proved the
+// contract right) and then the Go one; since the TypeScript runtime was deleted (decision 61, wave 1b) it runs the Go shop: the same folder, the same token files, the same answers.
 //
 // What a signature must satisfy is checked with the TypeScript signing module, so an implementation has to write byte-identical canonical JSON (RFC 8785) signed with Ed25519.
 // Assertions are on status codes and machine fields (`state`, `why`, `format`), never on English sentences.
-//
-// ROUTES THAT ARE TESTED FOR TYPESCRIPT ONLY (the last suite): a TypeScript listings shop also answers the owner's talk-and-cards page (whose cards, and the owner's taps on them, are how a draft is shown), web push, the owner's
-// limits page, the owner's Stock page, "Get my shop's file" and the deployer's limit-changes. A runtime that does not serve them is not a drop-in replacement; their tests are skipped
-// for it WITH the reason, so the count shows in the test output. Not listed: the chat (the listings front hides it), voice and documents (404 here too).
+// The owner's talk-and-cards page, web push, the limits page, the Stock page, "Get my shop's file" and the deployer's limit-changes have files of their own (assistant, routes,
+// stock). Not here: the chat (the listings front hides it); voice is in morning.contract.test.ts (off), documents are 404.
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -16,7 +14,7 @@ import { DatabaseSync } from "node:sqlite";
 import { canonicalJson, signingKeyFromText, verifyCard, verifyDocument, verifyNotice, keyIdOf } from "../../../../modules/signing/index.ts";
 import { photoIdOf } from "../../../../modules/listings/photo.ts";
 import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
-import { IMPL, OWNER_BASE, PAGE, VERSION, draftAnswer, makeShop, startFakeModel, tinyJpeg } from "./harness.ts";
+import { draftAnswer, makeShop, OWNER_BASE, PAGE, SKIP, startFakeModel, tinyJpeg, VERSION } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -37,7 +35,7 @@ async function publish(shop: Shop, id: string, op: Record<string, unknown> = KIT
 const view = async (shop: Shop): Promise<any> => (await shop.call("/internal/channel/owner-listing", { owner: shop.owner })).body;
 const switchOn = async (shop: Shop): Promise<void> => publish(shop, "sw-1", { op: "shop", visible: true });
 
-describe("health, status and the two tokens", () => {
+describe("health, status and the two tokens", { skip: SKIP }, () => {
   test("/healthz and /readyz need no token; /status needs the internal token", async () => {
     const s = await boot();
     const h = await s.call("/healthz", { token: null });
@@ -79,7 +77,7 @@ describe("health, status and the two tokens", () => {
   });
 });
 
-describe("the public read and the owner's credential", () => {
+describe("the public read and the owner's credential", { skip: SKIP }, () => {
   test("an empty shop: no listings, the switch off, and the offer names the shop", async () => {
     const s = await boot();
     const l = await s.call("/internal/channel/listings");
@@ -104,7 +102,7 @@ describe("the public read and the owner's credential", () => {
   });
 });
 
-describe("the owner's listings: create, edit, confirm, sold, remove", () => {
+describe("the owner's listings: create, edit, confirm, sold, remove", { skip: SKIP }, () => {
   test("publish_form makes a live listing, with the price in paise and the owner's language", async () => {
     const s = await boot();
     await publish(s, "r-1");
@@ -207,7 +205,7 @@ describe("the owner's listings: create, edit, confirm, sold, remove", () => {
   });
 });
 
-describe("photos", () => {
+describe("photos", { skip: SKIP }, () => {
   test("a photo is cleaned of its EXIF, named by its own bytes, public only with a public listing", async () => {
     const s = await boot();
     const raw = tinyJpeg();
@@ -245,7 +243,7 @@ describe("photos", () => {
   });
 });
 
-describe("the signed feed, the check and the Agent Card (verified with the TypeScript signing module)", () => {
+describe("the signed feed, the check and the Agent Card (verified with the TypeScript signing module)", { skip: SKIP }, () => {
   test("shop-feed: 404 while the switch is off, then a feed signed over RFC 8785 JSON that verifies", async () => {
     const s = await boot();
     await publish(s, "r-1", { op: "publish_form", category: "pets", title: "Two Persian kittens", priceInr: 8000, photos: [] });
@@ -342,7 +340,7 @@ describe("the signed feed, the check and the Agent Card (verified with the TypeS
   });
 });
 
-describe("the owner's passkey: set up, sign in, sign out", () => {
+describe("the owner's passkey: set up, sign in, sign out", { skip: SKIP }, () => {
   const opts = async (s: Shop, op: string, extra: Record<string, unknown> = {}) => s.call("/internal/channel/owner-passkey", { body: { op, ...extra } });
   const grant = (s: Shop) => ({ kind: "setup", token: s.setup });
 
@@ -436,7 +434,7 @@ describe("the owner's passkey: set up, sign in, sign out", () => {
   });
 });
 
-describe("a listing drafted by the assistant, through a model, under the budget", () => {
+describe("a listing drafted by the assistant, through a model, under the budget", { skip: SKIP }, () => {
   const WORDS = "I have two Persian kittens for sale on my page, 8000 rupees";
   const ask = async (s: Shop, id: string, text = WORDS) => {
     const r = await s.call("/internal/channel/events", { owner: s.owner, body: { events: [{ kind: "owner_message", id, text }] } });
@@ -536,7 +534,7 @@ describe("a listing drafted by the assistant, through a model, under the budget"
   });
 });
 
-describe("the store survives a restart", () => {
+describe("the store survives a restart", { skip: SKIP }, () => {
   test("listings, photos, the shop's key, the passkey session and the switch are all still there", async () => {
     const s = await boot();
     await publish(s, "r-1");

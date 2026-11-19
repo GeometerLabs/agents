@@ -1,4 +1,4 @@
-// Telling the Operator that a listings-only shop is PAUSED. The shared process (modules/runtime/shared.ts) pauses a shop that kept stopping its worker thread, and names it in
+// Telling the Operator that a listings-only shop is PAUSED. The shared process (go/cmd/listings-shared, go/internal/shared) pauses a shop that kept failing, and names it in
 // `GET /shared/shops` (`paused`, `pausedDetail`). It has no way to message anyone, so the deployer's loop does what it already does for `usage` and `obligations`: it asks, and writes
 // the answer into the shop's status file (lib/status.ts), which the panel reads (panel/contract.ts `paused`, panel/views.ts: one plain line on the shop's page). A shop that is no longer
 // paused has the field removed, so the line goes by itself when the pause ends or the shop's files change. A process that cannot be asked changes nothing: silence is not "fine" and not "paused".

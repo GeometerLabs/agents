@@ -57,7 +57,7 @@ export async function sharedHeld(ctx: Context): Promise<string[] | undefined> {
   try { const j = JSON.parse(r.stdout) as { shops?: unknown }; return Array.isArray(j.shops) ? j.shops.filter((x): x is string => typeof x === "string") : undefined; } catch { return undefined; }
 }
 
-/** What `/shared/shops` says about shops the process has PAUSED (shared-pool.ts), or undefined when it cannot be asked: the deployer copies it into the shops' status files (lib/listings-paused.ts). */
+/** What `/shared/shops` says about shops the process has PAUSED (go/internal/shared), or undefined when it cannot be asked: the deployer copies it into the shops' status files (lib/listings-paused.ts). */
 export async function sharedHeldDetail(ctx: Context): Promise<{ pausedDetail: { shop: string; why: string; until: number }[] } | undefined> {
   const r = await sharedGet(ctx, "/shared/shops");
   if (r.code !== 0) return undefined;

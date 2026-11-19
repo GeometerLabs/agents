@@ -13,11 +13,9 @@
 package directory
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"math"
 	"net/http"
 	"regexp"
@@ -28,6 +26,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
 const (
@@ -73,8 +72,8 @@ func wordList(v any) ([]string, bool) {
 		if !ok {
 			return nil, false
 		}
-		t := jsTrim(s)
-		if t == "" || utf16Len(t) > maxWord || !wordOK.MatchString(t) {
+		t := language.TrimJS(s)
+		if t == "" || language.UTF16Len(t) > maxWord || !wordOK.MatchString(t) {
 			return nil, false
 		}
 		out = append(out, t)
@@ -124,9 +123,9 @@ func ReadTypedSearch(raw any) *TypedSearch {
 	if !ok {
 		return nil
 	}
-	townText := jsTrim(town)
+	townText := language.TrimJS(town)
 	if place == "town" {
-		if townText == "" || utf16Len(townText) > maxTown || !townOK.MatchString(townText) {
+		if townText == "" || language.UTF16Len(townText) > maxTown || !townOK.MatchString(townText) {
 			return nil
 		}
 	} else if townText != "" {
@@ -150,9 +149,9 @@ func ReadTypedSearch(raw any) *TypedSearch {
 // ---- step 1: the rules ----
 
 var (
-	reRadius      = regexp.MustCompile(`(?i)(\d{1,3})[` + jsWS + `]*(?:km|kms|kilomet(?:er|re)s?|किमी|किलोमीटर|കി\.?[` + jsWS + `]?മീ|കിലോമീറ്റർ|ಕಿ\.?[` + jsWS + `]?ಮೀ|ಕಿಲೋಮೀಟರ್)([^\p{L}\p{M}]|$)`)
-	rePriceBefore = regexp.MustCompile(`(?i)(?:under|below|less than|upto|up to|max(?:imum)?|budget(?: of)?)[` + jsWS + `]*(?:₹|rs\.?|inr)?[` + jsWS + `]*(\d[\d,]{0,8})`)
-	rePriceAfter  = regexp.MustCompile(`(?i)(\d[\d,]{0,8})[` + jsWS + `]*(?:₹|rs\.?|rupees|रुपये|रुपए|രൂപ|ರೂಪಾಯಿ)?[` + jsWS + `]*(?:or less|or below|से कम|के अंदर|ൽ താഴെ|ക്ക് താഴെ|ಕ್ಕಿಂತ ಕಡಿಮೆ)`)
+	reRadius      = regexp.MustCompile(`(?i)(\d{1,3})[` + language.JSSpace + `]*(?:km|kms|kilomet(?:er|re)s?|किमी|किलोमीटर|കി\.?[` + language.JSSpace + `]?മീ|കിലോമീറ്റർ|ಕಿ\.?[` + language.JSSpace + `]?ಮೀ|ಕಿಲೋಮೀಟರ್)([^\p{L}\p{M}]|$)`)
+	rePriceBefore = regexp.MustCompile(`(?i)(?:under|below|less than|upto|up to|max(?:imum)?|budget(?: of)?)[` + language.JSSpace + `]*(?:₹|rs\.?|inr)?[` + language.JSSpace + `]*(\d[\d,]{0,8})`)
+	rePriceAfter  = regexp.MustCompile(`(?i)(\d[\d,]{0,8})[` + language.JSSpace + `]*(?:₹|rs\.?|rupees|रुपये|रुपए|രൂപ|ರೂಪಾಯಿ)?[` + language.JSSpace + `]*(?:or less|or below|से कम|के अंदर|ൽ താഴെ|ക്ക് താഴെ|ಕ್ಕಿಂತ ಕಡಿಮೆ)`)
 	reNearMe1     = regexp.MustCompile(`(?i)(?:near me|nearby|around me)([^\p{L}\p{M}]|$)`)
 	reNearMe2     = regexp.MustCompile(`(?i)मेरे पास|आस-पास|എന്റെ അടുത്ത്|ನನ್ನ ಹತ್ತಿರ`)
 )
@@ -219,131 +218,16 @@ func ReadRules(text string) Rules {
 	return out
 }
 
-// ---- the model call (modules/understanding/model-llm.ts askJson, the openai wire) ----
-
-// ModelConfig is the model's address (runtime of the directory's config `assistant.model`).
-type ModelConfig struct {
-	Wire      string `json:"wire"`
-	BaseURL   string `json:"baseUrl"`
-	Model     string `json:"model"`
-	TimeoutMs int    `json:"timeoutMs"`
-	MaxTokens int    `json:"maxTokens"`
-}
-
-// ModelAnswer is what one call came to: the parsed answer or why there is none (a few plain words that never contain what the model said), and the tokens it cost.
-type ModelAnswer struct {
-	Answer         any
-	Reason         string
-	HasUsage       bool
-	In, Out, Cache int64
-}
-
-var (
-	reFence = regexp.MustCompile("(?s)^```(?:json)?\\s*(.*?)\\s*```$")
-	reThink = regexp.MustCompile(`(?s)<think>.*?</think>`)
-)
-
-// AskJSON is one call to a model over the openai wire, asking for JSON. It sends no key of its own: the bearer is the directory's credential at the model Guard. It waits at most the
-// timeout (8000 ms by default) and never fails with an error: a timeout, an HTTP error, a refusal, a cut-off answer or a reply that is not JSON comes back as a Reason.
-func AskJSON(ctx context.Context, client *http.Client, cfg ModelConfig, bearer, system, user string, schema json.RawMessage, name string) ModelAnswer {
-	timeout := cfg.TimeoutMs
-	if timeout <= 0 {
-		timeout = 8000
-	}
-	maxTokens := cfg.MaxTokens
-	if maxTokens <= 0 {
-		maxTokens = 1024
-	}
-	body, _ := marshalNoEscape(orderedMap("model", cfg.Model, "max_tokens", maxTokens, "temperature", 0,
-		"response_format", orderedMap("type", "json_schema", "json_schema", orderedMap("name", name, "strict", true, "schema", schema)),
-		"messages", []any{orderedMap("role", "system", "content", system), orderedMap("role", "user", "content", user)}))
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(cfg.BaseURL, "/")+"/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return ModelAnswer{Reason: "the connection failed"}
-	}
-	req.Header.Set("content-type", "application/json")
-	if bearer != "" {
-		req.Header.Set("authorization", "Bearer "+bearer)
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			return ModelAnswer{Reason: fmt.Sprintf("no answer within %d ms", timeout)}
-		}
-		return ModelAnswer{Reason: "the connection failed"}
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return ModelAnswer{Reason: fmt.Sprintf("the model answered HTTP %d", resp.StatusCode)}
-	}
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return ModelAnswer{Reason: "the connection failed"}
-	}
-	var reply struct {
-		Choices []struct {
-			FinishReason string `json:"finish_reason"`
-			Message      struct {
-				Content any    `json:"content"`
-				Refusal string `json:"refusal"`
-			} `json:"message"`
-		} `json:"choices"`
-		Usage *struct {
-			Prompt  int64 `json:"prompt_tokens"`
-			Compl   int64 `json:"completion_tokens"`
-			Details *struct {
-				Cached int64 `json:"cached_tokens"`
-			} `json:"prompt_tokens_details"`
-		} `json:"usage"`
-	}
-	if json.Unmarshal(raw, &reply) != nil {
-		return ModelAnswer{Reason: "its reply was not JSON"}
-	}
-	out := ModelAnswer{}
-	if reply.Usage != nil {
-		out.HasUsage, out.In, out.Out = true, reply.Usage.Prompt, reply.Usage.Compl
-		if reply.Usage.Details != nil {
-			out.Cache = reply.Usage.Details.Cached
-		}
-	}
-	if len(reply.Choices) == 0 {
-		out.Reason = "its reply was not what was expected"
-		return out
-	}
-	c := reply.Choices[0]
-	switch {
-	case c.Message.Refusal != "":
-		out.Reason = "the model refused"
-		return out
-	case c.FinishReason == "length":
-		out.Reason = "its answer was cut off"
-		return out
-	}
-	text, ok := c.Message.Content.(string)
-	if !ok {
-		out.Reason = "its reply had no answer in it"
-		return out
-	}
-	bare := jsTrim(reThink.ReplaceAllString(text, ""))
-	if f := reFence.FindStringSubmatch(bare); f != nil {
-		bare = f[1]
-	}
-	if json.Unmarshal([]byte(bare), &out.Answer) != nil {
-		out.Reason = "its answer was not JSON"
-		out.Answer = nil
-	}
-	return out
-}
+// ---- the model call: understanding.Model, the one implementation the shops' runtime uses too (model-llm.ts askJson, the openai wire; 8000 ms and 1024 tokens by default) ----
 
 // ---- the assistant ----
 
-// AssistantConfig is what the assistant needs. Without a budget there is no assistant at all (the caller makes none).
+// AssistantConfig is what the assistant needs. Without a budget there is no assistant at all (the caller makes none). Model is the config's `assistant.model` (wire, baseUrl,
+// model; the credential is Bearer, read by the caller from `assistant.agentTokenFile`, so the model's own file and environment fields are not read).
 type AssistantConfig struct {
 	Budget         *budget.Config
 	PerBuyerPerDay int
-	Model          ModelConfig
+	Model          understanding.ModelConfig
 	Provider       string // the provider the rate table prices the model under (default "deepinfra")
 	Bearer         string
 	Client         *http.Client
@@ -354,6 +238,7 @@ type AssistantConfig struct {
 // Assistant is the buyer's assistant.
 type Assistant struct {
 	cfg     AssistantConfig
+	model   *understanding.Model
 	limiter *Limiter
 	clock   budget.Clock
 	mu      sync.Mutex
@@ -368,9 +253,6 @@ func NewAssistant(cfg AssistantConfig) *Assistant {
 	if cfg.Now == nil {
 		cfg.Now = func() int64 { return time.Now().UnixMilli() }
 	}
-	if cfg.Client == nil {
-		cfg.Client = &http.Client{}
-	}
 	if cfg.Provider == "" {
 		cfg.Provider = "deepinfra"
 	}
@@ -381,7 +263,8 @@ func NewAssistant(cfg AssistantConfig) *Assistant {
 	if err != nil {
 		loc = time.FixedZone("IST", 19800)
 	}
-	return &Assistant{cfg: cfg, limiter: NewLimiter(map[string]Limit{"ask": {cfg.PerBuyerPerDay, dayMs}}, cfg.Now), clock: budget.Clock{Now: cfg.Now, Loc: loc}, how: map[string]int{}, refused: map[string]int{}}
+	model := understanding.Open(cfg.Model, cfg.Bearer, cfg.Client, understanding.ParserTimeoutMs, understanding.ParserMaxTokens)
+	return &Assistant{cfg: cfg, model: model, limiter: NewLimiter(map[string]Limit{"ask": {cfg.PerBuyerPerDay, dayMs}}, cfg.Now), clock: budget.Clock{Now: cfg.Now, Loc: loc}, how: map[string]int{}, refused: map[string]int{}}
 }
 
 // AskInput is a question and who asks.
@@ -411,7 +294,7 @@ func (a *Assistant) fall(why string) Understood {
 }
 
 // meter counts a model call against the budget: the spend in the one meter, the call for today (a failed call still counts: it still cost).
-func (a *Assistant) meter(r ModelAnswer) {
+func (a *Assistant) meter(r understanding.Answer) {
 	at := a.cfg.Now()
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -420,7 +303,7 @@ func (a *Assistant) meter(r ModelAnswer) {
 	cost := new(int64)
 	if r.HasUsage {
 		rate := budget.RateFor(a.cfg.Provider, a.cfg.Model.Model, time.UnixMilli(at).UTC().Format("2006-01-02"))
-		cost = budget.CostMicroInr(rate, r.In, r.Out, r.Cache)
+		cost = budget.CostMicroInr(rate, r.InputTokens, r.OutputTokens, r.CachedTokens)
 		if cost == nil {
 			month.Unpriced++
 		} else {
@@ -458,12 +341,12 @@ func (a *Assistant) Understand(ctx context.Context, in AskInput) Understood {
 	if why := a.allowed(); why != "" {
 		return a.fall(why)
 	}
-	user := jsTrim(stripMarks(rules.Rest))
+	user := language.TrimJS(stripMarks(rules.Rest))
 	if user == "" {
 		user = clean
 	}
 	p := loadPack()
-	got := AskJSON(ctx, a.cfg.Client, a.cfg.Model, a.cfg.Bearer, p.Assistant.System, "<question>"+user+"</question>", p.Assistant.Schema, p.Assistant.Name)
+	got := a.model.AskContext(ctx, understanding.Call{System: p.Assistant.System, User: "<question>" + user + "</question>", Schema: p.Assistant.Schema, Name: p.Assistant.Name})
 	a.meter(got)
 	if got.Reason != "" || got.Answer == nil {
 		return a.fall("failed")
@@ -519,7 +402,7 @@ type Asked struct {
 
 // AskListings: understand, search with the directory's own code, say it in a line. Never fails for a bad answer from a model: that is the plain search.
 func AskListings(ctx context.Context, deps SearchDeps, a *Assistant, in AskInput) Asked {
-	in.Question = sliceUTF16(jsTrim(in.Question), MaxQuestion)
+	in.Question = language.UTF16SliceFFFD(language.TrimJS(in.Question), MaxQuestion)
 	if in.Towns == nil {
 		in.Towns = deps.Index.Towns(30)
 	}
