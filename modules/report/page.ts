@@ -14,7 +14,7 @@ export const fig = (value: string | number): string => (String(value) === "" ? "
 export const esc = (value: string | number): string => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 // 14 Nov: figures are <strong> in full ink (cards and the numbers table), so a figure never looks like its label; `.hi` is the one soft highlight, on the first money figure.
-const CSS = `
+export const CSS = `
 :root{--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--g0:#f0fdf4;--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--amber:#92400e;--amber-bg:#fffbeb;--amber-line:#f5d98a;--bg:#fff}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI","Noto Sans","Noto Sans Devanagari","Noto Sans Malayalam","Noto Sans Kannada",sans-serif}

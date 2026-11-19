@@ -1,0 +1,1303 @@
+{
+ "node": "v26.10.0",
+ "sections": [
+  {
+   "view": "0.0",
+   "lang": "hi",
+   "links": {
+    "base": "/owner/accounting"
+   },
+   "html": "<section class=\"money\" lang=\"hi\">\n<h2>पैसे</h2>\n<p class=\"machine\">ये शब्द मशीन से लिखे गए हैं; कोई हिंदी पाठक इन्हें जाँचेगा।</p>\n<h3>आज</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 रिफंड</p></div>\n<h3>इस महीने</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 रिफंड</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">रद्द करने पर रखे</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">पेमेंट सेवा का शुल्क</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">अभी आना बाकी</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 फीस में से</p></div>\n\n<h3>ग्राहकों को लौटाना बाकी</h3>\n<p class=\"calm\">कुछ भी लौटाना बाकी नहीं है।</p>\n<h3>अभी मिलान नहीं हुआ</h3>\n<div class=\"item s-info\"><p>ऑनलाइन मिला पैसा अभी आपके बैंक से मिलाया नहीं गया है। पेमेंट सेवा के ऐप में पेआउट देखिए।</p></div>\n<div class=\"card\"><h3>मेरे अकाउंटेंट को भेजें</h3><p class=\"note\">हर भुगतान एक तालिका में, जो Excel या Tally में खुलती है।</p><p><b>इस महीने</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/journal-2026-05.csv\">सारे भुगतान</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/documents-2026-05.csv\">रसीदें और बिल</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-masters.xml\">Tally के लिए: खाते</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-vouchers.xml\">Tally के लिए: एंट्री</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/README.txt\">पढ़ने के लिए</a></div><p><b>पिछले महीने</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/journal-2026-04.csv\">सारे भुगतान</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/documents-2026-04.csv\">रसीदें और बिल</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-masters.xml\">Tally के लिए: खाते</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-vouchers.xml\">Tally के लिए: एंट्री</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/README.txt\">पढ़ने के लिए</a></div><p><b>वित्त वर्ष 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/26-27/journal-26-27.csv\">सारे भुगतान</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/documents-26-27.csv\">रसीदें और बिल</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-masters.xml\">Tally के लिए: खाते</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-vouchers.xml\">Tally के लिए: एंट्री</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/README.txt\">पढ़ने के लिए</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=%E0%A4%AE%E0%A5%87%E0%A4%B0%E0%A5%80%20%E0%A4%A6%E0%A5%81%E0%A4%95%E0%A4%BE%E0%A4%A8%20%E0%A4%95%E0%A4%BE%20%E0%A4%B9%E0%A4%BF%E0%A4%B8%E0%A4%BE%E0%A4%AC%2C%20%E0%A4%AE%E0%A4%88%202026\" rel=\"noopener\">WhatsApp पर अपने अकाउंटेंट को बताइए</a></p></div>\n<p class=\"note\">ये वे भुगतान हैं जो आपके असिस्टेंट से होकर गए। दुकान पर दिया गया पैसा यहाँ नहीं है।</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "hi",
+   "links": null,
+   "html": "<section class=\"money\" lang=\"hi\">\n<h2>पैसे</h2>\n<p class=\"machine\">ये शब्द मशीन से लिखे गए हैं; कोई हिंदी पाठक इन्हें जाँचेगा।</p>\n<h3>आज</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 रिफंड</p></div>\n<h3>इस महीने</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 रिफंड</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">रद्द करने पर रखे</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">पेमेंट सेवा का शुल्क</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">अभी आना बाकी</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 फीस में से</p></div>\n\n<h3>ग्राहकों को लौटाना बाकी</h3>\n<p class=\"calm\">कुछ भी लौटाना बाकी नहीं है।</p>\n<h3>अभी मिलान नहीं हुआ</h3>\n<div class=\"item s-info\"><p>ऑनलाइन मिला पैसा अभी आपके बैंक से मिलाया नहीं गया है। पेमेंट सेवा के ऐप में पेआउट देखिए।</p></div>\n\n<p class=\"note\">ये वे भुगतान हैं जो आपके असिस्टेंट से होकर गए। दुकान पर दिया गया पैसा यहाँ नहीं है।</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "hi",
+   "links": {
+    "base": "/o/acc&unt'ing \"x\""
+   },
+   "html": "<section class=\"money\" lang=\"hi\">\n<h2>पैसे</h2>\n<p class=\"machine\">ये शब्द मशीन से लिखे गए हैं; कोई हिंदी पाठक इन्हें जाँचेगा।</p>\n<h3>आज</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 रिफंड</p></div>\n<h3>इस महीने</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 रिफंड</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">रद्द करने पर रखे</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">पेमेंट सेवा का शुल्क</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">अभी आना बाकी</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 फीस में से</p></div>\n\n<h3>ग्राहकों को लौटाना बाकी</h3>\n<p class=\"calm\">कुछ भी लौटाना बाकी नहीं है।</p>\n<h3>अभी मिलान नहीं हुआ</h3>\n<div class=\"item s-info\"><p>ऑनलाइन मिला पैसा अभी आपके बैंक से मिलाया नहीं गया है। पेमेंट सेवा के ऐप में पेआउट देखिए।</p></div>\n<div class=\"card\"><h3>मेरे अकाउंटेंट को भेजें</h3><p class=\"note\">हर भुगतान एक तालिका में, जो Excel या Tally में खुलती है।</p><p><b>इस महीने</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/journal-2026-05.csv\">सारे भुगतान</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/documents-2026-05.csv\">रसीदें और बिल</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-masters.xml\">Tally के लिए: खाते</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-vouchers.xml\">Tally के लिए: एंट्री</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/README.txt\">पढ़ने के लिए</a></div><p><b>पिछले महीने</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/journal-2026-04.csv\">सारे भुगतान</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/documents-2026-04.csv\">रसीदें और बिल</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-masters.xml\">Tally के लिए: खाते</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-vouchers.xml\">Tally के लिए: एंट्री</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/README.txt\">पढ़ने के लिए</a></div><p><b>वित्त वर्ष 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/journal-26-27.csv\">सारे भुगतान</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/documents-26-27.csv\">रसीदें और बिल</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-masters.xml\">Tally के लिए: खाते</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-vouchers.xml\">Tally के लिए: एंट्री</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/README.txt\">पढ़ने के लिए</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=%E0%A4%AE%E0%A5%87%E0%A4%B0%E0%A5%80%20%E0%A4%A6%E0%A5%81%E0%A4%95%E0%A4%BE%E0%A4%A8%20%E0%A4%95%E0%A4%BE%20%E0%A4%B9%E0%A4%BF%E0%A4%B8%E0%A4%BE%E0%A4%AC%2C%20%E0%A4%AE%E0%A4%88%202026\" rel=\"noopener\">WhatsApp पर अपने अकाउंटेंट को बताइए</a></p></div>\n<p class=\"note\">ये वे भुगतान हैं जो आपके असिस्टेंट से होकर गए। दुकान पर दिया गया पैसा यहाँ नहीं है।</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "en",
+   "links": {
+    "base": "/owner/accounting"
+   },
+   "html": "<section class=\"money\" lang=\"en\">\n<h2>Money</h2>\n\n<h3>Today</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 refunds</p></div>\n<h3>This month</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 refund</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Kept from cancellations</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Payment service charges</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">Still to come</span><span class=\"amt\">₹0</span></div><p class=\"note\">from 0 fees</p></div>\n\n<h3>Owed back to customers</h3>\n<p class=\"calm\">Nothing is owed back.</p>\n<h3>Not matched yet</h3>\n<div class=\"item s-info\"><p>Money paid online is not yet checked against your bank. See the payouts in your payment service&#39;s app.</p></div>\n<div class=\"card\"><h3>Send to my accountant</h3><p class=\"note\">Every payment in a table that opens in Excel or Tally.</p><p><b>This month</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/journal-2026-05.csv\">All payments</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/documents-2026-05.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/README.txt\">Read me</a></div><p><b>Last month</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/journal-2026-04.csv\">All payments</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/documents-2026-04.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/README.txt\">Read me</a></div><p><b>Financial year 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/26-27/journal-26-27.csv\">All payments</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/documents-26-27.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/README.txt\">Read me</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=My%20shop&#39;s%20accounts%20for%20May%202026\" rel=\"noopener\">Tell my accountant on WhatsApp</a></p></div>\n<p class=\"note\">These are the payments that went through your assistant. Money paid at the shop is not here.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "en",
+   "links": null,
+   "html": "<section class=\"money\" lang=\"en\">\n<h2>Money</h2>\n\n<h3>Today</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 refunds</p></div>\n<h3>This month</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 refund</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Kept from cancellations</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Payment service charges</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">Still to come</span><span class=\"amt\">₹0</span></div><p class=\"note\">from 0 fees</p></div>\n\n<h3>Owed back to customers</h3>\n<p class=\"calm\">Nothing is owed back.</p>\n<h3>Not matched yet</h3>\n<div class=\"item s-info\"><p>Money paid online is not yet checked against your bank. See the payouts in your payment service&#39;s app.</p></div>\n\n<p class=\"note\">These are the payments that went through your assistant. Money paid at the shop is not here.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "en",
+   "links": {
+    "base": "/o/acc&unt'ing \"x\""
+   },
+   "html": "<section class=\"money\" lang=\"en\">\n<h2>Money</h2>\n\n<h3>Today</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 refunds</p></div>\n<h3>This month</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 refund</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Kept from cancellations</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Payment service charges</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">Still to come</span><span class=\"amt\">₹0</span></div><p class=\"note\">from 0 fees</p></div>\n\n<h3>Owed back to customers</h3>\n<p class=\"calm\">Nothing is owed back.</p>\n<h3>Not matched yet</h3>\n<div class=\"item s-info\"><p>Money paid online is not yet checked against your bank. See the payouts in your payment service&#39;s app.</p></div>\n<div class=\"card\"><h3>Send to my accountant</h3><p class=\"note\">Every payment in a table that opens in Excel or Tally.</p><p><b>This month</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/journal-2026-05.csv\">All payments</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/documents-2026-05.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/README.txt\">Read me</a></div><p><b>Last month</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/journal-2026-04.csv\">All payments</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/documents-2026-04.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/README.txt\">Read me</a></div><p><b>Financial year 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/journal-26-27.csv\">All payments</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/documents-26-27.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/README.txt\">Read me</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=My%20shop&#39;s%20accounts%20for%20May%202026\" rel=\"noopener\">Tell my accountant on WhatsApp</a></p></div>\n<p class=\"note\">These are the payments that went through your assistant. Money paid at the shop is not here.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "ml",
+   "links": {
+    "base": "/owner/accounting"
+   },
+   "html": "<section class=\"money\" lang=\"ml\">\n<h2>പണം</h2>\n<p class=\"machine\">ഈ വാക്കുകൾ യന്ത്രം എഴുതിയതാണ്; ഒരു മലയാളം വായനക്കാരൻ പരിശോധിക്കും.</p>\n<h3>ഇന്ന്</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 റീഫണ്ട്</p></div>\n<h3>ഈ മാസം</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 റീഫണ്ട്</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">പേയ്‌മെന്റ് സേവനത്തിന്റെ ചാർജ്</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ഇനിയും കിട്ടാനുള്ളത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ഫീസിൽ നിന്ന്</p></div>\n\n<h3>ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</h3>\n<p class=\"calm\">തിരികെ നൽകാൻ ഒന്നുമില്ല.</p>\n<h3>ഇതുവരെ ഒത്തുനോക്കിയിട്ടില്ല</h3>\n<div class=\"item s-info\"><p>ഓൺലൈനായി കിട്ടിയ പണം ഇതുവരെ നിങ്ങളുടെ ബാങ്കുമായി ഒത്തുനോക്കിയിട്ടില്ല. പേയ്മെന്റ് സേവനത്തിന്റെ ആപ്പിൽ പേഔട്ടുകൾ നോക്കൂ.</p></div>\n<div class=\"card\"><h3>എന്റെ അക്കൗണ്ടന്റിന് അയയ്ക്കുക</h3><p class=\"note\">എല്ലാ പേയ്‌മെന്റും Excel-ലോ Tally-യിലോ തുറക്കുന്ന ഒരു പട്ടികയിൽ.</p><p><b>ഈ മാസം</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/journal-2026-05.csv\">എല്ലാ പണമിടപാടുകളും</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/documents-2026-05.csv\">രസീതുകളും ബില്ലുകളും</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-masters.xml\">Tally-ക്ക്: അക്കൗണ്ടുകൾ</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-vouchers.xml\">Tally-ക്ക്: എൻട്രികൾ</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/README.txt\">വായിക്കാൻ</a></div><p><b>കഴിഞ്ഞ മാസം</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/journal-2026-04.csv\">എല്ലാ പണമിടപാടുകളും</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/documents-2026-04.csv\">രസീതുകളും ബില്ലുകളും</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-masters.xml\">Tally-ക്ക്: അക്കൗണ്ടുകൾ</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-vouchers.xml\">Tally-ക്ക്: എൻട്രികൾ</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/README.txt\">വായിക്കാൻ</a></div><p><b>സാമ്പത്തിക വർഷം 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/26-27/journal-26-27.csv\">എല്ലാ പണമിടപാടുകളും</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/documents-26-27.csv\">രസീതുകളും ബില്ലുകളും</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-masters.xml\">Tally-ക്ക്: അക്കൗണ്ടുകൾ</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-vouchers.xml\">Tally-ക്ക്: എൻട്രികൾ</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/README.txt\">വായിക്കാൻ</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=%E0%B4%8E%E0%B4%A8%E0%B5%8D%E0%B4%B1%E0%B5%86%20%E0%B4%95%E0%B4%9F%E0%B4%AF%E0%B5%81%E0%B4%9F%E0%B5%86%20%E0%B4%95%E0%B4%A3%E0%B4%95%E0%B5%8D%E0%B4%95%E0%B5%81%E0%B4%95%E0%B5%BE%2C%20%E0%B4%AE%E0%B5%87%E0%B4%AF%E0%B5%8D%202026\" rel=\"noopener\">WhatsApp-ൽ അക്കൗണ്ടന്റിനോട് പറയൂ</a></p></div>\n<p class=\"note\">ഇവ നിങ്ങളുടെ അസിസ്റ്റന്റ് വഴി നടന്ന പേയ്‌മെന്റുകളാണ്. കടയിൽ നേരിട്ട് നൽകിയ പണം ഇവിടെ ഇല്ല.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "ml",
+   "links": null,
+   "html": "<section class=\"money\" lang=\"ml\">\n<h2>പണം</h2>\n<p class=\"machine\">ഈ വാക്കുകൾ യന്ത്രം എഴുതിയതാണ്; ഒരു മലയാളം വായനക്കാരൻ പരിശോധിക്കും.</p>\n<h3>ഇന്ന്</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 റീഫണ്ട്</p></div>\n<h3>ഈ മാസം</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 റീഫണ്ട്</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">പേയ്‌മെന്റ് സേവനത്തിന്റെ ചാർജ്</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ഇനിയും കിട്ടാനുള്ളത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ഫീസിൽ നിന്ന്</p></div>\n\n<h3>ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</h3>\n<p class=\"calm\">തിരികെ നൽകാൻ ഒന്നുമില്ല.</p>\n<h3>ഇതുവരെ ഒത്തുനോക്കിയിട്ടില്ല</h3>\n<div class=\"item s-info\"><p>ഓൺലൈനായി കിട്ടിയ പണം ഇതുവരെ നിങ്ങളുടെ ബാങ്കുമായി ഒത്തുനോക്കിയിട്ടില്ല. പേയ്മെന്റ് സേവനത്തിന്റെ ആപ്പിൽ പേഔട്ടുകൾ നോക്കൂ.</p></div>\n\n<p class=\"note\">ഇവ നിങ്ങളുടെ അസിസ്റ്റന്റ് വഴി നടന്ന പേയ്‌മെന്റുകളാണ്. കടയിൽ നേരിട്ട് നൽകിയ പണം ഇവിടെ ഇല്ല.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "ml",
+   "links": {
+    "base": "/o/acc&unt'ing \"x\""
+   },
+   "html": "<section class=\"money\" lang=\"ml\">\n<h2>പണം</h2>\n<p class=\"machine\">ഈ വാക്കുകൾ യന്ത്രം എഴുതിയതാണ്; ഒരു മലയാളം വായനക്കാരൻ പരിശോധിക്കും.</p>\n<h3>ഇന്ന്</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 റീഫണ്ട്</p></div>\n<h3>ഈ മാസം</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 റീഫണ്ട്</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">പേയ്‌മെന്റ് സേവനത്തിന്റെ ചാർജ്</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ഇനിയും കിട്ടാനുള്ളത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ഫീസിൽ നിന്ന്</p></div>\n\n<h3>ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</h3>\n<p class=\"calm\">തിരികെ നൽകാൻ ഒന്നുമില്ല.</p>\n<h3>ഇതുവരെ ഒത്തുനോക്കിയിട്ടില്ല</h3>\n<div class=\"item s-info\"><p>ഓൺലൈനായി കിട്ടിയ പണം ഇതുവരെ നിങ്ങളുടെ ബാങ്കുമായി ഒത്തുനോക്കിയിട്ടില്ല. പേയ്മെന്റ് സേവനത്തിന്റെ ആപ്പിൽ പേഔട്ടുകൾ നോക്കൂ.</p></div>\n<div class=\"card\"><h3>എന്റെ അക്കൗണ്ടന്റിന് അയയ്ക്കുക</h3><p class=\"note\">എല്ലാ പേയ്‌മെന്റും Excel-ലോ Tally-യിലോ തുറക്കുന്ന ഒരു പട്ടികയിൽ.</p><p><b>ഈ മാസം</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/journal-2026-05.csv\">എല്ലാ പണമിടപാടുകളും</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/documents-2026-05.csv\">രസീതുകളും ബില്ലുകളും</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-masters.xml\">Tally-ക്ക്: അക്കൗണ്ടുകൾ</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-vouchers.xml\">Tally-ക്ക്: എൻട്രികൾ</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/README.txt\">വായിക്കാൻ</a></div><p><b>കഴിഞ്ഞ മാസം</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/journal-2026-04.csv\">എല്ലാ പണമിടപാടുകളും</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/documents-2026-04.csv\">രസീതുകളും ബില്ലുകളും</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-masters.xml\">Tally-ക്ക്: അക്കൗണ്ടുകൾ</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-vouchers.xml\">Tally-ക്ക്: എൻട്രികൾ</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/README.txt\">വായിക്കാൻ</a></div><p><b>സാമ്പത്തിക വർഷം 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/journal-26-27.csv\">എല്ലാ പണമിടപാടുകളും</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/documents-26-27.csv\">രസീതുകളും ബില്ലുകളും</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-masters.xml\">Tally-ക്ക്: അക്കൗണ്ടുകൾ</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-vouchers.xml\">Tally-ക്ക്: എൻട്രികൾ</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/README.txt\">വായിക്കാൻ</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=%E0%B4%8E%E0%B4%A8%E0%B5%8D%E0%B4%B1%E0%B5%86%20%E0%B4%95%E0%B4%9F%E0%B4%AF%E0%B5%81%E0%B4%9F%E0%B5%86%20%E0%B4%95%E0%B4%A3%E0%B4%95%E0%B5%8D%E0%B4%95%E0%B5%81%E0%B4%95%E0%B5%BE%2C%20%E0%B4%AE%E0%B5%87%E0%B4%AF%E0%B5%8D%202026\" rel=\"noopener\">WhatsApp-ൽ അക്കൗണ്ടന്റിനോട് പറയൂ</a></p></div>\n<p class=\"note\">ഇവ നിങ്ങളുടെ അസിസ്റ്റന്റ് വഴി നടന്ന പേയ്‌മെന്റുകളാണ്. കടയിൽ നേരിട്ട് നൽകിയ പണം ഇവിടെ ഇല്ല.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "kn",
+   "links": {
+    "base": "/owner/accounting"
+   },
+   "html": "<section class=\"money\" lang=\"kn\">\n<h2>ಹಣ</h2>\n<p class=\"machine\">ಈ ಪದಗಳನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಓದುಗರೊಬ್ಬರು ಪರಿಶೀಲಿಸುತ್ತಾರೆ.</p>\n<h3>ಇಂದು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ರೀಫಂಡ್</p></div>\n<h3>ಈ ತಿಂಗಳು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 ರೀಫಂಡ್</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ಪಾವತಿ ಸೇವೆಯ ಶುಲ್ಕ</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಶುಲ್ಕಗಳಿಂದ</p></div>\n\n<h3>ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</h3>\n<p class=\"calm\">ಹಿಂದಿರುಗಿಸಲು ಏನೂ ಇಲ್ಲ.</p>\n<h3>ಇನ್ನೂ ಹೊಂದಿಸಿಲ್ಲ</h3>\n<div class=\"item s-info\"><p>ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಬಂದ ಹಣವನ್ನು ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ನೊಂದಿಗೆ ಹೊಂದಿಸಿಲ್ಲ. ಪಾವತಿ ಸೇವೆಯ ಆಪ್‌ನಲ್ಲಿ ಪೇಔಟ್‌ಗಳನ್ನು ನೋಡಿ.</p></div>\n<div class=\"card\"><h3>ನನ್ನ ಲೆಕ್ಕಿಗರಿಗೆ ಕಳುಹಿಸಿ</h3><p class=\"note\">ಪ್ರತಿ ಪಾವತಿಯೂ Excel ಅಥವಾ Tally ನಲ್ಲಿ ತೆರೆಯುವ ಕೋಷ್ಟಕದಲ್ಲಿ.</p><p><b>ಈ ತಿಂಗಳು</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/journal-2026-05.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/documents-2026-05.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/README.txt\">ಓದಲು</a></div><p><b>ಕಳೆದ ತಿಂಗಳು</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/journal-2026-04.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/documents-2026-04.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/README.txt\">ಓದಲು</a></div><p><b>ಹಣಕಾಸು ವರ್ಷ 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/26-27/journal-26-27.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/documents-26-27.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/README.txt\">ಓದಲು</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=%E0%B2%A8%E0%B2%A8%E0%B3%8D%E0%B2%A8%20%E0%B2%85%E0%B2%82%E0%B2%97%E0%B2%A1%E0%B2%BF%E0%B2%AF%20%E0%B2%B2%E0%B3%86%E0%B2%95%E0%B3%8D%E0%B2%95%2C%20%E0%B2%AE%E0%B3%87%202026\" rel=\"noopener\">WhatsApp ನಲ್ಲಿ ನಿಮ್ಮ ಅಕೌಂಟೆಂಟ್‌ಗೆ ಹೇಳಿ</a></p></div>\n<p class=\"note\">ಇವು ನಿಮ್ಮ ಸಹಾಯಕದ ಮೂಲಕ ನಡೆದ ಪಾವತಿಗಳು. ಅಂಗಡಿಯಲ್ಲಿ ನೇರವಾಗಿ ಕೊಟ್ಟ ಹಣ ಇಲ್ಲಿ ಇಲ್ಲ.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "kn",
+   "links": null,
+   "html": "<section class=\"money\" lang=\"kn\">\n<h2>ಹಣ</h2>\n<p class=\"machine\">ಈ ಪದಗಳನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಓದುಗರೊಬ್ಬರು ಪರಿಶೀಲಿಸುತ್ತಾರೆ.</p>\n<h3>ಇಂದು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ರೀಫಂಡ್</p></div>\n<h3>ಈ ತಿಂಗಳು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 ರೀಫಂಡ್</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ಪಾವತಿ ಸೇವೆಯ ಶುಲ್ಕ</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಶುಲ್ಕಗಳಿಂದ</p></div>\n\n<h3>ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</h3>\n<p class=\"calm\">ಹಿಂದಿರುಗಿಸಲು ಏನೂ ಇಲ್ಲ.</p>\n<h3>ಇನ್ನೂ ಹೊಂದಿಸಿಲ್ಲ</h3>\n<div class=\"item s-info\"><p>ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಬಂದ ಹಣವನ್ನು ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ನೊಂದಿಗೆ ಹೊಂದಿಸಿಲ್ಲ. ಪಾವತಿ ಸೇವೆಯ ಆಪ್‌ನಲ್ಲಿ ಪೇಔಟ್‌ಗಳನ್ನು ನೋಡಿ.</p></div>\n\n<p class=\"note\">ಇವು ನಿಮ್ಮ ಸಹಾಯಕದ ಮೂಲಕ ನಡೆದ ಪಾವತಿಗಳು. ಅಂಗಡಿಯಲ್ಲಿ ನೇರವಾಗಿ ಕೊಟ್ಟ ಹಣ ಇಲ್ಲಿ ಇಲ್ಲ.</p>\n</section>"
+  },
+  {
+   "view": "0.0",
+   "lang": "kn",
+   "links": {
+    "base": "/o/acc&unt'ing \"x\""
+   },
+   "html": "<section class=\"money\" lang=\"kn\">\n<h2>ಹಣ</h2>\n<p class=\"machine\">ಈ ಪದಗಳನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಓದುಗರೊಬ್ಬರು ಪರಿಶೀಲಿಸುತ್ತಾರೆ.</p>\n<h3>ಇಂದು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ರೀಫಂಡ್</p></div>\n<h3>ಈ ತಿಂಗಳು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 ರೀಫಂಡ್</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ಪಾವತಿ ಸೇವೆಯ ಶುಲ್ಕ</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಶುಲ್ಕಗಳಿಂದ</p></div>\n\n<h3>ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</h3>\n<p class=\"calm\">ಹಿಂದಿರುಗಿಸಲು ಏನೂ ಇಲ್ಲ.</p>\n<h3>ಇನ್ನೂ ಹೊಂದಿಸಿಲ್ಲ</h3>\n<div class=\"item s-info\"><p>ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಬಂದ ಹಣವನ್ನು ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ನೊಂದಿಗೆ ಹೊಂದಿಸಿಲ್ಲ. ಪಾವತಿ ಸೇವೆಯ ಆಪ್‌ನಲ್ಲಿ ಪೇಔಟ್‌ಗಳನ್ನು ನೋಡಿ.</p></div>\n<div class=\"card\"><h3>ನನ್ನ ಲೆಕ್ಕಿಗರಿಗೆ ಕಳುಹಿಸಿ</h3><p class=\"note\">ಪ್ರತಿ ಪಾವತಿಯೂ Excel ಅಥವಾ Tally ನಲ್ಲಿ ತೆರೆಯುವ ಕೋಷ್ಟಕದಲ್ಲಿ.</p><p><b>ಈ ತಿಂಗಳು</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/journal-2026-05.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/documents-2026-05.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-05/README.txt\">ಓದಲು</a></div><p><b>ಕಳೆದ ತಿಂಗಳು</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/journal-2026-04.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/documents-2026-04.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/2026-04/README.txt\">ಓದಲು</a></div><p><b>ಹಣಕಾಸು ವರ್ಷ 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/journal-26-27.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/documents-26-27.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/o/acc&amp;unt&#39;ing &quot;x&quot;/26-27/README.txt\">ಓದಲು</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=%E0%B2%A8%E0%B2%A8%E0%B3%8D%E0%B2%A8%20%E0%B2%85%E0%B2%82%E0%B2%97%E0%B2%A1%E0%B2%BF%E0%B2%AF%20%E0%B2%B2%E0%B3%86%E0%B2%95%E0%B3%8D%E0%B2%95%2C%20%E0%B2%AE%E0%B3%87%202026\" rel=\"noopener\">WhatsApp ನಲ್ಲಿ ನಿಮ್ಮ ಅಕೌಂಟೆಂಟ್‌ಗೆ ಹೇಳಿ</a></p></div>\n<p class=\"note\">ಇವು ನಿಮ್ಮ ಸಹಾಯಕದ ಮೂಲಕ ನಡೆದ ಪಾವತಿಗಳು. ಅಂಗಡಿಯಲ್ಲಿ ನೇರವಾಗಿ ಕೊಟ್ಟ ಹಣ ಇಲ್ಲಿ ಇಲ್ಲ.</p>\n</section>"
+  },
+  {
+   "view": "0.1",
+   "lang": "hi",
+   "links": null,
+   "html": "<section class=\"money\" lang=\"hi\">\n<h2>पैसे</h2>\n<p class=\"machine\">ये शब्द मशीन से लिखे गए हैं; कोई हिंदी पाठक इन्हें जाँचेगा।</p>\n<h3>आज</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 रिफंड</p></div>\n<h3>इस महीने</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">मिले</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 भुगतान</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">लौटाए</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 रिफंड</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">रद्द करने पर रखे</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">पेमेंट सेवा का शुल्क</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">अभी आना बाकी</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 फीस में से</p></div>\n\n<h3>ग्राहकों को लौटाना बाकी</h3>\n<p class=\"calm\">कुछ भी लौटाना बाकी नहीं है।</p>\n<h3>अभी मिलान नहीं हुआ</h3>\n<div class=\"item s-info\"><p>ऑनलाइन मिला पैसा अभी आपके बैंक से मिलाया नहीं गया है। पेमेंट सेवा के ऐप में पेआउट देखिए।</p></div><div class=\"item s-info\"><p>b-1 के लिए ₹12.50 का रिफंड हो चुका है, पर ग्राहक को अभी बताया नहीं गया। कृपया उन्हें बताएँ।</p></div><div class=\"item s-info\"><p>b-2 के लिए ₹0.29 का रिफंड हो चुका है, पर ग्राहक को अभी बताया नहीं गया। कृपया उन्हें बताएँ।</p></div><div class=\"item s-info\"><p>f-3 के लिए ₹1,234.57 का रिफंड हो चुका है, पर ग्राहक को अभी बताया नहीं गया। कृपया उन्हें बताएँ।</p></div>\n\n<p class=\"note\">ये वे भुगतान हैं जो आपके असिस्टेंट से होकर गए। दुकान पर दिया गया पैसा यहाँ नहीं है।</p>\n</section>"
+  },
+  {
+   "view": "0.1",
+   "lang": "en",
+   "links": {
+    "base": "/owner/accounting"
+   },
+   "html": "<section class=\"money\" lang=\"en\">\n<h2>Money</h2>\n\n<h3>Today</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 refunds</p></div>\n<h3>This month</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">Received</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 payments</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">Given back</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 refund</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Kept from cancellations</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">Payment service charges</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">Still to come</span><span class=\"amt\">₹0</span></div><p class=\"note\">from 0 fees</p></div>\n\n<h3>Owed back to customers</h3>\n<p class=\"calm\">Nothing is owed back.</p>\n<h3>Not matched yet</h3>\n<div class=\"item s-info\"><p>Money paid online is not yet checked against your bank. See the payouts in your payment service&#39;s app.</p></div><div class=\"item s-info\"><p>A refund of ₹12.50 for b-1 was made, but the customer has not been told yet. Please tell them.</p></div><div class=\"item s-info\"><p>A refund of ₹0.29 for b-2 was made, but the customer has not been told yet. Please tell them.</p></div><div class=\"item s-info\"><p>A refund of ₹1,234.57 for f-3 was made, but the customer has not been told yet. Please tell them.</p></div>\n<div class=\"card\"><h3>Send to my accountant</h3><p class=\"note\">Every payment in a table that opens in Excel or Tally.</p><p><b>This month</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/journal-2026-05.csv\">All payments</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/documents-2026-05.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/README.txt\">Read me</a></div><p><b>Last month</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/journal-2026-04.csv\">All payments</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/documents-2026-04.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/README.txt\">Read me</a></div><p><b>Financial year 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/26-27/journal-26-27.csv\">All payments</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/documents-26-27.csv\">Receipts and bills</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-masters.xml\">For Tally: accounts</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-vouchers.xml\">For Tally: entries</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/README.txt\">Read me</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=My%20shop&#39;s%20accounts%20for%20May%202026\" rel=\"noopener\">Tell my accountant on WhatsApp</a></p></div>\n<p class=\"note\">These are the payments that went through your assistant. Money paid at the shop is not here.</p>\n</section>"
+  },
+  {
+   "view": "0.1",
+   "lang": "ml",
+   "links": null,
+   "html": "<section class=\"money\" lang=\"ml\">\n<h2>പണം</h2>\n<p class=\"machine\">ഈ വാക്കുകൾ യന്ത്രം എഴുതിയതാണ്; ഒരു മലയാളം വായനക്കാരൻ പരിശോധിക്കും.</p>\n<h3>ഇന്ന്</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 റീഫണ്ട്</p></div>\n<h3>ഈ മാസം</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">കിട്ടിയത്</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 പേയ്‌മെന്റ്</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">തിരികെ നൽകിയത്</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 റീഫണ്ട്</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">പേയ്‌മെന്റ് സേവനത്തിന്റെ ചാർജ്</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ഇനിയും കിട്ടാനുള്ളത്</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ഫീസിൽ നിന്ന്</p></div>\n\n<h3>ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</h3>\n<p class=\"calm\">തിരികെ നൽകാൻ ഒന്നുമില്ല.</p>\n<h3>ഇതുവരെ ഒത്തുനോക്കിയിട്ടില്ല</h3>\n<div class=\"item s-info\"><p>ഓൺലൈനായി കിട്ടിയ പണം ഇതുവരെ നിങ്ങളുടെ ബാങ്കുമായി ഒത്തുനോക്കിയിട്ടില്ല. പേയ്മെന്റ് സേവനത്തിന്റെ ആപ്പിൽ പേഔട്ടുകൾ നോക്കൂ.</p></div><div class=\"item s-info\"><p>b-1-ന് ₹12.50 റീഫണ്ട് ചെയ്തു, പക്ഷേ ഉപഭോക്താവിനെ ഇതുവരെ അറിയിച്ചിട്ടില്ല. ദയവായി അറിയിക്കുക.</p></div><div class=\"item s-info\"><p>b-2-ന് ₹0.29 റീഫണ്ട് ചെയ്തു, പക്ഷേ ഉപഭോക്താവിനെ ഇതുവരെ അറിയിച്ചിട്ടില്ല. ദയവായി അറിയിക്കുക.</p></div><div class=\"item s-info\"><p>f-3-ന് ₹1,234.57 റീഫണ്ട് ചെയ്തു, പക്ഷേ ഉപഭോക്താവിനെ ഇതുവരെ അറിയിച്ചിട്ടില്ല. ദയവായി അറിയിക്കുക.</p></div>\n\n<p class=\"note\">ഇവ നിങ്ങളുടെ അസിസ്റ്റന്റ് വഴി നടന്ന പേയ്‌മെന്റുകളാണ്. കടയിൽ നേരിട്ട് നൽകിയ പണം ഇവിടെ ഇല്ല.</p>\n</section>"
+  },
+  {
+   "view": "0.1",
+   "lang": "kn",
+   "links": {
+    "base": "/owner/accounting"
+   },
+   "html": "<section class=\"money\" lang=\"kn\">\n<h2>ಹಣ</h2>\n<p class=\"machine\">ಈ ಪದಗಳನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಓದುಗರೊಬ್ಬರು ಪರಿಶೀಲಿಸುತ್ತಾರೆ.</p>\n<h3>ಇಂದು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ರೀಫಂಡ್</p></div>\n<h3>ಈ ತಿಂಗಳು</h3>\n<div class=\"item s-ok\"><div class=\"top\"><span class=\"stamp\">ಬಂದದ್ದು</span><span class=\"amt\">₹3</span></div><p class=\"note\">3 ಪಾವತಿ</p></div>\n<div class=\"item s-info\"><div class=\"top\"><span class=\"stamp\">ಹಿಂದಿರುಗಿಸಿದ್ದು</span><span class=\"amt\">₹0.30</span></div><p class=\"note\">1 ರೀಫಂಡ್</p></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span><span class=\"amt\">₹0.05</span></div></div>\n<div class=\"item s-plain\"><div class=\"top\"><span class=\"stamp\">ಪಾವತಿ ಸೇವೆಯ ಶುಲ್ಕ</span><span class=\"amt\">₹0.12</span></div></div>\n<div class=\"item s-wait\"><div class=\"top\"><span class=\"stamp\">ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span><span class=\"amt\">₹0</span></div><p class=\"note\">0 ಶುಲ್ಕಗಳಿಂದ</p></div>\n\n<h3>ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</h3>\n<p class=\"calm\">ಹಿಂದಿರುಗಿಸಲು ಏನೂ ಇಲ್ಲ.</p>\n<h3>ಇನ್ನೂ ಹೊಂದಿಸಿಲ್ಲ</h3>\n<div class=\"item s-info\"><p>ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಬಂದ ಹಣವನ್ನು ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ನೊಂದಿಗೆ ಹೊಂದಿಸಿಲ್ಲ. ಪಾವತಿ ಸೇವೆಯ ಆಪ್‌ನಲ್ಲಿ ಪೇಔಟ್‌ಗಳನ್ನು ನೋಡಿ.</p></div><div class=\"item s-info\"><p>b-1 ಗೆ ₹12.50 ರೀಫಂಡ್ ಮಾಡಲಾಗಿದೆ, ಆದರೆ ಗ್ರಾಹಕರಿಗೆ ಇನ್ನೂ ತಿಳಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ತಿಳಿಸಿ.</p></div><div class=\"item s-info\"><p>b-2 ಗೆ ₹0.29 ರೀಫಂಡ್ ಮಾಡಲಾಗಿದೆ, ಆದರೆ ಗ್ರಾಹಕರಿಗೆ ಇನ್ನೂ ತಿಳಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ತಿಳಿಸಿ.</p></div><div class=\"item s-info\"><p>f-3 ಗೆ ₹1,234.57 ರೀಫಂಡ್ ಮಾಡಲಾಗಿದೆ, ಆದರೆ ಗ್ರಾಹಕರಿಗೆ ಇನ್ನೂ ತಿಳಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ತಿಳಿಸಿ.</p></div>\n<div class=\"card\"><h3>ನನ್ನ ಲೆಕ್ಕಿಗರಿಗೆ ಕಳುಹಿಸಿ</h3><p class=\"note\">ಪ್ರತಿ ಪಾವತಿಯೂ Excel ಅಥವಾ Tally ನಲ್ಲಿ ತೆರೆಯುವ ಕೋಷ್ಟಕದಲ್ಲಿ.</p><p><b>ಈ ತಿಂಗಳು</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/journal-2026-05.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/documents-2026-05.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-05/README.txt\">ಓದಲು</a></div><p><b>ಕಳೆದ ತಿಂಗಳು</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/journal-2026-04.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/documents-2026-04.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/2026-04/README.txt\">ಓದಲು</a></div><p><b>ಹಣಕಾಸು ವರ್ಷ 26-27</b></p><div class=\"row\"><a class=\"btn quiet\" href=\"/owner/accounting/26-27/journal-26-27.csv\">ಎಲ್ಲಾ ಪಾವತಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/documents-26-27.csv\">ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-masters.xml\">Tally ಗಾಗಿ: ಖಾತೆಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/tally-vouchers.xml\">Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು</a><a class=\"btn quiet\" href=\"/owner/accounting/26-27/README.txt\">ಓದಲು</a></div><p><a class=\"btn quiet\" href=\"https://wa.me/?text=%E0%B2%A8%E0%B2%A8%E0%B3%8D%E0%B2%A8%20%E0%B2%85%E0%B2%82%E0%B2%97%E0%B2%A1%E0%B2%BF%E0%B2%AF%20%E0%B2%B2%E0%B3%86%E0%B2%95%E0%B3%8D%E0%B2%95%2C%20%E0%B2%AE%E0%B3%87%202026\" rel=\"noopener\">WhatsApp ನಲ್ಲಿ ನಿಮ್ಮ ಅಕೌಂಟೆಂಟ್‌ಗೆ ಹೇಳಿ</a></p></div>\n<p class=\"note\">ಇವು ನಿಮ್ಮ ಸಹಾಯಕದ ಮೂಲಕ ನಡೆದ ಪಾವತಿಗಳು. ಅಂಗಡಿಯಲ್ಲಿ ನೇರವಾಗಿ ಕೊಟ್ಟ ಹಣ ಇಲ್ಲಿ ಇಲ್ಲ.</p>\n</section>"
+  }
+ ],
+ "blocks": [
+  {
+   "range": "whole",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "hi",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में अभी आना बाकी</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹1 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "hi",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में अभी आना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹123.45 शामिल हैं जो ग्राहकों ने दो बार चुकाए। वह पैसा उनका है, दुकान का नहीं।</p><p class=\"small\">&quot;मिले&quot; में ₹7 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p><p class=\"small\">&quot;लौटाए&quot; में ₹0.05 शामिल हैं जिन्हें आपने खुद भेजा हुआ दर्ज किया।</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹0.03 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "en",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div><div class=\"card\"><strong>₹0</strong><span>Still to come at the end of the month</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹1 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "en",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div><div class=\"card\"><strong>₹0</strong><span>Still to come at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹123.45 that customers paid twice. That money is theirs, not the shop&#39;s.</p><p class=\"small\">&quot;Received&quot; includes ₹7 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p><p class=\"small\">&quot;Given back&quot; includes ₹0.05 that you marked as sent yourself.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹0.03 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "ml",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത്</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹1 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "ml",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ ഉപഭോക്താക്കൾ രണ്ടുതവണ അടച്ച ₹123.45 ഉൾപ്പെടുന്നു. ആ പണം അവരുടേതാണ്, കടയുടേതല്ല.</p><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹7 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p><p class=\"small\">&quot;തിരികെ നൽകിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം അയച്ചതായി രേഖപ്പെടുത്തിയ ₹0.05 ഉൾപ്പെടുന്നു.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹0.03 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "kn",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span></div></div>"
+  },
+  {
+   "range": "whole",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹1 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "kn",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ಗ್ರಾಹಕರು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ ₹123.45 ಸೇರಿದೆ. ಆ ಹಣ ಅವರದು, ಅಂಗಡಿಯದಲ್ಲ.</p><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹7 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p><p class=\"small\">&quot;ಹಿಂದಿರುಗಿಸಿದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹0.05 ಸೇರಿದೆ.</p>"
+  },
+  {
+   "range": "whole",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹0.03 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "hi",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में अभी आना बाकी</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹1 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "hi",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में अभी आना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹123.45 शामिल हैं जो ग्राहकों ने दो बार चुकाए। वह पैसा उनका है, दुकान का नहीं।</p><p class=\"small\">&quot;मिले&quot; में ₹7 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p><p class=\"small\">&quot;लौटाए&quot; में ₹0.05 शामिल हैं जिन्हें आपने खुद भेजा हुआ दर्ज किया।</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹0.03 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "en",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div><div class=\"card\"><strong>₹0</strong><span>Still to come at the end of the month</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹1 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "en",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div><div class=\"card\"><strong>₹0</strong><span>Still to come at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹123.45 that customers paid twice. That money is theirs, not the shop&#39;s.</p><p class=\"small\">&quot;Received&quot; includes ₹7 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p><p class=\"small\">&quot;Given back&quot; includes ₹0.05 that you marked as sent yourself.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹0.03 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "ml",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത്</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹1 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "ml",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ ഉപഭോക്താക്കൾ രണ്ടുതവണ അടച്ച ₹123.45 ഉൾപ്പെടുന്നു. ആ പണം അവരുടേതാണ്, കടയുടേതല്ല.</p><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹7 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p><p class=\"small\">&quot;തിരികെ നൽകിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം അയച്ചതായി രേഖപ്പെടുത്തിയ ₹0.05 ഉൾപ്പെടുന്നു.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹0.03 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "kn",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span></div></div>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹1 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "kn",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ಗ್ರಾಹಕರು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ ₹123.45 ಸೇರಿದೆ. ಆ ಹಣ ಅವರದು, ಅಂಗಡಿಯದಲ್ಲ.</p><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹7 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p><p class=\"small\">&quot;ಹಿಂದಿರುಗಿಸಿದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹0.05 ಸೇರಿದೆ.</p>"
+  },
+  {
+   "range": "2026-05",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹0.03 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "hi",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में अभी आना बाकी</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹1 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "hi",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में अभी आना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹123.45 शामिल हैं जो ग्राहकों ने दो बार चुकाए। वह पैसा उनका है, दुकान का नहीं।</p><p class=\"small\">&quot;मिले&quot; में ₹7 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p><p class=\"small\">&quot;लौटाए&quot; में ₹0.05 शामिल हैं जिन्हें आपने खुद भेजा हुआ दर्ज किया।</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "hi",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>इस महीने के पैसे</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>मिले</span></div><div class=\"card\"><strong>₹0.30</strong><span>लौटाए</span></div><div class=\"card\"><strong>₹0.05</strong><span>रद्द करने पर रखे</span></div><div class=\"card\"><strong>₹0</strong><span>महीने के अंत में ग्राहकों को लौटाना बाकी</span></div></div><p class=\"small\">&quot;मिले&quot; में ₹0.03 शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की।</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "en",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div><div class=\"card\"><strong>₹0</strong><span>Still to come at the end of the month</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹1 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "en",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div><div class=\"card\"><strong>₹0</strong><span>Still to come at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹123.45 that customers paid twice. That money is theirs, not the shop&#39;s.</p><p class=\"small\">&quot;Received&quot; includes ₹7 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p><p class=\"small\">&quot;Given back&quot; includes ₹0.05 that you marked as sent yourself.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "en",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>Money this month</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>Received</span></div><div class=\"card\"><strong>₹0.30</strong><span>Given back</span></div><div class=\"card\"><strong>₹0.05</strong><span>Kept from cancellations</span></div><div class=\"card\"><strong>₹0</strong><span>Still owed back at the end of the month</span></div></div><p class=\"small\">&quot;Received&quot; includes ₹0.03 that you marked as paid yourself. The rows above count only payments that your payment service confirmed.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "ml",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത്</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹1 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "ml",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ ഉപഭോക്താക്കൾ രണ്ടുതവണ അടച്ച ₹123.45 ഉൾപ്പെടുന്നു. ആ പണം അവരുടേതാണ്, കടയുടേതല്ല.</p><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹7 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p><p class=\"small\">&quot;തിരികെ നൽകിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം അയച്ചതായി രേഖപ്പെടുത്തിയ ₹0.05 ഉൾപ്പെടുന്നു.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "ml",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ഈ മാസത്തെ പണം</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>കിട്ടിയത്</span></div><div class=\"card\"><strong>₹0.30</strong><span>തിരികെ നൽകിയത്</span></div><div class=\"card\"><strong>₹0.05</strong><span>റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത്</span></div><div class=\"card\"><strong>₹0</strong><span>മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്</span></div></div><p class=\"small\">&quot;കിട്ടിയത്&quot; എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ ₹0.03 ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": null
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "kn",
+   "options": {
+    "toCome": true,
+    "booksOnly": null
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span></div></div>"
+  },
+  {
+   "range": "26-27",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 100,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹1 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "kn",
+   "options": {
+    "toCome": true,
+    "booksOnly": {
+     "paidTwicePaise": 12345,
+     "markedReceivedPaise": 700,
+     "markedGivenBackPaise": 5
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ಗ್ರಾಹಕರು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ ₹123.45 ಸೇರಿದೆ. ಆ ಹಣ ಅವರದು, ಅಂಗಡಿಯದಲ್ಲ.</p><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹7 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p><p class=\"small\">&quot;ಹಿಂದಿರುಗಿಸಿದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹0.05 ಸೇರಿದೆ.</p>"
+  },
+  {
+   "range": "26-27",
+   "lang": "kn",
+   "options": {
+    "toCome": false,
+    "booksOnly": {
+     "paidTwicePaise": 0,
+     "markedReceivedPaise": 3,
+     "markedGivenBackPaise": 0
+    }
+   },
+   "html": "<h2>ಈ ತಿಂಗಳ ಹಣ</h2><div class=\"cards\"><div class=\"card\"><strong>₹3</strong><span>ಬಂದದ್ದು</span></div><div class=\"card\"><strong>₹0.30</strong><span>ಹಿಂದಿರುಗಿಸಿದ್ದು</span></div><div class=\"card\"><strong>₹0.05</strong><span>ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು</span></div><div class=\"card\"><strong>₹0</strong><span>ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು</span></div></div><p class=\"small\">&quot;ಬಂದದ್ದು&quot; ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ ₹0.03 ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ.</p>"
+  }
+ ],
+ "pages": [
+  {
+   "number": "RCT/26-27/0001",
+   "status": "unregistered",
+   "lang": "hi",
+   "document": {
+    "language": "hi",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-1> & more (hi)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"hi\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>रसीद RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">यह हिंदी मशीन से लिखी गई है; किसी हिंदी भाषी ने अभी इसे जाँचा नहीं है।</p>\n<article class=\"card doc\">\n\n<h1>रसीद<span class=\"en\" lang=\"en\">Receipt</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>फ़ोन: +91 98765 43210</p>\n<dl>\n<dt>क्रमांक<span class=\"en\" lang=\"en\">Number</span></dt><dd>RCT/26-27/0001</dd>\n<dt>तारीख़<span class=\"en\" lang=\"en\">Date</span></dt><dd>शुक्रवार, 1 मई 2026, सुबह 10:39 बजे<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>मिली रकम<span class=\"en\" lang=\"en\">Amount received</span></dt><dd class=\"amount\">₹1</dd>\n<dt>किसलिए</dt><dd>Haircut for &lt;b-1&gt; &amp; more (hi)</dd>\n<dt>नाम</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>भुगतान का तरीका</dt><dd>ऑनलाइन</dd>\n<dt>कैसे पता चला</dt><dd>पेमेंट सेवा ने पुष्टि की</dd>\n</dl>\n<p class=\"made\">यह Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; के लिए कंप्यूटर से बनाया गया है।</p>\n</article>\n<p class=\"note noprint\">अपनी कॉपी रखने के लिए फ़ोन के मेन्यू में &quot;Print / Save as PDF&quot; चुनिए।</p>\n</main></body></html>"
+  },
+  {
+   "number": "RCT/26-27/0001",
+   "status": "unregistered",
+   "lang": "en",
+   "document": {
+    "language": "en",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-1> & more (en)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>Receipt RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\">\n<article class=\"card doc\">\n\n<h1>Receipt</h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>Phone: +91 98765 43210</p>\n<dl>\n<dt>Number</dt><dd>RCT/26-27/0001</dd>\n<dt>Date</dt><dd>Fri 1 May 2026, 10:39 am</dd>\n<dt>Amount received</dt><dd class=\"amount\">₹1</dd>\n<dt>For</dt><dd>Haircut for &lt;b-1&gt; &amp; more (en)</dd>\n<dt>Name</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>Paid by</dt><dd>Online</dd>\n<dt>How it is known</dt><dd>Confirmed by the payment service</dd>\n</dl>\n<p class=\"made\">Made by computer for Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;.</p>\n</article>\n<p class=\"note noprint\">To keep a copy, choose &quot;Print / Save as PDF&quot; in your phone&#39;s menu.</p>\n</main></body></html>"
+  },
+  {
+   "number": "RCT/26-27/0001",
+   "status": "unregistered",
+   "lang": "ml",
+   "document": {
+    "language": "ml",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-1> & more (ml)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"ml\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>രസീത് RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല.</p>\n<article class=\"card doc\">\n\n<h1>രസീത്<span class=\"en\" lang=\"en\">Receipt</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ഫോൺ: +91 98765 43210</p>\n<dl>\n<dt>നമ്പർ<span class=\"en\" lang=\"en\">Number</span></dt><dd>RCT/26-27/0001</dd>\n<dt>തീയതി<span class=\"en\" lang=\"en\">Date</span></dt><dd>വെള്ളി, 1 മേയ് 2026, രാവിലെ 10:39<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>ലഭിച്ച തുക<span class=\"en\" lang=\"en\">Amount received</span></dt><dd class=\"amount\">₹1</dd>\n<dt>എന്തിന്</dt><dd>Haircut for &lt;b-1&gt; &amp; more (ml)</dd>\n<dt>പേര്</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>അടച്ച വിധം</dt><dd>ഓൺലൈൻ</dd>\n<dt>എങ്ങനെ അറിയാം</dt><dd>പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ചു</dd>\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;-നായി കമ്പ്യൂട്ടർ ഉണ്ടാക്കിയത്.</p>\n</article>\n<p class=\"note noprint\">കോപ്പി സൂക്ഷിക്കാൻ ഫോണിലെ മെനുവിൽ &quot;Print / Save as PDF&quot; തിരഞ്ഞെടുക്കുക.</p>\n</main></body></html>"
+  },
+  {
+   "number": "RCT/26-27/0001",
+   "status": "unregistered",
+   "lang": "kn",
+   "document": {
+    "language": "kn",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-1> & more (kn)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"kn\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>ರಶೀದಿ RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ.</p>\n<article class=\"card doc\">\n\n<h1>ರಶೀದಿ<span class=\"en\" lang=\"en\">Receipt</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ಫೋನ್: +91 98765 43210</p>\n<dl>\n<dt>ಸಂಖ್ಯೆ<span class=\"en\" lang=\"en\">Number</span></dt><dd>RCT/26-27/0001</dd>\n<dt>ದಿನಾಂಕ<span class=\"en\" lang=\"en\">Date</span></dt><dd>ಶುಕ್ರವಾರ, 1 ಮೇ 2026, ಬೆಳಿಗ್ಗೆ 10:39<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>ಸ್ವೀಕರಿಸಿದ ಮೊತ್ತ<span class=\"en\" lang=\"en\">Amount received</span></dt><dd class=\"amount\">₹1</dd>\n<dt>ಯಾವುದಕ್ಕೆ</dt><dd>Haircut for &lt;b-1&gt; &amp; more (kn)</dd>\n<dt>ಹೆಸರು</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>ಪಾವತಿ ವಿಧಾನ</dt><dd>ಆನ್‌ಲೈನ್</dd>\n<dt>ಹೇಗೆ ತಿಳಿದಿದೆ</dt><dd>ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದೆ</dd>\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; ಗಾಗಿ ಕಂಪ್ಯೂಟರ್ ಮೂಲಕ ತಯಾರಿಸಲಾಗಿದೆ.</p>\n</article>\n<p class=\"note noprint\">ಪ್ರತಿ ಉಳಿಸಲು ಫೋನ್‌ನ ಮೆನುವಿನಲ್ಲಿ &quot;Print / Save as PDF&quot; ಆರಿಸಿ.</p>\n</main></body></html>"
+  },
+  {
+   "number": "RCT/26-27/0001",
+   "status": "composition",
+   "lang": "hi",
+   "document": {
+    "language": "hi",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-1> & more (hi)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"hi\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>रसीद RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">यह हिंदी मशीन से लिखी गई है; किसी हिंदी भाषी ने अभी इसे जाँचा नहीं है।</p>\n<article class=\"card doc\">\n<p class=\"legend\">कंपोज़िशन करदाता, आपूर्ति पर कर वसूलने का पात्र नहीं<span class=\"en\" lang=\"en\">composition taxable person, not eligible to collect tax on supplies</span></p>\n<h1>रसीद<span class=\"en\" lang=\"en\">Receipt</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>फ़ोन: +91 98765 43210</p>\n<dl>\n<dt>क्रमांक<span class=\"en\" lang=\"en\">Number</span></dt><dd>RCT/26-27/0001</dd>\n<dt>तारीख़<span class=\"en\" lang=\"en\">Date</span></dt><dd>शुक्रवार, 1 मई 2026, सुबह 10:39 बजे<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>मिली रकम<span class=\"en\" lang=\"en\">Amount received</span></dt><dd class=\"amount\">₹1</dd>\n<dt>किसलिए</dt><dd>Haircut for &lt;b-1&gt; &amp; more (hi)</dd>\n<dt>नाम</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>भुगतान का तरीका</dt><dd>ऑनलाइन</dd>\n<dt>कैसे पता चला</dt><dd>पेमेंट सेवा ने पुष्टि की</dd>\n</dl>\n<p class=\"made\">यह Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; के लिए कंप्यूटर से बनाया गया है।</p>\n</article>\n<p class=\"note noprint\">अपनी कॉपी रखने के लिए फ़ोन के मेन्यू में &quot;Print / Save as PDF&quot; चुनिए।</p>\n</main></body></html>"
+  },
+  {
+   "number": "RCT/26-27/0001",
+   "status": "composition",
+   "lang": "en",
+   "document": {
+    "language": "en",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-1> & more (en)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>Receipt RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\">\n<article class=\"card doc\">\n<p class=\"legend\">composition taxable person, not eligible to collect tax on supplies</p>\n<h1>Receipt</h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>Phone: +91 98765 43210</p>\n<dl>\n<dt>Number</dt><dd>RCT/26-27/0001</dd>\n<dt>Date</dt><dd>Fri 1 May 2026, 10:39 am</dd>\n<dt>Amount received</dt><dd class=\"amount\">₹1</dd>\n<dt>For</dt><dd>Haircut for &lt;b-1&gt; &amp; more (en)</dd>\n<dt>Name</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>Paid by</dt><dd>Online</dd>\n<dt>How it is known</dt><dd>Confirmed by the payment service</dd>\n</dl>\n<p class=\"made\">Made by computer for Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;.</p>\n</article>\n<p class=\"note noprint\">To keep a copy, choose &quot;Print / Save as PDF&quot; in your phone&#39;s menu.</p>\n</main></body></html>"
+  },
+  {
+   "number": "RCT/26-27/0001",
+   "status": "composition",
+   "lang": "ml",
+   "document": {
+    "language": "ml",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-1> & more (ml)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"ml\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>രസീത് RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല.</p>\n<article class=\"card doc\">\n<p class=\"legend\">കോമ്പോസിഷൻ നികുതിദായകൻ; വിതരണങ്ങളിൽ നികുതി ഈടാക്കാൻ അർഹതയില്ല<span class=\"en\" lang=\"en\">composition taxable person, not eligible to collect tax on supplies</span></p>\n<h1>രസീത്<span class=\"en\" lang=\"en\">Receipt</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ഫോൺ: +91 98765 43210</p>\n<dl>\n<dt>നമ്പർ<span class=\"en\" lang=\"en\">Number</span></dt><dd>RCT/26-27/0001</dd>\n<dt>തീയതി<span class=\"en\" lang=\"en\">Date</span></dt><dd>വെള്ളി, 1 മേയ് 2026, രാവിലെ 10:39<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>ലഭിച്ച തുക<span class=\"en\" lang=\"en\">Amount received</span></dt><dd class=\"amount\">₹1</dd>\n<dt>എന്തിന്</dt><dd>Haircut for &lt;b-1&gt; &amp; more (ml)</dd>\n<dt>പേര്</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>അടച്ച വിധം</dt><dd>ഓൺലൈൻ</dd>\n<dt>എങ്ങനെ അറിയാം</dt><dd>പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ചു</dd>\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;-നായി കമ്പ്യൂട്ടർ ഉണ്ടാക്കിയത്.</p>\n</article>\n<p class=\"note noprint\">കോപ്പി സൂക്ഷിക്കാൻ ഫോണിലെ മെനുവിൽ &quot;Print / Save as PDF&quot; തിരഞ്ഞെടുക്കുക.</p>\n</main></body></html>"
+  },
+  {
+   "number": "RCT/26-27/0001",
+   "status": "composition",
+   "lang": "kn",
+   "document": {
+    "language": "kn",
+    "kind": "receipt",
+    "number": "RCT/26-27/0001",
+    "at": "2026-05-01T05:09:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 100,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-1> & more (kn)",
+    "person": "Anita Sharma <A&B>",
+    "method": "gateway",
+    "evidence": "provider"
+   },
+   "html": "<!doctype html><html lang=\"kn\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>ರಶೀದಿ RCT/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ.</p>\n<article class=\"card doc\">\n<p class=\"legend\">ಸಂಯೋಜನೆ ತೆರಿಗೆದಾರ; ಪೂರೈಕೆಗಳ ಮೇಲೆ ತೆರಿಗೆ ಸಂಗ್ರಹಿಸಲು ಅರ್ಹರಲ್ಲ<span class=\"en\" lang=\"en\">composition taxable person, not eligible to collect tax on supplies</span></p>\n<h1>ರಶೀದಿ<span class=\"en\" lang=\"en\">Receipt</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ಫೋನ್: +91 98765 43210</p>\n<dl>\n<dt>ಸಂಖ್ಯೆ<span class=\"en\" lang=\"en\">Number</span></dt><dd>RCT/26-27/0001</dd>\n<dt>ದಿನಾಂಕ<span class=\"en\" lang=\"en\">Date</span></dt><dd>ಶುಕ್ರವಾರ, 1 ಮೇ 2026, ಬೆಳಿಗ್ಗೆ 10:39<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>ಸ್ವೀಕರಿಸಿದ ಮೊತ್ತ<span class=\"en\" lang=\"en\">Amount received</span></dt><dd class=\"amount\">₹1</dd>\n<dt>ಯಾವುದಕ್ಕೆ</dt><dd>Haircut for &lt;b-1&gt; &amp; more (kn)</dd>\n<dt>ಹೆಸರು</dt><dd>Anita Sharma &lt;A&amp;B&gt;</dd>\n\n<dt>ಪಾವತಿ ವಿಧಾನ</dt><dd>ಆನ್‌ಲೈನ್</dd>\n<dt>ಹೇಗೆ ತಿಳಿದಿದೆ</dt><dd>ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದೆ</dd>\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; ಗಾಗಿ ಕಂಪ್ಯೂಟರ್ ಮೂಲಕ ತಯಾರಿಸಲಾಗಿದೆ.</p>\n</article>\n<p class=\"note noprint\">ಪ್ರತಿ ಉಳಿಸಲು ಫೋನ್‌ನ ಮೆನುವಿನಲ್ಲಿ &quot;Print / Save as PDF&quot; ಆರಿಸಿ.</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "unregistered",
+   "lang": "hi",
+   "document": {
+    "language": "hi",
+    "kind": "bill",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-2> & more (hi)"
+   },
+   "html": "<!doctype html><html lang=\"hi\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>बिल BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">यह हिंदी मशीन से लिखी गई है; किसी हिंदी भाषी ने अभी इसे जाँचा नहीं है।</p>\n<article class=\"card doc\">\n\n<h1>बिल<span class=\"en\" lang=\"en\">Bill</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>फ़ोन: +91 98765 43210</p>\n<dl>\n<dt>क्रमांक<span class=\"en\" lang=\"en\">Number</span></dt><dd>BILL/26-27/0001</dd>\n<dt>तारीख़<span class=\"en\" lang=\"en\">Date</span></dt><dd>शुक्रवार, 1 मई 2026, सुबह 10:42 बजे<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>रकम<span class=\"en\" lang=\"en\">Amount</span></dt><dd class=\"amount\">₹5</dd>\n<dt>किसलिए</dt><dd>Haircut for &lt;b-2&gt; &amp; more (hi)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">यह Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; के लिए कंप्यूटर से बनाया गया है।</p>\n</article>\n<p class=\"note noprint\">अपनी कॉपी रखने के लिए फ़ोन के मेन्यू में &quot;Print / Save as PDF&quot; चुनिए।</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "unregistered",
+   "lang": "en",
+   "document": {
+    "language": "en",
+    "kind": "bill",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-2> & more (en)"
+   },
+   "html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>Bill BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\">\n<article class=\"card doc\">\n\n<h1>Bill</h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>Phone: +91 98765 43210</p>\n<dl>\n<dt>Number</dt><dd>BILL/26-27/0001</dd>\n<dt>Date</dt><dd>Fri 1 May 2026, 10:42 am</dd>\n<dt>Amount</dt><dd class=\"amount\">₹5</dd>\n<dt>For</dt><dd>Haircut for &lt;b-2&gt; &amp; more (en)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">Made by computer for Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;.</p>\n</article>\n<p class=\"note noprint\">To keep a copy, choose &quot;Print / Save as PDF&quot; in your phone&#39;s menu.</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "unregistered",
+   "lang": "ml",
+   "document": {
+    "language": "ml",
+    "kind": "bill",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-2> & more (ml)"
+   },
+   "html": "<!doctype html><html lang=\"ml\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>ബിൽ BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല.</p>\n<article class=\"card doc\">\n\n<h1>ബിൽ<span class=\"en\" lang=\"en\">Bill</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ഫോൺ: +91 98765 43210</p>\n<dl>\n<dt>നമ്പർ<span class=\"en\" lang=\"en\">Number</span></dt><dd>BILL/26-27/0001</dd>\n<dt>തീയതി<span class=\"en\" lang=\"en\">Date</span></dt><dd>വെള്ളി, 1 മേയ് 2026, രാവിലെ 10:42<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>തുക<span class=\"en\" lang=\"en\">Amount</span></dt><dd class=\"amount\">₹5</dd>\n<dt>എന്തിന്</dt><dd>Haircut for &lt;b-2&gt; &amp; more (ml)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;-നായി കമ്പ്യൂട്ടർ ഉണ്ടാക്കിയത്.</p>\n</article>\n<p class=\"note noprint\">കോപ്പി സൂക്ഷിക്കാൻ ഫോണിലെ മെനുവിൽ &quot;Print / Save as PDF&quot; തിരഞ്ഞെടുക്കുക.</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "unregistered",
+   "lang": "kn",
+   "document": {
+    "language": "kn",
+    "kind": "bill",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": false,
+    "whatFor": "Haircut for <b-2> & more (kn)"
+   },
+   "html": "<!doctype html><html lang=\"kn\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>ಬಿಲ್ BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ.</p>\n<article class=\"card doc\">\n\n<h1>ಬಿಲ್<span class=\"en\" lang=\"en\">Bill</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ಫೋನ್: +91 98765 43210</p>\n<dl>\n<dt>ಸಂಖ್ಯೆ<span class=\"en\" lang=\"en\">Number</span></dt><dd>BILL/26-27/0001</dd>\n<dt>ದಿನಾಂಕ<span class=\"en\" lang=\"en\">Date</span></dt><dd>ಶುಕ್ರವಾರ, 1 ಮೇ 2026, ಬೆಳಿಗ್ಗೆ 10:42<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>ಮೊತ್ತ<span class=\"en\" lang=\"en\">Amount</span></dt><dd class=\"amount\">₹5</dd>\n<dt>ಯಾವುದಕ್ಕೆ</dt><dd>Haircut for &lt;b-2&gt; &amp; more (kn)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; ಗಾಗಿ ಕಂಪ್ಯೂಟರ್ ಮೂಲಕ ತಯಾರಿಸಲಾಗಿದೆ.</p>\n</article>\n<p class=\"note noprint\">ಪ್ರತಿ ಉಳಿಸಲು ಫೋನ್‌ನ ಮೆನುವಿನಲ್ಲಿ &quot;Print / Save as PDF&quot; ಆರಿಸಿ.</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "composition",
+   "lang": "hi",
+   "document": {
+    "language": "hi",
+    "kind": "bill_of_supply",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-2> & more (hi)"
+   },
+   "html": "<!doctype html><html lang=\"hi\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>आपूर्ति का बिल BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">यह हिंदी मशीन से लिखी गई है; किसी हिंदी भाषी ने अभी इसे जाँचा नहीं है।</p>\n<article class=\"card doc\">\n<p class=\"legend\">कंपोज़िशन करदाता, आपूर्ति पर कर वसूलने का पात्र नहीं<span class=\"en\" lang=\"en\">composition taxable person, not eligible to collect tax on supplies</span></p>\n<h1>आपूर्ति का बिल<span class=\"en\" lang=\"en\">Bill of supply</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>फ़ोन: +91 98765 43210</p>\n<dl>\n<dt>क्रमांक<span class=\"en\" lang=\"en\">Number</span></dt><dd>BILL/26-27/0001</dd>\n<dt>तारीख़<span class=\"en\" lang=\"en\">Date</span></dt><dd>शुक्रवार, 1 मई 2026, सुबह 10:42 बजे<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>रकम<span class=\"en\" lang=\"en\">Amount</span></dt><dd class=\"amount\">₹5</dd>\n<dt>किसलिए</dt><dd>Haircut for &lt;b-2&gt; &amp; more (hi)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">यह Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; के लिए कंप्यूटर से बनाया गया है।</p>\n</article>\n<p class=\"note noprint\">अपनी कॉपी रखने के लिए फ़ोन के मेन्यू में &quot;Print / Save as PDF&quot; चुनिए।</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "composition",
+   "lang": "en",
+   "document": {
+    "language": "en",
+    "kind": "bill_of_supply",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-2> & more (en)"
+   },
+   "html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>Bill of supply BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\">\n<article class=\"card doc\">\n<p class=\"legend\">composition taxable person, not eligible to collect tax on supplies</p>\n<h1>Bill of supply</h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>Phone: +91 98765 43210</p>\n<dl>\n<dt>Number</dt><dd>BILL/26-27/0001</dd>\n<dt>Date</dt><dd>Fri 1 May 2026, 10:42 am</dd>\n<dt>Amount</dt><dd class=\"amount\">₹5</dd>\n<dt>For</dt><dd>Haircut for &lt;b-2&gt; &amp; more (en)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">Made by computer for Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;.</p>\n</article>\n<p class=\"note noprint\">To keep a copy, choose &quot;Print / Save as PDF&quot; in your phone&#39;s menu.</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "composition",
+   "lang": "ml",
+   "document": {
+    "language": "ml",
+    "kind": "bill_of_supply",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-2> & more (ml)"
+   },
+   "html": "<!doctype html><html lang=\"ml\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>സപ്ലൈ ബിൽ BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല.</p>\n<article class=\"card doc\">\n<p class=\"legend\">കോമ്പോസിഷൻ നികുതിദായകൻ; വിതരണങ്ങളിൽ നികുതി ഈടാക്കാൻ അർഹതയില്ല<span class=\"en\" lang=\"en\">composition taxable person, not eligible to collect tax on supplies</span></p>\n<h1>സപ്ലൈ ബിൽ<span class=\"en\" lang=\"en\">Bill of supply</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ഫോൺ: +91 98765 43210</p>\n<dl>\n<dt>നമ്പർ<span class=\"en\" lang=\"en\">Number</span></dt><dd>BILL/26-27/0001</dd>\n<dt>തീയതി<span class=\"en\" lang=\"en\">Date</span></dt><dd>വെള്ളി, 1 മേയ് 2026, രാവിലെ 10:42<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>തുക<span class=\"en\" lang=\"en\">Amount</span></dt><dd class=\"amount\">₹5</dd>\n<dt>എന്തിന്</dt><dd>Haircut for &lt;b-2&gt; &amp; more (ml)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;-നായി കമ്പ്യൂട്ടർ ഉണ്ടാക്കിയത്.</p>\n</article>\n<p class=\"note noprint\">കോപ്പി സൂക്ഷിക്കാൻ ഫോണിലെ മെനുവിൽ &quot;Print / Save as PDF&quot; തിരഞ്ഞെടുക്കുക.</p>\n</main></body></html>"
+  },
+  {
+   "number": "BILL/26-27/0001",
+   "status": "composition",
+   "lang": "kn",
+   "document": {
+    "language": "kn",
+    "kind": "bill_of_supply",
+    "number": "BILL/26-27/0001",
+    "at": "2026-05-01T05:12:00.000Z",
+    "timeZone": "Asia/Kolkata",
+    "amountPaise": 500,
+    "shop": {
+     "name": "Anita's <Salon> & \"Spa\"",
+     "address": "12 MG Road, Kochi\n682001",
+     "phone": "+91 98765 43210"
+    },
+    "legend": true,
+    "whatFor": "Haircut for <b-2> & more (kn)"
+   },
+   "html": "<!doctype html><html lang=\"kn\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><meta name=\"theme-color\" content=\"#e2f2e9\">\n<title>ಪೂರೈಕೆ ಬಿಲ್ BILL/26-27/0001 - Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</title><style>{{CSS}}</style></head>\n<body><header class=\"head\"><div class=\"wrap\"><h1>Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;</h1></div></header>\n<main class=\"wrap\"><p class=\"machine\">ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ.</p>\n<article class=\"card doc\">\n<p class=\"legend\">ಸಂಯೋಜನೆ ತೆರಿಗೆದಾರ; ಪೂರೈಕೆಗಳ ಮೇಲೆ ತೆರಿಗೆ ಸಂಗ್ರಹಿಸಲು ಅರ್ಹರಲ್ಲ<span class=\"en\" lang=\"en\">composition taxable person, not eligible to collect tax on supplies</span></p>\n<h1>ಪೂರೈಕೆ ಬಿಲ್<span class=\"en\" lang=\"en\">Bill of supply</span></h1>\n<p class=\"note\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot;<br>12 MG Road, Kochi\n682001<br>ಫೋನ್: +91 98765 43210</p>\n<dl>\n<dt>ಸಂಖ್ಯೆ<span class=\"en\" lang=\"en\">Number</span></dt><dd>BILL/26-27/0001</dd>\n<dt>ದಿನಾಂಕ<span class=\"en\" lang=\"en\">Date</span></dt><dd>ಶುಕ್ರವಾರ, 1 ಮೇ 2026, ಬೆಳಿಗ್ಗೆ 10:42<span class=\"en\" lang=\"en\">1 May 2026</span></dd>\n<dt>ಮೊತ್ತ<span class=\"en\" lang=\"en\">Amount</span></dt><dd class=\"amount\">₹5</dd>\n<dt>ಯಾವುದಕ್ಕೆ</dt><dd>Haircut for &lt;b-2&gt; &amp; more (kn)</dd>\n\n\n\n\n</dl>\n<p class=\"made\">Anita&#39;s &lt;Salon&gt; &amp; &quot;Spa&quot; ಗಾಗಿ ಕಂಪ್ಯೂಟರ್ ಮೂಲಕ ತಯಾರಿಸಲಾಗಿದೆ.</p>\n</article>\n<p class=\"note noprint\">ಪ್ರತಿ ಉಳಿಸಲು ಫೋನ್‌ನ ಮೆನುವಿನಲ್ಲಿ &quot;Print / Save as PDF&quot; ಆರಿಸಿ.</p>\n</main></body></html>"
+  }
+ ],
+ "caseDocs": [
+  {
+   "cases": [],
+   "lang": "en",
+   "withPerson": false,
+   "out": []
+  },
+  {
+   "cases": [
+    "b-1"
+   ],
+   "lang": "hi",
+   "withPerson": true,
+   "out": [
+    {
+     "language": "hi",
+     "kind": "receipt",
+     "number": "RCT/26-27/0001",
+     "at": "2026-05-01T05:09:00.000Z",
+     "timeZone": "Asia/Kolkata",
+     "amountPaise": 100,
+     "shop": {
+      "name": "Anita's <Salon> & \"Spa\"",
+      "address": "12 MG Road, Kochi\n682001",
+      "phone": ""
+     },
+     "legend": false,
+     "whatFor": "Haircut for <b-1> & more (hi)",
+     "person": "Anita Sharma <A&B>",
+     "method": "gateway",
+     "evidence": "provider"
+    }
+   ]
+  },
+  {
+   "cases": [
+    "b-1",
+    "b-2",
+    "b-3"
+   ],
+   "lang": "en",
+   "withPerson": true,
+   "out": [
+    {
+     "language": "en",
+     "kind": "bill",
+     "number": "BILL/26-27/0001",
+     "at": "2026-05-01T05:12:00.000Z",
+     "timeZone": "Asia/Kolkata",
+     "amountPaise": 500,
+     "shop": {
+      "name": "Anita's <Salon> & \"Spa\"",
+      "address": "12 MG Road, Kochi\n682001",
+      "phone": ""
+     },
+     "legend": false,
+     "whatFor": "Haircut for <b-2> & more (en)"
+    },
+    {
+     "language": "en",
+     "kind": "receipt",
+     "number": "RCT/26-27/0001",
+     "at": "2026-05-01T05:09:00.000Z",
+     "timeZone": "Asia/Kolkata",
+     "amountPaise": 100,
+     "shop": {
+      "name": "Anita's <Salon> & \"Spa\"",
+      "address": "12 MG Road, Kochi\n682001",
+      "phone": ""
+     },
+     "legend": false,
+     "whatFor": "Haircut for <b-1> & more (en)",
+     "person": "Anita Sharma <A&B>",
+     "method": "gateway",
+     "evidence": "provider"
+    }
+   ]
+  },
+  {
+   "cases": [
+    "b-1",
+    "b-2",
+    "b-3"
+   ],
+   "lang": "ml",
+   "withPerson": false,
+   "out": [
+    {
+     "language": "ml",
+     "kind": "bill",
+     "number": "BILL/26-27/0001",
+     "at": "2026-05-01T05:12:00.000Z",
+     "timeZone": "Asia/Kolkata",
+     "amountPaise": 500,
+     "shop": {
+      "name": "Anita's <Salon> & \"Spa\"",
+      "address": "12 MG Road, Kochi\n682001",
+      "phone": ""
+     },
+     "legend": false,
+     "whatFor": "Haircut for <b-2> & more (ml)"
+    },
+    {
+     "language": "ml",
+     "kind": "receipt",
+     "number": "RCT/26-27/0001",
+     "at": "2026-05-01T05:09:00.000Z",
+     "timeZone": "Asia/Kolkata",
+     "amountPaise": 100,
+     "shop": {
+      "name": "Anita's <Salon> & \"Spa\"",
+      "address": "12 MG Road, Kochi\n682001",
+      "phone": ""
+     },
+     "legend": false,
+     "whatFor": "Haircut for <b-1> & more (ml)",
+     "method": "gateway",
+     "evidence": "provider"
+    }
+   ]
+  },
+  {
+   "cases": [
+    "nothing"
+   ],
+   "lang": "kn",
+   "withPerson": true,
+   "out": []
+  }
+ ],
+ "css": {
+  "customerLength": 8698,
+  "docLength": 853
+ }
+}
