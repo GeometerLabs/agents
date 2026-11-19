@@ -31,8 +31,9 @@ const block = (c: ReturnType<typeof build>, svc: string) => c.services[svc].bloc
 // ---- compose ------------------------------------------------------------------------------------------------------------------------------------
 
 test("a shop on a Go version runs the programs' image as the same user, with the same environment, secrets, data, network and Guards; /pathway and /modules are not mounted; its health check is the program", () => {
-  const c = build([goShop("glow-salon", 1), node("bright-tuition", 2)], IMAGE);
-  const [go, old] = [block(c, "rt-glow-salon"), block(c, "rt-bright-tuition")];
+  const c = build([goShop("glow-salon", 1)], IMAGE);
+  const was = build([node("glow-salon", 1)]); // the same shop, before it moved to Go
+  const [go, old] = [block(c, "rt-glow-salon"), block(was, "rt-glow-salon")];
   assert.equal(go.image, IMAGE);
   assert.deepEqual(go.command, ["/listings", "--client", "/client"]);
   assert.equal(go.user, "1000:1000");
@@ -43,7 +44,7 @@ test("a shop on a Go version runs the programs' image as the same user, with the
   assert.deepEqual(go.volumes, (old.volumes as string[]).filter((v) => !v.endsWith(":/pathway:ro") && !v.endsWith(":/modules:ro")), "everything else is mounted as before");
   assert.ok(!JSON.stringify(go.volumes).includes("/pathway") && !JSON.stringify(go.volumes).includes("/modules"));
   assert.deepEqual(go.healthcheck.test, ["CMD", "/listings", "health", "http://127.0.0.1:8780/readyz"], "no wget in the image: the program asks its own /readyz");
-  assert.deepEqual(c.services["rt-glow-salon"].files, c.services["rt-bright-tuition"].files.map((f) => f.replace("bright-tuition", "glow-salon")));
+  assert.deepEqual(c.services["rt-glow-salon"].files, was.services["rt-glow-salon"].files, "the files whose change restarts it are the same");
   // the shop's door, report folder job and Guards do not change: only the one container does
   assert.equal(block(c, "rd-glow-salon").image, "node:26-alpine", "the one-shot that makes the reports folder stays on the node image");
 });
@@ -245,7 +246,7 @@ test("update to a Go version whose programs are already built moves the shop ont
     assert.ok(!w.calls.some((c) => c.args[0] === "run" && c.args.some((a) => String(a).startsWith("golang@"))), "the image of this checkout was already there: nothing is compiled");
     const compose = readFileSync(join(w.root, "generated", "compose.yaml"), "utf8");
     const rt = /\n  rt-glow-salon:\n([\s\S]*?)\n  [a-z]/u.exec(compose)![1];
-    assert.match(rt, new RegExp(`image: ${goImageFor(w.ctx.appDir).replace(".", "\\.")}`, "u"));
+    assert.match(rt, new RegExp(`image: "${goImageFor(w.ctx.appDir).replace(".", "\\.")}"`, "u"));
     assert.match(rt, /command:\s+- \/listings\s+- --client\s+- \/client/u);
     assert.ok(!rt.includes("/pathway"), "no template code is mounted for a Go program");
   } finally { w.done(); }
@@ -260,4 +261,29 @@ test("a dry run of an update to a Go version builds nothing", async () => {
     assert.ok(!w.calls.some((c) => c.args[0] === "run" || c.args[0] === "build"));
     assert.equal(pinOf(w.root), "bookings@0.1.0");
   } finally { w.done(); }
+});
+
+// ---- the deployer's questions to the shared container ----------------------------------------------------------------------------------------------
+
+test("the deployer asks the Go shared process through its own program (the image has no wget or test), falls back to wget for the Node one, and asks the data volume, not the container, whether a name is taken", async () => {
+  const { sharedHeld, sharedHasFolder } = await import("../lib/listings-move.ts");
+  const answer = JSON.stringify({ shops: ["sree-pets"] });
+  const go = fakeRunner(() => ok(answer));
+  const ctxGo = { ...world().ctx, runner: go };
+  assert.deepEqual(await sharedHeld(ctxGo), ["sree-pets"]);
+  assert.ok(go.calls[0].args.join(" ").endsWith("exec -T rt-listings /listings-shared get http://127.0.0.1:8780/shared/shops"));
+  assert.equal(go.calls.length, 1, "no second try when the program answered");
+  const nodeOnly = fakeRunner((_c, args) => (args.includes("/listings-shared") ? failed("exec: not found", 126) : ok(answer)));
+  assert.deepEqual(await sharedHeld({ ...ctxGo, runner: nodeOnly }), ["sree-pets"]);
+  assert.ok(nodeOnly.calls[1].args.join(" ").endsWith("exec -T rt-listings wget -q -O - http://127.0.0.1:8780/shared/shops"));
+  const server = serverConfig({});
+  const volume = `geometer-${server.id.replace(/_/gu, "-")}_rt-data-listings`;
+  const none = fakeRunner(() => failed("no such volume", 1));
+  assert.equal(await sharedHasFolder({ ...ctxGo, runner: none }, server, "sree-pets"), false, "no volume yet holds nothing, and nothing is run");
+  assert.equal(none.calls.length, 1);
+  const there = fakeRunner((_c, args) => (args[0] === "volume" ? ok() : args.at(-1) === "/v/sree-pets" ? ok() : failed("", 1)));
+  assert.equal(await sharedHasFolder({ ...ctxGo, runner: there }, server, "sree-pets"), true);
+  assert.equal(await sharedHasFolder({ ...ctxGo, runner: there }, server, "new-shop"), false);
+  const run = there.calls.find((c) => c.args[0] === "run")!.args;
+  assert.ok(run.includes(`${volume}:/v:ro`) && run.includes("--network") && run.includes("none") && run.includes("--read-only"), run.join(" "));
 });

@@ -2,7 +2,7 @@
 
 A listings-only shop is the smallest kind: it only shows what it has (`templates/commerce/listings`). This folder is **the shop's runtime written in Go**, begun as a trial of whether code
 that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The trial's results, wave 1a (the rest of the listings shop) and wave 1 merged (with the
-owner control) are in [TRIAL.md](TRIAL.md). It is not wired into the deployer yet: `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads
+owner control) are in [TRIAL.md](TRIAL.md). The deployer runs it (wave 1b): a template folder that says `"runtime": "go"` in `template.json` (listings 0.2.0) is run from the programs' image, which the server builds from its own checkout (see "On a server" below). `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads
 the same folder; `cmd/listings-shared` runs every shop of a server in one process, the way `server/shared-main.ts` does.
 
 What stays TypeScript: the front (`modules/channels/front.ts`), the deployer, the panel, the directory. They call this runtime over HTTP and cannot tell which one answered; the
@@ -21,6 +21,12 @@ INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_F
 The folder, the three token files and the environment are the TypeScript runtime's (`modules/runtime/shared.ts` `folderSource` describes the layout): `client/` holds `settings.json`,
 `runtime.json`, `pathway.lock` (written last), `owner-link.json`, `pages.json` and `owner-grants.json`; the secrets are `internal_token`, `channel_token` and `record_key`. `runtime.json`
 says where to listen (`host`, `port`) and where the data is (`dataDir`). Ctrl+C or SIGTERM finishes the step in hand and closes the store.
+
+`listings health <url>` and `listings-shared health <url>` do one GET and exit 0 on a 200, else 1: the container health check of an image that has no shell or wget.
+
+### On a server (wave 1b)
+
+The server compiles the programs itself, from its own checkout, in the official Go image pinned by digest in `bundle/release.json` (`go_image`, `go_image_digest`), at install (`install.sh`) and at `geometer update`; `geometer go-build` does it by hand. Source mounted read-only, `CGO_ENABLED=0`, `GOTOOLCHAIN=local`, `-trimpath -mod=readonly -buildvcs=false -ldflags "-s -w"`, a named volume `geo-go-cache` for the module and build cache. The result is `geo-go:<commit>`, an image `FROM scratch` of the programs alone (no shell, no tools, no certificates), run as `1000:1000`. To add a program (`cmd/directory`, `cmd/bookings`): one line in `GO_PROGRAMS` in `bundle/lib/go-build.ts`, and the template's `template.json` names it. The whole account is in `bundle/Explanation.md` ("How the Go runtimes reach a server").
 
 The contract against this binary (from the repository root; build both binaries first, the shared-process and cross-runtime tests use them):
 
@@ -44,6 +50,7 @@ internal/push/           web push: the push store (push.sqlite, the TypeScript r
 internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule, and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, ownerview.go)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts)
 internal/shared/         the multi-shop host (the Go twin of modules/runtime/shared.ts): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
+internal/health/         the `health` subcommand both programs share (one GET of an address, exit 0 or 1)
 cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
                          owner's sign-in routes, the tick's owner part and the owner's side of push (who may subscribe, what ends a subscription, the alerts to the

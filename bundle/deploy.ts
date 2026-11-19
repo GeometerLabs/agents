@@ -27,7 +27,7 @@ import { licencePaths, syncLicence } from "./lib/licence.ts";
 import { syncTerms } from "./lib/terms.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, isShared, kindFor, guardsOf, runtimeHasWhatsApp } from "./lib/kinds.ts";
-import { moveOutOfShared, needsMove } from "./lib/listings-move.ts";
+import { moveOutOfShared, needsMove, sharedHasFolder } from "./lib/listings-move.ts";
 import { ensureGoRuntimes, goImageFor, goRuntimeOf } from "./lib/go-build.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
@@ -276,8 +276,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   // A shop removed from the server leaves its folder in the shared volume (no code deletes an owner's file), and a new shop of the same name would start on that store and accept the
   // old owner's passkey. So a NEW listings-only shop is refused when the shared volume already holds a folder of its name. (A server whose shared container is not up has none.)
   if (shared && !state.shops[name]?.applied) {
-    const there = await compose(ctx, ["exec", "-T", SHARED.runtime, "test", "-e", `${HOME_DIR}/${name}`], { timeoutMs: 20_000 });
-    if (there.code === 0) problems.push({ rule: "shared-name-taken", message: `${name}: the shared volume of listings-only shops already holds a folder called ${name} (a shop of that name was here, and its file was kept). A new shop would start on the old shop's file and its owner's passkey. Choose another name, or have the old folder moved aside by hand first.` });
+    if (await sharedHasFolder(ctx, server, name)) problems.push({ rule: "shared-name-taken", message: `${name}: the shared volume of listings-only shops already holds a folder called ${name} (a shop of that name was here, and its file was kept). A new shop would start on the old shop's file and its owner's passkey. Choose another name, or have the old folder moved aside by hand first.` });
   }
   if (!shared) problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed, selfServe, runtimeHasWhatsApp(folder.runtime)));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
@@ -671,7 +670,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
  */
 export async function bringUp(ctx: Context, state: State, composed: Composed, forWhom: string[], o: { reload?: readonly string[] } = {}): Promise<string[]> {
   // wave 1b backstop: every path that starts the server (start, an agent's deploy, a removal) comes through here, and a compose file that names the Go image needs it on the machine
-  if (/\bimage: geo-go:/u.test(composed.compose)) {
+  if (/\bimage: "?geo-go:/u.test(composed.compose)) {
     const built = await ensureGoRuntimes(ctx);
     if (!built.ok) throw new Refused([{ rule: "go-runtime", message: built.reason }]);
   }
