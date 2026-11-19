@@ -340,7 +340,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   }
   // The shared process for the listings-only shops: ONE container, one door, whatever their number. It has no Guard of its own (these shops take no money and send no WhatsApp); its
   // only way out is the model Guard, on the network it shares with it alone, and each shop reaches that Guard with its own credential, so the Guard knows each by its own id; each shop's own runtime allowance limits its use (the Guard's daily cap is one number for the server).
-  //   /app                  the app, read-only: the one version of the template every shop on this process runs (a shop pinned to another is refused by the deployer)
+  //   /app                  (Node only) the app, read-only: the one version of the template every shop on this process runs (a shop pinned to another is refused by the deployer); a Go process has its code inside
   //   /shops                generated/listings/: one folder per shop, `<shop>/client/` (settings.json, runtime.json, pathway.lock LAST, pages.json, owner-grants.json, ...), read-only
   //   /run/secrets          secrets/rt-listings/: one folder per shop (internal_token, channel_token, record_key, agent_model), read-only
   //   /home/node            the shared data volume: `<shop>/data/agent.db`, a folder and a store file of its own for each shop

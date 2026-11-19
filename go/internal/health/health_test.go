@@ -2,6 +2,7 @@
 package health
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,5 +26,14 @@ func TestCheck(t *testing.T) {
 	ok.Close()
 	if got := Check(url+"/readyz", say); got != 1 || said == "" {
 		t.Fatalf("a closed port should be exit 1 with a reason, got %d %q", got, said)
+	}
+}
+
+func TestGetPrintsTheAnswer(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{"shops":["a"]}`)) }))
+	defer srv.Close()
+	var out bytes.Buffer
+	if got := Get(srv.URL+"/shared/shops", &out, func(string) {}); got != 0 || out.String() != `{"shops":["a"]}` {
+		t.Fatalf("got %d %q", got, out.String())
 	}
 }

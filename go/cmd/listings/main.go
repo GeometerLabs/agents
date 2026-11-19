@@ -29,6 +29,9 @@ func main() {
 	if len(args) == 2 && args[0] == "health" {
 		os.Exit(health.Check(args[1], func(line string) { fmt.Fprintln(os.Stderr, line) }))
 	}
+	if len(args) == 2 && args[0] == "get" {
+		os.Exit(health.Get(args[1], os.Stdout, func(line string) { fmt.Fprintln(os.Stderr, line) }))
+	}
 	for _, a := range args {
 		if a == "--help" || a == "-h" {
 			fmt.Println("Usage: INTERNAL_TOKEN_FILE=<file> listings --client <folder>")
