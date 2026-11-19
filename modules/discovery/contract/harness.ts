@@ -243,6 +243,7 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
   writeFileSync(configFile, JSON.stringify(config));
   let child: ChildProcess | undefined;
   let output = "";
+  let current: "ts" | "go" = IMPL; // the implementation started last: the person's sub-commands are run with it
   const base = `http://127.0.0.1:${port}`;
   const command = (impl: "ts" | "go", args: string[] = []): { cmd: string; args: string[] } =>
     impl === "go" ? { cmd: GO_BIN, args } : { cmd: process.execPath, args: [join(REPO, "bundle", "services", "directory.ts"), ...args] };
@@ -264,6 +265,7 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
     searchJson: async (q, who) => { const r = await d.call(`/search?${new URLSearchParams({ format: "json", ...q })}`, { who }); return { status: r.status, body: r.body }; },
     async start(impl = IMPL) {
       await stopChild(child);
+      current = impl;
       const { cmd, args } = command(impl);
       output = "";
       const c = spawnChild(cmd, args, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the ${impl} directory in ${root}`);
@@ -285,8 +287,8 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
     db: () => new DatabaseSync(join(dataDir, "directory.sqlite"), { readOnly: true }),
     makeDue(url) { const w = new DatabaseSync(join(dataDir, "directory.sqlite")); w.prepare("UPDATE feeds SET checked_at = NULL WHERE url = ?").run(url); w.close(); },
     async cli(...args) {
-      const { cmd, args: a } = command(IMPL, args);
-      const c = spawnChild(cmd, a, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the ${IMPL} directory's ${args[0]} command`);
+      const { cmd, args: a } = command(current, args);
+      const c = spawnChild(cmd, a, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the ${current} directory's ${args[0]} command`);
       let out = "";
       c.stdout!.on("data", (x: Buffer) => { out += x.toString(); });
       c.stderr!.on("data", (x: Buffer) => { out += x.toString(); });
