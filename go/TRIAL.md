@@ -356,3 +356,28 @@ the 24 hour hold and the limit are whole-rupee settings, so it cannot happen wit
 timestamp past 8.64e15 ms, which a forged webhook could cause; `say.ts` falls back from buttons to text after any ApiError under 500, a Guard hold or refusal included; `interactiveProblem`
 counts code points while the document checks count UTF-16 units; STOP uses `toUpperCase`, so `"ﬆop"` opts a customer out; `own-calendar.ts` creates `store.ownCalendar` on a read; and the
 messaging and calendar reports in their `Explanation.md` list more.
+
+## Wave 2: books and report (19 Nov)
+
+Ported as SHARED packages, each proved byte for byte against vectors made by running the TypeScript (Node v26.10.0; every generator has `--check` and a test in `words-fresh.test.ts`):
+`internal/zone`, `internal/locale`, `internal/slots`, `internal/accounting` (+ `render`), `internal/report`, `internal/bookingsreport`, and the QR encoder (main's `internal/qr` kept; the
+SVG and PNG helpers are its `image.go`). `internal/payments/books.go` adapts the books to refunds' narrow `Accounting` poster (a failed post panics with `BooksError`, as post.ts throws).
+The calendar's `zonedMidnight` was NOT swapped for `internal/zone`: it copies extra oddities (years 0 to 99, UTC fallback for a zone Intl rejects) that `zone` does not have.
+
+| Go | TypeScript it replaces |
+| --- | --- |
+| `internal/accounting` | `modules/accounting/{accounts,journal,post,numbers,periods,documents,case-documents,document-page,figures,invariants,settlements,summary,tally,export,owner-money,owner-money-render,report-block,words-documents,words-owner}.ts`, `templates/commerce/bookings/src/accounting.ts` (+ `obligations.ts` as far as owner-money reads it) |
+| `internal/report` | `modules/report/{summary,summary-sign,sign,digest,months,page,text,claims,settled-by-word,verify-link,monthly-job,what-this-checks,go-live}.ts`, `modules/qr/svg.ts` |
+| `internal/bookingsreport` | `templates/commerce/bookings/report/{data,run,html,text,whatsapp,certificate (monthly part),summary,strings,monthly-job,go-live}.ts` |
+
+The Bookings wave deletes, once its Go runtime uses them: `templates/commerce/bookings/src/accounting.ts` and `templates/commerce/bookings/report/*` that it ported. `modules/accounting/*` and
+`modules/report/*` STAY until Orders, Fees and Stock orders move (their runtimes import them); `check.ts`, `cli.ts`, `keys.ts` and the TypeScript `test/` stay (CLIs and tests).
+
+Left, with the reason (each package's `Deferred.md` has the detail): `validateSettings` for Bookings (the policy digest is of the validated settings, so the Bookings runtime must hand in the validated tree);
+go-live certificate builders and pages (CLI and deployer); Go PNG bytes differ from zlib's (same pixels); the Bookings adapters for `accounting.Record`, `accounting.Payments` and `report.Messaging`; refs visited in
+key order where the TypeScript uses insertion order (`BooksFaults` privacy sentences); amounts beyond 2^53.
+
+TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
+is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`
+last; `invariants.ts` privacy faults depend on refs insertion order; `fitText` folds whitespace before stripping zero-width characters (so a name can turn a signed summary into the older link); `settledWho` slices at
+UTF-16 and can leave half an emoji; `workOf` leaves a refund settled by a person's word "waiting for owner" in every later month unless an `owner_decision` follows; a rule id like `constructor` would throw in `STOP_SITES`.

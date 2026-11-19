@@ -1,0 +1,650 @@
+{
+ "node": "v26.10.0",
+ "periods": [
+  "2026-01",
+  "25-26",
+  "2026-10",
+  "2026-12",
+  "2026-13",
+  "26-28",
+  "",
+  "2026-1",
+  "00-01"
+ ],
+ "tallies": [
+  {
+   "name": "none",
+   "tally": null
+  },
+  {
+   "name": "empty",
+   "tally": {}
+  },
+  {
+   "name": "company",
+   "tally": {
+    "company": "Acme & Co <Test> \"q\" 'x'",
+    "ledgerNames": {
+     "cash": "Cash A/c",
+     "revenue:haircut": "Hair & Co",
+     "upi": "  Bank UPI  "
+    }
+   }
+  }
+ ],
+ "out": [
+  {
+   "period": "2026-01",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-01.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n2026-01-05,J-1,Receipt,Payment gateway clearing,500.00,0.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-1,Receipt,Customer advances and deposits,0.00,500.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-3,Receipt,Payment gateway clearing,300.00,0.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-3,Receipt,Customer advances and deposits,0.00,300.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-4,Journal,Customer advances and deposits,800.00,0.00,,,b-1,,,4\r\n2026-01-05,J-4,Journal,Sales: bookings,0.00,800.00,,,b-1,,,4\r\n2026-01-06,J-6,Payment,Sales returns (refunds after the sale),300.00,0.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-6,Payment,Payment gateway clearing,0.00,300.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-7,Payment,Sales returns (refunds after the sale),10.00,0.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-06,J-7,Payment,Payment gateway clearing,0.00,10.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-07,J-11,Journal,Sales returns (refunds after the sale),50.00,0.00,,,b-3,,upr-1,11\r\n2026-01-07,J-11,Journal,Refunds payable to customers,0.00,50.00,,,b-3,,upr-1,11\r\n2026-01-07,J-14,Payment,Refunds payable to customers,50.00,0.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-07,J-14,Payment,\"Bank (UPI receipts, marked by owner)\",0.00,50.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-08,J-18,Journal,Sales returns (refunds after the sale),7.00,0.00,,,b-4,,upr-2,18\r\n2026-01-08,J-18,Journal,Refunds payable to customers,0.00,7.00,,,b-4,,upr-2,18\r\n2026-01-08,J-19,Journal,Refunds payable to customers,7.00,0.00,,,b-4,,upr-2,19\r\n2026-01-08,J-19,Journal,Cancellation charges retained,0.00,7.00,,,b-4,,upr-2,19\r\n2026-01-09,J-22,Receipt,\"Bank (UPI receipts, marked by owner)\",90.00,0.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-22,Receipt,Customer advances and deposits,0.00,90.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-23,Receipt,Cash in hand,91.00,0.00,cash,owner_mark,b-5,cash-1,,23\r\n2026-01-09,J-23,Receipt,Customer advances and deposits,0.00,91.00,cash,owner_mark,b-5,cash-1,,23\r\n"
+     },
+     {
+      "name": "documents-2026-01.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-01 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-01.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-01.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-01",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-01.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n2026-01-05,J-1,Receipt,Payment gateway clearing,500.00,0.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-1,Receipt,Customer advances and deposits,0.00,500.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-3,Receipt,Payment gateway clearing,300.00,0.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-3,Receipt,Customer advances and deposits,0.00,300.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-4,Journal,Customer advances and deposits,800.00,0.00,,,b-1,,,4\r\n2026-01-05,J-4,Journal,Sales: bookings,0.00,800.00,,,b-1,,,4\r\n2026-01-06,J-6,Payment,Sales returns (refunds after the sale),300.00,0.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-6,Payment,Payment gateway clearing,0.00,300.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-7,Payment,Sales returns (refunds after the sale),10.00,0.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-06,J-7,Payment,Payment gateway clearing,0.00,10.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-07,J-11,Journal,Sales returns (refunds after the sale),50.00,0.00,,,b-3,,upr-1,11\r\n2026-01-07,J-11,Journal,Refunds payable to customers,0.00,50.00,,,b-3,,upr-1,11\r\n2026-01-07,J-14,Payment,Refunds payable to customers,50.00,0.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-07,J-14,Payment,\"Bank (UPI receipts, marked by owner)\",0.00,50.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-08,J-18,Journal,Sales returns (refunds after the sale),7.00,0.00,,,b-4,,upr-2,18\r\n2026-01-08,J-18,Journal,Refunds payable to customers,0.00,7.00,,,b-4,,upr-2,18\r\n2026-01-08,J-19,Journal,Refunds payable to customers,7.00,0.00,,,b-4,,upr-2,19\r\n2026-01-08,J-19,Journal,Cancellation charges retained,0.00,7.00,,,b-4,,upr-2,19\r\n2026-01-09,J-22,Receipt,\"Bank (UPI receipts, marked by owner)\",90.00,0.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-22,Receipt,Customer advances and deposits,0.00,90.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-23,Receipt,Cash in hand,91.00,0.00,cash,owner_mark,b-5,cash-1,,23\r\n2026-01-09,J-23,Receipt,Customer advances and deposits,0.00,91.00,cash,owner_mark,b-5,cash-1,,23\r\n"
+     },
+     {
+      "name": "documents-2026-01.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<LEDGER NAME=\"Payment gateway clearing\" ACTION=\"Create\"><NAME>Payment gateway clearing</NAME><PARENT>Sundry Debtors</PARENT></LEDGER>\n<LEDGER NAME=\"Customer advances and deposits\" ACTION=\"Create\"><NAME>Customer advances and deposits</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Sales: bookings\" ACTION=\"Create\"><NAME>Sales: bookings</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Sales returns (refunds after the sale)\" ACTION=\"Create\"><NAME>Sales returns (refunds after the sale)</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Refunds payable to customers\" ACTION=\"Create\"><NAME>Refunds payable to customers</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Bank (UPI receipts, marked by owner)\" ACTION=\"Create\"><NAME>Bank (UPI receipts, marked by owner)</NAME><PARENT>Bank Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cancellation charges retained\" ACTION=\"Create\"><NAME>Cancellation charges retained</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cash in hand\" ACTION=\"Create\"><NAME>Cash in hand</NAME><PARENT>Cash-in-Hand</PARENT></LEDGER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-1</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-3</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-4</VOUCHERNUMBER><NARRATION>applied, b-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales: bookings</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-6</VOUCHERNUMBER><NARRATION>refund made, b-1, payment pay_2, refund rf_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-7</VOUCHERNUMBER><NARRATION>refund made, b-2, payment pay_3</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-11</VOUCHERNUMBER><NARRATION>refund owed, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Payment\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Payment</VOUCHERTYPENAME><VOUCHERNUMBER>J-14</VOUCHERNUMBER><NARRATION>refund made, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank (UPI receipts, marked by owner)</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-18</VOUCHERNUMBER><NARRATION>refund owed, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-19</VOUCHERNUMBER><NARRATION>kept, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cancellation charges retained</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-22</VOUCHERNUMBER><NARRATION>received, b-5, payment upi-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank (UPI receipts, marked by owner)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-23</VOUCHERNUMBER><NARRATION>received, b-5, payment cash-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cash in hand</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-01 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-01.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-01.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company you want them in (the file names no company, so it goes into the open one). 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-01",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-01.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n2026-01-05,J-1,Receipt,Payment gateway clearing,500.00,0.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-1,Receipt,Customer advances and deposits,0.00,500.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-3,Receipt,Payment gateway clearing,300.00,0.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-3,Receipt,Customer advances and deposits,0.00,300.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-4,Journal,Customer advances and deposits,800.00,0.00,,,b-1,,,4\r\n2026-01-05,J-4,Journal,Sales: bookings,0.00,800.00,,,b-1,,,4\r\n2026-01-06,J-6,Payment,Sales returns (refunds after the sale),300.00,0.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-6,Payment,Payment gateway clearing,0.00,300.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-7,Payment,Sales returns (refunds after the sale),10.00,0.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-06,J-7,Payment,Payment gateway clearing,0.00,10.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-07,J-11,Journal,Sales returns (refunds after the sale),50.00,0.00,,,b-3,,upr-1,11\r\n2026-01-07,J-11,Journal,Refunds payable to customers,0.00,50.00,,,b-3,,upr-1,11\r\n2026-01-07,J-14,Payment,Refunds payable to customers,50.00,0.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-07,J-14,Payment,\"Bank (UPI receipts, marked by owner)\",0.00,50.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-08,J-18,Journal,Sales returns (refunds after the sale),7.00,0.00,,,b-4,,upr-2,18\r\n2026-01-08,J-18,Journal,Refunds payable to customers,0.00,7.00,,,b-4,,upr-2,18\r\n2026-01-08,J-19,Journal,Refunds payable to customers,7.00,0.00,,,b-4,,upr-2,19\r\n2026-01-08,J-19,Journal,Cancellation charges retained,0.00,7.00,,,b-4,,upr-2,19\r\n2026-01-09,J-22,Receipt,\"Bank (UPI receipts, marked by owner)\",90.00,0.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-22,Receipt,Customer advances and deposits,0.00,90.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-23,Receipt,Cash in hand,91.00,0.00,cash,owner_mark,b-5,cash-1,,23\r\n2026-01-09,J-23,Receipt,Customer advances and deposits,0.00,91.00,cash,owner_mark,b-5,cash-1,,23\r\n"
+     },
+     {
+      "name": "documents-2026-01.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<LEDGER NAME=\"Payment gateway clearing\" ACTION=\"Create\"><NAME>Payment gateway clearing</NAME><PARENT>Sundry Debtors</PARENT></LEDGER>\n<LEDGER NAME=\"Customer advances and deposits\" ACTION=\"Create\"><NAME>Customer advances and deposits</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Sales: bookings\" ACTION=\"Create\"><NAME>Sales: bookings</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Sales returns (refunds after the sale)\" ACTION=\"Create\"><NAME>Sales returns (refunds after the sale)</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Refunds payable to customers\" ACTION=\"Create\"><NAME>Refunds payable to customers</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Bank UPI\" ACTION=\"Create\"><NAME>Bank UPI</NAME><PARENT>Bank Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cancellation charges retained\" ACTION=\"Create\"><NAME>Cancellation charges retained</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cash A/c\" ACTION=\"Create\"><NAME>Cash A/c</NAME><PARENT>Cash-in-Hand</PARENT></LEDGER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-1</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-3</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-4</VOUCHERNUMBER><NARRATION>applied, b-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales: bookings</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-6</VOUCHERNUMBER><NARRATION>refund made, b-1, payment pay_2, refund rf_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-7</VOUCHERNUMBER><NARRATION>refund made, b-2, payment pay_3</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-11</VOUCHERNUMBER><NARRATION>refund owed, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Payment\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Payment</VOUCHERTYPENAME><VOUCHERNUMBER>J-14</VOUCHERNUMBER><NARRATION>refund made, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank UPI</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-18</VOUCHERNUMBER><NARRATION>refund owed, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-19</VOUCHERNUMBER><NARRATION>kept, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cancellation charges retained</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-22</VOUCHERNUMBER><NARRATION>received, b-5, payment upi-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank UPI</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-23</VOUCHERNUMBER><NARRATION>received, b-5, payment cash-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cash A/c</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-01 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-01.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-01.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "25-26",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-25-26.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n2026-01-05,J-1,Receipt,Payment gateway clearing,500.00,0.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-1,Receipt,Customer advances and deposits,0.00,500.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-3,Receipt,Payment gateway clearing,300.00,0.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-3,Receipt,Customer advances and deposits,0.00,300.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-4,Journal,Customer advances and deposits,800.00,0.00,,,b-1,,,4\r\n2026-01-05,J-4,Journal,Sales: bookings,0.00,800.00,,,b-1,,,4\r\n2026-01-06,J-6,Payment,Sales returns (refunds after the sale),300.00,0.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-6,Payment,Payment gateway clearing,0.00,300.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-7,Payment,Sales returns (refunds after the sale),10.00,0.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-06,J-7,Payment,Payment gateway clearing,0.00,10.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-07,J-11,Journal,Sales returns (refunds after the sale),50.00,0.00,,,b-3,,upr-1,11\r\n2026-01-07,J-11,Journal,Refunds payable to customers,0.00,50.00,,,b-3,,upr-1,11\r\n2026-01-07,J-14,Payment,Refunds payable to customers,50.00,0.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-07,J-14,Payment,\"Bank (UPI receipts, marked by owner)\",0.00,50.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-08,J-18,Journal,Sales returns (refunds after the sale),7.00,0.00,,,b-4,,upr-2,18\r\n2026-01-08,J-18,Journal,Refunds payable to customers,0.00,7.00,,,b-4,,upr-2,18\r\n2026-01-08,J-19,Journal,Refunds payable to customers,7.00,0.00,,,b-4,,upr-2,19\r\n2026-01-08,J-19,Journal,Cancellation charges retained,0.00,7.00,,,b-4,,upr-2,19\r\n2026-01-09,J-22,Receipt,\"Bank (UPI receipts, marked by owner)\",90.00,0.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-22,Receipt,Customer advances and deposits,0.00,90.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-23,Receipt,Cash in hand,91.00,0.00,cash,owner_mark,b-5,cash-1,,23\r\n2026-01-09,J-23,Receipt,Customer advances and deposits,0.00,91.00,cash,owner_mark,b-5,cash-1,,23\r\n"
+     },
+     {
+      "name": "documents-25-26.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 25-26 (one financial year, 1 April to 31 March), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-25-26.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-25-26.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "25-26",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-25-26.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n2026-01-05,J-1,Receipt,Payment gateway clearing,500.00,0.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-1,Receipt,Customer advances and deposits,0.00,500.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-3,Receipt,Payment gateway clearing,300.00,0.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-3,Receipt,Customer advances and deposits,0.00,300.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-4,Journal,Customer advances and deposits,800.00,0.00,,,b-1,,,4\r\n2026-01-05,J-4,Journal,Sales: bookings,0.00,800.00,,,b-1,,,4\r\n2026-01-06,J-6,Payment,Sales returns (refunds after the sale),300.00,0.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-6,Payment,Payment gateway clearing,0.00,300.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-7,Payment,Sales returns (refunds after the sale),10.00,0.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-06,J-7,Payment,Payment gateway clearing,0.00,10.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-07,J-11,Journal,Sales returns (refunds after the sale),50.00,0.00,,,b-3,,upr-1,11\r\n2026-01-07,J-11,Journal,Refunds payable to customers,0.00,50.00,,,b-3,,upr-1,11\r\n2026-01-07,J-14,Payment,Refunds payable to customers,50.00,0.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-07,J-14,Payment,\"Bank (UPI receipts, marked by owner)\",0.00,50.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-08,J-18,Journal,Sales returns (refunds after the sale),7.00,0.00,,,b-4,,upr-2,18\r\n2026-01-08,J-18,Journal,Refunds payable to customers,0.00,7.00,,,b-4,,upr-2,18\r\n2026-01-08,J-19,Journal,Refunds payable to customers,7.00,0.00,,,b-4,,upr-2,19\r\n2026-01-08,J-19,Journal,Cancellation charges retained,0.00,7.00,,,b-4,,upr-2,19\r\n2026-01-09,J-22,Receipt,\"Bank (UPI receipts, marked by owner)\",90.00,0.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-22,Receipt,Customer advances and deposits,0.00,90.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-23,Receipt,Cash in hand,91.00,0.00,cash,owner_mark,b-5,cash-1,,23\r\n2026-01-09,J-23,Receipt,Customer advances and deposits,0.00,91.00,cash,owner_mark,b-5,cash-1,,23\r\n"
+     },
+     {
+      "name": "documents-25-26.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<LEDGER NAME=\"Payment gateway clearing\" ACTION=\"Create\"><NAME>Payment gateway clearing</NAME><PARENT>Sundry Debtors</PARENT></LEDGER>\n<LEDGER NAME=\"Customer advances and deposits\" ACTION=\"Create\"><NAME>Customer advances and deposits</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Sales: bookings\" ACTION=\"Create\"><NAME>Sales: bookings</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Sales returns (refunds after the sale)\" ACTION=\"Create\"><NAME>Sales returns (refunds after the sale)</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Refunds payable to customers\" ACTION=\"Create\"><NAME>Refunds payable to customers</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Bank (UPI receipts, marked by owner)\" ACTION=\"Create\"><NAME>Bank (UPI receipts, marked by owner)</NAME><PARENT>Bank Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cancellation charges retained\" ACTION=\"Create\"><NAME>Cancellation charges retained</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cash in hand\" ACTION=\"Create\"><NAME>Cash in hand</NAME><PARENT>Cash-in-Hand</PARENT></LEDGER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-1</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-3</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-4</VOUCHERNUMBER><NARRATION>applied, b-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales: bookings</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-6</VOUCHERNUMBER><NARRATION>refund made, b-1, payment pay_2, refund rf_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-7</VOUCHERNUMBER><NARRATION>refund made, b-2, payment pay_3</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-11</VOUCHERNUMBER><NARRATION>refund owed, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Payment\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Payment</VOUCHERTYPENAME><VOUCHERNUMBER>J-14</VOUCHERNUMBER><NARRATION>refund made, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank (UPI receipts, marked by owner)</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-18</VOUCHERNUMBER><NARRATION>refund owed, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-19</VOUCHERNUMBER><NARRATION>kept, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cancellation charges retained</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-22</VOUCHERNUMBER><NARRATION>received, b-5, payment upi-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank (UPI receipts, marked by owner)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-23</VOUCHERNUMBER><NARRATION>received, b-5, payment cash-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cash in hand</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 25-26 (one financial year, 1 April to 31 March), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-25-26.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-25-26.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company you want them in (the file names no company, so it goes into the open one). 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "25-26",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-25-26.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n2026-01-05,J-1,Receipt,Payment gateway clearing,500.00,0.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-1,Receipt,Customer advances and deposits,0.00,500.00,gateway,provider,b-1,pay_1,,1\r\n2026-01-05,J-3,Receipt,Payment gateway clearing,300.00,0.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-3,Receipt,Customer advances and deposits,0.00,300.00,gateway,provider,b-1,pay_2,,3\r\n2026-01-05,J-4,Journal,Customer advances and deposits,800.00,0.00,,,b-1,,,4\r\n2026-01-05,J-4,Journal,Sales: bookings,0.00,800.00,,,b-1,,,4\r\n2026-01-06,J-6,Payment,Sales returns (refunds after the sale),300.00,0.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-6,Payment,Payment gateway clearing,0.00,300.00,gateway,provider,b-1,pay_2,rf_1,6\r\n2026-01-06,J-7,Payment,Sales returns (refunds after the sale),10.00,0.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-06,J-7,Payment,Payment gateway clearing,0.00,10.00,gateway,person_word,b-2,pay_3,,7\r\n2026-01-07,J-11,Journal,Sales returns (refunds after the sale),50.00,0.00,,,b-3,,upr-1,11\r\n2026-01-07,J-11,Journal,Refunds payable to customers,0.00,50.00,,,b-3,,upr-1,11\r\n2026-01-07,J-14,Payment,Refunds payable to customers,50.00,0.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-07,J-14,Payment,\"Bank (UPI receipts, marked by owner)\",0.00,50.00,upi,owner_mark,b-3,,upr-1,14\r\n2026-01-08,J-18,Journal,Sales returns (refunds after the sale),7.00,0.00,,,b-4,,upr-2,18\r\n2026-01-08,J-18,Journal,Refunds payable to customers,0.00,7.00,,,b-4,,upr-2,18\r\n2026-01-08,J-19,Journal,Refunds payable to customers,7.00,0.00,,,b-4,,upr-2,19\r\n2026-01-08,J-19,Journal,Cancellation charges retained,0.00,7.00,,,b-4,,upr-2,19\r\n2026-01-09,J-22,Receipt,\"Bank (UPI receipts, marked by owner)\",90.00,0.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-22,Receipt,Customer advances and deposits,0.00,90.00,upi,owner_mark,b-5,upi-1,,22\r\n2026-01-09,J-23,Receipt,Cash in hand,91.00,0.00,cash,owner_mark,b-5,cash-1,,23\r\n2026-01-09,J-23,Receipt,Customer advances and deposits,0.00,91.00,cash,owner_mark,b-5,cash-1,,23\r\n"
+     },
+     {
+      "name": "documents-25-26.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<LEDGER NAME=\"Payment gateway clearing\" ACTION=\"Create\"><NAME>Payment gateway clearing</NAME><PARENT>Sundry Debtors</PARENT></LEDGER>\n<LEDGER NAME=\"Customer advances and deposits\" ACTION=\"Create\"><NAME>Customer advances and deposits</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Sales: bookings\" ACTION=\"Create\"><NAME>Sales: bookings</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Sales returns (refunds after the sale)\" ACTION=\"Create\"><NAME>Sales returns (refunds after the sale)</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Refunds payable to customers\" ACTION=\"Create\"><NAME>Refunds payable to customers</NAME><PARENT>Current Liabilities</PARENT></LEDGER>\n<LEDGER NAME=\"Bank UPI\" ACTION=\"Create\"><NAME>Bank UPI</NAME><PARENT>Bank Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cancellation charges retained\" ACTION=\"Create\"><NAME>Cancellation charges retained</NAME><PARENT>Sales Accounts</PARENT></LEDGER>\n<LEDGER NAME=\"Cash A/c\" ACTION=\"Create\"><NAME>Cash A/c</NAME><PARENT>Cash-in-Hand</PARENT></LEDGER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-1</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>500.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-3</VOUCHERNUMBER><NARRATION>received, b-1, payment pay_2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260105</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-4</VOUCHERNUMBER><NARRATION>applied, b-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales: bookings</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>800.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-6</VOUCHERNUMBER><NARRATION>refund made, b-1, payment pay_2, refund rf_1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>300.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260106</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-7</VOUCHERNUMBER><NARRATION>refund made, b-2, payment pay_3</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Payment gateway clearing</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>10.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-11</VOUCHERNUMBER><NARRATION>refund owed, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Payment\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260107</DATE><VOUCHERTYPENAME>Payment</VOUCHERTYPENAME><VOUCHERNUMBER>J-14</VOUCHERNUMBER><NARRATION>refund made, b-3, refund upr-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank UPI</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>50.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-18</VOUCHERNUMBER><NARRATION>refund owed, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Sales returns (refunds after the sale)</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Journal\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260108</DATE><VOUCHERTYPENAME>Journal</VOUCHERTYPENAME><VOUCHERNUMBER>J-19</VOUCHERNUMBER><NARRATION>kept, b-4, refund upr-2</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Refunds payable to customers</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cancellation charges retained</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>7.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-22</VOUCHERNUMBER><NARRATION>received, b-5, payment upi-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Bank UPI</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>90.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n<VOUCHER VCHTYPE=\"Receipt\" ACTION=\"Create\" OBJVIEW=\"Accounting Voucher View\"><DATE>20260109</DATE><VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME><VOUCHERNUMBER>J-23</VOUCHERNUMBER><NARRATION>received, b-5, payment cash-1</NARRATION>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Cash A/c</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n<ALLLEDGERENTRIES.LIST><LEDGERNAME>Customer advances and deposits</LEDGERNAME><ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE><AMOUNT>91.00</AMOUNT></ALLLEDGERENTRIES.LIST>\n</VOUCHER>\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 25-26 (one financial year, 1 April to 31 March), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-25-26.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-25-26.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-10",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-10.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-10.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-10 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-10.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-10.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-10",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-10.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-10.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-10 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-10.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-10.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company you want them in (the file names no company, so it goes into the open one). 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-10",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-10.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-10.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-10 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-10.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-10.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-12",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-12.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-12.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-12 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-12.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-12.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-12",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-12.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-12.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-12 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-12.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-12.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company you want them in (the file names no company, so it goes into the open one). 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-12",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-12.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-12.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-12 (one month), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-2026-12.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-12.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-13",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "error": "\"2026-13\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "2026-13",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "error": "\"2026-13\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "2026-13",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "error": "\"2026-13\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "26-28",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "error": "\"26-28\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "26-28",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "error": "\"26-28\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "26-28",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "error": "\"26-28\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "error": "\"\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "error": "\"\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "error": "\"\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "2026-1",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "error": "\"2026-1\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "2026-1",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "error": "\"2026-1\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "2026-1",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "error": "\"2026-1\" is not a period: write a month as 2026-11 or a financial year as 26-27."
+   }
+  },
+  {
+   "period": "00-01",
+   "tally": "none",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-00-01.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-00-01.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 00-01 (one financial year, 1 April to 31 March), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-00-01.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-00-01.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "00-01",
+   "tally": "empty",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-00-01.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-00-01.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 00-01 (one financial year, 1 April to 31 March), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-00-01.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-00-01.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company you want them in (the file names no company, so it goes into the open one). 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "00-01",
+   "tally": "company",
+   "oldDue": false,
+   "out": {
+    "value": [
+     {
+      "name": "journal-00-01.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-00-01.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "tally-masters.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>All Masters</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "tally-vouchers.xml",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>Acme &amp; Co &lt;Test&gt; &quot;q&quot; &apos;x&apos;</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC><REQUESTDATA><TALLYMESSAGE xmlns:UDF=\"TallyUDF\">\n</TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 00-01 (one financial year, 1 April to 31 March), dates in the shop's time zone (Asia/Kolkata).\r\n\r\njournal-00-01.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-00-01.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n\r\nImporting into TallyPrime (best effort: the CSV files above are the way that always works)\r\ntally-masters.xml and tally-vouchers.xml are written from TallyPrime's own help pages and sample files. They have not been tried on a real TallyPrime, so look at the first import in Tally's Exceptions report. 1) Back up the company first. 2) Open the company: its name must be exactly \"Acme & Co <Test> \"q\" 'x'\", as written in the file. 3) Alt+O (Import) > Masters, choose tally-masters.xml. 4) Alt+O (Import) > Transactions, choose tally-vouchers.xml. Import each file once only: a second import makes every voucher again. The dates must be inside the company's financial year, and the ledgers are made under groups every TallyPrime has (Cash-in-Hand, Bank Accounts, Sundry Debtors, Current Liabilities, Sales Accounts, Indirect Expenses, Duties & Taxes). Vouchers are plain Receipt, Payment and Journal vouchers, never GST invoices.\r\n"
+     }
+    ]
+   }
+  }
+ ],
+ "otherZone": [
+  {
+   "period": "2026-04",
+   "tz": "America/New_York",
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-04.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-04.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-04 (one month), dates in the shop's time zone (America/New_York).\r\n\r\njournal-2026-04.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-04.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "26-27",
+   "tz": "America/New_York",
+   "out": {
+    "value": [
+     {
+      "name": "journal-26-27.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-26-27.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 26-27 (one financial year, 1 April to 31 March), dates in the shop's time zone (America/New_York).\r\n\r\njournal-26-27.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-26-27.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2027-03",
+   "tz": "America/New_York",
+   "out": {
+    "value": [
+     {
+      "name": "journal-2027-03.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2027-03.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2027-03 (one month), dates in the shop's time zone (America/New_York).\r\n\r\njournal-2027-03.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2027-03.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2026-04",
+   "tz": "UTC",
+   "out": {
+    "value": [
+     {
+      "name": "journal-2026-04.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2026-04.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2026-04 (one month), dates in the shop's time zone (UTC).\r\n\r\njournal-2026-04.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2026-04.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "26-27",
+   "tz": "UTC",
+   "out": {
+    "value": [
+     {
+      "name": "journal-26-27.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-26-27.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 26-27 (one financial year, 1 April to 31 March), dates in the shop's time zone (UTC).\r\n\r\njournal-26-27.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-26-27.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  },
+  {
+   "period": "2027-03",
+   "tz": "UTC",
+   "out": {
+    "value": [
+     {
+      "name": "journal-2027-03.csv",
+      "content": "date,voucher_no,voucher_type,account,debit,credit,method,evidence,case_ref,payment_id,refund_id,record_seq\r\n"
+     },
+     {
+      "name": "documents-2027-03.csv",
+      "content": "number,date,type,amount,note\r\n"
+     },
+     {
+      "name": "README.txt",
+      "content": "Files for the period 2027-03 (one month), dates in the shop's time zone (UTC).\r\n\r\njournal-2027-03.csv: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.\r\ndocuments-2027-03.csv: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them (\"RCT/26-27/0003 to RCT/26-27/10002\"): \"not used: the shop's data was restored\" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and \"missing\" for any other gap (which should not happen).\r\n\r\nThese are the payments that went through your assistant. Money paid at the shop is not here.\r\nAll amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.\r\n"
+     }
+    ]
+   }
+  }
+ ]
+}
