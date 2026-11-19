@@ -1,0 +1,10636 @@
+[
+ {
+  "name": "a fresh list: insert, read, confirm drops the hold, delete",
+  "initial": null,
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "a",
+      "start": 1795239000000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "confirmed"
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "nope",
+     {
+      "summary": "x"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     0,
+     1
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "a",
+      "start": 1795239000000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_1"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_1",
+     "holdExpiresAt": 1795239000000
+    }
+   },
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_1",
+     "holdExpiresAt": 1795239000000
+    }
+   },
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   }
+  ],
+  "state": {
+   "events": {},
+   "next": 2
+  },
+  "order": []
+ },
+ {
+  "name": "an existing list is pruned on insert, ids go on from next",
+  "initial": {
+   "events": {
+    "own_1": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    },
+    "own_2": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   "next": 3
+  },
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "n",
+      "start": 1795239000000,
+      "end": 1795239060000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": [
+     {
+      "summary": "old",
+      "start": 1794375000000,
+      "end": 1794375060000,
+      "status": "confirmed",
+      "bookingRef": "b-0",
+      "id": "own_1"
+     },
+     {
+      "summary": "recent",
+      "start": 1795152600000,
+      "end": 1795152660000,
+      "status": "tentative",
+      "bookingRef": "b-9",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_2"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "n",
+     "start": 1795239000000,
+     "end": 1795239060000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "recent",
+      "start": 1795152600000,
+      "end": 1795152660000,
+      "status": "tentative",
+      "bookingRef": "b-9",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_2"
+     },
+     {
+      "summary": "n",
+      "start": 1795239000000,
+      "end": 1795239060000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "id": "own_3"
+     }
+    ]
+   }
+  ],
+  "state": {
+   "events": {
+    "own_2": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    },
+    "own_3": {
+     "summary": "n",
+     "start": 1795239000000,
+     "end": 1795239060000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_3"
+    }
+   },
+   "next": 4
+  },
+  "order": [
+   "own_2",
+   "own_3"
+  ]
+ },
+ {
+  "name": "a list is pruned two days after the end, not before",
+  "initial": {
+   "events": {
+    "own_1": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    },
+    "own_2": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   "next": 3
+  },
+  "now": 1795498200000,
+  "steps": [
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "n",
+      "start": 1795239000000,
+      "end": 1795239060000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": {
+     "summary": "n",
+     "start": 1795239000000,
+     "end": 1795239060000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "n",
+      "start": 1795239000000,
+      "end": 1795239060000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "id": "own_3"
+     }
+    ]
+   }
+  ],
+  "state": {
+   "events": {
+    "own_3": {
+     "summary": "n",
+     "start": 1795239000000,
+     "end": 1795239060000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_3"
+    }
+   },
+   "next": 4
+  },
+  "order": [
+   "own_3"
+  ]
+ },
+ {
+  "name": "an empty saved list with next 1",
+  "initial": {
+   "events": {},
+   "next": 1
+  },
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "freeBusy",
+    "args": [
+     0,
+     1
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "n",
+      "start": 1795239000000,
+      "end": 1795239060000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "n",
+     "start": 1795239000000,
+     "end": 1795239060000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_1"
+    }
+   }
+  ],
+  "state": {
+   "events": {
+    "own_1": {
+     "summary": "n",
+     "start": 1795239000000,
+     "end": 1795239060000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_1"
+    }
+   },
+   "next": 2
+  },
+  "order": [
+   "own_1"
+  ]
+ },
+ {
+  "name": "overlap edges: end is exclusive, start is exclusive of the other's end",
+  "initial": null,
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "a",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795242600000,
+     1795244400000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795237200000,
+     1795239000000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795242540000,
+     1795242660000
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795238999999,
+     1795239000001
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795242540000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795239000001
+     }
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": [
+     {
+      "summary": "a",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_1"
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "start": 1795239000000,
+      "end": 1795242600000
+     }
+    ]
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": [
+     {
+      "summary": "a",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_1"
+     }
+    ]
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": [
+     {
+      "summary": "a",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_1"
+     }
+    ]
+   }
+  ],
+  "state": {
+   "events": {
+    "own_1": {
+     "summary": "a",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   "next": 2
+  },
+  "order": [
+   "own_1"
+  ]
+ },
+ {
+  "name": "random sequence 21",
+  "initial": null,
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s0",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s1",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "start": 1795248900000,
+      "end": 1795251600000
+     }
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795243500000,
+      "to": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s6",
+      "start": 1795245300000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s9",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795243500000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_4"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s13",
+      "start": 1795247100000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s14",
+      "start": 1795239000000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s17",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s18",
+      "start": 1795248900000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s21",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s23",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {
+      "start": 1795242600000,
+      "end": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s26",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795245300000
+     }
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s29",
+      "start": 1795248900000,
+      "end": 1795251600000,
+      "status": "confirmed",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_3"
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_12"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_14",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s37",
+      "start": 1795245300000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795243500000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s38",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795241700000,
+     1795246200000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_16",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248000000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_16",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795247100000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_13"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_9"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s50",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_15",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795239000000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_12",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795239900000,
+     1795240800000
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s58",
+      "start": 1795247100000,
+      "end": 1795250700000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_17",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795242600000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_14",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s63",
+      "start": 1795240800000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795247100000,
+     1795251600000
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795248000000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_8"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s69",
+      "start": 1795239900000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": {
+     "summary": "s0",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s1",
+     "start": 1795247100000,
+     "end": 1795248900000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_2"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s6",
+     "start": 1795245300000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_3"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s9",
+     "start": 1795240800000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_4"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s13",
+     "start": 1795247100000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795245300000,
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s14",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_6"
+    }
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s17",
+     "start": 1795243500000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s18",
+     "start": 1795248900000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_8"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s21",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s21",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "id": "own_9",
+     "holdExpiresAt": 1795242600000
+    }
+   },
+   {
+    "ok": {
+     "summary": "s23",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_10"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s26",
+     "start": 1795247100000,
+     "end": 1795248900000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795245300000,
+     "id": "own_11"
+    }
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s29",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_12"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s29",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_12"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s37",
+     "start": 1795245300000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795243500000,
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s38",
+     "start": 1795245300000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795245300000,
+      "end": 1795246200000
+     },
+     {
+      "start": 1795245300000,
+      "end": 1795248000000
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s29",
+      "start": 1795248900000,
+      "end": 1795251600000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "id": "own_12"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s38",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "id": "own_14"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s29",
+      "start": 1795248900000,
+      "end": 1795251600000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "id": "own_12"
+     },
+     {
+      "summary": "s38",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "id": "own_14"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s37",
+     "start": 1795245300000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795243500000,
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s50",
+     "start": 1795243500000,
+     "end": 1795244400000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_15"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s50",
+     "start": 1795243500000,
+     "end": 1795244400000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_15"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s29",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_12",
+     "holdExpiresAt": 1795239000000
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s58",
+     "start": 1795247100000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_16"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s29",
+      "start": 1795248900000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_12",
+      "holdExpiresAt": 1795239000000
+     },
+     {
+      "summary": "s37",
+      "start": 1795245300000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795243500000,
+      "id": "own_13"
+     },
+     {
+      "summary": "s38",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "id": "own_14"
+     },
+     {
+      "summary": "s58",
+      "start": 1795247100000,
+      "end": 1795250700000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_16"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795245300000,
+      "end": 1795246200000
+     },
+     {
+      "start": 1795245300000,
+      "end": 1795248000000
+     },
+     {
+      "start": 1795243500000,
+      "end": 1795244400000
+     },
+     {
+      "start": 1795247100000,
+      "end": 1795250700000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "moved",
+     "start": 1795245300000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s63",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_17"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795248900000,
+      "end": 1795251600000
+     },
+     {
+      "start": 1795245300000,
+      "end": 1795248000000
+     },
+     {
+      "start": 1795247100000,
+      "end": 1795250700000
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "s50",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_15"
+     },
+     {
+      "summary": "s63",
+      "start": 1795240800000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_17"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "summary": "s37",
+      "start": 1795245300000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795243500000,
+      "id": "own_13"
+     },
+     {
+      "summary": "moved",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "id": "own_14"
+     },
+     {
+      "summary": "s50",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_15"
+     },
+     {
+      "summary": "s63",
+      "start": 1795240800000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_17"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s69",
+     "start": 1795239900000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_18"
+    }
+   }
+  ],
+  "state": {
+   "events": {
+    "own_12": {
+     "summary": "s29",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_12",
+     "holdExpiresAt": 1795239000000
+    },
+    "own_13": {
+     "summary": "s37",
+     "start": 1795245300000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795243500000,
+     "id": "own_13"
+    },
+    "own_14": {
+     "summary": "moved",
+     "start": 1795245300000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_14"
+    },
+    "own_15": {
+     "summary": "s50",
+     "start": 1795243500000,
+     "end": 1795244400000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_15"
+    },
+    "own_16": {
+     "summary": "s58",
+     "start": 1795247100000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_16"
+    },
+    "own_17": {
+     "summary": "s63",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_17"
+    },
+    "own_18": {
+     "summary": "s69",
+     "start": 1795239900000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_18"
+    }
+   },
+   "next": 19
+  },
+  "order": [
+   "own_12",
+   "own_13",
+   "own_14",
+   "own_15",
+   "own_16",
+   "own_17",
+   "own_18"
+  ]
+ },
+ {
+  "name": "random sequence 22",
+  "initial": {
+   "events": {
+    "own_1": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    },
+    "own_2": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   "next": 3
+  },
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s0",
+      "start": 1795248000000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_3"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-3",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_3"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795239000000,
+     1795244400000
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795242600000,
+      "to": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_3"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s12",
+      "start": 1795248000000,
+      "end": 1795248900000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s15",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795246200000,
+     1795251600000
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s27",
+      "start": 1795239900000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_6"
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248900000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795245300000,
+     1795248000000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s33",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_7"
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s36",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_3"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795237200000,
+     1795242600000
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s47",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_7"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s50",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795240800000,
+     1795248000000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795239000000,
+     1795243500000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s56",
+      "start": 1795248000000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_10"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {
+      "start": 1795240800000,
+      "end": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795246200000,
+     1795251600000
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_9"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s65",
+      "start": 1795241700000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s66",
+      "start": 1795244400000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s68",
+      "start": 1795248000000,
+      "end": 1795250700000,
+      "status": "tentative",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   }
+  ],
+  "results": [
+   {
+    "ok": {
+     "summary": "s0",
+     "start": 1795248000000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   null,
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s12",
+     "start": 1795248000000,
+     "end": 1795248900000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_4"
+    }
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s15",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s15",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": []
+   },
+   null,
+   {
+    "ok": [
+     {
+      "summary": "s15",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_5"
+     }
+    ]
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   null,
+   {
+    "ok": {
+     "summary": "s15",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s15",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_5"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s27",
+     "start": 1795239900000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_6"
+    }
+   },
+   null,
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s33",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": null
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s36",
+     "start": 1795239900000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_8"
+    }
+   },
+   null,
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "start": 1795239900000,
+      "end": 1795240800000
+     }
+    ]
+   },
+   null,
+   null,
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "summary": "s36",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000,
+      "id": "own_8"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s50",
+     "start": 1795239900000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795239000000,
+      "end": 1795242600000
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "start": 1795239900000,
+      "end": 1795240800000
+     },
+     {
+      "start": 1795239000000,
+      "end": 1795242600000
+     },
+     {
+      "start": 1795239900000,
+      "end": 1795240800000
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s56",
+     "start": 1795248000000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_11"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_9"
+    }
+   },
+   null,
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795248000000,
+      "end": 1795250700000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s65",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_12"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s66",
+     "start": 1795244400000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s36",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000,
+      "id": "own_8"
+     },
+     {
+      "summary": "s47",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_9"
+     },
+     {
+      "summary": "s56",
+      "start": 1795248000000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795246200000,
+      "id": "own_11"
+     },
+     {
+      "summary": "s65",
+      "start": 1795241700000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000,
+      "id": "own_12"
+     },
+     {
+      "summary": "s66",
+      "start": 1795244400000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795242600000,
+      "id": "own_13"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s68",
+     "start": 1795248000000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_14"
+    }
+   },
+   null
+  ],
+  "state": {
+   "events": {
+    "own_8": {
+     "summary": "s36",
+     "start": 1795239900000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_8"
+    },
+    "own_9": {
+     "summary": "s47",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_9"
+    },
+    "own_11": {
+     "summary": "s56",
+     "start": 1795248000000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_11"
+    },
+    "own_12": {
+     "summary": "s65",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_12"
+    },
+    "own_13": {
+     "summary": "s66",
+     "start": 1795244400000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_13"
+    },
+    "own_14": {
+     "summary": "s68",
+     "start": 1795248000000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_14"
+    }
+   },
+   "next": 15
+  },
+  "order": [
+   "own_8",
+   "own_9",
+   "own_11",
+   "own_12",
+   "own_13",
+   "own_14"
+  ]
+ },
+ {
+  "name": "random sequence 23",
+  "initial": null,
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {}
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s2",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s3",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795237200000,
+     1795243500000
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s8",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795243500000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s9",
+      "start": 1795245300000,
+      "end": 1795247100000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795243500000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s10",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_4"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_7"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {
+      "start": 1795241700000,
+      "end": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s18",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s19",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_8"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795246200000,
+     1795252500000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795243500000,
+     1795245300000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795248000000
+     }
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795243500000
+     }
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795246200000,
+     1795247100000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795240800000,
+     1795242600000
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795247100000,
+     1795254300000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s37",
+      "start": 1795245300000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_3"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s41",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s43",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s44",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s47",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795246200000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_7"
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795248000000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_4"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_6"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s56",
+      "start": 1795242600000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_13"
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_14"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s59",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s60",
+      "start": 1795247100000,
+      "end": 1795250700000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s61",
+      "start": 1795241700000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s62",
+      "start": 1795248000000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s63",
+      "start": 1795244400000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_6",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s66",
+      "start": 1795248000000,
+      "end": 1795248900000,
+      "status": "confirmed",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_16",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_6"
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_11"
+    ]
+   }
+  ],
+  "results": [
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s2",
+     "start": 1795247100000,
+     "end": 1795248900000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s3",
+     "start": 1795243500000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s2",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "id": "own_1"
+     },
+     {
+      "summary": "s3",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "id": "own_2"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s3",
+     "start": 1795243500000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s2",
+     "start": 1795247100000,
+     "end": 1795248900000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s8",
+     "start": 1795245300000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795243500000,
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s9",
+     "start": 1795245300000,
+     "end": 1795247100000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795243500000,
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s10",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_5"
+    }
+   },
+   null,
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": [
+     {
+      "summary": "s2",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "id": "own_1"
+     },
+     {
+      "summary": "s3",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "id": "own_2"
+     },
+     {
+      "summary": "s8",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795243500000,
+      "id": "own_3"
+     },
+     {
+      "summary": "s10",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795237200000,
+      "id": "own_5"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s18",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_6"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s19",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s19",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_7",
+     "holdExpiresAt": 1795248000000
+    }
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": [
+     {
+      "summary": "s19",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_7",
+      "holdExpiresAt": 1795248000000
+     }
+    ]
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s37",
+     "start": 1795245300000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s41",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_9"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s43",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s44",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_11"
+    }
+   },
+   null,
+   null,
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_12"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "summary": "s41",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795240800000,
+      "id": "own_9"
+     },
+     {
+      "summary": "s43",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_10"
+     },
+     {
+      "summary": "s44",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795240800000,
+      "id": "own_11"
+     },
+     {
+      "summary": "s47",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795237200000,
+      "id": "own_12"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s56",
+     "start": 1795242600000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s59",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s60",
+     "start": 1795247100000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_15"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s61",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_16"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s62",
+     "start": 1795248000000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_17"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s63",
+     "start": 1795244400000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_18"
+    }
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s66",
+     "start": 1795248000000,
+     "end": 1795248900000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_19"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s61",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_16"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s44",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_11"
+    }
+   }
+  ],
+  "state": {
+   "events": {
+    "own_9": {
+     "summary": "s41",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_9"
+    },
+    "own_10": {
+     "summary": "s43",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_10"
+    },
+    "own_11": {
+     "summary": "s44",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_11"
+    },
+    "own_12": {
+     "summary": "s47",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_12"
+    },
+    "own_14": {
+     "summary": "s59",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_14"
+    },
+    "own_15": {
+     "summary": "s60",
+     "start": 1795247100000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_15"
+    },
+    "own_16": {
+     "summary": "s61",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_16"
+    },
+    "own_17": {
+     "summary": "s62",
+     "start": 1795248000000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_17"
+    },
+    "own_18": {
+     "summary": "s63",
+     "start": 1795244400000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_18"
+    },
+    "own_19": {
+     "summary": "s66",
+     "start": 1795248000000,
+     "end": 1795248900000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_19"
+    }
+   },
+   "next": 20
+  },
+  "order": [
+   "own_9",
+   "own_10",
+   "own_11",
+   "own_12",
+   "own_14",
+   "own_15",
+   "own_16",
+   "own_17",
+   "own_18",
+   "own_19"
+  ]
+ },
+ {
+  "name": "random sequence 24",
+  "initial": {
+   "events": {
+    "own_1": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    },
+    "own_2": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   "next": 3
+  },
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s2",
+      "start": 1795246200000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795239900000,
+     1795240800000
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795245300000,
+     1795252500000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s5",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s8",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s9",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s10",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "start": 1795243500000,
+      "end": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s14",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s15",
+      "start": 1795247100000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s16",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_8",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795242600000,
+     1795243500000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_8",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s20",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_7"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795246200000,
+      "to": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-2",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s25",
+      "start": 1795248900000,
+      "end": 1795249800000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248000000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_8",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s28",
+      "start": 1795239000000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795245300000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-4",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s33",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_6",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_6",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_8"
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_9"
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795247100000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_12"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s44",
+      "start": 1795244400000,
+      "end": 1795248000000,
+      "status": "tentative",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_11"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s47",
+      "start": 1795248900000,
+      "end": 1795250700000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_15",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_15"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s51",
+      "start": 1795247100000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795247100000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s54",
+      "start": 1795244400000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795248000000,
+      "to": 1795250700000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s56",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_14"
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248900000,
+     1795251600000
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795245300000,
+     1795251600000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s63",
+      "start": 1795247100000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s66",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_12",
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s68",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "tentative",
+     "bookingRef": "b-0",
+     "id": "own_1",
+     "holdExpiresAt": 1795241700000
+    }
+   },
+   {
+    "ok": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s2",
+     "start": 1795246200000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": [
+     {
+      "start": 1795246200000,
+      "end": 1795248000000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s5",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s5",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795247100000,
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "recent",
+      "start": 1795152600000,
+      "end": 1795152660000,
+      "status": "tentative",
+      "bookingRef": "b-9",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_2"
+     },
+     {
+      "summary": "s2",
+      "start": 1795246200000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_3"
+     },
+     {
+      "summary": "s5",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_4"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s8",
+     "start": 1795243500000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795241700000,
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s9",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "id": "own_6"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s10",
+     "start": 1795239900000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s10",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "id": "own_7"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s2",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s14",
+     "start": 1795246200000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795244400000,
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s15",
+     "start": 1795247100000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s16",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s14",
+     "start": 1795246200000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s14",
+     "start": 1795246200000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s20",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_11"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "recent",
+      "start": 1795152600000,
+      "end": 1795152660000,
+      "status": "tentative",
+      "bookingRef": "b-9",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_2"
+     },
+     {
+      "summary": "s2",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_3"
+     },
+     {
+      "summary": "s5",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_4"
+     },
+     {
+      "summary": "s8",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795241700000,
+      "id": "own_5"
+     },
+     {
+      "summary": "s9",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "id": "own_6"
+     },
+     {
+      "summary": "s10",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "id": "own_7"
+     },
+     {
+      "summary": "s14",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239900000,
+      "id": "own_8"
+     },
+     {
+      "summary": "s15",
+      "start": 1795247100000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_9"
+     },
+     {
+      "summary": "s16",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_10"
+     },
+     {
+      "summary": "s20",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795237200000,
+      "id": "own_11"
+     }
+    ]
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "summary": "s14",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239900000,
+      "id": "own_8"
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "s2",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_3"
+     },
+     {
+      "summary": "s9",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "id": "own_6"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s25",
+     "start": 1795248900000,
+     "end": 1795249800000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795247100000,
+     "id": "own_12"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s5",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_4"
+     },
+     {
+      "summary": "s14",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239900000,
+      "id": "own_8"
+     },
+     {
+      "summary": "s15",
+      "start": 1795247100000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_9"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s14",
+     "start": 1795246200000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s28",
+     "start": 1795239000000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795243500000,
+      "end": 1795246200000
+     },
+     {
+      "start": 1795248000000,
+      "end": 1795251600000
+     },
+     {
+      "start": 1795243500000,
+      "end": 1795246200000
+     },
+     {
+      "start": 1795246200000,
+      "end": 1795249800000
+     },
+     {
+      "start": 1795247100000,
+      "end": 1795249800000
+     },
+     {
+      "start": 1795243500000,
+      "end": 1795246200000
+     },
+     {
+      "start": 1795248900000,
+      "end": 1795249800000
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "recent",
+      "start": 1795152600000,
+      "end": 1795152660000,
+      "status": "tentative",
+      "bookingRef": "b-9",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_2"
+     },
+     {
+      "summary": "s2",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_3"
+     },
+     {
+      "summary": "s5",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_4"
+     },
+     {
+      "summary": "s8",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795241700000,
+      "id": "own_5"
+     },
+     {
+      "summary": "s9",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "id": "own_6"
+     },
+     {
+      "summary": "s14",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_8"
+     },
+     {
+      "summary": "s15",
+      "start": 1795247100000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_9"
+     },
+     {
+      "summary": "s16",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_10"
+     },
+     {
+      "summary": "s20",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795237200000,
+      "id": "own_11"
+     },
+     {
+      "summary": "s25",
+      "start": 1795248900000,
+      "end": 1795249800000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_12"
+     },
+     {
+      "summary": "s28",
+      "start": 1795239000000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795237200000,
+      "id": "own_13"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s15",
+     "start": 1795247100000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_9",
+     "holdExpiresAt": 1795241700000
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s8",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795241700000,
+      "id": "own_5"
+     },
+     {
+      "summary": "s14",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_8"
+     },
+     {
+      "summary": "s15",
+      "start": 1795247100000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_9",
+      "holdExpiresAt": 1795241700000
+     },
+     {
+      "summary": "s20",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795237200000,
+      "id": "own_11"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s33",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s9",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "id": "own_6"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s9",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "id": "own_6"
+    }
+   },
+   {
+    "ok": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_2"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s14",
+     "start": 1795246200000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "summary": "s5",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_4"
+     },
+     {
+      "summary": "s14",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_8"
+     },
+     {
+      "summary": "s33",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_14"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s5",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s44",
+     "start": 1795244400000,
+     "end": 1795248000000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "id": "own_15"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795248900000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_16"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s47",
+      "start": 1795248900000,
+      "end": 1795250700000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_16"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s51",
+     "start": 1795247100000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795245300000,
+     "id": "own_17"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s51",
+      "start": 1795247100000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795245300000,
+      "id": "own_17"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s54",
+     "start": 1795244400000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_18"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s56",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_19"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s63",
+     "start": 1795247100000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_20"
+    }
+   },
+   null,
+   {
+    "ok": [
+     {
+      "summary": "s63",
+      "start": 1795247100000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_20"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s66",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_21"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s68",
+     "start": 1795244400000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_22"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   }
+  ],
+  "state": {
+   "events": {
+    "own_22": {
+     "summary": "s68",
+     "start": 1795244400000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_22"
+    }
+   },
+   "next": 23
+  },
+  "order": [
+   "own_22"
+  ]
+ },
+ {
+  "name": "random sequence 25",
+  "initial": null,
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "start": 1795248900000,
+      "end": 1795251600000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s3",
+      "start": 1795244400000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s4",
+      "start": 1795239000000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795246200000,
+     1795247100000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s8",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s11",
+      "start": 1795242600000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795245300000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795238100000,
+     1795242600000
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_6"
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s16",
+      "start": 1795242600000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_6"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795248000000,
+      "to": 1795250700000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s19",
+      "start": 1795239900000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795248000000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s23",
+      "start": 1795244400000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_6",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s25",
+      "start": 1795247100000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s26",
+      "start": 1795239900000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795239000000,
+     1795240800000
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s29",
+      "start": 1795240800000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "now": 1795239000000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795248900000
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_9"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s37",
+      "start": 1795241700000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_10",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795242600000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248900000,
+     1795249800000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s41",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795243500000,
+     1795248000000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s43",
+      "start": 1795248900000,
+      "end": 1795252500000,
+      "status": "tentative",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s44",
+      "start": 1795248900000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-4",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_6",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s47",
+      "start": 1795240800000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s49",
+      "start": 1795242600000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795239900000,
+     1795242600000
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_8"
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_12"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s55",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s58",
+      "start": 1795239000000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s59",
+      "start": 1795246200000,
+      "end": 1795248900000,
+      "status": "confirmed",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_9"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s61",
+      "start": 1795247100000,
+      "end": 1795249800000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s62",
+      "start": 1795241700000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_22"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-1",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_22",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s67",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795245300000,
+      "to": 1795248900000
+     }
+    ]
+   }
+  ],
+  "results": [
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s3",
+     "start": 1795244400000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s4",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s4",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s4",
+     "start": 1795239000000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_2",
+     "holdExpiresAt": 1795240800000
+    }
+   },
+   {
+    "ok": {
+     "summary": "s8",
+     "start": 1795239900000,
+     "end": 1795240800000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s11",
+     "start": 1795242600000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s16",
+     "start": 1795242600000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s19",
+     "start": 1795239900000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_6"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s23",
+     "start": 1795244400000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_7"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s25",
+     "start": 1795247100000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s26",
+     "start": 1795239900000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s26",
+      "start": 1795239900000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000,
+      "id": "own_9"
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "s26",
+      "start": 1795239900000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000,
+      "id": "own_9"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s29",
+     "start": 1795240800000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_10"
+    }
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s29",
+      "start": 1795240800000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_10"
+     }
+    ]
+   },
+   null,
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s37",
+     "start": 1795241700000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_11"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795241700000,
+      "end": 1795243500000
+     }
+    ]
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s41",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_12"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s43",
+     "start": 1795248900000,
+     "end": 1795252500000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s44",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795240800000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_15"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s49",
+     "start": 1795242600000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_16"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s55",
+     "start": 1795240800000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_17"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s58",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_18"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s59",
+     "start": 1795246200000,
+     "end": 1795248900000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_19"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s61",
+     "start": 1795247100000,
+     "end": 1795249800000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795245300000,
+     "id": "own_20"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s62",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_21"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s67",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_22"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s67",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_22"
+     }
+    ]
+   }
+  ],
+  "state": {
+   "events": {
+    "own_22": {
+     "summary": "s67",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_22"
+    }
+   },
+   "next": 23
+  },
+  "order": [
+   "own_22"
+  ]
+ },
+ {
+  "name": "random sequence 26",
+  "initial": {
+   "events": {
+    "own_1": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    },
+    "own_2": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   "next": 3
+  },
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "get",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "now": 1795498200000
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s7",
+      "start": 1795243500000,
+      "end": 1795244400000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "start": 1795240800000,
+      "end": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s11",
+      "start": 1795248900000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795242600000,
+     1795243500000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_4"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s16",
+      "start": 1795248900000,
+      "end": 1795252500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s18",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s19",
+      "start": 1795241700000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s22",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s24",
+      "start": 1795239900000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_7"
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795245300000,
+     1795247100000
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s28",
+      "start": 1795244400000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248900000,
+     1795252500000
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s31",
+      "start": 1795242600000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s32",
+      "start": 1795239900000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795245300000,
+     1795249800000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s34",
+      "start": 1795240800000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795248900000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s36",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795243500000,
+     1795246200000
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_9"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795241700000,
+     1795248900000
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_8",
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s44",
+      "start": 1795240800000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_6"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795243500000,
+     1795248000000
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_13",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_10",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s51",
+      "start": 1795244400000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795244400000,
+     1795248000000
+    ]
+   },
+   {
+    "now": 1795411800000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_15",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s55",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795243500000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s58",
+      "start": 1795248900000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_13"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795247100000,
+     1795252500000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795239000000,
+     1795241700000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s62",
+      "start": 1795248900000,
+      "end": 1795251600000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795245300000,
+     1795246200000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s65",
+      "start": 1795248900000,
+      "end": 1795251600000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_20",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s68",
+      "start": 1795248000000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795247100000,
+     1795248900000
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   null,
+   {
+    "ok": null
+   },
+   null,
+   {
+    "ok": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s7",
+     "start": 1795243500000,
+     "end": 1795244400000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_3"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s11",
+     "start": 1795248900000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795247100000,
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s16",
+     "start": 1795248900000,
+     "end": 1795252500000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795247100000,
+     "id": "own_5"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s18",
+     "start": 1795246200000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_6"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s19",
+     "start": 1795241700000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s16",
+      "start": 1795248900000,
+      "end": 1795252500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_5"
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "s16",
+      "start": 1795248900000,
+      "end": 1795252500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_5"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s22",
+     "start": 1795243500000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795241700000,
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s19",
+      "start": 1795241700000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000,
+      "id": "own_7"
+     },
+     {
+      "summary": "s22",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795241700000,
+      "id": "own_8"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s24",
+     "start": 1795239900000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s19",
+     "start": 1795241700000,
+     "end": 1795242600000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s18",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_6"
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "s19",
+      "start": 1795241700000,
+      "end": 1795242600000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000,
+      "id": "own_7"
+     },
+     {
+      "summary": "s22",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795241700000,
+      "id": "own_8"
+     },
+     {
+      "summary": "s24",
+      "start": 1795239900000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795238100000,
+      "id": "own_9"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s28",
+     "start": 1795244400000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s16",
+      "start": 1795248900000,
+      "end": 1795252500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_5"
+     },
+     {
+      "summary": "s18",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_6"
+     }
+    ]
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s31",
+     "start": 1795242600000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_11"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s32",
+     "start": 1795239900000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_12"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795248900000,
+      "end": 1795252500000
+     },
+     {
+      "start": 1795246200000,
+      "end": 1795249800000
+     },
+     {
+      "start": 1795244400000,
+      "end": 1795248000000
+     },
+     {
+      "start": 1795242600000,
+      "end": 1795246200000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s34",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s16",
+      "start": 1795248900000,
+      "end": 1795252500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_5"
+     },
+     {
+      "summary": "s18",
+      "start": 1795246200000,
+      "end": 1795249800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_6"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s36",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s22",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795241700000,
+      "id": "own_8"
+     },
+     {
+      "summary": "s28",
+      "start": 1795244400000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_10"
+     },
+     {
+      "summary": "s31",
+      "start": 1795242600000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795240800000,
+      "id": "own_11"
+     }
+    ]
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "start": 1795246200000,
+      "end": 1795249800000
+     },
+     {
+      "start": 1795241700000,
+      "end": 1795242600000
+     },
+     {
+      "start": 1795243500000,
+      "end": 1795245300000
+     },
+     {
+      "start": 1795244400000,
+      "end": 1795248000000
+     },
+     {
+      "start": 1795242600000,
+      "end": 1795246200000
+     },
+     {
+      "start": 1795239900000,
+      "end": 1795243500000
+     },
+     {
+      "start": 1795242600000,
+      "end": 1795243500000
+     }
+    ]
+   },
+   null,
+   {
+    "ok": [
+     {
+      "summary": "s16",
+      "start": 1795248900000,
+      "end": 1795252500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000,
+      "id": "own_5"
+     },
+     {
+      "summary": "s28",
+      "start": 1795244400000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "id": "own_10"
+     },
+     {
+      "summary": "s32",
+      "start": 1795239900000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795238100000,
+      "id": "own_12"
+     },
+     {
+      "summary": "s36",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795240800000,
+      "id": "own_14"
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s22",
+     "start": 1795243500000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795241700000,
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s44",
+     "start": 1795240800000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_15"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s51",
+     "start": 1795244400000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_16"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s51",
+      "start": 1795244400000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "id": "own_16"
+     }
+    ]
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s55",
+     "start": 1795243500000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795241700000,
+     "id": "own_17"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795244400000,
+      "end": 1795245300000
+     },
+     {
+      "start": 1795243500000,
+      "end": 1795245300000
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s58",
+     "start": 1795248900000,
+     "end": 1795249800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_18"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "start": 1795248900000,
+      "end": 1795249800000
+     }
+    ]
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s62",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795247100000,
+     "id": "own_19"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s65",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795247100000,
+     "id": "own_20"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s65",
+     "start": 1795248900000,
+     "end": 1795251600000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_20"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s68",
+     "start": 1795248000000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_21"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s68",
+      "start": 1795248000000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795246200000,
+      "id": "own_21"
+     }
+    ]
+   }
+  ],
+  "state": {
+   "events": {
+    "own_21": {
+     "summary": "s68",
+     "start": 1795248000000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_21"
+    }
+   },
+   "next": 22
+  },
+  "order": [
+   "own_21"
+  ]
+ },
+ {
+  "name": "random sequence 27",
+  "initial": null,
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795240800000,
+     1795245300000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s2",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s8",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s9",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795245300000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_5"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s12",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s13",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795242600000,
+      "to": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795248000000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s16",
+      "start": 1795239000000,
+      "end": 1795240800000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_6",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-3",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s21",
+      "start": 1795243500000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_7",
+     {}
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s24",
+      "start": 1795239000000,
+      "end": 1795241700000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795237200000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s26",
+      "start": 1795239000000,
+      "end": 1795239900000,
+      "status": "confirmed",
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s27",
+      "start": 1795241700000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_10",
+     {
+      "start": 1795240800000,
+      "end": 1795243500000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795243500000,
+     1795246200000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_10",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795246200000,
+     1795249800000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795244400000,
+     1795247100000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s34",
+      "start": 1795248000000,
+      "end": 1795249800000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s35",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s36",
+      "start": 1795243500000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_13",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_8"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_15",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795240800000,
+      "to": 1795242600000
+     }
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-3",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s44",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795251600000
+     }
+    ]
+   },
+   {
+    "now": 1795239000000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s47",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248900000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s49",
+      "start": 1795248900000,
+      "end": 1795250700000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "to": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795242600000,
+     1795247100000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_13",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_8",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_12"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795246200000,
+     1795248000000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s60",
+      "start": 1795243500000,
+      "end": 1795245300000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795240800000,
+     1795241700000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s62",
+      "start": 1795240800000,
+      "end": 1795241700000,
+      "status": "confirmed",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795246200000,
+     1795251600000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s64",
+      "start": 1795244400000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s66",
+      "start": 1795240800000,
+      "end": 1795241700000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "now": 1795584600000
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_12"
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s2",
+     "start": 1795240800000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_1"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s8",
+     "start": 1795247100000,
+     "end": 1795248900000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795245300000,
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s9",
+     "start": 1795244400000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s8",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795245300000,
+      "id": "own_2"
+     },
+     {
+      "summary": "s9",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_3"
+     }
+    ]
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s12",
+     "start": 1795240800000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s13",
+     "start": 1795244400000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s9",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_3"
+     },
+     {
+      "summary": "s12",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_4"
+     },
+     {
+      "summary": "s13",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795242600000,
+      "id": "own_5"
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "s8",
+      "start": 1795247100000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795245300000,
+      "id": "own_2"
+     },
+     {
+      "summary": "s9",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "id": "own_3"
+     },
+     {
+      "summary": "s12",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_4"
+     },
+     {
+      "summary": "s13",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795242600000,
+      "id": "own_5"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s16",
+     "start": 1795239000000,
+     "end": 1795240800000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_6"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s16",
+     "start": 1795239000000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_6",
+     "holdExpiresAt": 1795240800000
+    }
+   },
+   null,
+   {
+    "ok": [
+     {
+      "summary": "s16",
+      "start": 1795239000000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_6",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s13",
+     "start": 1795244400000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_5"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s21",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795241700000,
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s21",
+     "start": 1795243500000,
+     "end": 1795246200000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s24",
+     "start": 1795239000000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795237200000,
+     "id": "own_8"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s26",
+     "start": 1795239000000,
+     "end": 1795239900000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s27",
+     "start": 1795241700000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s27",
+      "start": 1795241700000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "id": "own_10"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s27",
+     "start": 1795240800000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s27",
+     "start": 1795240800000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s34",
+     "start": 1795248000000,
+     "end": 1795249800000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_11"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s35",
+     "start": 1795240800000,
+     "end": 1795244400000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_12"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s36",
+     "start": 1795243500000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s36",
+     "start": 1795243500000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "id": "own_13"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s36",
+      "start": 1795243500000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "id": "own_13"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s44",
+     "start": 1795245300000,
+     "end": 1795248000000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s44",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_14"
+     }
+    ]
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s47",
+     "start": 1795240800000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_15"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s49",
+     "start": 1795248900000,
+     "end": 1795250700000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795247100000,
+     "id": "own_16"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": [
+     {
+      "start": 1795245300000,
+      "end": 1795248000000
+     },
+     {
+      "start": 1795240800000,
+      "end": 1795244400000
+     }
+    ]
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": null
+   },
+   null,
+   {
+    "ok": [
+     {
+      "summary": "s44",
+      "start": 1795245300000,
+      "end": 1795248000000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "id": "own_14"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s60",
+     "start": 1795243500000,
+     "end": 1795245300000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_17"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s62",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_18"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s64",
+     "start": 1795244400000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_19"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s64",
+      "start": 1795244400000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795242600000,
+      "id": "own_19"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s66",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_20"
+    }
+   },
+   null,
+   null,
+   {
+    "ok": null
+   }
+  ],
+  "state": {
+   "events": {
+    "own_20": {
+     "summary": "s66",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_20"
+    }
+   },
+   "next": 21
+  },
+  "order": [
+   "own_20"
+  ]
+ },
+ {
+  "name": "random sequence 28",
+  "initial": {
+   "events": {
+    "own_1": {
+     "summary": "old",
+     "start": 1794375000000,
+     "end": 1794375060000,
+     "status": "confirmed",
+     "bookingRef": "b-0",
+     "id": "own_1"
+    },
+    "own_2": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   "next": 3
+  },
+  "now": 1795239000000,
+  "steps": [
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795248900000,
+      "to": 1795251600000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_2"
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795241700000,
+     1795242600000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s4",
+      "start": 1795245300000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795243500000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s6",
+      "start": 1795239900000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795238100000,
+     1795242600000
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "start": 1795240800000,
+      "end": 1795241700000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795246200000,
+     1795248000000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248000000,
+     1795251600000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s14",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3"
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s19",
+      "start": 1795246200000,
+      "end": 1795247100000,
+      "status": "confirmed",
+      "bookingRef": "b-2"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "start": 1795244400000,
+      "end": 1795248000000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795246200000,
+     1795251600000
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795248000000,
+     1795250700000
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795242600000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_6",
+     {
+      "status": "tentative",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s25",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795241700000,
+     1795248900000
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_2",
+     {
+      "start": 1795248900000,
+      "end": 1795252500000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {}
+    ]
+   },
+   {
+    "now": 1795325400000
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795241700000,
+     1795246200000
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-2",
+      "from": 1795239000000,
+      "to": 1795253400000
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795244400000,
+     1795245300000
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "bookingRef": "b-1"
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s35",
+      "start": 1795241700000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "now": 1795239000000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s37",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239000000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s38",
+      "start": 1795239900000,
+      "end": 1795240800000,
+      "status": "tentative",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795238100000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795240800000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s40",
+      "start": 1795239900000,
+      "end": 1795241700000,
+      "status": "confirmed",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {
+      "start": 1795247100000,
+      "end": 1795248000000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_1",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795242600000,
+     1795248900000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s45",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795242600000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_1"
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795245300000,
+      "to": 1795247100000
+     }
+    ]
+   },
+   {
+    "op": "list",
+    "args": [
+     {
+      "from": 1795248000000,
+      "to": 1795250700000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s49",
+      "start": 1795240800000,
+      "end": 1795244400000,
+      "status": "tentative",
+      "bookingRef": "b-4"
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_3",
+     {
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_5",
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s52",
+      "start": 1795248000000,
+      "end": 1795248900000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "delete",
+    "args": [
+     "own_10"
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s54",
+      "start": 1795248000000,
+      "end": 1795251600000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795246200000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {
+      "summary": "moved"
+     }
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795239900000,
+     1795244400000
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_7"
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_8",
+     {}
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_11",
+     {}
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s60",
+      "start": 1795241700000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_4",
+     {
+      "status": "confirmed",
+      "holdExpiresAt": null
+     }
+    ]
+   },
+   {
+    "op": "conflicts",
+    "args": [
+     1795239000000,
+     1795239900000
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s63",
+      "start": 1795247100000,
+      "end": 1795250700000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795245300000
+     }
+    ]
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s64",
+      "start": 1795246200000,
+      "end": 1795248000000,
+      "status": "confirmed",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795244400000
+     }
+    ]
+   },
+   {
+    "op": "update",
+    "args": [
+     "own_9",
+     {
+      "start": 1795243500000,
+      "end": 1795244400000
+     }
+    ]
+   },
+   {
+    "now": 1795671000000
+   },
+   {
+    "op": "insert",
+    "args": [
+     {
+      "summary": "s67",
+      "start": 1795241700000,
+      "end": 1795243500000,
+      "status": "tentative",
+      "bookingRef": "b-4",
+      "holdExpiresAt": 1795239900000
+     }
+    ]
+   },
+   {
+    "op": "get",
+    "args": [
+     "own_17"
+    ]
+   },
+   {
+    "op": "freeBusy",
+    "args": [
+     1795242600000,
+     1795249800000
+    ]
+   }
+  ],
+  "results": [
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "recent",
+     "start": 1795152600000,
+     "end": 1795152660000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s4",
+     "start": 1795245300000,
+     "end": 1795248900000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795243500000,
+     "id": "own_3"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s6",
+     "start": 1795239900000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_4"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795239900000,
+      "end": 1795242600000
+     }
+    ]
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "recent",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "tentative",
+     "bookingRef": "b-9",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "summary": "s4",
+      "start": 1795245300000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795243500000,
+      "id": "own_3"
+     }
+    ]
+   },
+   {
+    "ok": [
+     {
+      "summary": "s4",
+      "start": 1795245300000,
+      "end": 1795248900000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795243500000,
+      "id": "own_3"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s14",
+     "start": 1795239900000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "id": "own_5"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "moved",
+     "start": 1795245300000,
+     "end": 1795248900000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795243500000,
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": {
+     "summary": "moved",
+     "start": 1795245300000,
+     "end": 1795248900000,
+     "status": "confirmed",
+     "bookingRef": "b-1",
+     "id": "own_3"
+    }
+   },
+   {
+    "ok": {
+     "summary": "recent",
+     "start": 1795240800000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-9",
+     "id": "own_2"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s19",
+     "start": 1795246200000,
+     "end": 1795247100000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_6"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795246200000,
+      "end": 1795247100000
+     }
+    ]
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": [
+     {
+      "start": 1795246200000,
+      "end": 1795247100000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s19",
+     "start": 1795246200000,
+     "end": 1795247100000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "id": "own_6",
+     "holdExpiresAt": 1795239000000
+    }
+   },
+   {
+    "ok": {
+     "summary": "s25",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795242600000,
+      "end": 1795243500000
+     }
+    ]
+   },
+   null,
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   null,
+   {
+    "ok": [
+     {
+      "start": 1795242600000,
+      "end": 1795243500000
+     }
+    ]
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s35",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_8"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s37",
+     "start": 1795240800000,
+     "end": 1795242600000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239000000,
+     "id": "own_9"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s38",
+     "start": 1795239900000,
+     "end": 1795240800000,
+     "status": "tentative",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795238100000,
+     "id": "own_10"
+    }
+   },
+   {
+    "ok": [
+     {
+      "summary": "s25",
+      "start": 1795242600000,
+      "end": 1795243500000,
+      "status": "confirmed",
+      "bookingRef": "b-3",
+      "holdExpiresAt": 1795240800000,
+      "id": "own_7"
+     },
+     {
+      "summary": "s35",
+      "start": 1795241700000,
+      "end": 1795245300000,
+      "status": "tentative",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239900000,
+      "id": "own_8"
+     },
+     {
+      "summary": "s37",
+      "start": 1795240800000,
+      "end": 1795242600000,
+      "status": "confirmed",
+      "bookingRef": "b-2",
+      "holdExpiresAt": 1795239000000,
+      "id": "own_9"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s40",
+     "start": 1795239900000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_11"
+    }
+   },
+   {
+    "ok": {
+     "summary": "moved",
+     "start": 1795239900000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_11"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795242600000,
+      "end": 1795243500000
+     },
+     {
+      "start": 1795241700000,
+      "end": 1795245300000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s45",
+     "start": 1795244400000,
+     "end": 1795246200000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795242600000,
+     "id": "own_12"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "summary": "s45",
+      "start": 1795244400000,
+      "end": 1795246200000,
+      "status": "tentative",
+      "bookingRef": "b-1",
+      "holdExpiresAt": 1795242600000,
+      "id": "own_12"
+     }
+    ]
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s49",
+     "start": 1795240800000,
+     "end": 1795244400000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "id": "own_13"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": {
+     "summary": "s52",
+     "start": 1795248000000,
+     "end": 1795248900000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_14"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": {
+     "summary": "s54",
+     "start": 1795248000000,
+     "end": 1795251600000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795246200000,
+     "id": "own_15"
+    }
+   },
+   {
+    "ok": {
+     "summary": "moved",
+     "start": 1795239900000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_11"
+    }
+   },
+   {
+    "ok": [
+     {
+      "start": 1795242600000,
+      "end": 1795243500000
+     },
+     {
+      "start": 1795241700000,
+      "end": 1795245300000
+     },
+     {
+      "start": 1795240800000,
+      "end": 1795242600000
+     },
+     {
+      "start": 1795239900000,
+      "end": 1795241700000
+     },
+     {
+      "start": 1795240800000,
+      "end": 1795244400000
+     }
+    ]
+   },
+   {
+    "ok": {
+     "summary": "s25",
+     "start": 1795242600000,
+     "end": 1795243500000,
+     "status": "confirmed",
+     "bookingRef": "b-3",
+     "holdExpiresAt": 1795240800000,
+     "id": "own_7"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s35",
+     "start": 1795241700000,
+     "end": 1795245300000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_8"
+    }
+   },
+   {
+    "ok": {
+     "summary": "moved",
+     "start": 1795239900000,
+     "end": 1795241700000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "id": "own_11"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s60",
+     "start": 1795241700000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-1",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_16"
+    }
+   },
+   {
+    "error": {
+     "name": "Error",
+     "message": "No such event in the booking list."
+    }
+   },
+   {
+    "ok": []
+   },
+   {
+    "ok": {
+     "summary": "s63",
+     "start": 1795247100000,
+     "end": 1795250700000,
+     "status": "tentative",
+     "bookingRef": "b-2",
+     "holdExpiresAt": 1795245300000,
+     "id": "own_17"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s64",
+     "start": 1795246200000,
+     "end": 1795248000000,
+     "status": "confirmed",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795244400000,
+     "id": "own_18"
+    }
+   },
+   {
+    "ok": {
+     "summary": "s37",
+     "start": 1795243500000,
+     "end": 1795244400000,
+     "status": "confirmed",
+     "bookingRef": "b-2",
+     "id": "own_9"
+    }
+   },
+   null,
+   {
+    "ok": {
+     "summary": "s67",
+     "start": 1795241700000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_19"
+    }
+   },
+   {
+    "ok": null
+   },
+   {
+    "ok": [
+     {
+      "start": 1795241700000,
+      "end": 1795243500000
+     }
+    ]
+   }
+  ],
+  "state": {
+   "events": {
+    "own_19": {
+     "summary": "s67",
+     "start": 1795241700000,
+     "end": 1795243500000,
+     "status": "tentative",
+     "bookingRef": "b-4",
+     "holdExpiresAt": 1795239900000,
+     "id": "own_19"
+    }
+   },
+   "next": 20
+  },
+  "order": [
+   "own_19"
+  ]
+ }
+]

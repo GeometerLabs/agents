@@ -1029,3 +1029,15 @@ Not run: the owner asked for one test pass at the end, so the tests below are wr
 **A Hindi review sheet.** `scripts/review-sheet.ts` and `bundle/panel/review-sheet.ts` now take `hi` and write `REVIEW-hi.md`. Hindi has no shared word list (the parser reads it from its own lists in `rule-parser.ts`), so section 5 shows the sentences and what the agent reads from each, as Fees' sheet does. `REVIEW-ml.md` and `REVIEW-kn.md` were regenerated: the only change is the two new panel lines.
 
 Tests written, not run: `test/capacity.test.ts` (new); changed: `test/review-sheet.test.ts`, `bundle/panel/test/words.test.ts` (Hindi added), and the hand-check counts in `test/hand-check-shops.test.ts`, `test/report-cli.test.ts`, `test/report-certificates.test.ts`, `test/report-go-live.test.ts`.
+
+## The runtime contract (19 November 2026, for the Go port)
+
+`contract/` holds an HTTP contract suite for this runtime: every test makes a shop's folder as the deployer does, starts `server/main.ts` as a separate process, and talks to it only
+over HTTP and the files the deployer writes; `BOOKINGS_IMPL=go` runs the same tests against a Go binary (every test is skipped, with the reason, while there is none). `contract/README.md`
+is the inventory a port starts from (routes, files, Guard calls, timed work, and every unit test file mapped to contract, unit, demo or other component). Two kinds of shop: a "fakes"
+shop on the test clock (in-memory services; observed through the page's routes and the files) and a "guards" shop against fake Guards that record every request. The one change to a
+runtime file: `server/main.ts` takes the test clock the way the listings shop's main does (a live shop refuses it). The generic pieces moved to `modules/test/contract/`.
+
+## Deferred.md is where the rest is
+
+What the suite does not yet hold the runtime to is in `contract/README.md` section 8 and in `Deferred.md` ("The contract's open cases").

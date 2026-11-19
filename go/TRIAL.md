@@ -351,3 +351,52 @@ assistant's prompt and the fold tables are Go source now (`internal/directory/wo
 
 **Found (Go, left, Deferred.md):** a lone surrogate written as `\ud800` in a feed is read by Go's JSON decoder as U+FFFD, so the Go reader keeps a name the TypeScript refused; the shops' Go
 `Model.Cost` prices cached input tokens at the full rate where the TypeScript prices them at the cached rate (one line, left to the shop runtime's owner: it changes what a shop is charged).
+
+## Wave 2 preparation (19 Nov 2026): the Bookings contract, before any Go
+
+The HTTP contract suite for the Bookings shop runtime is written in TypeScript and passes on the TypeScript runtime; no Go for Bookings exists yet. It is
+`templates/commerce/bookings/contract/` (its README is the inventory a port starts from: every route, file, Guard call and timed job, and every one of the 85 unit test files mapped to
+"contract", "unit", "demo" or "other component"). `BOOKINGS_IMPL=go` with no binary skips every test with "no Go Bookings runtime yet (wave 2)". The generic harness pieces (process
+tracker, fake model, fake push Guard, test-clock file, process starter, HTTP caller, owner-control helpers) moved to `modules/test/contract/` and the listings contract uses them.
+One runtime file changed: `templates/commerce/bookings/server/main.ts` takes the test clock the way the listings shop's main does (nothing changes without the two variables, and a
+live shop refuses them). The Go Bookings binary must honour the same two variables for a "fakes" shop (`go/internal/testclock`).
+## Wave 2: Guard clients (19 Nov 2026): the shared building blocks of the Bookings, Orders, Fees and Stock-orders runtimes
+
+Ported to Go as shared packages, each proved against vectors made by RUNNING the TypeScript client against a recording HTTP server (`go/scripts/gen_guard_vectors.ts`, cases in
+`go/scripts/vectors/`; `--check` and the `words-fresh` test keep them fresh). The Go tests read only the vector files and replay each script from a Go server; the requests (method, target,
+the headers that matter, body bytes) and the outcomes (result, or error name, words and carried fields) must be equal.
+
+| package | what | TypeScript it replaces once the Go runtime uses it |
+| --- | --- | --- |
+| `internal/guard` | the errors, the one HTTP client, Guard's answers told apart, the JavaScript byte helpers | `modules/core/{faults,http,json}.ts` (shared: stay until the last wave) |
+| `internal/payments` (+ `razorpay`, `upi`) | the neutral payments, careful links, the refund logic, the stand-in gateway, the Razorpay client and webhook reader, the `upi://pay` link | `modules/payments/{payments,links,refunds}.ts`, `providers/razorpay/{api,webhook}.ts`, `providers/upi/link.ts` |
+| `internal/messaging` | Meta and Gupshup clients, stand-in, send-once, say, statuses, webhook readers | `modules/messaging/*`, `standInMessaging` in `modules/runtime/services.ts` |
+| `internal/calendar` | Google Calendar v3 through the calendar Guard, the fake, the shop's own list | `templates/commerce/bookings/src/adapters/{calendar,own-calendar}.ts`, `live/google-calendar.ts` |
+| `internal/qr`, `internal/terms` | the UPI QR; the shop's terms | `modules/qr/*`, `modules/terms/*` |
+
+What the Bookings wave may delete: the Bookings-only files (the three calendar adapters, the calendar part of `live/index.ts`). What must STAY until the Orders, Fees and Stock-orders waves:
+every `modules/*` file above (their runtimes import them), the deployer's and panel's reads of `providers/*` and `gupshup-selfserve.ts`, and `modules/standins/*` (the HTTP stand-in
+servers the contract tests start; test infrastructure). `go/scripts/vectors/fixtures.ts` reads `templates/commerce/bookings/test/fixtures/*`: if the Bookings TypeScript goes, those
+fixtures need a new home.
+
+**Results** (19 Nov, through the heat lock): `go build ./...`, `go vet` and `go test -count=1 ./internal/{guard,payments,messaging,calendar,qr,terms}/...` pass (guard, payments, razorpay, upi,
+messaging, calendar, qr, terms: 8 packages ok); `node go/scripts/gen_guard_vectors.ts --check`: 23 vector files fresh; `words-fresh`: 4 of 4. Refund logic: 78 scenarios covering every
+`sortRefundError` arm in `requestRefund` and `releaseHeld`, both retry exhaustions, both `expireGuardHold` arms, the `recheck` arms, the four `tellConfirmed` outcomes and a sweep proving an
+unanswered hold sends nothing.
+
+**Not ported, and why** (each package's `Deferred.md` has the detail): the owner-marked UPI ledger, obligations and desk (state the Bookings runtime owns, uses the approvals codes; goes with
+that runtime); the deployer's limits spec (`guard-limits.ts` beyond `rupeesToPaise`), `guard-model.ts`, the provider declarations and panel words; the HTTP stand-in servers; the inbox's HTTP
+side (only the webhook readers and signature checks are ported); `internal/standins` was not made as a package: the stand-ins live beside what they stand in for (`payments.Fake`,
+`calendar` fake, `messaging.NewFake/NewStandIn`), one source of truth.
+
+**Merge notes:** `go/internal/qr` exists on `go-books-19nov` too (a different API): keep one. `internal/payments` declares a narrow `Accounting` poster and `LogMore` of its own; the books
+stream's `internal/accounting` needs an adapter of a few lines. `go/internal/zone` of the books branch could replace the calendar's `zonedMidnight`.
+
+**Differences from TypeScript, recorded:** money and times read from a reply are whole numbers only (a fractional amount reads as absent, where `num` passes it); `UntoldRefund.amountInr`
+is kept in paise and written as the exact decimal; the Go fake gateway has no fault plans; keep-alive is off in the Guard client (net/http would send a GET again on a cut connection).
+
+**TypeScript findings (reported, not fixed):** `refunds.ts` line 429 `amountInr: r.amount / 100` can be fractional (a refund of 12.5 rupees), while every other amount in the file is whole rupees;
+the 24 hour hold and the limit are whole-rupee settings, so it cannot happen with these settings, but nothing enforces it. `recordMessageStatus` throws `RangeError` for a failed status with a
+timestamp past 8.64e15 ms, which a forged webhook could cause; `say.ts` falls back from buttons to text after any ApiError under 500, a Guard hold or refusal included; `interactiveProblem`
+counts code points while the document checks count UTF-16 units; STOP uses `toUpperCase`, so `"ﬆop"` opts a customer out; `own-calendar.ts` creates `store.ownCalendar` on a read; and the
+messaging and calendar reports in their `Explanation.md` list more.

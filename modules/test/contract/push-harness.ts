@@ -1,14 +1,13 @@
-// What the contract needs to test a shop's web push: a FAKE push Guard (the HTTP server the runtime posts each encrypted push to, modules/push/sender.ts), a browser that can open
+// Shared by the listings and Bookings runtime contracts (moved here from the listings contract). What the contract needs to test a shop's web push: a FAKE push Guard (the HTTP server the runtime posts each encrypted push to, modules/push/sender.ts), a browser that can open
 // what it is sent (the other end of RFC 8291), and the one edit to a shop's folder that turns push on (runtime.json `services.push`, as the deployer writes it). A separate file so
-// harness.ts stays as it is; both runtimes (LISTINGS_IMPL=ts|go) read the same runtime.json, so this serves both.
+// Both implementations of a runtime (TypeScript and Go) read the same runtime.json, so this serves both.
 import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { createECDH, randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { decryptPush, readVapidHeader, vapidVerifies } from "../../../../modules/push/crypto.ts";
-import type { PushCall } from "../../../../modules/push/hosts.ts";
-import type { Shop } from "./harness.ts";
+import { decryptPush, readVapidHeader, vapidVerifies } from "../../push/crypto.ts";
+import type { PushCall } from "../../push/hosts.ts";
 
 /** One call the fake Guard heard: the route, the credential the runtime presented, and the JSON it posted. */
 export interface GuardCall { path: string; authorization: string | undefined; call: PushCall }
@@ -45,7 +44,7 @@ export async function startFakeGuard(): Promise<FakeGuard> {
 export const GUARD_TOKEN = "guard-agent-credential";
 
 /** Turn push on for a shop that has not started yet: runtime.json names the push Guard, and the credential file beside the shop's secrets. */
-export function enablePush(shop: Shop, guard: FakeGuard): void {
+export function enablePush(shop: { client: string; root: string }, guard: FakeGuard): void {
   const file = join(shop.client, "runtime.json");
   const runtime = JSON.parse(readFileSync(file, "utf8")) as { services: Record<string, unknown> };
   const tokenFile = join(shop.root, "secrets", "push_agent_token");

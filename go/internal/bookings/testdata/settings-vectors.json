@@ -1,0 +1,3600 @@
+[
+ {
+  "name": "the example as it is",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": true
+  }
+ },
+ {
+  "name": "no name",
+  "input": {
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "Add the business's name (\"name\")."
+   ]
+  }
+ },
+ {
+  "name": "a bad timezone",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Mars/Olympus",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The time zone \"Mars/Olympus\" is not one I know. Use a name like \"Asia/Kolkata\"."
+   ]
+  }
+ },
+ {
+  "name": "no services",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "Add at least one service (\"services\") with a name, a price in rupees and a duration."
+   ]
+  }
+ },
+ {
+  "name": "a service with a fraction of a rupee",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450.5,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "Service \"haircut\" needs a price in whole rupees (\"priceInr\"), for example 450. This is also the lowest price the agent will ever agree to."
+   ]
+  }
+ },
+ {
+  "name": "a service that lasts 25 hours",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 1500
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "Service \"haircut\" needs a duration in whole minutes (\"durationMinutes\"), between 5 and 1440."
+   ]
+  }
+ },
+ {
+  "name": "a service that lasts a whole day",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 1440
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": true
+  }
+ },
+ {
+  "name": "two services with one id",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "Two services share the id \"haircut\". Each id must be different."
+   ]
+  }
+ },
+ {
+  "name": "opening hours that close before they open",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "20:00",
+     "close": "10:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "On \"mon\" the opening time 20:00 must be earlier than the closing time 10:00."
+   ]
+  }
+ },
+ {
+  "name": "opening hours with a bad time",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "25:00",
+     "close": "26:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The hours for \"tue\" must be written as 24-hour times like \"10:00\" or \"20:30\"."
+   ]
+  }
+ },
+ {
+  "name": "a slot of 0 minutes",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 0,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The slot length (\"slotMinutes\") must be between 5 and 240, not 0."
+   ]
+  }
+ },
+ {
+  "name": "a deposit above the cheapest price",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 1000,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The deposit (₹1000) is more than the cheapest service (₹250). Lower the deposit so it never exceeds a price."
+   ]
+  }
+ },
+ {
+  "name": "a refund limit above the deposit",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 300
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": true
+  }
+ },
+ {
+  "name": "a language the shop does not speak",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "fr"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The language \"fr\" is not supported yet. Use one of \"hi\" (Hindi), \"en\" (English), \"ml\" (Malayalam), \"kn\" (Kannada)."
+   ]
+  }
+ },
+ {
+  "name": "an owner number that is not a number",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "not a number",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The owner's WhatsApp number (\"owner.whatsapp\") must start with + and the country code, then digits only, for example +919800000000."
+   ]
+  }
+ },
+ {
+  "name": "a payment module that does not exist",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "bitcoin"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The payment module \"bitcoin\" is not one I know. Use \"upi\" or \"razorpay\": {\"module\": \"upi\", \"upi\": {\"id\": \"glowsalon@okicici\", \"payee\": \"Glow Salon\"}} or {\"module\": \"razorpay\"}."
+   ]
+  }
+ },
+ {
+  "name": "UPI without an id",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "upi",
+    "upi": {
+     "payee": "Glow Salon"
+    }
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "\"payment.upi.id\": Add the shop's UPI ID, for example glowsalon@okicici."
+   ]
+  }
+ },
+ {
+  "name": "UPI on its own list",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "upi",
+    "upi": {
+     "id": "glowsalon@okicici",
+     "payee": "Glow Salon"
+    }
+   },
+   "calendar": {
+    "module": "own"
+   }
+  },
+  "output": {
+   "ok": true
+  }
+ },
+ {
+  "name": "two chairs",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   },
+   "resources": {
+    "shop": 2
+   }
+  },
+  "output": {
+   "ok": true
+  }
+ },
+ {
+  "name": "a resource that is not listed",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45,
+     "resource": "tractor"
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "Service \"haircut\" uses the resource \"tractor\", which is not listed in \"resources\". Add it there with how many can run at once."
+   ]
+  }
+ },
+ {
+  "name": "a resource with no units",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   },
+   "resources": {
+    "shop": 0
+   }
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "The number for \"shop\" in \"resources\" must be a whole number from 1 to 50, not 0."
+   ]
+  }
+ },
+ {
+  "name": "an unknown key",
+  "input": {
+   "name": "Glow Salon",
+   "address": "12 MG Road, Kochi",
+   "timezone": "Asia/Kolkata",
+   "services": [
+    {
+     "id": "haircut",
+     "names": {
+      "en": [
+       "haircut",
+       "hair cut"
+      ],
+      "hi": [
+       "हेयरकट",
+       "हेयर कट",
+       "बाल कटवाना",
+       "कटिंग"
+      ],
+      "ml": [
+       "ഹെയർകട്ട്",
+       "ഹെയർ കട്ട്",
+       "മുടി വെട്ട്",
+       "കട്ടിംഗ്"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಟ್",
+       "ಹೇರ್ಕಟ್",
+       "ಕೂದಲು ಕತ್ತರಿಸ",
+       "ಕಟಿಂಗ್"
+      ]
+     },
+     "priceInr": 450,
+     "durationMinutes": 45
+    },
+    {
+     "id": "beard-trim",
+     "names": {
+      "en": [
+       "beard trim",
+       "beard"
+      ],
+      "hi": [
+       "दाढ़ी ट्रिम",
+       "दाढ़ी"
+      ],
+      "ml": [
+       "താടി ട്രിം",
+       "താടി"
+      ],
+      "kn": [
+       "ಗಡ್ಡ ಟ್ರಿಮ್",
+       "ಗಡ್ಡ"
+      ]
+     },
+     "priceInr": 250,
+     "durationMinutes": 20
+    },
+    {
+     "id": "facial",
+     "names": {
+      "en": [
+       "facial"
+      ],
+      "hi": [
+       "फेशियल"
+      ],
+      "ml": [
+       "ഫേഷ്യൽ"
+      ],
+      "kn": [
+       "ಫೇಶಿಯಲ್"
+      ]
+     },
+     "priceInr": 900,
+     "durationMinutes": 60
+    },
+    {
+     "id": "hair-colour",
+     "names": {
+      "en": [
+       "hair colour",
+       "hair color"
+      ],
+      "hi": [
+       "हेयर कलर",
+       "बाल रंगवाना"
+      ],
+      "ml": [
+       "ഹെയർ കളർ",
+       "മുടി കളർ",
+       "ഹെയർ ഡൈ"
+      ],
+      "kn": [
+       "ಹೇರ್ ಕಲರ್",
+       "ಕೂದಲು ಬಣ್ಣ",
+       "ಹೇರ್ ಡೈ"
+      ]
+     },
+     "priceInr": 1800,
+     "durationMinutes": 90
+    }
+   ],
+   "openingHours": {
+    "mon": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tue": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wed": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thu": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "fri": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sat": {
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "sun": null
+   },
+   "slotMinutes": 30,
+   "bufferMinutes": 10,
+   "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 15
+   },
+   "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+   },
+   "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+   ],
+   "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+   },
+   "reminders": {
+    "hoursBefore": [
+     24,
+     2
+    ]
+   },
+   "payment": {
+    "module": "razorpay"
+   },
+   "colour": "red"
+  },
+  "output": {
+   "ok": false,
+   "errors": [
+    "I don't know what \"colour\" means in the settings. Allowed: name, address, timezone, services, openingHours, slotMinutes, bufferMinutes, resources, deposit, cancellation, languages, owner, approvers, reminders, payment, calendar, assistant."
+   ]
+  }
+ }
+]
