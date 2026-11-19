@@ -8,7 +8,7 @@ import { fakeClock } from "../../core/clock.ts";
 import { HOUR, DAY } from "../../core/time.ts";
 import { GUEST_HANDLE, guestHash, newGuestHandle } from "../handle.ts";
 import { chatConversationOf, isChannelConversation, isChatConversation } from "../conversation.ts";
-import { CHAT_LIMITS, chatAnswered, chatDay, chatKnown, chatThread, chatTurn, createRate } from "../chat.ts";
+import { CHAT_LIMITS, GUEST_TURNS_BEFORE_62, chatAnswered, guestTurnsPerDay, chatDay, chatKnown, chatThread, chatTurn, createRate } from "../chat.ts";
 import { checkChannelEvent, chatTaskKey, channelEventKey } from "../events.ts";
 import { compactChannel, emptyChannelState, CHAT_THREAD_MAX } from "../state.ts";
 import type { ChannelState } from "../state.ts";
@@ -146,7 +146,7 @@ test("a tap is read only if the shop's latest lines offered it, and is shown wit
 test("the day's model turns: after the cap the words are read by the rules alone (noModel), the buttons still work, and a new day starts again", async () => {
   const w = stepWorld();
   w.ask(true);
-  for (let i = 0; i < CHAT_LIMITS.modelTurnsPerDay; i++) await w.turn({ id: `s-${i}`, text: `question ${i}` });
+  for (let i = 0; i < GUEST_TURNS_BEFORE_62; i++) await w.turn({ id: `s-${i}`, text: `question ${i}` });
   assert.ok(w.seen.every((m) => m.noModel === undefined), "up to the cap the model may be asked");
   assert.equal(chatThread(w.state, w.hash, { retentionDays: 30, now: NOW, dayKey: chatDay(NOW, TZ) }).capped, true);
   await w.turn({ id: "s-over", text: "one more question" });
@@ -159,10 +159,26 @@ test("the day's model turns: after the cap the words are read by the rules alone
   assert.equal(w.seen.at(-1)!.noModel, undefined, "tomorrow the model may be asked again");
 });
 
+test("one guest's daily model turns are the shop's budget number (price list ai.daily.customer-talk.per-guest), and the old 20 only when the budget has none", async () => {
+  assert.equal(guestTurnsPerDay(undefined), GUEST_TURNS_BEFORE_62);
+  assert.equal(guestTurnsPerDay({}), GUEST_TURNS_BEFORE_62);
+  assert.equal(guestTurnsPerDay({ guestTurnsPerDay: 40 }), 40);
+  const w = stepWorld();
+  w.ask(true);
+  const budget = { monthlyMicroInr: 30_000_000, daily: {}, guestTurnsPerDay: 40 };
+  const turn = (i: number) => chatTurn({ state: w.state, ai: w.ai, now: w.clock.now(), timeZone: TZ, kind: "bookings", budget, run: async (m) => { w.seen.push({ text: m.text, from: m.from, ...(m.noModel ? { noModel: true as const } : {}) }); stateFor(w.ai, w.clock.now(), TZ).model += 1; }, setLanguage: () => undefined }, { kind: "chat_message", id: `b-${i}`, handle: w.hash, language: "en", text: `q ${i}` } as never);
+  for (let i = 0; i < 40; i++) await turn(i);
+  assert.ok(w.seen.every((m) => m.noModel === undefined), "the 21st to the 40th may still ask the model");
+  assert.equal(chatThread(w.state, w.hash, { retentionDays: 30, now: NOW, dayKey: chatDay(NOW, TZ), budget }).capped, true);
+  assert.equal(chatThread(w.state, w.hash, { retentionDays: 30, now: NOW, dayKey: chatDay(NOW, TZ) }).capped, true, "without the budget the fallback of 20 is passed too");
+  await turn(40);
+  assert.equal(w.seen.at(-1)!.noModel, true);
+});
+
 test("a turn in which no model was asked does not use up the day's model turns", async () => {
   const w = stepWorld();
   w.ask(false);
-  for (let i = 0; i < CHAT_LIMITS.modelTurnsPerDay + 5; i++) await w.turn({ id: `s-${i}`, text: "menu" });
+  for (let i = 0; i < GUEST_TURNS_BEFORE_62 + 5; i++) await w.turn({ id: `s-${i}`, text: "menu" });
   assert.ok(w.seen.every((m) => m.noModel === undefined));
 });
 

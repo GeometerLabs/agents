@@ -1702,7 +1702,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * all its checks, then the menu), under the guest's own conversation. modules/channels/chat.ts says how the send is kept, made once and capped.
    */
   async function onChatMessage(e: ChatMessage): Promise<void> {
-    await chatTurn({ state: channelState(), ai: store, now: clock.now(), timeZone: tz, kind: "bookings", run: onMessage, ...(deps.chatAudio ? { audio: deps.chatAudio } : {}), setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
+    await chatTurn({ state: channelState(), ai: store, now: clock.now(), timeZone: tz, kind: "bookings", run: onMessage, ...(policy.budget ? { budget: policy.budget } : {}), ...(deps.chatAudio ? { audio: deps.chatAudio } : {}), setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
   }
 
   async function handle(event: AgentEvent): Promise<void> {
