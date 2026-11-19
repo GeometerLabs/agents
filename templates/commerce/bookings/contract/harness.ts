@@ -80,6 +80,18 @@ export function openStart(from: number, minDays = 2, hour = 11): number {
   throw new Error("no open day found");
 }
 
+/** Settings that make the shop open round the clock every day (a booking a few hours from now is then possible whenever a test runs: the late-cancellation rules need one). */
+export const ALWAYS_OPEN = { openingHours: Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((d) => [d, { open: "00:00", close: "23:59" }])) };
+
+/** A start (epoch ms) two to three hours after `from`, on the 30-minute grid and clear of midnight (a booking must end the day it starts): for a shop with ALWAYS_OPEN. */
+export function soonStart(from: number): number {
+  let t = Math.ceil((from + 2 * HOUR) / (30 * MIN)) * 30 * MIN;
+  const p = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(t);
+  const minutes = Number(p.find((x) => x.type === "hour")!.value) * 60 + Number(p.find((x) => x.type === "minute")!.value);
+  if (minutes > 22 * 60) t += (24 * 60 - minutes) * MIN; // past 22:00: the start moves to midnight, which is still inside 24 hours
+  return t;
+}
+
 export interface ShopOptions {
   /** "fakes" (default): in-memory services and the test clock. "guards": the fake Guards of guards.ts and the real clock. */
   mode?: "fakes" | "guards";
@@ -136,6 +148,10 @@ export interface Shop {
   events(list: unknown[]): Promise<Answer>;
   /** A customer's WhatsApp message arrives (as the inbox hands it on); waits until it is handled. `reply` is a tapped button or list row. */
   inbound(from: string, text: string, o?: { id?: string; reply?: { id: string; kind: "button" | "list" }; timestamp?: number; extra?: Record<string, unknown> }): Promise<Answer>;
+  /** A customer taps the button or list row `id` of the newest interactive message the shop sent them (guards mode: read from the WhatsApp stand-in's outbox, so a tap of something never shown throws). */
+  tap(id: string, o?: { from?: string }): Promise<Answer>;
+  /** What the shop sent a number on WhatsApp (guards mode, from the WhatsApp stand-in): kind (text, template, interactive...), template name and words, oldest first. */
+  sent(to: string): { kind: string; templateName?: string; text: string; interactive?: any }[];
   /** POST /internal/channel/events with the channel token (and the owner's link for an owner kind). */
   channelEvents(list: unknown[], o?: { owner?: boolean | string; session?: string }): Promise<Answer>;
   /** A customer's booking from the shop's page: returns the raw handle and its hash. Waits until handled. */
@@ -275,11 +291,22 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     async status() { return (await shop.call("/status")).body; },
     events: (list) => shop.call("/internal/events", { body: { events: list } }),
     async inbound(from, text, m = {}) {
-      const message = { id: m.id ?? uid("wamid"), from, text, timestamp: m.timestamp ?? shop.now(), ...(m.reply ? { reply: m.reply } : {}), ...(m.extra ?? {}) };
+      // in guards mode the message is made by the WhatsApp stand-in, which also opens the customer's 24-hour window there (it refuses a plain message to a number that has not written)
+      const made = guards ? guards.standins.fakes.messaging.receive(from, text, { ...(m.id ? { id: m.id } : {}), ...(m.reply ? { reply: m.reply } : {}) } as never) : undefined;
+      const message = made ?? { id: m.id ?? uid("wamid"), from, text, timestamp: m.timestamp ?? shop.now(), ...(m.reply ? { reply: m.reply } : {}) };
+      Object.assign(message, m.extra ?? {});
       const a = await shop.events([{ kind: "message", message }]);
       if (a.status === 200) await shop.settle();
       return a;
     },
+    async tap(id, t = {}) {
+      const from = t.from ?? CUSTOMER;
+      const shown = shop.sent(from).filter((x) => x.interactive).reverse().map((x) => x.interactive).find((i) => [...(i.buttons ?? []), ...(i.list?.rows ?? [])].some((c: { id: string }) => c.id === id));
+      const option = [...(shown?.buttons ?? []), ...(shown?.list?.rows ?? [])].find((c: { id: string }) => c.id === id);
+      if (!shown || !option) throw new Error(`No buttons or list ${from} was sent have an option with the id "${id}".`);
+      return shop.inbound(from, option.title, { reply: { id, kind: shown.buttons ? "button" : "list" } });
+    },
+    sent: (to) => (guards ? guards.standins.fakes.messaging.sentTo(to) : []) as never,
     channelEvents: (list, c = {}) => shop.call("/internal/channel/events", { body: { events: list }, ...(c.owner ? { owner: typeof c.owner === "string" ? c.owner : owner } : {}), ...(c.session ? { session: c.session } : {}) }),
     async book(b = {}) {
       const handle = newHandle();

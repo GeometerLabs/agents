@@ -63,6 +63,8 @@ export interface Recorder {
   loseReply(o?: { times?: number; match?: Plan["match"] }): void;
   /** Wait `ms` before passing the next `times` matching calls on. */
   delay(ms: number, o?: { times?: number; match?: Plan["match"] }): void;
+  /** Take every planned fault away (down, an answer, a delay, a lost reply). */
+  clear(): void;
   /** Down: every call answers 503 (Guard's captured kill-switch answer) until `up()`. */
   down(): void;
   up(): void;
@@ -126,6 +128,7 @@ async function recorder(service: Service, target: string, calls: GuardCall[]): P
     drop: (o) => add({ kind: "drop" }, o),
     loseReply: (o) => add({ kind: "delay", ms: 0 }, o, { lose: true }),
     delay: (ms, o) => add({ kind: "delay", ms }, o),
+    clear: () => { plans.length = 0; isDown = false; },
     down: () => { isDown = true; }, up: () => { isDown = false; },
     close: () => new Promise<void>((r) => { server.closeAllConnections(); server.close(() => r()); }),
   };
