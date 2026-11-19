@@ -184,7 +184,7 @@ export const KINDS: Record<string, Kind> = {
     validateRuntimeConfig: stockRuntime,
     papers: { runOn: stockRunOn, summariseRun: stockSummary, buildGoLiveCertificate: stockCertificate, policyDigest: stockDigest, writeGoLiveCertificate: stockWrite },
   },
-  // Listings only (18 Nov 2026): a shop that only shows what it has. No Guard, no money, no WhatsApp: it runs on the server's one shared process (modules/runtime/shared.ts) and is free.
+  // Listings only (18 Nov 2026): a shop that only shows what it has. No Guard, no money, no WhatsApp: it runs on the server's one shared process (go/cmd/listings-shared) and is free.
   // It has no hand check or go-live paper (nothing it does can move money or send a message), so `papers` is left out and every place that makes one asks first.
   listings: {
     id: "listings", shared: true,

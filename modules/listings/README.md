@@ -165,7 +165,7 @@ key it sees for a shop page. So the key must stay with the **shop**, not with wh
 `runtime/shop-protocol.ts` builds the feed from the runtime's own state (the same public read the page uses) and signs it (`protocol.ts signedFeed`): the canonical JSON of the feed without
 `signature`, Ed25519, `signature { alg, keyId, key, sig }`. The front sends only the shop's page address, name, languages and chat address; the runtime refuses a page that is not an address of this
 shop (its `pages.json`), refuses a chat address off the page, and signs nothing else the front says. Served only while the owner's switch is on (404 otherwise). A directory's own reader
-(`modules/discovery/feed.ts`, `trust.ts`) accepts it and refuses it when a price is changed. A listing with no text (the plain form writes a title only) writes no `text` for that language, because the
+(`go/internal/directory` feed.go and trust.go; modules/discovery/contract/shop-protocol.contract.test.ts) accepts it and refuses it when a price is changed. A listing with no text (the plain form writes a title only) writes no `text` for that language, because the
 reader refuses an empty string.
 
 ## Check: "do you still have these?"
@@ -178,7 +178,7 @@ page and the ids to the runtime.
 
 ## The Agent Card
 
-`<shop page>/agent-card.json`, while the switch is on. `channels/shop-card.ts` builds it with the A2A 1.0.1 field names the directory's card uses (`discovery/card.ts`): skills `show_listings`, `check_items`
+`<shop page>/agent-card.json`, while the switch is on. `channels/shop-card.ts` builds it with the A2A 1.0.1 field names the directory's card uses (`go/internal/directory/words/cards.json`): skills `show_listings`, `check_items`
 and the shop's own operations (from the same tool lists the API and MCP are made from), interfaces `MCP` (kinds that have an endpoint) and `HTTPS-JSON`. The runtime signs it with the shop's key (a JWS, the same
 `kid` as the feed) only if every address in it is under the shop's page.
 

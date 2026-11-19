@@ -3,6 +3,7 @@
 package directory
 
 import (
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"math"
 	"regexp"
 	"strings"
@@ -10,9 +11,9 @@ import (
 
 // normal: words as they are indexed and searched: composed form, no zero-width joiners (they split Malayalam words), lower case.
 func normal(text string) string {
-	t := nfc(text)
+	t := language.NFC(text)
 	t = strings.ReplaceAll(strings.ReplaceAll(t, "‌", ""), "‍", "")
-	return jsLower(t)
+	return language.LowerJS(t)
 }
 
 // haversineKm is the great-circle distance in kilometres. Math.sin and the others are V8's; Go's may differ in the last bit, which can only matter exactly on a band edge.
@@ -30,7 +31,7 @@ var wordRun = regexp.MustCompile(`[\p{L}\p{M}\p{N}]+`)
 func wordsOf(text string) []string {
 	var out []string
 	for _, w := range wordRun.FindAllString(normal(text), -1) {
-		out = append(out, sliceUTF16(w, 40))
+		out = append(out, language.UTF16SliceFFFD(w, 40))
 		if len(out) == 8 {
 			break
 		}

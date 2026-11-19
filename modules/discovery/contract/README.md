@@ -1,16 +1,17 @@
 # The directory contract
 
-A suite that describes what the directory SERVICE does **as the outside sees it** (`bundle/services/directory.ts`: the process the deployer runs as the `directory` container), so more than
-one implementation can be held to it. Every test writes the service's config as the deployer does, starts the service as a **separate process** on a free port and talks to it only over
-HTTP (and reads two of its files, read only). Decision 61, wave 1c (the same method as `templates/commerce/listings/contract/`).
+A suite that describes what the directory SERVICE does **as the outside sees it** (the program the deployer runs as the `directory` container: since 19 Nov 2026 the Go program
+`go/cmd/directory`). Every test writes the service's config as the deployer does, starts the service as a **separate process** on a free port and talks to it only over HTTP (and reads two of
+its files, read only). Decision 61, wave 1c (the same method as `templates/commerce/listings/contract/`). Until the TypeScript service (`bundle/services/directory.ts`, `modules/discovery`) was
+deleted, every test passed on both; its answers are kept in `golden/` (below).
 
 ```
-DIRECTORY_IMPL=ts node --test --test-concurrency=1 modules/discovery/contract/        # the TypeScript service (the default)
-DIRECTORY_IMPL=go DIRECTORY_GO_BIN=go/bin/directory node --test --test-concurrency=1 modules/discovery/contract/
+cd go && go build -o bin/directory ./cmd/directory && cd ..
+node --test --test-concurrency=1 modules/discovery/contract/        # DIRECTORY_GO_BIN names another binary (default go/bin/directory)
 ```
 
-On `go` with no binary at `DIRECTORY_GO_BIN` (default `go/bin/directory`) every test is skipped and says why. Build: `cd go && go build -o bin/directory ./cmd/directory`.
-Every process the harness starts goes through `templates/commerce/listings/contract/children.ts` (its own process group, stopped at the end of every test, a leak fails the run).
+With no binary every test that needs one is skipped and says why. Every process the harness starts goes through `modules/test/contract/children.ts` (its own process group,
+stopped at the end of every test, a leak fails the run).
 
 ## The inventory
 
@@ -48,22 +49,33 @@ JSON schema `typed_search`) only with the assistant on. Nothing else leaves.
 A 404 or 410 keeps the shop's items and, after a whole day of it, drops the feed and its items (the pinned key stays). A feed signed by another key than the pinned one is HELD (hidden from
 every search) and listed for a person.
 
-## Which test file covers what, and what is left to a unit test
+## The golden answers, the clock
 
-| TypeScript test (`modules/discovery/test/`) | covered by | what stays a unit test (a pure function: a Go unit test with vectors made from the TypeScript) |
-| --- | --- | --- |
-| `feed.test.ts` (reading a feed, the limits, the money strings) | **contract** `feeds.contract.test.ts` (over HTTP: what is listed, dropped, refused and why) | `parseFeed` on every field: a unit test with vectors (`go/internal/directory/testdata`) |
-| `index.test.ts` (the index, words, FTS, the rebuild) | **contract** `search.contract.test.ts` (four languages, Latin letters, filters, the rebuild is not reachable) | `skeleton` (romanise), `normal`, `wordsOf`: unit with vectors |
-| `search.test.ts` (candidates, order, check, the 10) | **contract** `search.contract.test.ts` (fit, bands, in stock, turns, the cap) and `feeds.contract.test.ts` (the checks) | the order function on fixed seeds: unit with vectors (`order`, `turnHash`) |
-| `order.test.ts` (the order never reads a price) | **contract** `search.contract.test.ts` (same shops, other prices and names: same order) | the field list and the fixed-seed order: unit |
-| `notices.test.ts` | **contract** `feeds.contract.test.ts` (accepted, refused, limited, once a minute) | `feedAllowed` on addresses: unit with vectors of the TypeScript URL reader (`testdata/url-vectors.json`) |
-| `http.test.ts` (routes, headers, privacy, limits) | **contract** `search.contract.test.ts` | the limiter window: unit |
-| `page.test.ts` (the pages in four languages) | **contract** `search.contract.test.ts` (the states, the policy, the escaping) | the words, the price format, "confirmed N days ago": unit with vectors; and the packed words are GENERATED from the TypeScript with a freshness test |
-| `mcp.test.ts` | **contract** `search.contract.test.ts` (the endpoint) and `assistant.contract.test.ts` (`ask`) | none |
-| `assistant.test.ts` (typed search, cleaning, rules, caps, grounding) | **contract** `assistant.contract.test.ts` (good and malformed answers, caps, credential, cleaning, the page) | `readTypedSearch`, `cleanQuestion`, `readRules`, `requestOf`: unit with vectors; `groundedProblem` (the hook for a model-written line, which the service never wires) and the decision model (`systemOne`, which the deployer never configures) are NOT ported (Deferred.md) |
+`differential.test.ts` used to give the TypeScript and the Go service the same requests over the same shops and compare the answers whole. Before the TypeScript was deleted it was
+RECORDED: `golden/differential.json.gz` holds its 456 answers (every page state in four languages, the JSON, the filters and refusals, the limit pages, the MCP answers, the notices, the
+assistant over the form and the tool, the card's body), masked only where a run differs (nonces, ISO times, the card's signature, the style sheet by its hash). It was recorded twice
+(identical), and both services matched it. A replay runs at the recorded instant: the fake shops' clock (`harness.ts now()`) and the directory's test clock (`GEOMETER_TEST=1`,
+`GEOMETER_TEST_CLOCK_FILE`; refused unless the service listens on 127.0.0.1, which the deployer never gives it) are moved back to it, so the day the order turns on and "Confirmed today"
+come out as they were. After a change that is meant, record again (`DIRECTORY_GOLDEN=write`, see the file's header) and read the difference.
 
-Not covered over HTTP because a test cannot reach it: the rebuild of the index from its kept feeds (`rebuildIndex` is called by no service path), and a real model or provider (everything is a scripted fake).
+## Where the TypeScript unit tests went (deleted 19 Nov 2026)
+
+| TypeScript test (`modules/discovery/test/`) | now checked by |
+| --- | --- |
+| `feed.test.ts` | `feeds.contract.test.ts` (over HTTP) and `go/internal/directory/golden_test.go` `TestFeedsReadAsTheTypeScriptReadThem` (a good feed and 46 changes, the TypeScript reader's answers in `testdata/feeds.json.gz`) |
+| `index.test.ts` | `search.contract.test.ts`, `cross-restart.test.ts`, `feeds.contract.test.ts` (the counts: their values and columns, no table of searches or addresses), the golden answers, `refresh_test.go` (a failing feed keeps the index; fewer items replace the old), `vectors_test.go` (the fold, the words); the rebuild is not ported (Deferred.md) |
+| `search.test.ts` | `search.contract.test.ts`, `feeds.contract.test.ts`, the golden answers, `check_test.go` (60 s memory at 59 and 61 s, the two-minute edge, an answer changed after signing, the question's body) |
+| `order.test.ts` | `search.contract.test.ts`, `order_test.go` (the six fields; the order code names no price, plan, payment...), `vectors_test.go` (the TypeScript's order on 36 cases) |
+| `notices.test.ts` | `feeds.contract.test.ts`, `shop-protocol.contract.test.ts`, `notices_test.go`, `refresh_test.go` |
+| `http.test.ts` | `search.contract.test.ts`, the golden answers (every route's status and headers), `limits_test.go` (the window resets after a minute) |
+| `page.test.ts` | the golden answers and `golden_test.go` `TestPagesAreTheTypeScriptPages` (every state in four languages, whole, as the TypeScript rendered them: `testdata/pages.json.gz`); its check of the words themselves (every line in every language, none empty, none English, no banned word) is `modules/discovery/test/words.test.ts`, beside `words.ts` |
+| `mcp.test.ts` | `search.contract.test.ts` (and a card changed after signing fails), `feeds.contract.test.ts` (a held shop's `shop_page` is not found), `assistant.contract.test.ts`, the golden answers (every MCP answer whole) |
+| `assistant.test.ts` | `assistant.contract.test.ts`, the golden answers, `vectors_test.go` (typed answers, cleaning, rules); the decision model and the model-written line are not ported (Deferred.md) |
+| `bundle/test/directory-service.test.ts`, `directory-assistant.test.ts` | the deployer's checks: `bundle/test/go-runtime.test.ts`; the service's way out: `fetcher_test.go`; its key: `cmd/directory/main_test.go`; its credential: `assistant.contract.test.ts` |
+| `modules/listings/test/protocol.test.ts` (its four checks with the directory's reader) | `shop-protocol.contract.test.ts` (the shops' own feed, check answer and notice, accepted by the directory) |
+
+Not covered over HTTP because a test cannot reach it: the rebuild of the index from its kept feeds (no service path), and a real model or provider (everything is a scripted fake).
 
 `harness.ts` also holds the fake door (one local server that answers for every shop of the pages domain), the fake shops (signed with the TypeScript signing module, as the TypeScript shops
-are) and the fake OpenAI-compatible model. The order rotates by day, so the tests check its PROPERTIES, never a fixed sequence; each test uses a visitor address of its own so the limits of one
+are; `shop-protocol.contract.test.ts` uses the shops' own protocol code) and the fake OpenAI-compatible model. The order rotates by day, so the tests check its PROPERTIES, never a fixed sequence; each test uses a visitor address of its own so the limits of one
 never meet another's.

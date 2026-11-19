@@ -62,22 +62,15 @@ export const names = {
 };
 
 /**
- * The shared process for listings-only shops (18 Nov 2026; modules/runtime/shared.ts): ONE container for every such shop on a server, with one door on the admin network, one
+ * The shared process for listings-only shops (18 Nov 2026; the Go program go/cmd/listings-shared since wave 1b): ONE container for every such shop on a server, with one door on the admin network, one
  * network that holds only it and the model Guard, and ONE data volume with a folder per shop (`/home/node/<shop>/data/agent.db`, the same layout inside as any shop's volume,
  * one level down). `index` is the shared process's place in the address plan: the shops' own are 1 to 199 (lib/state.ts), so 200 is never a shop's.
  */
 export const SHARED = { runtime: "rt-listings", door: "door-listings", dataVolume: "rt-data-listings", net: "net-listings", index: 200 } as const;
 /**
- * The shared process's worker pool (modules/runtime/shared-pool.ts) and the container's memory wall, from ONE place so the two cannot drift: the container gets SHARED_WORKERS and SHARED_WORKER_MB
- * in its environment (compose.ts) and a mem_limit of workers x workerMb + marginMb. The worker limits cap V8's old-generation heap ONLY, not Buffers, SQLite's own memory, the main thread or
- * the thread stacks, so the margin (512 MB) covers those and the quarantine workers (128 MB each, only for a shop that hurt a worker twice); the container limit is the outer wall.
- */
-export const SHARED_POOL = { workers: 4, workerMb: 256, marginMb: 512 } as const;
-export const sharedMemLimitMb = (): number => SHARED_POOL.workers * SHARED_POOL.workerMb + SHARED_POOL.marginMb;
-/**
- * The same wall for the shared process on Go (wave 1b): no worker pool, so the number is not workers x limit. Measured 19 Nov (go/TRIAL.md): 100 shops held in one Go process are about
+ * The memory wall of the shared process (on Go since wave 1b; the Node process's worker pool, 4 x 256 + 512 MB, went with it): Measured 19 Nov (go/TRIAL.md): 100 shops held in one Go process are about
  * 104 MB (the Node pool: 391 MB), and a quarantined shop runs as a child of the same binary at about 20 to 30 MB. 1024 MB is ten times the 100-shop figure: room for many hundreds of
- * shops and a few children, and still a wall that stops a leak from taking the server. (The Node figure above stays for the older versions that run on Node.)
+ * shops and a few children, and still a wall that stops a leak from taking the server.
  */
 export const SHARED_GO_MEM_LIMIT_MB = 1024;
 /** The compose volume that holds a shop's data: its own, or the shared one. */

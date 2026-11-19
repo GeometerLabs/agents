@@ -1,5 +1,5 @@
 // A shop's A2A Agent Card (specs/agent-card.md, "What a shop's card says"), served at `<shop page>/agent-card.json` while the owner's switch "Show my shop on Streetlist and in search" is on.
-// It follows the field names of the A2A specification, version 1.0.1 (the same ones modules/discovery/card.ts, the directory's own card, uses): name, description, supportedInterfaces
+// It follows the field names of the A2A specification, version 1.0.1 (the same ones the directory's own card uses, go/internal/directory/words/cards.json): name, description, supportedInterfaces
 // [{url, protocolBinding, protocolVersion}], provider {organization, url}, version, documentationUrl, capabilities, defaultInputModes, defaultOutputModes, skills [{id, name, description, tags,
 // examples, inputModes, outputModes}]. Members that hold only a default value are left out, as the specification's section 8.4.1 asks, because the card is then signed (a JWS over its
 // RFC 8785 form, modules/signing/jws.ts) with the SHOP'S key by the shop's runtime: this file builds the card, it never holds a key.

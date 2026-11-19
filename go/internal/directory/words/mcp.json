@@ -1,0 +1,187 @@
+{
+  "about": "The directory's MCP tools (search_listings, get_listing, shop_page) and the `ask` tool, as tools/list gives them. Go source since 19 Nov 2026 (it was modules/discovery/mcp.ts DIRECTORY_TOOLS and ASK_TOOL).",
+  "tools": [
+    {
+      "name": "search_listings",
+      "description": "Find what local shops have. Give the words the buyer used (any of English, Hindi, Malayalam, Kannada, or the same words in Latin letters), optionally a category, the buyer's map point (lat and lon) or town, and a radius. Results come in the directory's fair order (fit first, then distance, shops in the same distance band take turns; never by payment or plan), at most 10 a page, and each is confirmed by its shop when the shop answers: `checked: true` means the shop just said so, `checked: false` means it did not answer and the buyer should call to check. Prices are in rupees. Say what the results say and nothing more; open `chat` to talk to the shop.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "What the buyer wants, in their own words."
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "pets",
+              "food",
+              "clothes",
+              "home",
+              "electronics",
+              "vehicles_and_cycles",
+              "services",
+              "other"
+            ]
+          },
+          "lat": {
+            "type": "string",
+            "description": "The buyer's latitude, decimal degrees as a string (for example \"10.52\")."
+          },
+          "lon": {
+            "type": "string",
+            "description": "The buyer's longitude, decimal degrees as a string."
+          },
+          "town": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "The buyer's town, when there is no map point."
+          },
+          "radius_km": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "lang": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "ml",
+              "kn"
+            ],
+            "description": "The buyer's language for titles (a listing carries its words in all four; one an assistant wrote is marked machineWritten)."
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 190,
+            "description": "0, 10, 20 ... for the next page (the `next` of the last answer)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_listing",
+      "description": "One listing in full: its words in every language it has, its price, photos, how many there are, and the shop's own confirmation of whether it is still there.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "type": "string",
+            "description": "The shop's page address, as a result gave it in shop.page (for example https://streetlist.in/rani-pets/)."
+          },
+          "id": {
+            "type": "string",
+            "description": "The listing's id in that shop (item.id of a result)."
+          },
+          "lang": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "ml",
+              "kn"
+            ],
+            "description": "The buyer's language for titles (a listing carries its words in all four; one an assistant wrote is marked machineWritten)."
+          }
+        },
+        "required": [
+          "shop",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "shop_page",
+      "description": "One shop: its name, trade, town, where to chat with it and its Agent Card, and the listings it has (not confirmed one by one: use get_listing for that). A registration number, where a shop shows one, is the owner's own word and is not checked by anyone.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "type": "string",
+            "description": "The shop's page address, as a result gave it in shop.page (for example https://streetlist.in/rani-pets/)."
+          },
+          "lang": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "ml",
+              "kn"
+            ],
+            "description": "The buyer's language for titles (a listing carries its words in all four; one an assistant wrote is marked machineWritten)."
+          }
+        },
+        "required": [
+          "shop"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ],
+  "askTool": {
+    "name": "ask",
+    "description": "Give the buyer's own words (any of English, Hindi, Malayalam, Kannada, or the same in Latin letters) and get what local shops have, in one call. The directory turns the words into a typed search (returned as `assistant.search`: words, wordsEn, category, place, radiusKm, maxPrice), runs it with its own code, and returns the results in the same fair order as search_listings, each confirmed by its shop where the shop answers. `assistant.line` is a short line in the buyer's language built from the results; say only what the results say. When the directory's assistant is over its daily or monthly cap, the words are searched exactly as given and `assistant.notice` says so. Phone numbers, e-mail addresses, links, names and exact addresses in the words are removed before any model sees them; no shop ever receives the words.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "What the buyer wants, in their own words."
+        },
+        "lat": {
+          "type": "string",
+          "description": "The buyer's latitude, decimal degrees as a string, for near me and distances."
+        },
+        "lon": {
+          "type": "string",
+          "description": "The buyer's longitude, decimal degrees as a string."
+        },
+        "lang": {
+          "type": "string",
+          "enum": [
+            "en",
+            "hi",
+            "ml",
+            "kn"
+          ],
+          "description": "The buyer's language for titles (a listing carries its words in all four; one an assistant wrote is marked machineWritten)."
+        }
+      },
+      "required": [
+        "question"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  }
+}

@@ -1,0 +1,115 @@
+{
+ "about": "What stock.contract.test.ts saw, recorded by golden.ts (LISTINGS_GOLDEN=write); masked: signatures, ISO instants, epoch ms.",
+ "impl": "ts",
+ "commit": "b253982ec2fd479af935472d9c1769855c1d58b0",
+ "entries": {
+  "the saved stock after three starts": {
+   "at": 1795076460009,
+   "value": {
+    "lines": [
+     {
+      "id": "listing:l-1",
+      "name": "Two Persian kittens",
+      "unit": "pc",
+      "count": 2,
+      "low": 3,
+      "lowFlag": true,
+      "crossings": 2,
+      "applied": {
+       "req:t-2": {
+        "qty": 2,
+        "took": 2,
+        "atMs": 0
+       },
+       "req:t-3": {
+        "qty": 1,
+        "took": 1,
+        "atMs": 0
+       },
+       "req:t-5": {
+        "qty": 9,
+        "took": 0,
+        "atMs": 0
+       },
+       "req:t-6": {
+        "qty": 7,
+        "took": 7,
+        "atMs": 0
+       }
+      },
+      "moves": [
+       {
+        "kind": "started",
+        "delta": 6,
+        "after": 6,
+        "atMs": 0,
+        "by": "owner"
+       },
+       {
+        "kind": "sold",
+        "delta": -2,
+        "after": 4,
+        "atMs": 0,
+        "by": "owner"
+       },
+       {
+        "kind": "sold",
+        "delta": -1,
+        "after": 3,
+        "atMs": 0,
+        "by": "owner"
+       },
+       {
+        "kind": "corrected",
+        "delta": 6,
+        "after": 9,
+        "atMs": 0,
+        "by": "owner"
+       },
+       {
+        "kind": "sold",
+        "delta": -7,
+        "after": 2,
+        "atMs": 0,
+        "by": "owner"
+       }
+      ],
+      "startedMs": 0
+     },
+     {
+      "id": "listing:l-2",
+      "name": "Lamp",
+      "count": 2,
+      "lowFlag": false,
+      "crossings": 0,
+      "applied": {},
+      "moves": [
+       {
+        "kind": "started",
+        "delta": 2,
+        "after": 2,
+        "atMs": 0,
+        "by": "owner"
+       }
+      ],
+      "startedMs": 0
+     }
+    ],
+    "alerts": [
+     {
+      "line": "listing:l-1",
+      "crossing": 1,
+      "count": 3,
+      "atMs": 0
+     },
+     {
+      "line": "listing:l-1",
+      "crossing": 2,
+      "count": 2,
+      "atMs": 0
+     }
+    ]
+   }
+  }
+ }
+}

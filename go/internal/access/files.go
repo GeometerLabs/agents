@@ -12,13 +12,11 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
-	"unicode/utf16"
 
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	xlanguage "golang.org/x/text/language"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -49,80 +47,16 @@ func sha(text string) string { s := sha256.Sum256([]byte(text)); return hex.Enco
 // readFile is "the file's text, or nothing": a file that cannot be read for a moment (a write in the middle) is as if it were not there, and is read again on the next request.
 func readFile(file string) ([]byte, bool) { b, err := os.ReadFile(file); return b, err == nil }
 
-// cut is JavaScript's `text.slice(0, n)`: n UTF-16 code units (a pair cut in half leaves a replacement character, where JavaScript leaves a lone surrogate).
-func cut(s string, n int) string {
-	if u := utf16.Encode([]rune(s)); len(u) > n {
-		return string(utf16.Decode(u[:n]))
-	}
-	return s
-}
-
 // ---- times in files: JavaScript's Date.parse --------------------------------------------------------------------------------------------------------------
 
-// isoTime is the ECMAScript date-time string format (and the few liberties V8 takes with it: a lower-case t or z, a space for the T, an offset without its colon, any number of
-// fraction digits): what Date.parse reads in owner-grants.json, owner-reset.json and owner-sessions.json. V8 also reads older, looser forms ("Nov 19 2026"); this does not, and
-// such a field is left out, as an unreadable one is (a broken field never widens access). The panel and the admin write toISOString(), which both read the same.
-var isoTime = regexp.MustCompile(`^([+-]\d{6}|\d{4})(?:-(\d{2})(?:-(\d{2}))?)?(?:[Tt ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?([Zz]|[+-]\d{2}:?\d{2})?)?$`)
-
-// ParseJSDate is Date.parse for those forms: epoch milliseconds, and false for what Date.parse would call NaN (or what this does not read). A date alone is UTC; a date and a
-// time with no offset is the machine's local time, as JavaScript reads them.
-func ParseJSDate(text string) (int64, bool) {
-	m := isoTime.FindStringSubmatch(text)
-	if m == nil || m[1] == "-000000" {
-		return 0, false
-	}
-	year, _ := strconv.Atoi(m[1])
-	num := func(s string, def int) int {
-		if s == "" {
-			return def
-		}
-		n, _ := strconv.Atoi(s)
-		return n
-	}
-	month, dayOf := num(m[2], 1), num(m[3], 1)
-	hour, minute, second := num(m[4], 0), num(m[5], 0), num(m[6], 0)
-	ms := 0
-	if m[7] != "" {
-		f := (m[7] + "00")[:3] // V8 keeps the first three digits
-		ms, _ = strconv.Atoi(f)
-	}
-	// V8 lets a day run past its month (the 30th of February is the 2nd of March) but not past 31; 24:00 is the next midnight, and nothing after it
-	if month < 1 || month > 12 || dayOf < 1 || dayOf > 31 || minute > 59 || second > 59 || hour > 24 || (hour == 24 && (minute != 0 || second != 0 || ms != 0)) {
-		return 0, false
-	}
-	loc := time.UTC
-	hasTime := m[4] != ""
-	if hasTime && m[8] == "" {
-		loc = time.Local
-	}
-	t := time.Date(year, time.Month(month), dayOf, hour, minute, second, ms*int(time.Millisecond), loc)
-	if z := m[8]; z != "" && z != "Z" && z != "z" {
-		off := strings.ReplaceAll(z[1:], ":", "")
-		oh, _ := strconv.Atoi(off[:2])
-		om, _ := strconv.Atoi(off[2:])
-		if oh > 23 || om > 59 {
-			return 0, false
-		}
-		shift := time.Duration(oh)*time.Hour + time.Duration(om)*time.Minute
-		if z[0] == '+' {
-			t = t.Add(-shift)
-		} else {
-			t = t.Add(shift)
-		}
-	}
-	// a Date holds at most 8.64e15 ms either side of 1970 (the year 275760); past that Date.parse says NaN
-	if ms := t.UnixMilli(); ms > 8_640_000_000_000_000 || ms < -8_640_000_000_000_000 {
-		return 0, false
-	}
-	return t.UnixMilli(), true
-}
+// Times in these files are read by language.ParseJSDate (Date.parse for the ISO forms, one implementation for every package).
 
 func timeOf(v any) (string, int64, bool) {
 	s, ok := v.(string)
 	if !ok {
 		return "", 0, false
 	}
-	t, ok := ParseJSDate(s)
+	t, ok := language.ParseJSDate(s)
 	return s, t, ok
 }
 
@@ -277,7 +211,7 @@ func readOwnerGrants(b []byte, ok bool) *Grants {
 		at, att, okA := timeOf(p["askedAt"])
 		eff, _, okE := timeOf(p["effectiveAt"])
 		if okB && okA && okE {
-			g.PendingRemoval = &PendingRemoval{AskedBy: cut(by, 80), AskedAt: at, EffectiveAt: eff, askedAt: att}
+			g.PendingRemoval = &PendingRemoval{AskedBy: language.UTF16SliceFFFD(by, 80), AskedAt: at, EffectiveAt: eff, askedAt: att}
 		}
 	}
 	return g
@@ -298,7 +232,7 @@ func readOwnerReset(b []byte, ok bool) *Reset {
 	if !okA || !okR || !okB {
 		return nil
 	}
-	r := &Reset{At: at, at: att, Reason: cut(reason, 300), By: cut(by, 80)}
+	r := &Reset{At: at, at: att, Reason: language.UTF16SliceFFFD(reason, 300), By: language.UTF16SliceFFFD(by, 80)}
 	// the reset's own QR lives HERE, in the admin's file, and nowhere the panel writes: from a reset until the owner's first passkey after it, the runtime accepts only this one
 	if s, ok := f["setup"].(map[string]any); ok {
 		h, okH := s["sha256"].(string)
@@ -337,7 +271,7 @@ const recoveryLetters = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
 
 var recoveryCode = regexp.MustCompile(`^[` + recoveryLetters + `]{10}$`)
 
-var upper = cases.Upper(language.Und)
+var upper = cases.Upper(xlanguage.Und)
 
 // jsSpace is JavaScript's \s (with the u flag): the Unicode spaces and line ends, and the byte-order mark. Not Go's unicode.IsSpace, which differs (U+0085 is in Go's, U+FEFF
 // is not).

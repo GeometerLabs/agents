@@ -1,0 +1,336 @@
+{
+ "about": "What differential.test.ts saw, recorded by golden.ts (LISTINGS_GOLDEN=write); masked: signatures, ISO instants, epoch ms.",
+ "impl": "ts",
+ "commit": "b253982ec2fd479af935472d9c1769855c1d58b0",
+ "entries": {
+  "the owner's form, the place, the public read and the feed": {
+   "at": 1795076396712,
+   "value": [
+    [
+     422,
+     {
+      "why": "bad_qty",
+      "error": "The shop's rules refuse that (bad_qty)."
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     422,
+     {
+      "why": "too_long",
+      "error": "The shop's rules refuse that (too_long)."
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     422,
+     {
+      "why": "bad_category",
+      "error": "The shop's rules refuse that (bad_category)."
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    [
+     200,
+     {
+      "saved": 1,
+      "duplicates": 0
+     }
+    ],
+    {
+     "shop": {
+      "visible": true,
+      "lat": 9.93123,
+      "lon": 76.2673,
+      "registration": "PSR 12"
+     },
+     "listings": [
+      {
+       "id": "l-4",
+       "state": "live",
+       "category": "pets",
+       "ownerLang": "en",
+       "words": {
+        "en": {
+         "title": "Puppy",
+         "text": ""
+        }
+       },
+       "photos": [],
+       "freshness": "fresh",
+       "confirmedMs": "<ms>"
+      },
+      {
+       "id": "l-2",
+       "state": "live",
+       "category": "home",
+       "ownerLang": "en",
+       "words": {
+        "en": {
+         "title": "Lamp",
+         "text": ""
+        }
+       },
+       "pricePaise": 45056,
+       "priceNote": "per piece",
+       "qty": 3,
+       "photos": [],
+       "freshness": "fresh",
+       "confirmedMs": "<ms>"
+      }
+     ],
+     "pending": [],
+     "uploadsLeft": 30,
+     "maxLive": 50,
+     "liveCount": 2,
+     "categories": [
+      {
+       "id": "pets",
+       "names": {}
+      },
+      {
+       "id": "food",
+       "names": {}
+      },
+      {
+       "id": "clothes",
+       "names": {}
+      },
+      {
+       "id": "home",
+       "names": {}
+      },
+      {
+       "id": "electronics",
+       "names": {}
+      },
+      {
+       "id": "vehicles",
+       "names": {}
+      },
+      {
+       "id": "services",
+       "names": {}
+      },
+      {
+       "id": "other",
+       "names": {}
+      }
+     ]
+    },
+    {
+     "shop": {
+      "visible": true,
+      "lat": 9.93123,
+      "lon": 76.2673,
+      "registration": "PSR 12"
+     },
+     "listings": [
+      {
+       "id": "l-4",
+       "state": "live",
+       "category": "pets",
+       "ownerLang": "en",
+       "words": {
+        "en": {
+         "title": "Puppy",
+         "text": ""
+        }
+       },
+       "photos": [],
+       "createdMs": "<ms>",
+       "publishedMs": "<ms>",
+       "confirmedMs": "<ms>",
+       "by": "owner",
+       "from": "app"
+      },
+      {
+       "id": "l-2",
+       "state": "live",
+       "category": "home",
+       "ownerLang": "en",
+       "words": {
+        "en": {
+         "title": "Lamp",
+         "text": ""
+        }
+       },
+       "pricePaise": 45056,
+       "priceNote": "per piece",
+       "qty": 3,
+       "photos": [],
+       "createdMs": "<ms>",
+       "publishedMs": "<ms>",
+       "confirmedMs": "<ms>",
+       "by": "owner",
+       "from": "app"
+      }
+     ]
+    },
+    {
+     "format": "shop-feed/1",
+     "updated": "<iso>",
+     "shop": {
+      "name": "Glow",
+      "page": "https://pages.example/glow-pets/",
+      "languages": [
+       "ml",
+       "en"
+      ],
+      "check": "https://pages.example/glow-pets/api/v1/check",
+      "agentCard": "https://pages.example/glow-pets/agent-card.json",
+      "registration": {
+       "kind": "pet-shop",
+       "number": "PSR 12",
+       "source": "owner"
+      }
+     },
+     "items": [
+      {
+       "id": "l-4",
+       "page": "https://pages.example/glow-pets/shop#l-4",
+       "category": "pets",
+       "title": {
+        "en": "Puppy"
+       },
+       "text": {},
+       "ownerLanguage": "en",
+       "machineWritten": [],
+       "price": null,
+       "photos": [],
+       "availability": "in_stock",
+       "confirmed": "<iso>"
+      },
+      {
+       "id": "l-2",
+       "page": "https://pages.example/glow-pets/shop#l-2",
+       "category": "home",
+       "title": {
+        "en": "Lamp"
+       },
+       "text": {},
+       "ownerLanguage": "en",
+       "machineWritten": [],
+       "price": {
+        "value": "450.56",
+        "currency": "INR",
+        "note": "per piece"
+       },
+       "quantity": 3,
+       "photos": [],
+       "availability": "in_stock",
+       "confirmed": "<iso>"
+      }
+     ],
+     "signature": "<sig>"
+    },
+    {
+     "listings": {
+      "removed": 2,
+      "live": 2
+     },
+     "tasks": {
+      "pending": 0,
+      "done": 11,
+      "failed": 0
+     },
+     "recordLength": 11
+    }
+   ]
+  },
+  "which drafts the grounding checks let through": {
+   "at": 1795076397053,
+   "value": [
+    "0: two kittens for sale on my page, 500 rupees / Persian kittens / Free toys with each kitten. => 1 call(s); no draft",
+    "1: two kittens for sale on my page, 500 rupees / Persian kittens / Free time to visit us. => 1 call(s); draft price=50000 qty=2 note=- lang=en",
+    "2: two kittens for sale on my page, 500 rupees / Persian kittens / मुफ्त खिलौने. => 1 call(s); no draft",
+    "3: two kittens for sale on my page, 500 rupees / Persian kittens / ಉಚಿತ ಆಟಿಕೆಗಳು. => 1 call(s); no draft",
+    "4: two kittens for sale on my page, 500 rupees / Persian kittens / ഉറപ്പ് നൽകുന്നു. => 1 call(s); no draft",
+    "5: two kittens for sale on my page, 500 rupees / Persian kittens / Ten of them, and a dozen toys. => 1 call(s); no draft",
+    "6: ten kittens for sale on my page, 500 rupees / Ten Persian kittens / Playful. => 1 call(s); draft price=50000 qty=10 note=- lang=en",
+    "7: two kittens for sale on my page, 500 rupees / Persian kittens / Only 20% left. => 1 call(s); no draft",
+    "8: two kittens for sale on my page, 500 rupees / Persian kittens / We will bring them to you. => 1 call(s); no draft",
+    "9: two kittens for sale on my page, 500 rupees / Persian kittens / The owner says they are kind. => 1 call(s); no draft",
+    "10: healthy kittens for sale on my page, 500 rupees / Healthy kittens / Playful. => 1 call(s); draft price=50000 qty=- note=- lang=en",
+    "11: two kittens for sale on my page, 500 rupees / Vaccinated kittens / Playful. => 1 call(s); no draft",
+    "12: two kittens for sale on my page, 500 rupees / Persian kittens / Playful. => 1 call(s); no draft",
+    "13: two kittens for sale on my page, 500 rupees / Persian kittens / Vaccinated yesterday. => 1 call(s); no draft",
+    "14: two kittens for sale on my page, 500 rupees / Persian kittens / A safe home wanted. => 1 call(s); no draft",
+    "15: kittens, safe with children, for sale on my page / Persian kittens / A safe home wanted. => 1 call(s); draft price=- qty=- note=- lang=en",
+    "16: list this: a brass lamp for 1,500 rupees / Brass lamp / Old and heavy. => 1 call(s); draft price=150000 qty=- note=- lang=en",
+    "17: list this: a brass lamp for 1,500 rupees / Brass lamp / Costs 1500. => 1 call(s); draft price=150000 qty=- note=- lang=en",
+    "18: list this: a brass lamp for 1,500 rupees / Brass lamp / Costs 15,000. => 1 call(s); no draft",
+    "19: put it on my page: 5 kg rice, 60 rupees per kg / Rice / Fresh rice. => 1 call(s); draft price=6000 qty=- note=per kg lang=en",
+    "20: put it on my page: rice / Rice / Fresh rice, for sale at 12 rupees. => 1 call(s); no draft",
+    "21: put it on my page: rice / Rice / Fresh rice. => 1 call(s); draft price=- qty=- note=- lang=en"
+   ]
+  }
+ }
+}

@@ -3,12 +3,10 @@
 // stands in for the door's own port (so no test touches DNS or a private address), and a fake OpenAI-compatible model. The directory itself is only ever reached over HTTP, plus
 // its two files read-only (directory.sqlite for what a person could not see over HTTP, and directory.key).
 //
-// Which implementation runs is chosen by the environment:
-//   DIRECTORY_IMPL=ts   (default)  node bundle/services/directory.ts
-//   DIRECTORY_IMPL=go              the built binary named by DIRECTORY_GO_BIN (default <repo>/go/bin/directory)
-// Both read the same CONFIG file, PORT and HOST variables and the same data folder. With `go` and no binary every test skips and says why (`SKIP`).
-// Shops are signed with the TypeScript signing module (modules/signing), the one the TypeScript shops use; a small independent checker (spec.ts) tests the directory's own
-// signed card against the spec, so a reader does not depend on the module it checks.
+// The directory is the Go program (go/cmd/directory) named by DIRECTORY_GO_BIN (default <repo>/go/bin/directory); with no binary every test skips and says why (`SKIP`). Until
+// 19 Nov 2026 DIRECTORY_IMPL=ts ran the TypeScript service the Go one replaced; it was deleted after its answers were recorded (golden/, differential.test.ts).
+// Shops are signed with the TypeScript signing module (modules/signing), the one the TypeScript shops use; the search contract checks the directory's own signed card with an
+// independent RFC 8785 reader, so a reader does not depend on the module it checks.
 import type { ChildProcess } from "node:child_process";
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
@@ -17,22 +15,34 @@ import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnChild, stopChild } from "../../../templates/commerce/listings/contract/children.ts";
+import { spawnChild, stopChild } from "../../test/contract/children.ts";
 import { generateSigningKey } from "../../signing/keys.ts";
 import { signAnswer, signFeed, signNotice } from "../../signing/sign.ts";
 import type { SigningKey } from "../../signing/keys.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, "..", "..", "..");
-export const IMPL = (process.env.DIRECTORY_IMPL ?? "ts") as "ts" | "go";
+/** What runs: only the Go directory is left (the name stays so a recording says what made it). */
+export const IMPL = "go" as const;
+// The TypeScript directory is deleted: a run that asks for it must not pass quietly on Go (a log reading "DIRECTORY_IMPL=ts ... pass" would be a TypeScript pass that never ran).
+if (process.env.DIRECTORY_IMPL !== undefined && process.env.DIRECTORY_IMPL !== "go") throw new Error(`DIRECTORY_IMPL=${process.env.DIRECTORY_IMPL}: only the Go directory is left (the TypeScript one was deleted on 19 Nov 2026); unset DIRECTORY_IMPL or set it to go`);
 export const GO_BIN = process.env.DIRECTORY_GO_BIN ?? join(REPO, "go", "bin", "directory");
 /** The pages domain the fake shops and the directory share. */
 export const DOMAIN = "pages.example";
 export const ORIGIN = `https://${DOMAIN}`;
 /** Set (with the reason) when this run cannot happen: pass it as the test option `{ skip: SKIP }`. */
-export const SKIP: string | false = IMPL === "go" && !existsSync(GO_BIN) ? `DIRECTORY_IMPL=go but there is no binary at ${GO_BIN} (build it: cd go && go build -o bin/directory ./cmd/directory)` : false;
+export const SKIP: string | false = !existsSync(GO_BIN) ? `there is no directory binary at ${GO_BIN} (build it: cd go && go build -o bin/directory ./cmd/directory)` : false;
 
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * The fake shops' clock: the machine's plus an offset. 0 except in the differential test, which replays answers recorded at an earlier instant: it sets the offset so the shops
+ * stamp their feeds, check answers and notices at that instant's time, and starts the directory on the same clock (`clock: true`, the directory's test clock). Everything a page
+ * says about time (the day the order turns on, "Confirmed today", a check answer "from just now") then comes out as it did when it was recorded.
+ */
+let offsetMs = 0;
+export const now = (): number => Date.now() + offsetMs;
+export const setClockOffset = (ms: number): void => { offsetMs = ms; };
 /** Poll until `fn` gives a truthy value (or throw with `what` after `ms`). */
 export async function until<T>(what: string, fn: () => T | Promise<T>, ms = 15_000): Promise<NonNullable<T>> {
   const end = Date.now() + ms;
@@ -78,7 +88,7 @@ export function item(page: string, id: string, over: Partial<Item> = {}): Item {
     title: { en: "Persian kitten", hi: "फ़ारसी बिल्ली का बच्चा", ml: "പേർഷ്യൻ പൂച്ചക്കുട്ടി", kn: "ಪರ್ಷಿಯನ್ ಬೆಕ್ಕಿನ ಮರಿ" },
     text: { en: "Two kittens, vaccinated by the vet, from our own cat.", ml: "രണ്ട് പൂച്ചക്കുട്ടികൾ" },
     ownerLanguage: "ml", machineWritten: ["en", "hi", "kn"], price: { value: "8000.00", currency: "INR", note: "each" }, quantity: 2,
-    photos: [{ url: `${page}photo/ph-9.jpg`, type: "image/jpeg", width: 1200, height: 900 }], availability: "in_stock", confirmed: new Date(Date.now() - 3_600_000).toISOString(), ...over,
+    photos: [{ url: `${page}photo/ph-9.jpg`, type: "image/jpeg", width: 1200, height: 900 }], availability: "in_stock", confirmed: new Date(now() - 3_600_000).toISOString(), ...over,
   };
 }
 
@@ -90,12 +100,12 @@ export function fakeShop(slug: string, o: { name?: string; town?: string; lat?: 
     feed(over = {}) {
       const place: Record<string, unknown> = { town: s.town, ...(o.lat ? { lat: o.lat, lon: o.lon ?? "76.214435" } : {}), ...over.place };
       return signFeed({
-        format: "shop-feed/1", updated: over.updated ?? new Date(Date.now() - 600_000).toISOString(),
+        format: "shop-feed/1", updated: over.updated ?? new Date(now() - 600_000).toISOString(),
         shop: { name: over.name ?? s.name, page, trade: "pet shop", languages: ["ml", "en"], place, chat: `${page}chat`, check: `${page}api/v1/check`, agentCard: `${page}agent-card.json`, ...over.shop },
         items: over.items ?? s.items,
       }, over.key ?? s.key) as unknown as Record<string, unknown>;
     },
-    notice(over = {}, key = s.key) { return signNotice({ format: "shop-feed-changed/1", feed: s.feedUrl, updated: new Date().toISOString(), ...over }, key) as unknown as Record<string, unknown>; },
+    notice(over = {}, key = s.key) { return signNotice({ format: "shop-feed-changed/1", feed: s.feedUrl, updated: new Date(now()).toISOString(), ...over }, key) as unknown as Record<string, unknown>; },
     rekey() { s.key = generateSigningKey(); },
   };
   return s;
@@ -128,7 +138,7 @@ export async function startFakeDoor(...initial: FakeShop[]): Promise<FakeDoor> {
       shop.hits.check++; shop.hits.checkBodies.push(body);
       let ids: string[] = [];
       try { ids = (JSON.parse(body) as { ids: string[] }).ids; } catch { /* a bad question */ }
-      const at = new Date().toISOString();
+      const at = new Date(now()).toISOString();
       const a = shop.checkAnswer ? shop.checkAnswer(ids, at) : signAnswer({ format: "shop-check/1", page: shop.page, at, items: ids.map((id) => ({ id, availability: "in_stock" })) }, shop.key);
       if (a === null) return; // never answered: the directory's timeout ends it
       if (a && typeof a === "object" && "status" in a && "body" in a) return send((a as { status: number }).status, (a as { body: string }).body);
@@ -142,12 +152,17 @@ export async function startFakeDoor(...initial: FakeShop[]): Promise<FakeDoor> {
 }
 
 /** Sign a check answer for a shop (the harness's own helper, so a test can write a wrong one). */
-export const answerFor = (shop: FakeShop, items: Said[], at = new Date().toISOString(), key = shop.key): Record<string, unknown> =>
+export const answerFor = (shop: FakeShop, items: Said[], at = new Date(now()).toISOString(), key = shop.key): Record<string, unknown> =>
   signAnswer({ format: "shop-check/1", page: shop.page, at, items }, key) as unknown as Record<string, unknown>;
 
 // ---- a fake OpenAI-compatible model --------------------------------------------------------------------------------------------------------------------------
 
-export interface FakeModel { port: number; calls: number; requests: { url: string; authorization: string | undefined; body: any }[]; replies: unknown[]; mode: "ok" | "http500" | "refuse" | "cut" | "text" | "fence"; close(): Promise<void> }
+export interface FakeModel {
+  port: number; calls: number; requests: { url: string; authorization: string | undefined; body: any }[]; replies: unknown[]; mode: "ok" | "http500" | "refuse" | "cut" | "text" | "fence";
+  /** When set, the answer to a call is chosen by the user message's text (what the directory sent), else `replies` in turn: so a test's answers do not depend on the order of calls. */
+  replyFor?: (user: string) => unknown;
+  close(): Promise<void>;
+}
 
 /** The typed search a good model gives back (assistant.ts TYPED_SEARCH_SCHEMA). */
 export const typed = (o: Partial<{ words: string[]; words_en: string[]; category: string; place: string; town: string; radius_km: number | null; max_price: number | null }> = {}): Record<string, unknown> =>
@@ -165,7 +180,7 @@ export async function startFakeModel(replies: unknown[] = [typed()]): Promise<Fa
       try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { /* leave empty */ }
       fake.requests.push({ url: req.url ?? "", authorization: req.headers.authorization, body });
       if (fake.mode === "http500") { res.writeHead(500); return void res.end("{}"); }
-      const answer = fake.replies[Math.min(n, fake.replies.length - 1)];
+      const answer = fake.replyFor ? fake.replyFor(String(body?.messages?.[1]?.content ?? "")) : fake.replies[Math.min(n, fake.replies.length - 1)];
       const text = fake.mode === "text" ? "I think you want a kitten." : fake.mode === "fence" ? `<think>hmm</think>\n\`\`\`json\n${JSON.stringify(answer)}\n\`\`\`` : typeof answer === "string" ? answer : JSON.stringify(answer);
       const message = fake.mode === "refuse" ? { role: "assistant", content: null, refusal: "no" } : { role: "assistant", content: text };
       res.writeHead(200, { "content-type": "application/json" });
@@ -189,8 +204,10 @@ export interface DirectoryOptions {
   area?: string;
   /** How often the service reads the feeds that are due, in ms (the service's DIRECTORY_TICK_MS; default 200 here, 20 000 in service). */
   tickMs?: number;
-  /** An existing data folder (to start again on it, or on it with the other runtime). */
+  /** An existing data folder (to start again on it). */
   dataDir?: string;
+  /** Run the directory on the fake shops' clock (`now()`, the machine's plus the offset): GEOMETER_TEST=1 and GEOMETER_TEST_CLOCK_FILE, the Go directory's test clock. */
+  clock?: boolean;
 }
 
 export interface Directory {
@@ -200,7 +217,7 @@ export interface Directory {
   /** A fresh visitor address. */
   visitor(): string;
   stop(): Promise<void>;
-  start(impl?: "ts" | "go"): Promise<void>;
+  start(): Promise<void>;
   log(): string;
   pid(): number | undefined;
   /** The index file, read only (a person's side: what is pinned, what is held, how each feed went). */
@@ -243,11 +260,13 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
   writeFileSync(configFile, JSON.stringify(config));
   let child: ChildProcess | undefined;
   let output = "";
-  let current: "ts" | "go" = IMPL; // the implementation started last: the person's sub-commands are run with it
   const base = `http://127.0.0.1:${port}`;
-  const command = (impl: "ts" | "go", args: string[] = []): { cmd: string; args: string[] } =>
-    impl === "go" ? { cmd: GO_BIN, args } : { cmd: process.execPath, args: [join(REPO, "bundle", "services", "directory.ts"), ...args] };
-  const env = (): Record<string, string | undefined> => ({ ...process.env, CONFIG: configFile, PORT: String(port), HOST: "127.0.0.1", DIRECTORY_TICK_MS: String(o.tickMs ?? 200) });
+  const clockFile = join(root, "clock");
+  if (o.clock) writeFileSync(clockFile, String(offsetMs));
+  const env = (): Record<string, string | undefined> => ({
+    ...process.env, CONFIG: configFile, PORT: String(port), HOST: "127.0.0.1", DIRECTORY_TICK_MS: String(o.tickMs ?? 200),
+    ...(o.clock ? { GEOMETER_TEST: "1", GEOMETER_TEST_CLOCK_FILE: clockFile } : {}),
+  });
 
   const d: Directory = {
     root, dataDir, port, base, configFile,
@@ -263,12 +282,10 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
       return { status: r.status, body: parsed, text, headers: r.headers };
     },
     searchJson: async (q, who) => { const r = await d.call(`/search?${new URLSearchParams({ format: "json", ...q })}`, { who }); return { status: r.status, body: r.body }; },
-    async start(impl = IMPL) {
+    async start() {
       await stopChild(child);
-      current = impl;
-      const { cmd, args } = command(impl);
       output = "";
-      const c = spawnChild(cmd, args, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the ${impl} directory in ${root}`);
+      const c = spawnChild(GO_BIN, [], { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the directory in ${root}`);
       child = c;
       c.stdout!.on("data", (x: Buffer) => { output += x.toString(); });
       c.stderr!.on("data", (x: Buffer) => { output += x.toString(); });
@@ -287,8 +304,7 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
     db: () => new DatabaseSync(join(dataDir, "directory.sqlite"), { readOnly: true }),
     makeDue(url) { const w = new DatabaseSync(join(dataDir, "directory.sqlite")); w.prepare("UPDATE feeds SET checked_at = NULL WHERE url = ?").run(url); w.close(); },
     async cli(...args) {
-      const { cmd, args: a } = command(current, args);
-      const c = spawnChild(cmd, a, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the ${current} directory's ${args[0]} command`);
+      const c = spawnChild(GO_BIN, args, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the directory's ${args[0]} command`);
       let out = "";
       c.stdout!.on("data", (x: Buffer) => { out += x.toString(); });
       c.stderr!.on("data", (x: Buffer) => { out += x.toString(); });
