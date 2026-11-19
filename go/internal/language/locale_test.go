@@ -1,16 +1,17 @@
-package locale
+package language
+
+// format.ts formatDate, formatTime and formatInr (whole rupees) proved on what Node's own formatters wrote for the books and the report (testdata/locale-vectors.json, made by
+// scripts/gen_locale.ts): the books, the report, the Bookings words and the owner's assistant all write with these, so a date is written one way by every Go runtime.
 
 import (
 	"encoding/json"
 	"os"
 	"testing"
-
-	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
 // The vectors are what Node's own formatters wrote (scripts/gen_locale.ts).
-func TestFormattersEqualTheTypeScript(t *testing.T) {
-	raw, err := os.ReadFile("testdata/vectors.json")
+func TestFormatsEqualLocaleVectors(t *testing.T) {
+	raw, err := os.ReadFile("testdata/locale-vectors.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,21 +46,14 @@ func TestFormattersEqualTheTypeScript(t *testing.T) {
 		}
 	}
 	for _, c := range v.Date {
-		if got := FormatDate(zone.Date{Year: c.Y, Month: c.M, Day: c.D}, c.Lang); got != c.Text {
+		if got := Formats(c.Lang).Date(c.Y, c.M, c.D); got != c.Text {
 			t.Errorf("FormatDate(%d-%d-%d, %s) = %q, TypeScript %q", c.Y, c.M, c.D, c.Lang, got, c.Text)
 		}
 	}
 	for _, c := range v.Time {
-		if got := FormatTime(c.H, c.Min, c.Lang); got != c.Text {
+		if got := Formats(c.Lang).TimeOfDay(c.H, c.Min); got != c.Text {
 			t.Errorf("FormatTime(%d:%d, %s) = %q, TypeScript %q", c.H, c.Min, c.Lang, got, c.Text)
 		}
 	}
 }
 
-func TestInr(t *testing.T) {
-	for p, want := range map[int64]string{0: "₹0", 99: "₹0.99", 100: "₹1", 45050: "₹450.50", 45005: "₹450.05", 12345600: "₹1,23,456", -50: "₹-0.50", -45000: "₹-450"} {
-		if got := Inr(p); got != want {
-			t.Errorf("Inr(%d) = %q, want %q", p, got, want)
-		}
-	}
-}

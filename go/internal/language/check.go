@@ -182,32 +182,43 @@ func dedupe(xs []string) []string {
 }
 
 // FormatInr is format.ts `formatInr`: "₹" and JavaScript's toLocaleString("en-IN") (Indian grouping: the last three digits, then pairs; at most three decimals, rounded half away
-// from zero as ICU does, trailing zeros dropped).
+// from zero as ICU does, trailing zeros dropped). This is the one rupee text of the Go runtimes: the owner's assistant, the Bookings words, the books and the report all use it
+// (an amount in paise is FormatInr(paise / 100), as the TypeScript callers divide).
 func FormatInr(rupees float64) string {
 	neg := rupees < 0
 	r := math.Abs(rupees)
 	s := strconv.FormatFloat(math.Round(r*1000)/1000, 'f', 3, 64)
 	whole, frac, _ := strings.Cut(s, ".")
-	frac = strings.TrimRight(frac, "0")
-	var g string
-	if len(whole) <= 3 {
-		g = whole
-	} else {
-		g = whole[len(whole)-3:]
-		rest := whole[:len(whole)-3]
-		for len(rest) > 2 {
-			g = rest[len(rest)-2:] + "," + g
-			rest = rest[:len(rest)-2]
-		}
-		g = rest + "," + g
-	}
-	if frac != "" {
+	g := groupIN(whole)
+	if frac = strings.TrimRight(frac, "0"); frac != "" {
 		g += "." + frac
 	}
 	if neg {
 		g = "-" + g
 	}
 	return "₹" + g
+}
+
+// FormatInrWhole is FormatInr of a whole number of rupees, by integer arithmetic, so a number past 2^53 / 1000 is still written exactly as toLocaleString writes an integer
+// ("₹1,25,000", "₹-5").
+func FormatInrWhole(rupees int64) string {
+	if rupees < 0 {
+		return "₹-" + groupIN(strconv.FormatInt(-rupees, 10))
+	}
+	return "₹" + groupIN(strconv.FormatInt(rupees, 10))
+}
+
+// groupIN is the en-IN grouping of a run of digits: the last three, then pairs (12,34,567).
+func groupIN(digits string) string {
+	if len(digits) <= 3 {
+		return digits
+	}
+	g, rest := digits[len(digits)-3:], digits[:len(digits)-3]
+	for len(rest) > 2 {
+		g = rest[len(rest)-2:] + "," + g
+		rest = rest[:len(rest)-2]
+	}
+	return rest + "," + g
 }
 
 // normaliseDate and normaliseTime are check.ts's: whitespace, commas and case vary in what is written, the values do not. JavaScript's `\s+` is JSSpace, so the runs are collapsed

@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/GeometerLabs/agents/go/internal/locale"
+	"github.com/GeometerLabs/agents/go/internal/language"
 )
 
 // DocKind is words-documents.ts DocKind: "receipt", "bill", "bill_of_supply" or "refund_note".
@@ -67,12 +67,12 @@ func DocKindOf(series Series, status TaxStatus) DocKind {
 	return "bill"
 }
 
-// FormatPaise is formatPaise: whole rupees and paise from integer paise, by integer arithmetic only: 45000 is "₹450", 45050 is "₹450.50". The grouping is en-IN's (locale.FormatInrWhole).
+// FormatPaise is formatPaise: whole rupees and paise from integer paise, by integer arithmetic only: 45000 is "₹450", 45050 is "₹450.50". The grouping is en-IN's (language.FormatInrWhole).
 func FormatPaise(paise int64) (string, error) {
 	if paise < 0 || paise > 9007199254740991 {
 		return "", fmt.Errorf("An amount is a whole number of paise, 0 or more (got %d).", paise)
 	}
-	base := locale.FormatInrWhole(paise / 100)
+	base := language.FormatInrWhole(paise / 100)
 	if rest := paise % 100; rest != 0 {
 		return fmt.Sprintf("%s.%02d", base, rest), nil
 	}

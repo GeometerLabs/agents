@@ -1,14 +1,15 @@
 // The Money section of the owner's app, as one HTML fragment (modules/accounting/owner-money-render.ts). The figures are accounting.MoneyView, the words accounting.Owner. Phone first, and only the
 // page's own look: the cards, stamps and big `.amt` figures of the customer pages' style sheet (`.item`, `.top`, `.stamp`, `.amt`, `.calm`, `.row`, `.btn.quiet`, `.note`, `.machine`), so it
-// needs no style and no script. Every value goes through esc. Amounts are written from integer paise, whole rupees without decimals, with Indian grouping (locale.Inr).
+// needs no style and no script. Every value goes through esc. Amounts are written from integer paise, whole rupees without decimals, with Indian grouping (inr).
 package render
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
-	"github.com/GeometerLabs/agents/go/internal/locale"
+	lang "github.com/GeometerLabs/agents/go/internal/language" // its parameters are named "language", as owner-money-render.ts's are
 	"github.com/GeometerLabs/agents/go/internal/slots"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
@@ -17,7 +18,22 @@ import (
 // link page has no signed-in session) shows no download card.
 type ExportLinks struct{ Base string }
 
-func inr(paise int64) string { return locale.Inr(paise) }
+// inr is owner-money-render.ts `inr`: "₹1,200", or "₹1,200.50" when the paise are not whole rupees, by integer arithmetic (the whole rupees are format.ts formatInr's text).
+// `Math.trunc(paise / 100)` of a negative amount under one rupee is -0, which toLocaleString writes "-0", so that case is copied ("₹-0.50").
+func inr(paise int64) string {
+	rupees, rest := paise/100, paise%100 // Go truncates towards zero, as Math.trunc does
+	if rest < 0 {
+		rest = -rest
+	}
+	text := lang.FormatInrWhole(rupees)
+	if rupees == 0 && paise < 0 {
+		text = "₹-0"
+	}
+	if rest == 0 {
+		return text
+	}
+	return fmt.Sprintf("%s.%02d", text, rest)
+}
 
 // OwnerMoneySection is ownerMoneySection.
 func OwnerMoneySection(view accounting.MoneyView, language string, links *ExportLinks, timeZone string) string {
@@ -56,7 +72,7 @@ func OwnerMoneySection(view accounting.MoneyView, language string, links *Export
 			return slots.Fill(w.UpiClaim, inr(n.Paise), ref(n.Case))
 		case "gateway":
 			p := zone.LocalParts(n.SinceMs, timeZone)
-			return slots.Fill(w.Gateway, inr(n.Paise), ref(n.Case), locale.FormatDate(p.Date, language))
+			return slots.Fill(w.Gateway, inr(n.Paise), ref(n.Case), lang.Formats(language).Date(p.Date.Year, p.Date.Month, p.Date.Day))
 		case "gateway_held":
 			return slots.Fill(w.GatewayHeld, inr(n.Paise), ref(n.Case))
 		case "not_through_assistant":
@@ -150,5 +166,5 @@ func OwnerMoneySection(view accounting.MoneyView, language string, links *Export
 	return b.String()
 }
 
-// monthName is MONTH_NAMES[language][month - 1] (locale.Month takes the month as 1 to 12).
-func monthName(language string, month int) string { return locale.Month(language, month) }
+// monthName is MONTH_NAMES[language][month - 1] (month 1 to 12).
+func monthName(language string, month int) string { return lang.Formats(language).Months[month-1] }

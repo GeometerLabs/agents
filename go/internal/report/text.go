@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/language"
-	"github.com/GeometerLabs/agents/go/internal/locale"
 	"github.com/GeometerLabs/agents/go/internal/slots"
 )
 
@@ -53,9 +52,9 @@ func BadgeText(lang string) string { return BadgeSymbol + " " + Innovator(lang) 
 // PeriodLabel is periodLabel: "Nov 2026" for a whole month, otherwise "Tue 3 Nov – Mon 9 Nov 2026".
 func PeriodLabel(p ReportPeriod, lang string) string {
 	if p.Month != nil {
-		return fmt.Sprintf("%s %d", locale.Month(lang, p.Month.Month), p.Month.Year)
+		return fmt.Sprintf("%s %d", language.Formats(lang).Months[p.Month.Month-1], p.Month.Year)
 	}
-	return fmt.Sprintf("%s – %s %d", locale.FormatDate(p.FirstDay, lang), locale.FormatDate(p.LastDay, lang), p.LastDay.Year)
+	return fmt.Sprintf("%s – %s %d", language.Formats(lang).Date(p.FirstDay.Year, p.FirstDay.Month, p.FirstDay.Day), language.Formats(lang).Date(p.LastDay.Year, p.LastDay.Month, p.LastDay.Day), p.LastDay.Year)
 }
 
 // SettledByWord is SETTLED_BY_WORD[language](who): "Settled by asha, by their word". who is as SettledWho shows it.
