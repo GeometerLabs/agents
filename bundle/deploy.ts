@@ -28,6 +28,7 @@ import { syncTerms } from "./lib/terms.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, isShared, kindFor, guardsOf, runtimeHasWhatsApp } from "./lib/kinds.ts";
 import { moveOutOfShared, needsMove } from "./lib/listings-move.ts";
+import { ensureGoRuntimes, goImageFor, goRuntimeOf } from "./lib/go-build.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
@@ -392,7 +393,10 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
 
 function deployOf(ctx: Context, name: string, shop: { index: number; applied?: Snapshot }): ShopDeploy {
   const s = shop.applied!;
-  return { name, index: shop.index, ...(isShared(s.pathway.split("@")[0]) ? { shared: true } : {}), pathwayDir: appliedPathwayDir(ctx.appDir, ctx.dir, s) ?? s.pathwayDir, guards: Object.values(s.guards).map((g) => ({ kind: g.kind as GuardPlan["kind"], service: g.service, tenant: name })) };
+  const pathwayDir = appliedPathwayDir(ctx.appDir, ctx.dir, s) ?? s.pathwayDir;
+  // wave 1b: the folder the shop is pinned to says which runtime it has (template.json); a version made before Go has no such field and stays on Node
+  const go = goRuntimeOf(pathwayDir);
+  return { name, index: shop.index, ...(isShared(s.pathway.split("@")[0]) ? { shared: true } : {}), ...(go ? { runtime: go } : {}), pathwayDir, guards: Object.values(s.guards).map((g) => ({ kind: g.kind as GuardPlan["kind"], service: g.service, tenant: name })) };
 }
 
 /**
@@ -473,7 +477,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (server.pages) ensureDir(p.home);
   // the speech models folder, if speech is on: made here so Docker does not make it as root; the server admin's fetch-models fills it (services/speech/README.md)
   if (server.speech?.enabled) ensureDir(server.speech.modelsDir ?? p.speechModels);
-  const composed = composeServer(server, dirsOf(ctx), shops, { opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}), ...(directoryAssistant(server) ? { assistant: true } : {}) });
+  // wave 1b: the image of the Go programs, named from this checkout's commit; the compose file needs the name only when a shop runs on Go
+  const goImage = shops.some((sh) => sh.runtime) ? goImageFor(ctx.appDir) : undefined;
+  const composed = composeServer(server, dirsOf(ctx), shops, { ...(goImage ? { goImage } : {}), opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}), ...(directoryAssistant(server) ? { assistant: true } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
   return composed;
@@ -577,6 +583,12 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   // decision 60: the directory's buyer assistant is one more agent of the model Guard, under its own id, with a credential only the directory container reads (secrets/directory/agent_model)
   if (directoryAssistant(server)) modelAgents.push({ id: DIRECTORY_AGENT_ID, sha: sha(ensureSecret(secretFile(ctx.dir, "directory", "agent_model"), mintGuardToken)) });
   problems.push(...await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }));
+  // wave 1b: a shop that runs on a Go program needs the image of the programs of THIS checkout (made at install and at `geometer update`; made here when it is gone, for example after a
+  // `docker system prune`). Checked before anything is written or started, so a build that fails leaves the server exactly as it was.
+  if (prepared.some((p) => goRuntimeOf(p.pathwayDir))) {
+    const built = await ensureGoRuntimes(ctx);
+    if (!built.ok) problems.push({ rule: "go-runtime", message: built.reason });
+  }
   if (problems.length > 0) throw new Refused(problems);
 
   // 3. nothing broken: no secret in any file we are about to write, then write
@@ -658,6 +670,11 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
  * (POST /admin/reload) instead of being restarted, so a call in flight is not cut off. A Guard that refuses, or answers that a change needs a restart, is restarted as before.
  */
 export async function bringUp(ctx: Context, state: State, composed: Composed, forWhom: string[], o: { reload?: readonly string[] } = {}): Promise<string[]> {
+  // wave 1b backstop: every path that starts the server (start, an agent's deploy, a removal) comes through here, and a compose file that names the Go image needs it on the machine
+  if (/\bimage: geo-go:/u.test(composed.compose)) {
+    const built = await ensureGoRuntimes(ctx);
+    if (!built.ok) throw new Refused([{ rule: "go-runtime", message: built.reason }]);
+  }
   const hashes = Object.fromEntries(Object.keys(composed.services).map((n) => [n, serviceHashes(composed, n)]));
   const before = state.serviceHashes ?? {};
   ctx.log(`Bringing up ${forWhom.join(", ")}...`);
