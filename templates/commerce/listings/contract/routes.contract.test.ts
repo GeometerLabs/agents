@@ -1,6 +1,6 @@
 // The CONTRACT of four routes a listings-only shop answers besides the ones in listings.contract.test.ts: the owner's limits page and the deployer's limit-changes, "Get my shop's
 // file" (leave with your shop), and web push. Same rules as that file: the shop is a separate process (harness.ts), the only way in is HTTP, LISTINGS_IMPL=ts|go picks the runtime,
-// it must pass on TypeScript first, and assertions are on statuses and machine fields, not on English sentences. The push tests turn push on through push-harness.ts (a fake push
+// it must pass on TypeScript first, and assertions are on statuses and machine fields, not on English sentences. The push tests turn push on through modules/test/contract/push-harness.ts (a fake push
 // Guard and a browser that opens what it is sent).
 //
 // Where TypeScript and Go are asked to differ from each other: nowhere in this file. (The one difference it once marked `todo`, TypeScript writing the session's token into the
@@ -16,8 +16,8 @@ import { newSoftPasskey, softRegister } from "../../../../modules/channels/test/
 import { newOwnerFileId } from "../../../../modules/channels/owner-file.ts";
 import { IMPL, OWNER_BASE, REPO, makeShop } from "./harness.ts";
 import type { Shop } from "./harness.ts";
-import { GUARD_TOKEN, enablePush, softBrowser, startFakeGuard, vapidChecks } from "./push-harness.ts";
-import type { FakeGuard } from "./push-harness.ts";
+import { GUARD_TOKEN, enablePush, softBrowser, startFakeGuard, vapidChecks } from "../../../../modules/test/contract/push-harness.ts";
+import type { FakeGuard } from "../../../../modules/test/contract/push-harness.ts";
 
 const shops: Shop[] = [];
 const guards: FakeGuard[] = [];

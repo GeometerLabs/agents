@@ -34,8 +34,8 @@ import { fitNotification } from "../../../../modules/push/sender.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { OWNER_BASE, makeShop } from "./harness.ts";
 import type { Shop, ShopOptions } from "./harness.ts";
-import { softBrowser, startFakeGuard } from "./push-harness.ts";
-import type { FakeGuard, SoftBrowser } from "./push-harness.ts";
+import { softBrowser, startFakeGuard } from "../../../../modules/test/contract/push-harness.ts";
+import type { FakeGuard, SoftBrowser } from "../../../../modules/test/contract/push-harness.ts";
 
 const shops: Shop[] = [];
 const servers: Server[] = [];
