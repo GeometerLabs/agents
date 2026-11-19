@@ -46,3 +46,17 @@ test("words-fresh: the Bookings unit vectors (go/internal/bookings/testdata) equ
   assert.deepEqual([...(await bookings.generate()).keys()].sort(), ["coerce-vectors.json", "guard-spec-vectors.json", "limits-vectors.json", "ondc-vectors.json", "parser-vectors.json", "report-vectors.json", "runner-vectors.json", "scenarios-vectors.json", "settings-vectors.json", "templates-vectors.json"]);
   assert.deepEqual(await bookings.staleFiles(bookings.OUT), [], "a Bookings vector file is out of date: run  node go/scripts/gen_bookings_vectors.ts  and commit the result");
 });
+
+test("words-fresh: the Bookings words and the shared formats (go/internal/bookings/words, go/internal/language/formats.json) equal a fresh render of the TypeScript", async () => {
+  const bookings = await import("../../../../go/scripts/gen_bookings_words.ts");
+  assert.deepEqual([...bookings.generate().keys()].sort(), ["go/internal/bookings/words/en.json.gz", "go/internal/bookings/words/hi.json.gz", "go/internal/bookings/words/kn.json.gz", "go/internal/bookings/words/ml.json.gz", "go/internal/language/formats.json"]);
+  assert.deepEqual(bookings.staleFiles(), [], "a Bookings words file is out of date: run  node go/scripts/gen_bookings_words.ts  and commit the result");
+  // the check is not vacuous: a copy with one word changed is reported stale
+  const dir = mkdtempSync(join(tmpdir(), "bookings-words-fresh-"));
+  try {
+    const files = bookings.generate();
+    const name = "go/internal/language/formats.json";
+    writeFileSync(join(dir, "formats.json"), files.get(name)!.replace("Sun", "Sunn"));
+    assert.deepEqual(bookings.staleFiles(dir, new Map([["formats.json", files.get(name)!]])), ["formats.json"]);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
