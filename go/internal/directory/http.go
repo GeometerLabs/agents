@@ -157,12 +157,13 @@ func NewHandler(deps HTTPDeps) http.Handler {
 	}
 	send := func(w http.ResponseWriter, status int, body, typ string, extra map[string]string) {
 		h := w.Header()
-		h["content-type"] = []string{typ}
-		h["content-length"] = []string{strconv.Itoa(len(body))}
-		h["x-content-type-options"] = []string{"nosniff"}
-		h["referrer-policy"] = []string{"no-referrer"}
+		// Header.Set writes the canonical name (Go adds its own Content-Length in that form, and a second one under another spelling is a refused response)
+		h.Set("content-type", typ)
+		h.Set("content-length", strconv.Itoa(len(body)))
+		h.Set("x-content-type-options", "nosniff")
+		h.Set("referrer-policy", "no-referrer")
 		for k, v := range extra {
-			h[k] = []string{v}
+			h.Set(k, v)
 		}
 		w.WriteHeader(status)
 		_, _ = io.WriteString(w, body)
@@ -221,9 +222,11 @@ func NewHandler(deps HTTPDeps) http.Handler {
 		case path == "/search/font.woff2" && (method == "GET" || method == "HEAD"):
 			b := FontBytes()
 			h := w.Header()
-			h["content-type"], h["content-length"] = []string{"font/woff2"}, []string{strconv.Itoa(len(b))}
-			h["cache-control"] = []string{"public, max-age=31536000, immutable"}
-			h["x-content-type-options"], h["referrer-policy"] = []string{"nosniff"}, []string{"no-referrer"}
+			h.Set("content-type", "font/woff2")
+			h.Set("content-length", strconv.Itoa(len(b)))
+			h.Set("cache-control", "public, max-age=31536000, immutable")
+			h.Set("x-content-type-options", "nosniff")
+			h.Set("referrer-policy", "no-referrer")
 			w.WriteHeader(200)
 			if method != "HEAD" {
 				_, _ = w.Write(b)
@@ -413,7 +416,9 @@ func NewHandler(deps HTTPDeps) http.Handler {
 			status, out := ServerPost(DirectoryServer(deps.Search, deps.Assistant, who), json.RawMessage(text))
 			if status == 202 {
 				h := w.Header()
-				h["cache-control"], h["x-content-type-options"], h["referrer-policy"] = []string{"no-store"}, []string{"nosniff"}, []string{"no-referrer"}
+				h.Set("cache-control", "no-store")
+				h.Set("x-content-type-options", "nosniff")
+				h.Set("referrer-policy", "no-referrer")
 				w.WriteHeader(202)
 				return
 			}

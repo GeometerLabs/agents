@@ -81,8 +81,10 @@ func parseHTTPS(text string) (webURL, bool) {
 	}
 	labels := strings.Split(strings.TrimSuffix(host, "."), ".")
 	last := labels[len(labels)-1]
-	if last == "" || last[0] >= '0' && last[0] <= '9' || strings.HasPrefix(last, "0x") { // would be read as an IPv4 address
-		return webURL{}, false
+	if last == "" || last[0] >= '0' && last[0] <= '9' || strings.HasPrefix(last, "0x") { // JavaScript reads this as an IPv4 address
+		if !canonicalIPv4(host) { // only the plain dotted form, which it keeps as written; every other form it rewrites, so it is refused here
+			return webURL{}, false
+		}
 	}
 	if strings.HasPrefix(host, "xn--") || strings.Contains(host, ".xn--") {
 		return webURL{}, false // punycode is validated by JavaScript (IDNA); not modelled
@@ -128,4 +130,19 @@ func parseHTTPS(text string) (webURL, bool) {
 	}
 	u.Href = href
 	return u, true
+}
+
+// canonicalIPv4 is a dotted-decimal address of four parts, each 0 to 255 with no leading zero: the one form of IPv4 host JavaScript's URL keeps as written.
+func canonicalIPv4(host string) bool {
+	parts := strings.Split(host, ".")
+	if len(parts) != 4 {
+		return false
+	}
+	for _, p := range parts {
+		n, err := strconv.Atoi(p)
+		if err != nil || n < 0 || n > 255 || strconv.Itoa(n) != p {
+			return false
+		}
+	}
+	return true
 }
