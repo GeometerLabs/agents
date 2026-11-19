@@ -140,3 +140,6 @@ func parseISO(s string) (int64, bool) {
 	}
 	return 0, false
 }
+
+// itoa is String(n) for a whole number.
+func itoa(n int) string { return strconv.Itoa(n) }
