@@ -238,8 +238,15 @@ Everything wave 1 listed as not ported is now Go, held to the same contract on b
 - **The owner's talk** (`assistant/talk.go`, `runtime/talk.go`): the owner's notes and public listings as sources, the TypeScript's prompt (rendered by gen_words.ts), the four checks
   an owner's turn has and the outgoing check (`language/check.go`), the fixed line when a check fails or the model does not answer, the fault pause, the day's notice once.
 - **The morning line and the licence's final stop** (`runtime/morning.go`): with push on, once a day from the owner's morning hour for four hours, claimed in the record before the
-  push and ended after, silent with nothing waiting, never in the final stop (client/licence.json, rules.ts `licenceNow`).
+  push and ended after, silent with nothing waiting, never in the final stop (client/licence.json, rules.ts `licenceNow`); on the contract's test clock a failed send is tried
+  again an hour later, the next day has its own line, and nothing goes after the four hours. (The "unconfirmed" ending, for a process that died mid-send, is ported but not run
+  by the contract: it needs a process killed between the claim and the push.)
 - **Voice**: a listings shop has none; the two voice routes answer as TypeScript's do (method, the owner's credential, then "voice is not on").
+
+**Results** (19 Nov, through the heat lock, one run each): the whole contract folder, **201 of 201 on TypeScript (241 s) and 201 of 201 on Go (159 s), none skipped** (172 before
+this stream; the new cases compare a TypeScript shop and a Go shop line for line, so both runs start both). `go build`, `go vet` and `go test ./...` pass; the language package's
+vectors (every generated pattern on a corpus, the dates at four instants, Redact) equal JavaScript's. The touched TypeScript modules' own unit tests pass (dates, check-links,
+intents, intents-memory, talk-check, talk-flow, morning, understanding/talk). Binaries: `listings` 23.7 MB, `listings-shared` 24.2 MB.
 
 **Not ported, and why (none of it is reachable in a listings-only shop):** a customer's talk and the claims checks only a customer's turn has (no customers); a note the talk
 proposes (Remember / No buttons, which the owner's page does not have, so TypeScript never makes one there either); the outgoing check's moments (a booking's time, free times: no
