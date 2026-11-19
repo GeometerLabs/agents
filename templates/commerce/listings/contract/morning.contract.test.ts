@@ -32,7 +32,7 @@ function record(s: Shop): any[] {
 async function morningShop(impl: "ts" | "go", o: { language?: "en" | "hi" | "ml" | "kn"; quiet?: boolean; licence?: unknown; personality?: string }): Promise<{ s: Shop; guard: FakeGuard; open: (c: any) => any }> {
   const fake: FakeModel = await startFakeModel(() => draftAnswer()); others.push(fake);
   const guard = await startFakeGuard(); others.push(guard);
-  const s = await makeShop({ modelPort: fake.port, budget: { monthlyMicroInr: 50_000_000, daily: { listing_draft: 20 } }, ownerLanguage: o.language ?? "en", assistant: { morning: { at: at() }, ...(o.personality ? { personality: o.personality } : {}) } });
+  const s = await makeShop({ modelPort: fake.port, budget: { monthlyMicroInr: 50_000_000, daily: { listing_draft: 20 } }, ownerLanguage: o.language ?? "en", assistant: { morning: { at: at() }, ...(o.personality ? { character: { personality: o.personality } } : {}) } });
   shops.push(s);
   enablePush(s, guard);
   if (o.licence) writeFileSync(join(s.client, "licence.json"), JSON.stringify(o.licence));
@@ -49,7 +49,7 @@ async function morningShop(impl: "ts" | "go", o: { language?: "en" | "hi" | "ml"
 
 /** Run the beat for a few seconds (a tick a second) and see what the morning line did. */
 async function morningOf(impl: "ts" | "go", s: Shop, guard: FakeGuard, open: (c: any) => any): Promise<any> {
-  s.setTickSeconds(1); await s.stop(); await s.start(impl);
+  s.setTickSeconds(1); enablePush(s, guard); await s.stop(); await s.start(impl); // setTickSeconds writes runtime.json from the harness's copy, which has no push Guard
   for (let i = 0; i < 40 && !record(s).some((e) => e.action === "send_message" && e.refs.morning && e.outcome !== "attempted"); i++) await new Promise((r) => setTimeout(r, 100));
   await new Promise((r) => setTimeout(r, 1500)); // more beats: nothing is sent twice
   const lines = record(s).filter((e) => e.action === "send_message" && e.refs.morning).map((e) => [e.outcome, { ...e.refs, ...(e.refs.messageId ? { messageId: "m-" } : {}) }, e.notes ?? "", e.language]);
