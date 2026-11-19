@@ -85,12 +85,14 @@ Run `node go/scripts/gen_bookings_report_words.ts` and `node go/scripts/gen_book
 `strings.ts`, `crash-test/not-tested.ts`, `modules/record/ledger.ts` or the accounting modules; `words-fresh.test.ts` fails when one was not run. The Go tests are
 `go test ./internal/bookingsreport/`.
 
-## Settings: the caller's duty
+## Settings: the caller's duty (the one known way Go and TypeScript can disagree)
 
 `policyDigest` is the digest of the settings AS `validateSettings` returns them (it fills the time zone, `bufferMinutes`, `languages`, trims the name, reads every service and the payment
-block). `validateSettings` is not ported (the Bookings runtime's settings loader owns it), so the tree handed in must be the validated settings serialised as JSON (what the TypeScript
-runtime and the panel write to `settings.json`). A hand-written file that leaves a default out gives another digest, and a go-live certificate of the same settings would then be read as
-"different". The vectors hold both digests (`policies.raw`) and the generator fails if the validated settings' digest changes when they go through JSON.
+block). `validateSettings` is not ported, and the file on disk is not always the validated tree: `geometer deploy` (`bundle/geometer.ts`) validates the settings file and then ships its
+text as the owner wrote it; the TypeScript runtime validates on load. So the tree handed in must be what `validateSettings` returns, as JSON. A raw file that leaves a default out or pads
+the name gives another digest, the report's `policyDigest` differs from the TypeScript's, and a go-live certificate of the same settings (the CLI makes it from the validated settings)
+would be read as "different" instead of "own". The Bookings runtime must either port `validateSettings` or read settings through something that gives the validated tree. The vectors hold
+both digests (`policies.raw`: a padded name and a missing `bufferMinutes`) and the generator fails if the validated settings' digest changes when they go through JSON.
 
 ## What the TypeScript does that Go does not need
 
