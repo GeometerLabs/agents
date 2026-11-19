@@ -4,7 +4,8 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { encodeQr } from "../../modules/qr/qr.ts";
+import { createHash } from "node:crypto";
+import { byteCapacity, encodeQr } from "../../modules/qr/qr.ts";
 import { qrSvg, textQrSvg } from "../../modules/qr/svg.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -32,8 +33,14 @@ export function generate(): Map<string, string> {
     { text: "plain", border: undefined, label: "UPI", width: 0 },
   ].map((o) => ({ ...o, svg: qrSvg(encodeQr(o.text), { ...(o.border !== undefined ? { border: o.border } : {}), ...(o.label ? { label: o.label } : {}), ...(o.width ? { width: o.width } : {}) }) }));
   const masks = [0, 1, 2, 3, 4, 5, 6, 7].map((m) => { const qr = encodeQr("mask " + m, { mask: m }); return { text: "mask " + m, mask: m, version: qr.version, rows: qr.dark.map((r) => r.map((d) => (d ? "1" : "0")).join("")) }; });
+  // every version 1 to 40, filled to its capacity, so both hand-copied level-M tables, the alignment positions (version 32 has its own step) and the version information are all compared
+  const versions = Array.from({ length: 40 }, (_, i) => i + 1).map((v) => {
+    const text = "Q".repeat(byteCapacity(v));
+    const qr = encodeQr(text, { minVersion: v });
+    return { version: v, length: text.length, mask: qr.mask, size: qr.size, rowsSha256: createHash("sha256").update(qr.dark.map((r) => r.map((d) => (d ? "1" : "0")).join("")).join("\n")).digest("hex") };
+  });
   const tooLong = (() => { try { encodeQr("w".repeat(2400)); return null; } catch (e) { return (e as Error).message; } })();
-  out.set("qr/testdata/vectors.json", JSON.stringify({ cases, options, masks, tooLong }, null, 0) + "\n");
+  out.set("qr/testdata/vectors.json", JSON.stringify({ cases, options, masks, versions, tooLong }, null, 0) + "\n");
   return out;
 }
 
