@@ -5,8 +5,11 @@ that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md
 owner control) are in [TRIAL.md](TRIAL.md). It is not wired into the deployer yet: `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads
 the same folder; `cmd/listings-shared` runs every shop of a server in one process, the way `server/shared-main.ts` does.
 
-What stays TypeScript: the front (`modules/channels/front.ts`), the deployer, the panel, the directory. They call this runtime over HTTP and cannot tell which one answered; the
-**contract** in `templates/commerce/listings/contract/` is what both must pass.
+What stays TypeScript: the front (`modules/channels/front.ts`, with the shops' own MCP endpoints), the deployer, the panel. They call this runtime over HTTP and cannot tell which one answered;
+the **contract** in `templates/commerce/listings/contract/` is what both must pass.
+
+Wave 1c adds the **directory of local shops** (`cmd/directory`, `internal/directory`): the service `bundle/services/directory.ts` starts, in Go, reading the same config and the same data
+folder, passing the directory contract in `modules/discovery/contract/` on TypeScript and on Go (see TRIAL.md, "Wave 1c"). It is not wired into the deployer yet either.
 
 ## Build and run
 
@@ -14,6 +17,7 @@ What stays TypeScript: the front (`modules/channels/front.ts`), the deployer, th
 cd go
 go build -o bin/listings ./cmd/listings                 # 23.3 MB; with -ldflags "-s -w" 16.4 MB (19 Nov, wave 1 merged)
 go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags "-s -w" 16.8 MB
+go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, Wave 1c)
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -26,6 +30,7 @@ The contract against this binary (from the repository root; build both binaries 
 
 ```
 LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=1 templates/commerce/listings/contract/
+DIRECTORY_IMPL=go DIRECTORY_GO_BIN=go/bin/directory node --test --test-concurrency=1 modules/discovery/contract/    # the directory
 ```
 
 The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
@@ -35,7 +40,7 @@ The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
 ```
 cmd/listings/            main: the command line, the token files, start and stop (the Go twin of server/main.ts + modules/runtime/start.ts)
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
-internal/signing/        the shop's Ed25519 key, RFC 8785 canonical JSON, the signed feed / answer / notice and the Agent Card's JWS (modules/signing)
+internal/signing/        Ed25519 and RFC 8785 canonical JSON, both ways: the shop's key and the signed feed / answer / notice / Agent Card's JWS (modules/signing), and the reading of them (VerifyDocument, VerifyNotice: the directory's checks)
 internal/listings/       the listings: state and rules, the owner's ops, the public and owner reads, the feed and check documents, photos, the assistant's draft and its grounding checks
 internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn), the Operator's setup code and card, and who controls them (the gate, the Operator's requests,
                          Geometer's reset, the owner's phones and own codes, the number lock), in owner-access.sqlite, same schema (modules/channels owner-*.ts, webauthn.ts)
@@ -51,6 +56,9 @@ internal/understanding/  the model steps (modules/understanding): one JSON call 
 internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule (rules.go), the owner's reading for the router (reading.go), the owner's talk (talk.go: prompt, answer, checks), notes from words (notes.go), and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, notes.go, talk.go, morning.go, ownerview.go)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts), the decision model's breaker and the day's notices (steps.go)
 internal/shared/         the multi-shop host (the Go twin of modules/runtime/shared.ts): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
+cmd/directory/           main of the directory of local shops (the Go twin of bundle/services/directory.ts: CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change)
+internal/directory/      the directory (modules/discovery): signed feeds read, checked and indexed (SQLite + FTS5, the TypeScript's own file), the fair order, search, the pages, the MCP endpoint, the signed
+                         Agent Card, the buyer's assistant; the words, style sheet, tool definitions and card text are GENERATED from the TypeScript (scripts/gen_directory.ts); read Explanation.md and Deferred.md
 cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
                          owner's sign-in routes, the tick's owner part and the owner's side of push (who may subscribe, what ends a subscription, the alerts to the
@@ -59,6 +67,8 @@ scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the T
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
                            in a corpus); `--check` only compares; the test words-fresh fails when it was not run after a change to a pattern it names
 scripts/gen_words.ts       renders the owner's words (and the lists the rules read, and the owner-control alerts with the moment they carry) from the TypeScript into internal/assistant/words/*.json.gz; `--check` only compares. `node go/scripts/gen_words.ts` after any change to modules/assistant/words*.ts, modules/listings/words.ts or the alerts in modules/channels/owner-phones.ts and owner-signin.ts (the test words-fresh fails when it was not run)
+scripts/gen_directory.ts   writes internal/directory/romanise_gen.go and words/pack.json.gz (+ the font) from the TypeScript directory; `--check` only compares (modules/discovery/contract/words-fresh.test.ts runs it)
+scripts/gen_directory_vectors.ts   what the TypeScript directory gives on hostile and awkward inputs (addresses, dates, numbers, the Latin fold, the order, the assistant's cleaning), for internal/directory/vectors_test.go
 scripts/sync_rates.sh      copies the dated rate tables (modules/understanding/rates) into internal/budget/rates, which the binary embeds (a test keeps them equal)
 scripts/gen_*_vectors.ts   what the TypeScript digest, formatters and rules give on a set of cases, for the Go tests (internal/assistant/testdata)
 ```
