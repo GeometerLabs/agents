@@ -336,6 +336,17 @@ report), so the domain code waits on them; `internal/bookings/ports.go` holds th
 refund limit, the price floor, STOP, every move between states, reminders; the settings' refusals word for word; the task runner's cases). Slices 4 and 5 (the customer's chat
 and talk, the owner's side for Bookings, the assistant's Bookings skill, the limits Bookings declares) are not started. `internal/bookings/Deferred.md` is the list.
 
+**The customer-facing words (slice 4, part; branch `go-bookings-words-19nov`).** Every message the Bookings agent sends (96 per language, four languages), the WhatsApp templates'
+bodies and how each slot is filled, the labels and Meta's limits, and the owner's day list are DATA made from the TypeScript by `go/scripts/gen_bookings_words.ts` (each template is
+rendered with probe facts and each probe turned back into a `{slot}`; which facts a message needs is found by taking each away from the real function, so Go refuses the same
+messages with the same sentence; `--check` and `words-fresh.test.ts` fail when a file is stale). The formats are shared (`internal/language/format.go` + `formats.json`, made by the
+same script from format.ts's own tables: format.ts writes dates and times from tables, not Intl; the zone is Go's database and the rupee grouping `language.FormatInr`, both proved
+equal; the data was made with Node v26.10.0). `internal/language` check.go now carries the moments (the booking's slot and a list's free times) and its problem sentences, so
+the outgoing check of a Bookings message equals the TypeScript's. `internal/bookings/templates.go`, `meta.go`, `interactive.go` render a message, the WhatsApp parameters, the
+templates submitted to Meta, the lists and buttons. Proved on every case of `templates-vectors.json` (384 renders and their checks, 136 WhatsApp templates, the 13 replies, labels,
+lists, buttons and the 136 submissions) plus the language package's equal-to-Node cases for rupees, dates and times (`go test ./internal/bookings/... ./internal/language/...`).
+Not done: the UPI owner's buttons (`ownerMarkButtons`), see Deferred.md. TypeScript findings: none changed.
+
 **What passes (19 Nov, through the heat lock).**
 
 * The Bookings contract on Go, whole folder (`BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/`): **128 tests, 23
