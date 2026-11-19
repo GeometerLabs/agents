@@ -530,3 +530,7 @@ said: the sources and the checks are the assistant's, and `understanding` is bel
 
 **Tests.** `runtime/chat_test.go` (`channels/test/chat.test.ts`'s cases over a fake step), `assistant/talkcustomer_test.go` (the vectors), `chatid/chatid_test.go` (a software passkey). The tests of the Bookings chat contract that
 wait for the agent core are listed in the final report of this branch; `scenarios-vectors.json` has none that does not run the agent's booking flow (all 14 do), so none is used here.
+
+**Measured (19 Nov, after this branch):** `go build ./...`, `go vet ./...` and `go test ./...` pass (27 packages, `internal/chatid` is new). The Bookings chat contract on Go (`chat.contract.test.ts`) is **4 of 17**: the empty and unknown thread
+and the 400s, a tap nothing offered, the 12-new-guests-an-hour 429 pass; the 13 that wait for the agent core are every one that needs the shop to answer (the send answered, the same send again, delete my chat after a
+booking, the three languages and Hinglish, the 8 a minute test (its 429 comes at the right send, but its last line counts the saved guest lines), and the five model tests). The listings contract on Go: 202 tests, 202 pass.
