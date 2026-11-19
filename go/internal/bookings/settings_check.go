@@ -54,7 +54,7 @@ func hasKey(m map[string]any, k string) bool { _, ok := m[k]; return ok }
 var (
 	whatsappRe = regexp.MustCompile(`^\+\d{10,15}$`)
 	personRe   = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
-	nameRe     = regexp.MustCompile(`^[\p{L}\p{M}][\p{L}\p{M} '’-]{0,23}$`)
+	charNameRe = regexp.MustCompile(`^[\p{L}\p{M}][\p{L}\p{M} '’-]{0,23}$`)
 	seedRe     = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,79}$`)
 	morningRe  = regexp.MustCompile(`^([01]\d|2[0-3]):([0-5]\d)$`)
 )
@@ -262,7 +262,7 @@ func (r *reader) character(v any, given bool, order func(string) []string) map[s
 			nameOK = false
 		}
 	}
-	if !nameOK || (name != "" && !nameRe.MatchString(name)) {
+	if !nameOK || (name != "" && !charNameRe.MatchString(name)) {
 		r.add(`The character's "name" must be 1 to 24 letters (spaces, hyphens and apostrophes are fine; no digits), or left out.`)
 	}
 	styleIDs := make([]string, len(checkWords.Styles))

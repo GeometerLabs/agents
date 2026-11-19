@@ -22,7 +22,7 @@ owner's buttons are `bookings.OwnerMarkButtons` (they use Bookings' labels and t
 ## Proved
 
 `testdata/vectors.json` is made by running the TypeScript (`go/scripts/gen_ownermarked_vectors.ts`; `templates/commerce/bookings/test/go-books-fresh.test.ts` fails when it is stale):
-13 scenarios (a deposit paid in one mark, in two, a bad amount, a request closed and then marked, a refund owed / reminded / done / kept, a code already held, the 51-draw cap, a link that
+12 scenarios (a deposit paid in one mark, in two, a bad amount, a request closed and then marked, a refund owed / reminded / done / kept, a code already held, the 51-draw cap, a link that
 cannot be made, the neutral view's every call), compared after EVERY step for the result and the whole state; 47 replies the owner might type or tap; the no-gateway words. The ledger draws
 its codes with `node:crypto randomInt`, which the generator replaces by a replay of draws the scenario names, so a code is the same text on both sides.
 
