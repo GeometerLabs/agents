@@ -227,6 +227,7 @@ test("the Agent Card is the directory's own, signed with the key it keeps in its
   const rawKey = Buffer.from(pub, "base64url").subarray(-32);
   assert.equal(header.kid, createHash("sha256").update(rawKey).digest("base64url"));
   assert.ok(cardSignatureOk(card, pub), "the signature checks against the spec's own rule");
+  assert.ok(!cardSignatureOk({ ...card, description: "x" }, pub), "a card changed after it was signed does not check (mcp.test.ts carried over)");
   await d.stop();
   await d.start();
   assert.equal((await d.call("/.well-known/agent-card.json")).body.signatures[0].protected, card.signatures[0].protected);

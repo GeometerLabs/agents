@@ -230,6 +230,8 @@ test("a feed signed by another key than the pinned one is held for a person: hid
   await d.start();
   await until("the change to be held", () => d.db().prepare("SELECT COUNT(*) AS n FROM key_changes").get()?.n === 1);
   assert.equal((await found(d)).length, 0, "its items leave every search");
+  const viaMcp = await d.call("/mcp", { body: { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "shop_page", arguments: { shop: shop.page } } } });
+  assert.equal(viaMcp.body.result?.isError, true, "and an assistant asking for the held shop's page is told it is not found (mcp.test.ts carried over)");
   assert.match(d.log(), /a key change waits for a person/u);
   assert.equal((d.db().prepare("SELECT pinned_key_id, offered_key_id FROM key_changes").get() as any).pinned_key_id, first);
   const listed = await d.cli("changes");
@@ -257,7 +259,16 @@ test("what the buyer typed never reaches a shop, and nothing about the buyer is 
   await d.searchJson({ q: "kitten", town: "Thrissur", lat: "10.52", lon: "76.21" });
   for (const b of shop.hits.checkBodies) assert.deepEqual(Object.keys(JSON.parse(b)).sort(), ["format", "ids"]);
   assert.ok(!shop.hits.checkBodies.join("").includes("Thrissur"));
-  const counts = d.db().prepare("SELECT kind, n FROM counts").all() as { kind: string; n: number }[];
+  await d.searchJson({ q: "zebra" }, "198.51.100.5");
+  const counts = d.db().prepare("SELECT day, kind, n FROM counts").all() as { day: string; kind: string; n: number }[];
   assert.deepEqual(counts.map((c) => c.kind).sort(), ["results", "searches"]);
+  // the values, and nothing else: two searches, one result, under India's day (index.test.ts and http.test.ts carried over)
+  assert.deepEqual(Object.fromEntries(counts.map((c) => [c.kind, c.n])), { searches: 2, results: 1 });
+  assert.match(counts[0].day, /^\d{4}-\d{2}-\d{2}$/u);
+  assert.deepEqual((d.db().prepare("PRAGMA table_info(counts)").all() as { name: string }[]).map((c) => c.name), ["day", "kind", "n"]);
+  const tables = (d.db().prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]).map((t) => t.name);
+  for (const t of tables) assert.ok(!/search|query|visitor|address|session|cookie/iu.test(t.replace("items_fts", "")), `a table called ${t} would keep what a person searched`);
+  const dump = JSON.stringify(d.db().prepare("SELECT * FROM counts").all());
+  assert.ok(!dump.includes("198.51.100.5") && !dump.includes("zebra"));
   assert.ok(!d.log().includes("kitten"), "the log never holds a search");
 });

@@ -28,6 +28,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, "..", "..", "..", "..");
 /** The runtime under test (golden.ts writes it into a recording). */
 export const IMPL = "go";
+// The TypeScript listings shop is deleted: a run that asks for it must not pass quietly on Go (a log reading "LISTINGS_IMPL=ts ... pass" would be a TypeScript pass that never ran).
+if (process.env.LISTINGS_IMPL !== undefined && process.env.LISTINGS_IMPL !== "go") throw new Error(`LISTINGS_IMPL=${process.env.LISTINGS_IMPL}: only the Go listings shop is left (the TypeScript one was deleted on 19 Nov 2026); unset LISTINGS_IMPL or set it to go`);
 /** The Go binary the shops are started from. */
 export const GO_BIN = process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings");
 /** Every test's skip: the reason when there is no binary to start (build it: cd go && go build -o bin/listings ./cmd/listings), else false. */

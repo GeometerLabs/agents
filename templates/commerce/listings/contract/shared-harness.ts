@@ -54,7 +54,8 @@ export interface Host {
   /** GET/POST a path of the shared process itself (not a shop's). */
   get(path: string): Promise<{ status: number; body: any }>;
   /** Call a shop through the router. The credential is the caller's: a token (the channel token is the default on /internal/channel/*), the owner's link. */
-  call(shop: string, path: string, o?: { token?: string | null; internal?: boolean; owner?: string; body?: unknown; headers?: Record<string, string> }): Promise<{ status: number; body: any; headers: Headers }>;
+  /** `raw` with `type` sends bytes (a photo) instead of JSON. */
+  call(shop: string, path: string, o?: { token?: string | null; internal?: boolean; owner?: string; body?: unknown; raw?: Uint8Array; type?: string; headers?: Record<string, string> }): Promise<{ status: number; body: any; headers: Headers }>;
   stop(): Promise<void>;
 }
 
@@ -100,7 +101,9 @@ export async function startHost(root: Root, o: { scanSeconds?: number; shops?: R
       const token = c.token === undefined ? (folder ? (c.internal || !path.startsWith("/internal/channel/") ? folder.internal : folder.channel) : null) : c.token;
       const headers: Record<string, string> = { ...(token ? { authorization: `Bearer ${token}` } : {}), ...(c.owner ? { "x-owner-link": c.owner } : {}), ...(c.headers ?? {}) };
       if (c.body !== undefined) headers["content-type"] = "application/json";
-      const r = await fetch(`${url}/shop/${shop}${path}`, { method: c.body !== undefined ? "POST" : "GET", headers, ...(c.body !== undefined ? { body: JSON.stringify(c.body) } : {}) });
+      if (c.raw !== undefined) headers["content-type"] = c.type ?? "application/octet-stream";
+      const sent = c.raw !== undefined ? c.raw : c.body !== undefined ? JSON.stringify(c.body) : undefined;
+      const r = await fetch(`${url}/shop/${shop}${path}`, { method: sent !== undefined ? "POST" : "GET", headers, ...(sent !== undefined ? { body: sent } : {}) });
       return { status: r.status, body: await r.json().catch(() => null), headers: r.headers };
     },
     async stop() { await stopChild(child, 5000); },

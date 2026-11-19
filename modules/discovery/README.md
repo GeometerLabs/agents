@@ -14,4 +14,5 @@ What is left in this folder:
 | --- | --- |
 | `words.ts` | the words of the search page and the order page in four languages: the source the Go directory's words are generated from (`go/scripts/gen_directory.ts`), and what the review sheet (`bundle/panel/review.ts`) lists for a native reader |
 | `types.ts` | the four languages and the kinds, which `words.ts` and the generator use |
+| `test/words.test.ts` | the words' own check (every line in every language, none empty, none English, no banned word) |
 | `contract/` | the directory CONTRACT: black-box tests that start the directory as a separate process and talk to it over HTTP (its README says what each covers), with the golden answers the TypeScript gave before it was deleted |

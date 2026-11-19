@@ -368,8 +368,8 @@ Go restart tests, and the "same files" check is a golden of the three SQLite sch
 test passing both ways: the proof that Go reads TypeScript's files, since a TypeScript-written fixture would hold the shop's private key and is not committed); with the goldens in place
 196 of 196 on TypeScript and on Go; after `LISTINGS_IMPL=ts` went, **190 of 190 on Go** (7 turn-taking pairs became one restart test each, and the shared process's 6 scenarios no longer run
 a second time on TypeScript). No Go-versus-TypeScript difference was found. The listings unit tests that went: `shared-pool.test.ts` and `shared-shops.test.ts` (routing, another shop's
-token refused, a shop let go, the back-soon page: `contract/shared.contract.test.ts` and `go/internal/shared/host_test.go`; a listing and a photo staying in their own shop's feed and file are
-covered by each shop's own store and routes in the shared contract, not by a dedicated cross-shop feed check, Deferred.md); `modules/runtime/test/shared*.test.ts` (the TypeScript pool:
+token refused, a shop let go, the back-soon page: `contract/shared.contract.test.ts` and `go/internal/shared/host_test.go`; a listing and a photo staying in their own shop's feed and file: a new
+scenario in `shared.contract.test.ts`; the back-soon language order: `go/internal/shared/backsoon_lang_test.go`; the back-off's doubling has no Go test yet, bundle/Deferred.md); `modules/runtime/test/shared*.test.ts` (the TypeScript pool:
 `host_test.go` holds the Go host's strikes, quarantine, pause and restarts). `first-signin.test.ts` and `settings.test.ts` stay (they test `src/settings.ts`, which stays).
 
 **TypeScript behaviour the goldens pin** (reported, not changed): asked on Thu 19 Nov, "money on 16 nov" is answered for 16 Nov of next year, not three days ago; Go does the same.
