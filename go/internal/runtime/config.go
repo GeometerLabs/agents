@@ -1,4 +1,4 @@
-// Package runtime is one listings-only shop's runtime: its folder read and checked, its store opened, the saved queue of events run one step at a time, and the HTTP routes the
+// Package runtime is a shop's runtime: the listings-only shop's (wave 1), and every template's shared part (template.go: a Bookings shop gives it a Kit, wave 2). Its folder read and checked, its store opened, the saved queue of events run one step at a time, and the HTTP routes the
 // shop's front, the directory and the inbox use. The Go twin of modules/runtime and templates/commerce/listings/server. It reads the same folder and the same token files as the
 // TypeScript runtime (modules/runtime/shared.ts `folderSource` describes the layout): client/settings.json, runtime.json, pathway.lock (written last), owner-link.json,
 // pages.json, owner-grants.json; secrets internal_token, channel_token, record_key.
@@ -54,6 +54,9 @@ type Settings struct {
 		MorningOff                                    bool // "morning": false
 		MorningHour, MorningMinute                    int
 	}
+	// Own is a template's own settings (template.go Kit.ReadSettings), nil for the listings shop. Raw is settings.json as read, for a template that reads a member again.
+	Own any
+	Raw map[string]any
 }
 
 // ModelConfig is runtime.json's `parser` (or `talk`): understanding.ModelConfig.
@@ -73,7 +76,11 @@ type Config struct {
 	PauseMin    int64
 	AllowMsgs   *int64
 	AllowMicro  *int64
-	file        string
+	// Services is runtime.json's `services` as read (nil: not given; an empty object is "no WhatsApp", config.ts runtimeHasWhatsApp), for a template to check and use. Raw is the
+	// whole file as read.
+	Services map[string]any
+	Raw      map[string]any
+	file     string
 }
 
 // Client is a shop's folder, read.
@@ -104,7 +111,15 @@ func readFolderJSON(dir, name string) (map[string]any, error) {
 }
 
 // LoadClient reads and checks a whole client folder, and refuses if it is pinned to another version of the pathway than this one.
-func LoadClient(folder string) (*Client, error) {
+func LoadClient(folder string) (*Client, error) { return LoadClientKit(folder, nil) }
+
+// LoadClientKit is LoadClient for a template's folder: the lock must name the template's pathway and version, and its settings are checked the template's way. With no kit it is
+// the listings shop's folder.
+func LoadClientKit(folder string, kit Kit) (*Client, error) {
+	pathway, version := Pathway, Version
+	if kit != nil {
+		pathway, version = kit.Pathway(), kit.Version()
+	}
 	dir, err := filepath.Abs(folder)
 	if err != nil {
 		return nil, err
@@ -128,14 +143,22 @@ func LoadClient(folder string) (*Client, error) {
 		return nil, bad("pathway.lock lists more than one line. This runtime cannot load modules yet, so it will not start with a lock that asks for them.")
 	}
 	c.Lock.Pathway, c.Lock.Version = m[1], m[2]
-	if c.Lock.Pathway != Pathway || c.Lock.Version != Version {
-		return nil, bad("This client is pinned to %s@%s (pathway.lock), but this runtime is %s@%s. It will not start on a different version.", c.Lock.Pathway, c.Lock.Version, Pathway, Version)
+	if c.Lock.Pathway != pathway || c.Lock.Version != version {
+		return nil, bad("This client is pinned to %s@%s (pathway.lock), but this runtime is %s@%s. It will not start on a different version.", c.Lock.Pathway, c.Lock.Version, pathway, version)
 	}
 	s, err := readFolderJSON(dir, "settings.json")
 	if err != nil {
 		return nil, err
 	}
-	if err := c.readSettings(s); err != nil {
+	c.Settings.Raw = s
+	if kit != nil {
+		raw, _ := os.ReadFile(filepath.Join(dir, "settings.json"))
+		own, errs := kit.ReadSettings(s, raw, &c.Settings)
+		if len(errs) > 0 {
+			return nil, bad("These settings need fixing (settings.json):\n- %s", strings.Join(errs, "\n- "))
+		}
+		c.Settings.Own = own
+	} else if err := c.readSettings(s); err != nil {
 		return nil, err
 	}
 	r, err := readFolderJSON(dir, "runtime.json")
@@ -248,6 +271,9 @@ func (c *Client) readSettings(in map[string]any) error {
 
 var hhmm = regexp.MustCompile(`^([01]\d|2[0-3]):([0-5]\d)$`)
 
+// ReadAssistant is readAssistant for a template's settings (the same lenient reading of the character and the morning hour).
+func (s *Settings) ReadAssistant(raw any) { s.readAssistant(raw) }
+
 // readAssistant takes the character and the morning hour out of the `assistant` block, with settings.ts's defaults (Clay, warm, 08:00).
 func (s *Settings) readAssistant(raw any) {
 	a := &s.Assistant
@@ -290,6 +316,10 @@ func (c *Client) readRuntime(in map[string]any) error {
 	var errs []string
 	cfg := &c.Config
 	cfg.file = filepath.Join(c.Folder, "runtime.json")
+	cfg.Raw = in
+	if sv, ok := in["services"].(map[string]any); ok {
+		cfg.Services = sv
+	}
 	if m := in["mode"]; m != "fakes" && m != "live" {
 		errs = append(errs, `Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).`)
 	} else {

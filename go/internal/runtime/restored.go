@@ -48,6 +48,15 @@ func (r *Runtime) afterRestore() error {
 		if v, ok := note["lastSeq"].(float64); ok {
 			lastSeq = int(v)
 		}
+		// a template's store moves every id counter on (snapshot.ts skipCounters: the next booking is b-100002 after b-1), so no id given out after the snapshot is given again
+		if r.o.Kit != nil {
+			r.o.Kit.SkipCounters(r.snap.T, restoreIDGap)
+			text, err := r.snap.Serialize()
+			if err != nil {
+				return err
+			}
+			r.snapshot = text
+		}
 		number, lang := r.owner()
 		rec := r.recorder()
 		rec.append(NewLine{Conversation: number, Action: "restored", Outcome: "confirmed", Inputs: note, Language: lang, Refs: refs,
