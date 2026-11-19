@@ -16,6 +16,10 @@ still has every part, and a shop can be moved back to it.
 | The shop's assistant for Bookings (its skill, cards, the morning line; the limits Bookings declares ARE ported: the page, the deployer's word, the owner's change) | `src/assistant.ts`, `src/chat-limits.ts` | slice 5 | the shared assistant package grown for a second template |
 | The customer's chat on the page (`/internal/channel/chat`, `chat-id`, `chat-voice`) | `modules/channels/chat*.ts` | slice 4 | the chat's state and the customer's talk with the model |
 | The monthly report and the licence notices | `report/`, `server/licence.ts` | the report is another stream's (go/internal/report) | the report package |
+| The UPI owner's buttons (`ownerMarkButtons`: "Received", "Refund sent", "Kept for booking") | `modules/payments/owner-marked/buttons.ts` | they belong to the owner-marked ledger, which is not modelled; the labels they use ARE generated (`Label`) | the ledger in Go |
+| An image header on a WhatsApp template | `meta-templates.ts` `header: "image"` | no Bookings template has one; the generator refuses to run if one gets one, so it cannot be missed | Meta's example picture handle in the submission |
+| The words for a language the shop does not speak | `templates.ts` | none: all four are generated | nothing |
+| Switching `internal/assistant` (its own date/time/rupee data in `words/*.json.gz`) and `rules.go`'s `inr` (`assistantINR`) to `internal/language` | `format.ts` | a small tidy of files another stream owns; the two are proved equal to Node on the same vectors, so nothing differs | one change on the merged branch |
 | The day's compact of finished conversations' words (`core.ts compact`, `compactStore`, `store.compactTurns`) | `modules/runtime/core.ts` | the words it removes (channel outbox, a page's typed name) are in blocks not modelled yet | the channel state in Go |
 
 ## Reads that answer 200 with LESS than the TypeScript (said here so nobody reads them as equal)
