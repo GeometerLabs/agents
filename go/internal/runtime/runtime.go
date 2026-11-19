@@ -20,10 +20,12 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/access"
+	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/signing"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
 // retryDelays: wait before the first, second and third retry, so four tries in all.
@@ -33,8 +35,8 @@ var retryDelays = []time.Duration{time.Second, 5 * time.Second, 30 * time.Second
 type Options struct {
 	Client    *Client
 	Store     *store.Store
-	Access    *access.Access // nil: the shop has no owner sign-in (no channel token)
-	Model     *Model
+	Access    *access.Access       // nil: the shop has no owner sign-in (no channel token)
+	Model     *understanding.Model // the talk model (runtime.json `talk`, or `parser`): the owner's talk and a listing's draft
 	RecordKey []byte
 	Log       func(string)
 	Now       func() int64
@@ -45,6 +47,7 @@ type Options struct {
 
 // Runtime is one running shop.
 type Runtime struct {
+	router  *understanding.Router[assistant.Intent] // the owner's router (nil: the rules alone read the owner's words)
 	o       Options
 	loc     *time.Location
 	policy  budget.Policy
@@ -90,6 +93,7 @@ func New(o Options) (*Runtime, error) {
 	}
 	r := &Runtime{o: o, loc: loc, clock: budget.Clock{Now: o.Now, Loc: loc}, started: o.Now(), kick: make(chan struct{}, 1), stop: make(chan struct{}), done: make(chan struct{})}
 	cfg := &o.Client.Config
+	r.router = ownerRouter(cfg, o.Model, o.Log)
 	r.policy = budget.Policy{
 		Override: func() string { return cfg.Switch("ai", "buttons", "auto") },
 		Model:    func() string { return cfg.Switch("model", "off", "normal") },
@@ -332,12 +336,15 @@ func (r *Runtime) step(ev map[string]any, taskID string) (err error) {
 		case "owner_signin":
 			r.ownerSignin(rec)
 		case "owner_message":
+			r.seedPlace(snap, rec)
 			if err := r.ownerMessage(snap, rec, ev, now); err != nil {
 				return err
 			}
 		case "owner_action":
+			r.seedPlace(snap, rec)
 			r.ownerAction(snap, rec, ev, now)
 		default:
+			r.seedPlace(snap, rec) // TypeScript hands any other kind to the agent, which seeds the place and then ignores the event
 			r.o.Log(fmt.Sprintf("An event of kind %v came for a listings-only shop run by the Go runtime, which does not take it; it was dropped.", ev["kind"]))
 		}
 	}
@@ -492,12 +499,36 @@ func (r *Runtime) ownerSignin(rec *recorder) {
 // drafts and of photos no listing holds; then the owner's part (owner.go ownerBeat: the Operator's request and Geometer's reset read, the owner's number watched, each finding
 // said once, the panel's "sign out every device" said once). It returns the requests to mark told once the step is saved, or the error that stops the step.
 func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) ([]string, error) {
-	// the assistant's beat: cards past their time, what is no longer needed, the morning question (only once the shop has an assistant state: before that there is nothing to do)
-	if snap.A != nil {
-		r.assistantFor(snap, rec, now).onTick()
-	}
+	// the beat reaches the agent, which seeds the place first (and with it makes the assistant's state); then the assistant's beat: cards past their time, what is no longer
+	// needed, the morning question
+	r.seedPlace(snap, rec)
+	r.assistantFor(snap, rec, now).onTick()
 	r.daily(snap, now)
 	return r.ownerBeat(rec)
+}
+
+// seedPlace is templates/commerce/listings/src/agent.ts `seedPlace`, run first on every step that reaches the agent (the beat, the owner's words, a card's tap, an event no other
+// part takes): the place the Operator gave at setup (settings.json `place`) is written into the shop's listings ONCE, with the panel's authority, so the page shows the town before
+// the owner has typed anything. A place the owner has (a town or a pincode) is never overwritten. Like TypeScript's `listingsOf(assistantOf(store))`, it makes the assistant's
+// state and the listings on first use.
+func (r *Runtime) seedPlace(snap *Snap, rec *recorder) {
+	snap.ensureA()
+	ls := snap.Touch()
+	if ls.Shop.Town != "" || ls.Shop.Pincode != "" {
+		return
+	}
+	set := r.o.Client.Settings
+	town := set.Town
+	patch := listings.ShopPatch{Town: &town}
+	if set.Pincode != "" {
+		pin := set.Pincode
+		patch.Pincode = &pin
+	}
+	if ls.SetShop(patch) != "" {
+		return
+	}
+	number, lang := r.owner()
+	rec.append(NewLine{Conversation: number, Action: "listing", Outcome: "confirmed", Inputs: map[string]any{"place": "set at setup"}, Language: lang, Notes: "the Operator's place from setup was written into the shop's listings; the owner can change it in their app"})
 }
 
 // daily is the once-a-day part of the beat.

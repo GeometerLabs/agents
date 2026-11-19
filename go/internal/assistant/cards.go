@@ -332,11 +332,149 @@ func (s *State) Compact(now int64, todayIso string) int {
 		gone += len(s.Chat) - ChatLines
 		s.Chat = s.Chat[len(s.Chat)-ChatLines:]
 	}
+	gone += s.compactChanges()
 	if len(s.Talk) > TalkLines {
 		gone += len(s.Talk) - TalkLines
 		s.Talk = s.Talk[len(s.Talk)-TalkLines:]
 	}
 	return gone
+}
+
+// MarkChangesTold is limits-card.ts `unannounced` for a shop that declares no limit (a listings-only shop): every settled change the owner was not told of is marked told, and
+// there is nothing to say (a change of a limit the shop does not declare has no words). Run on the beat after the budget's notices, as conversation.ts `onTick` does.
+func (s *State) MarkChangesTold() {
+	var changes []json.RawMessage
+	if json.Unmarshal(s.Rest["limitChanges"], &changes) != nil {
+		return
+	}
+	touched := false
+	for i, c := range changes {
+		var head struct {
+			State string `json:"state"`
+			Told  any    `json:"told"`
+		}
+		_ = json.Unmarshal(c, &head)
+		if head.State == "pending" || truthy(head.Told) {
+			continue
+		}
+		changes[i] = setMember(c, "told", json.RawMessage("true"))
+		touched = true
+	}
+	if touched {
+		b, _ := json.Marshal(changes)
+		s.Rest["limitChanges"] = b
+	}
+}
+
+// truthy is JavaScript's truthiness of a JSON value.
+func truthy(v any) bool {
+	switch x := v.(type) {
+	case nil:
+		return false
+	case bool:
+		return x
+	case float64:
+		return x != 0
+	case string:
+		return x != ""
+	}
+	return true
+}
+
+// setMember sets one member of a JSON object, keeping the order of the others: in place when it is there, at the end when it is not (as a JavaScript assignment does).
+func setMember(obj json.RawMessage, key string, val json.RawMessage) json.RawMessage {
+	dec := json.NewDecoder(bytes.NewReader(obj))
+	if t, err := dec.Token(); err != nil || t != json.Delim('{') {
+		return obj
+	}
+	var b bytes.Buffer
+	b.WriteByte('{')
+	n, found := 0, false
+	for dec.More() {
+		t, err := dec.Token()
+		if err != nil {
+			return obj
+		}
+		k, _ := t.(string)
+		var v json.RawMessage
+		if dec.Decode(&v) != nil {
+			return obj
+		}
+		if k == key {
+			v, found = val, true
+		}
+		if n > 0 {
+			b.WriteByte(',')
+		}
+		kb, _ := json.Marshal(k)
+		b.Write(kb)
+		b.WriteByte(':')
+		b.Write(v)
+		n++
+	}
+	if !found {
+		if n > 0 {
+			b.WriteByte(',')
+		}
+		kb, _ := json.Marshal(key)
+		b.Write(kb)
+		b.WriteByte(':')
+		b.Write(val)
+	}
+	b.WriteByte('}')
+	return b.Bytes()
+}
+
+// KeepSettledChanges is modules/limits/chat-limits.ts KEEP_SETTLED_CHANGES.
+const KeepSettledChanges = 30
+
+// compactChanges is chat-limits.ts `compactChanges` over `limitChanges` (`state.limitChanges ??= []` first): settled changes are taken off, keeping the newest 30; a pending one is
+// never taken. Only `id` and `state` of a change are read; every change kept is written back exactly as it was.
+func (s *State) compactChanges() int {
+	raw, ok := s.Rest["limitChanges"]
+	if !ok || string(bytes.TrimSpace(raw)) == "null" {
+		s.Rest["limitChanges"] = json.RawMessage("[]")
+		return 0
+	}
+	var changes []json.RawMessage
+	if json.Unmarshal(raw, &changes) != nil {
+		return 0
+	}
+	type head struct {
+		ID    string `json:"id"`
+		State string `json:"state"`
+	}
+	heads := make([]head, len(changes))
+	var settled []string
+	for i, c := range changes {
+		_ = json.Unmarshal(c, &heads[i])
+		if heads[i].State != "pending" {
+			settled = append(settled, heads[i].ID)
+		}
+	}
+	if len(settled) <= KeepSettledChanges {
+		return 0
+	}
+	drop := map[string]bool{}
+	for _, id := range settled[:len(settled)-KeepSettledChanges] {
+		drop[id] = true
+	}
+	var b bytes.Buffer
+	b.WriteByte('[')
+	n := 0
+	for i, c := range changes {
+		if drop[heads[i].ID] {
+			continue
+		}
+		if n > 0 {
+			b.WriteByte(',')
+		}
+		b.Write(bytes.TrimSpace(c))
+		n++
+	}
+	b.WriteByte(']')
+	s.Rest["limitChanges"] = json.RawMessage(b.Bytes())
+	return len(drop)
 }
 
 // AddTalk is conversation.ts `talk`: one line of the page's talk, the oldest going once there are more than the page shows.

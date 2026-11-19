@@ -29,7 +29,9 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/listings"
+	"github.com/GeometerLabs/agents/go/internal/memory"
 )
 
 // conv is the assistant for one step: it works on the step's own state (so what it does is saved with the step, whole or not at all) and the step's record.
@@ -42,6 +44,7 @@ type conv struct {
 	pack   *assistant.Pack
 	number string
 	lang   string
+	memory *memory.State // the step's notes, read on first use (notes.go)
 }
 
 func (r *Runtime) assistantFor(snap *Snap, rec *recorder, now int64) *conv {
@@ -427,21 +430,19 @@ func (r *Runtime) ownerMessage(snap *Snap, rec *recorder, ev map[string]any, now
 	if err != nil || taken {
 		return err
 	}
-	c.readIntent(text)
+	c.readIntent(text, "o:owner-page:"+id)
 	return nil
 }
 
-// readIntent is the rules' reading and what the assistant does with it.
-func (c *conv) readIntent(text string) {
-	read := assistant.ReadOwnerRules(text)
-	kind := assistant.Offered(read.Kind)
-	// the read is counted in the month's AI counts (reader.countUnderstood) and written to the record (conversation.ts, the owner_assistant line)
-	budget.For(&c.snap.AI, c.r.clock, c.now).Rules++
-	refs := map[string]string{"intent": kind, "step": "rules", "provider": "rules", "model": "rule-parser", "inputTokens": "0", "outputTokens": "0", "costMicroInr": "0", "tried": "rules"}
+// readIntent is conversation.ts `onOwnerMessage` after the fixed phrases and a listing: the router's reading (talk.go readOwner), its owner_assistant line, and the answer.
+func (c *conv) readIntent(text, key string) {
+	read, note, refs := c.readOwner(text)
+	kind := read.Kind
+	refs["intent"] = kind
 	if read.Ref != "" {
 		refs["case"] = read.Ref
 	}
-	c.logLine("owner_assistant", "confirmed", map[string]any{"intent": kind}, refs, "")
+	c.logLine("owner_assistant", "confirmed", map[string]any{"intent": kind}, refs, note)
 	switch kind {
 	case "help":
 		p := c.r.o.Client.Settings.Assistant
@@ -453,8 +454,12 @@ func (c *conv) readIntent(text string) {
 	case "limit":
 		// a listings-only shop declares no limit, so "which limit?" lists none (TypeScript's own line, empty list and all)
 		c.say("limit_which")
-	case "remember", "notes", "forget":
-		c.say("not_offered") // the shop's memory is not in this runtime (go/TRIAL.md)
+	case "remember":
+		c.remember(read.Words)
+	case "notes":
+		c.listNotes()
+	case "forget":
+		c.forgetNote(read.Note)
 	case "leave_file":
 		c.leave("file")
 	case "leave_operator":
@@ -476,20 +481,28 @@ func (c *conv) readIntent(text string) {
 		}
 		c.say("refusal.no_case", "ref", read.Ref) // no skill of this shop holds a case: "Nothing has the number b-14."
 	default:
-		// TypeScript answers with the owner-talk model first (talk-owner.ts); that is not in this runtime, so the fixed answer
-		c.say("not_understood")
+		// the words no rule or model could place: answered as a conversation when the talk may ask a model (talk.go), otherwise the fixed answer
+		if !c.talkToOwner(text, key) {
+			c.say("not_understood")
+		}
 	}
 }
 
-// undoLast is conversation.ts `undoLast`. A listings-only shop makes no undo record of its own (it closes no day and moves no booking); the ones TypeScript's "remember" made are not
-// undone here.
+// undoLast is conversation.ts `undoLast`: the newest undo record still in time. A listings-only shop makes only the "remember" kind (it closes no day and moves no booking); any
+// other kind (from a shop that once ran another template) is answered "doesn't handle that".
 func (c *conv) undoLast() {
 	for i := len(c.a.Undo) - 1; i >= 0; i-- {
-		u := c.a.Undo[i]
-		if !u.Done && u.UntilMs > c.now {
-			c.say("not_offered")
+		u := &c.a.Undo[i]
+		if u.Done || u.UntilMs <= c.now {
+			continue
+		}
+		if u.Kind == "remember" {
+			u.Done, u.HasDone = true, true
+			c.undoRemember(u.Case)
 			return
 		}
+		c.say("not_offered")
+		return
 	}
 	c.say("undo_none")
 }
@@ -517,18 +530,17 @@ func (c *conv) showWaiting() {
 	}
 }
 
-// money is "money in" for a date: the payments the record holds on it (a listings-only shop takes none, so it is "nothing recorded"). A date other than today, tomorrow or the day after
-// is not read by this port: the owner is told so with TypeScript's "doesn't handle that".
-func (c *conv) money(d *assistant.DatePhrase) {
+// money is "money in" for a date (conversation.ts, the "money" kind): the payments the record holds on it (a listings-only shop takes none, so it is "nothing recorded"). The date is the
+// one the words name (language.FindDatePhrase, resolved by language.ResolveDate with dates.ts's rules), or today; a date that does not exist (31 November) is today, as
+// `dateOf(intent) ?? today()` makes it.
+func (c *conv) money(d *language.DatePhrase) {
 	t := time.UnixMilli(c.now).In(c.r.loc)
-	if d != nil {
-		if d.Other {
-			c.say("not_offered")
-			return
-		}
-		t = t.AddDate(0, 0, d.Offset)
-	}
 	y, m, day := t.Date()
+	if d != nil {
+		if ry, rm, rd, ok := language.ResolveDate(*d, t); ok {
+			y, m, day = ry, rm, rd
+		}
+	}
 	from := time.Date(y, m, day, 0, 0, 0, 0, c.r.loc).UnixMilli()
 	to := time.Date(y, m, day+1, 0, 0, 0, 0, c.r.loc).UnixMilli()
 	var paise, payments int64
@@ -604,6 +616,7 @@ func (c *conv) onTick() {
 		c.logLine("owner_card", "blocked", map[string]any{"card": cd.ID}, map[string]string{"card": cd.ID, "skill": cd.Action.Skill, "kind": cd.Action.Kind, "digest": cd.Digest, "decision": "none"}, "the card ran out without a tap: nothing was done")
 	}
 	c.a.Compact(c.now, c.r.today(c.now))
+	c.notesTick()
 	if c.snap.hasList {
 		c.snap.Listings.Tidy(c.now)
 	}
@@ -611,6 +624,7 @@ func (c *conv) onTick() {
 		c.snap.Stock.Tidy(c.now)
 	}
 	c.budgetBeat()
+	c.a.MarkChangesTold() // limits-card.ts `unannounced`: a listings-only shop declares no limit, so a settled change is marked told and nothing is said
 	c.askFresh()
 }
 

@@ -39,13 +39,14 @@ const CLAIM_WORDS: Record<ClaimKind, RegExp> = {
 };
 
 /** Words that say something happened. Only the template's own messages, written from the record, may say these. */
-const COMPLETION = U(`${NB}(?:booked|confirmed|paid|refunded|cancell?ed|canceled|sent|scheduled|reserved|completed|done|processed|credited|rescheduled|moved)${NL}|बुक हो|बुक कर दि|बुक कर लि|कन्फर्म हो|कन्फर्म कर|पक्की हो|भुगतान हो|भुगतान कर दि|पेमेंट हो|रिफंड हो|रिफंड कर दि|रद्द हो|रद्द कर दि|रद्द कर दी|भेज दि|भेज दी|बुक ചെയ്തു|ബുക്ക് ചെയ്തു|ബുക്ക് ആയി|ഉറപ്പിച്ചു|ഉറപ്പായി|പണമടച്ചു|പേയ്മെന്റ് ലഭിച്ചു|റീഫണ്ട് ചെയ്തു|റദ്ദാക്കി|റദ്ദായി|അയച്ചു|ಬುಕ್ ಮಾಡಲಾಗಿದೆ|ಬುಕ್ ಆಗಿದೆ|ದೃಢಪಡಿಸಲಾಗಿದೆ|ಖಚಿತವಾಗಿದೆ|ಪಾವತಿಸಲಾಗಿದೆ|ಪಾವತಿ ಆಗಿದೆ|ರೀಫಂಡ್ ಮಾಡಲಾಗಿದೆ|ರದ್ದುಮಾಡಲಾಗಿದೆ|ರದ್ದಾಗಿದೆ|ಕಳುಹಿಸಲಾಗಿದೆ`);
+export const COMPLETION = U(`${NB}(?:booked|confirmed|paid|refunded|cancell?ed|canceled|sent|scheduled|reserved|completed|done|processed|credited|rescheduled|moved)${NL}|बुक हो|बुक कर दि|बुक कर लि|कन्फर्म हो|कन्फर्म कर|पक्की हो|भुगतान हो|भुगतान कर दि|पेमेंट हो|रिफंड हो|रिफंड कर दि|रद्द हो|रद्द कर दि|रद्द कर दी|भेज दि|भेज दी|बुक ചെയ്തു|ബുക്ക് ചെയ്തു|ബുക്ക് ആയി|ഉറപ്പിച്ചു|ഉറപ്പായി|പണമടച്ചു|പേയ്മെന്റ് ലഭിച്ചു|റീഫണ്ട് ചെയ്തു|റദ്ദാക്കി|റദ്ദായി|അയച്ചു|ಬುಕ್ ಮಾಡಲಾಗಿದೆ|ಬುಕ್ ಆಗಿದೆ|ದೃಢಪಡಿಸಲಾಗಿದೆ|ಖಚಿತವಾಗಿದೆ|ಪಾವತಿಸಲಾಗಿದೆ|ಪಾವತಿ ಆಗಿದೆ|ರೀಫಂಡ್ ಮಾಡಲಾಗಿದೆ|ರದ್ದುಮಾಡಲಾಗಿದೆ|ರದ್ದಾಗಿದೆ|ಕಳುಹಿಸಲಾಗಿದೆ`);
 
 /** Number words and fractions a reply may not use unless the same word is in a source it names ("half price" needs a source that says half). */
-const NUMBER_WORDS = U(`${NB}(?:half|quarter|double|twice|triple|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|dozen)${NL}|आधा|आधी|दोगुना|दुगना|दस|बीस|तीस|चालीस|पचास|साठ|सत्तर|अस्सी|नब्बे|പകുതി|ഇരട്ടി|പത്ത്|ഇരുപത്|മുപ്പത്|നാൽപ്പത്|അമ്പത്|അറുപത്|ഏഴുപത്|എൺപത്|തൊണ്ണൂറ്|ಅರ್ಧ|ದುಪ್ಪಟ್ಟು|ಹತ್ತು|ಇಪ್ಪತ್ತು|ಮೂವತ್ತು|ನಲವತ್ತು|ಐವತ್ತು|ಅರವತ್ತು|ಎಪ್ಪತ್ತು|ಎಂಭತ್ತು|ತೊಂಬತ್ತು`);
-const PERCENT = /(\d+(?:\.\d+)?)\s*(?:%|per ?cent|प्रतिशत|ശതമാനം|ಶೇಕಡಾ|ಪ್ರತಿಶತ|ಶೇ\.?)/giu;
-const LINK = /(?:https?:\/\/|www\.)[^\s)]+|\b(?:[a-z0-9-]+\.)+(?:com|in|dev|co|org|net|app|io|me|link)(?:\/[^\s)]*)?/giu;
-const LONG_DIGITS = /\d[\d\s().+-]{6,}\d/gu;
+// Exported (with COMPLETION, PERCENT, LINK and LONG_DIGITS) for go/scripts/gen_patterns.ts: the Go runtime checks the owner's talk with the same sources.
+export const NUMBER_WORDS = U(`${NB}(?:half|quarter|double|twice|triple|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|dozen)${NL}|आधा|आधी|दोगुना|दुगना|दस|बीस|तीस|चालीस|पचास|साठ|सत्तर|अस्सी|नब्बे|പകുതി|ഇരട്ടി|പത്ത്|ഇരുപത്|മുപ്പത്|നാൽപ്പത്|അമ്പത്|അറുപത്|ഏഴുപത്|എൺപത്|തൊണ്ണൂറ്|ಅರ್ಧ|ದುಪ್ಪಟ್ಟು|ಹತ್ತು|ಇಪ್ಪತ್ತು|ಮೂವತ್ತು|ನಲವತ್ತು|ಐವತ್ತು|ಅರವತ್ತು|ಎಪ್ಪತ್ತು|ಎಂಭತ್ತು|ತೊಂಬತ್ತು`);
+export const PERCENT = /(\d+(?:\.\d+)?)\s*(?:%|per ?cent|प्रतिशत|ശതമാനം|ಶೇಕಡಾ|ಪ್ರತಿಶತ|ಶೇ\.?)/giu;
+export const LINK = /(?:https?:\/\/|www\.)[^\s)]+|\b(?:[a-z0-9-]+\.)+(?:com|in|dev|co|org|net|app|io|me|link)(?:\/[^\s)]*)?/giu;
+export const LONG_DIGITS = /\d[\d\s().+-]{6,}\d/gu;
 
 /** Which kinds of claim a text states. */
 export function claimKindsOf(text: string): ClaimKind[] {
