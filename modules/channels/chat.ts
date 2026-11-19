@@ -11,6 +11,7 @@
 // runtime's door (createHandleRate), because a restart forgetting it costs nothing; a cap that must hold across restarts is in the saved state.
 import type { InboundMessage } from "../messaging/messaging.ts";
 import type { PageAudio } from "../voice/turn.ts";
+import type { BudgetConfig } from "../budget/budget.ts";
 import { dayLocal, stateFor } from "../understanding/ai-state.ts";
 import type { AiStore } from "../understanding/ai-state.ts";
 import type { Language } from "../language/languages.ts";
@@ -31,8 +32,6 @@ import type { ChatKind } from "./words-chat.ts";
  * rests on the handle alone: the shop-wide ones bound a flood of new handles.
  */
 export const CHAT_LIMITS = {
-  /** Typed sends that may ask the model, per guest per day (the shop's day). After it the rules and the buttons answer, as in button mode. */
-  modelTurnsPerDay: 20,
   /** Sends of any kind per guest per day: a saved cap, so a restart does not forget it. */
   messagesPerDay: 150,
   /** Sends per guest per minute, in memory. */
@@ -44,6 +43,14 @@ export const CHAT_LIMITS = {
   /** Times one guest may make the shop tell the owner (on WhatsApp) per day (the shop's day): a saved cap. After it the guest is told, truthfully, that the owner could not be told just now. */
   pingsPerDay: 3,
 } as const;
+
+/**
+ * Typed sends that may ask the model, per guest per day (the shop's day); after it the rules and the buttons answer, as in button mode. The number is the price list's
+ * (`ai.daily.customer-talk.per-guest`, decision 62), written into the shop's runtime.json as `budget.guestTurnsPerDay` by the bundle. GUEST_TURNS_BEFORE_62 is used only for a shop
+ * whose runtime.json has no such number (a list from before 20 Nov, or no budget); it is the old constant, kept so such a shop is never left with no limit, and goes when every list in force has the entry.
+ */
+export const GUEST_TURNS_BEFORE_62 = 20;
+export const guestTurnsPerDay = (budget?: Pick<BudgetConfig, "guestTurnsPerDay">): number => budget?.guestTurnsPerDay ?? GUEST_TURNS_BEFORE_62;
 
 /** How many of the shop's latest lines a tap may name: a button from the line before last is still fair, one from an hour ago is not. */
 const TAP_WINDOW = 4;
@@ -77,7 +84,7 @@ export const chatAnswered = (state: ChannelState | undefined, hash: string): boo
  * line's buttons are no longer on offer to draw). An unknown guest has an empty thread: the same answer for a guest never seen and for one at another shop, so a
  * made-up handle learns nothing.
  */
-export function chatThread(state: ChannelState | undefined, hash: string, o: { after?: number; retentionDays: number; now: number; dayKey: string }): ChatThread {
+export function chatThread(state: ChannelState | undefined, hash: string, o: { after?: number; retentionDays: number; now: number; dayKey: string; /** the shop's budget: its per-guest daily turns (guestTurnsPerDay) */ budget?: BudgetConfig }): ChatThread {
   const conversation = chatConversationOf(hash);
   const guest = state?.chat?.[conversation];
   const shop = (state?.outbox ?? []).filter((m) => m.to === conversation);
@@ -87,7 +94,7 @@ export function chatThread(state: ChannelState | undefined, hash: string, o: { a
   ].sort((a, b) => a.n - b.n);
   const last = lines.at(-1);
   const out = lines.filter((l) => l.n > (o.after ?? 0)).map((l) => (l === last ? l : { n: l.n, who: l.who, text: l.text, atMs: l.atMs, ...(l.cid ? { cid: l.cid } : {}), ...(l.moment ? { moment: l.moment } : {}) }));
-  return { lines: out, answered: shop.length > 0, capped: guest !== undefined && guest.day === o.dayKey && guest.turns >= CHAT_LIMITS.modelTurnsPerDay, retentionDays: o.retentionDays };
+  return { lines: out, answered: shop.length > 0, capped: guest !== undefined && guest.day === o.dayKey && guest.turns >= guestTurnsPerDay(o.budget), retentionDays: o.retentionDays };
 }
 
 /**
@@ -120,6 +127,8 @@ export interface ChatTurnDeps {
   setLanguage(conversation: string, language: Language): void;
   /** Hold-to-talk: the recording a send's `voice` reference names, from the runtime's memory (templates' runtime.ts chatAudio). Left out: the shop has no voice service. */
   audio?(ref: string): PageAudio | undefined;
+  /** The shop's model budget (policy.budget): where one guest's daily model turns are read from (guestTurnsPerDay). */
+  budget?: BudgetConfig;
 }
 
 /** The model-asking steps counted so far this month (the decision step and the language model; the rules cost nothing). */
@@ -165,7 +174,7 @@ export async function chatTurn(d: ChatTurnDeps, e: ChatMessage): Promise<ChatTur
   guest.n ??= nextGuestNumber(d.state); // the owner's name for this guest, "Chat guest 3" (chat-guest.ts), given once at the first send
   d.setLanguage(conversation, e.language);
 
-  const capped = guest.turns >= CHAT_LIMITS.modelTurnsPerDay;
+  const capped = guest.turns >= guestTurnsPerDay(d.budget);
   const before = modelCalls(d.ai, d.now, d.timeZone);
   // a recording is listened to only while the day's model turns last, and always counts as one of them (listening is paid, whatever the words then need); a capped guest's recording is not
   // handed over, so the agent answers it as it answers a note it could not use: with the line asking them to type

@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { fakeClock } from "../../core/clock.ts";
 import { guestHash, newGuestHandle } from "../handle.ts";
 import { chatConversationOf } from "../conversation.ts";
-import { CHAT_LIMITS, chatMayPing, chatPingGate, chatThread, chatTurn } from "../chat.ts";
+import { CHAT_LIMITS, GUEST_TURNS_BEFORE_62, chatMayPing, chatPingGate, chatThread, chatTurn } from "../chat.ts";
 import { checkChannelEvent } from "../events.ts";
 import { compactChannel, emptyChannelState } from "../state.ts";
 import { channelMessaging, markMoment } from "../outbox.ts";
@@ -165,7 +165,7 @@ function voiceWorld(o: { capped?: boolean; audio?: boolean } = {}) {
     ...(o.audio === false ? {} : { audio: (ref: string) => (ref === "gone" ? undefined : { ref, bytes: new Uint8Array([1, 2, 3]), mime: "audio/webm; codecs=opus" }) }),
     run: async (m) => { seen.push({ ...(m.voiceNote ? { voiceNote: true as const } : {}), hasAudio: m.audio !== undefined, text: m.text }); if (m.audio) { listened++; m.onHeard?.("is five pm free tomorrow"); } },
   }, { kind: "chat_message", id: "v-1", handle: hash, language: "en", voice: "ref-1", ...e } as never);
-  if (o.capped) { state.chat = { [chatConversationOf(hash)]: { startedMs: NOW, lastMs: NOW, said: [], day: "2026-11-17", turns: CHAT_LIMITS.modelTurnsPerDay, messages: 0 } }; }
+  if (o.capped) { state.chat = { [chatConversationOf(hash)]: { startedMs: NOW, lastMs: NOW, said: [], day: "2026-11-17", turns: GUEST_TURNS_BEFORE_62, messages: 0 } }; }
   return { state, hash, seen, turn, listened: () => listened };
 }
 

@@ -1,0 +1,5126 @@
+{
+ "node": "v26.10.0",
+ "def": {
+  "name": "legacy",
+  "timezone": "Asia/Kolkata",
+  "status": null,
+  "legacy": {
+   "received": [
+    {
+     "action": "record_deposit",
+     "outcome": "confirmed",
+     "for": "advance"
+    },
+    {
+     "action": "record_deposit",
+     "outcome": "blocked",
+     "for": "extra"
+    },
+    {
+     "action": "owner_marked_paid",
+     "outcome": "confirmed",
+     "for": "advance"
+    }
+   ],
+   "applied": [
+    {
+     "action": "complete_booking",
+     "account": "revenue:bookings"
+    }
+   ]
+  },
+  "nows": [
+   "2026-02-10T05:00:00Z"
+  ],
+  "oldDue": {},
+  "labels": {}
+ },
+ "steps": [
+  {
+   "at": 1767589200000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-1",
+    "refs": {
+     "paymentId": "pay_1",
+     "amountPaise": "50000"
+    }
+   }
+  },
+  {
+   "at": 1767589260000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-1",
+    "refs": {
+     "paymentId": "pay_1",
+     "amountPaise": "50000"
+    }
+   }
+  },
+  {
+   "at": 1767592800000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "blocked",
+    "booking": "b-1",
+    "refs": {
+     "paymentId": "pay_2",
+     "amountPaise": "30000"
+    }
+   }
+  },
+  {
+   "at": 1767594600000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "complete_booking",
+    "outcome": "confirmed",
+    "booking": "b-1",
+    "refs": {}
+   }
+  },
+  {
+   "at": 1767594660000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "complete_booking",
+    "outcome": "confirmed",
+    "booking": "b-1",
+    "refs": {}
+   }
+  },
+  {
+   "at": 1767675600000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "refund",
+    "outcome": "confirmed",
+    "booking": "b-1",
+    "refs": {
+     "paymentId": "pay_2",
+     "refundId": "rf_1",
+     "amountPaise": "30000"
+    }
+   }
+  },
+  {
+   "at": 1767675660000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "refund",
+    "outcome": "confirmed",
+    "booking": "b-2",
+    "refs": {
+     "paymentId": "pay_3",
+     "amountPaise": "1000",
+     "confirmedBy": "caller"
+    }
+   }
+  },
+  {
+   "at": 1767675720000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "refund",
+    "outcome": "confirmed",
+    "booking": "b-2",
+    "refs": {
+     "amountPaise": "1000"
+    }
+   }
+  },
+  {
+   "at": 1767675780000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "refund",
+    "outcome": "confirmed",
+    "booking": "b-2",
+    "refs": {
+     "paymentId": "pay_3"
+    }
+   }
+  },
+  {
+   "at": 1767675840000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "refund",
+    "outcome": "confirmed",
+    "booking": "b-2",
+    "refs": {
+     "paymentId": "pay_3",
+     "amountPaise": "1e3"
+    }
+   }
+  },
+  {
+   "at": 1767762000000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_owed",
+    "outcome": "held_for_owner",
+    "booking": "b-3",
+    "refs": {
+     "refundId": "upr-1",
+     "amountPaise": "5000"
+    }
+   }
+  },
+  {
+   "at": 1767762060000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_owed",
+    "outcome": "held_for_owner",
+    "booking": "b-3",
+    "refs": {
+     "refundId": "upr-1",
+     "amountPaise": "5000"
+    }
+   }
+  },
+  {
+   "at": 1767762120000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_owed",
+    "outcome": "held_for_owner",
+    "booking": "b-3",
+    "refs": {
+     "amountPaise": "5000"
+    }
+   }
+  },
+  {
+   "at": 1767765600000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_marked_done",
+    "outcome": "confirmed",
+    "booking": "b-3",
+    "refs": {
+     "refundId": "upr-1"
+    }
+   }
+  },
+  {
+   "at": 1767765660000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_marked_done",
+    "outcome": "confirmed",
+    "booking": "b-3",
+    "refs": {
+     "amountPaise": "2"
+    }
+   }
+  },
+  {
+   "at": 1767765720000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_marked_done",
+    "outcome": "confirmed",
+    "booking": "b-3",
+    "refs": {
+     "refundId": "upr-9",
+     "amountPaise": ""
+    }
+   }
+  },
+  {
+   "at": 1767765780000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_marked_done",
+    "outcome": "confirmed",
+    "booking": "b-3",
+    "refs": {
+     "refundId": "upr-9"
+    }
+   }
+  },
+  {
+   "at": 1767848400000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_owed",
+    "outcome": "held_for_owner",
+    "booking": "b-4",
+    "refs": {
+     "refundId": "upr-2",
+     "amountPaise": "700"
+    }
+   }
+  },
+  {
+   "at": 1767852000000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_kept",
+    "outcome": "confirmed",
+    "booking": "b-4",
+    "refs": {
+     "refundId": "upr-2"
+    }
+   }
+  },
+  {
+   "at": 1767852060000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_kept",
+    "outcome": "confirmed",
+    "booking": "b-4",
+    "refs": {
+     "refundId": "upr-2"
+    }
+   }
+  },
+  {
+   "at": 1767852120000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "upi_refund_kept",
+    "outcome": "confirmed",
+    "booking": "b-4",
+    "refs": {}
+   }
+  },
+  {
+   "at": 1767934800000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "owner_marked_paid",
+    "outcome": "confirmed",
+    "booking": "b-5",
+    "refs": {
+     "paymentId": "upi-1",
+     "amountPaise": "9000"
+    }
+   }
+  },
+  {
+   "at": 1767936600000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "owner_marked_paid",
+    "outcome": "confirmed",
+    "booking": "b-5",
+    "refs": {
+     "paymentId": "cash-1",
+     "amountPaise": "9100",
+     "via": "cash"
+    }
+   }
+  },
+  {
+   "at": 1767936660000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "owner_marked_paid",
+    "outcome": "confirmed",
+    "booking": "b-5",
+    "refs": {
+     "amountPaise": "9100",
+     "via": "cash"
+    }
+   }
+  },
+  {
+   "at": 1767938400000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "complete_booking",
+    "outcome": "confirmed",
+    "booking": null,
+    "refs": {}
+   }
+  },
+  {
+   "at": 1767938460000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "complete_booking",
+    "outcome": "failed",
+    "booking": "b-5",
+    "refs": {}
+   }
+  },
+  {
+   "at": 1767938520000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "other_action",
+    "outcome": "confirmed",
+    "booking": "b-5",
+    "refs": {
+     "amountPaise": "1"
+    }
+   }
+  },
+  {
+   "at": 1768021200000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_6",
+     "amountPaise": "0x10"
+    }
+   }
+  },
+  {
+   "at": 1768021260000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_7",
+     "amountPaise": "05"
+    }
+   }
+  },
+  {
+   "at": 1768021320000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_8",
+     "amountPaise": " 5"
+    }
+   }
+  },
+  {
+   "at": 1768021380000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_9",
+     "amountPaise": "+5"
+    }
+   }
+  },
+  {
+   "at": 1768021440000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_10",
+     "amountPaise": "-5"
+    }
+   }
+  },
+  {
+   "at": 1768021500000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_11",
+     "amountPaise": "9007199254740993"
+    }
+   }
+  },
+  {
+   "at": 1768021560000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_12",
+     "amountPaise": "12.5"
+    }
+   }
+  },
+  {
+   "at": 1768021620000,
+   "op": "raw",
+   "line": {
+    "conversation": "919800000001",
+    "language": "en",
+    "notes": "",
+    "action": "record_deposit",
+    "outcome": "confirmed",
+    "booking": "b-6",
+    "refs": {
+     "paymentId": "pay_13",
+     "amountPaise": "ten"
+    }
+   }
+  }
+ ],
+ "jobs": [],
+ "entries": [
+  {
+   "seq": 1,
+   "time": "2026-01-05T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-1",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_1",
+    "amountPaise": "50000"
+   }
+  },
+  {
+   "seq": 2,
+   "time": "2026-01-05T05:01:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-1",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_1",
+    "amountPaise": "50000"
+   }
+  },
+  {
+   "seq": 3,
+   "time": "2026-01-05T06:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-1",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "blocked",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_2",
+    "amountPaise": "30000"
+   }
+  },
+  {
+   "seq": 4,
+   "time": "2026-01-05T06:30:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-1",
+   "action": "complete_booking",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {}
+  },
+  {
+   "seq": 5,
+   "time": "2026-01-05T06:31:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-1",
+   "action": "complete_booking",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {}
+  },
+  {
+   "seq": 6,
+   "time": "2026-01-06T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-1",
+   "action": "refund",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_2",
+    "refundId": "rf_1",
+    "amountPaise": "30000"
+   }
+  },
+  {
+   "seq": 7,
+   "time": "2026-01-06T05:01:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-2",
+   "action": "refund",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_3",
+    "amountPaise": "1000",
+    "confirmedBy": "caller"
+   }
+  },
+  {
+   "seq": 8,
+   "time": "2026-01-06T05:02:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-2",
+   "action": "refund",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "amountPaise": "1000"
+   }
+  },
+  {
+   "seq": 9,
+   "time": "2026-01-06T05:03:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-2",
+   "action": "refund",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_3"
+   }
+  },
+  {
+   "seq": 10,
+   "time": "2026-01-06T05:04:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-2",
+   "action": "refund",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_3",
+    "amountPaise": "1e3"
+   }
+  },
+  {
+   "seq": 11,
+   "time": "2026-01-07T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-3",
+   "action": "upi_refund_owed",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "held_for_owner",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-1",
+    "amountPaise": "5000"
+   }
+  },
+  {
+   "seq": 12,
+   "time": "2026-01-07T05:01:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-3",
+   "action": "upi_refund_owed",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "held_for_owner",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-1",
+    "amountPaise": "5000"
+   }
+  },
+  {
+   "seq": 13,
+   "time": "2026-01-07T05:02:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-3",
+   "action": "upi_refund_owed",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "held_for_owner",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "amountPaise": "5000"
+   }
+  },
+  {
+   "seq": 14,
+   "time": "2026-01-07T06:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-3",
+   "action": "upi_refund_marked_done",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-1"
+   }
+  },
+  {
+   "seq": 15,
+   "time": "2026-01-07T06:01:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-3",
+   "action": "upi_refund_marked_done",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "amountPaise": "2"
+   }
+  },
+  {
+   "seq": 16,
+   "time": "2026-01-07T06:02:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-3",
+   "action": "upi_refund_marked_done",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-9",
+    "amountPaise": ""
+   }
+  },
+  {
+   "seq": 17,
+   "time": "2026-01-07T06:03:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-3",
+   "action": "upi_refund_marked_done",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-9"
+   }
+  },
+  {
+   "seq": 18,
+   "time": "2026-01-08T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-4",
+   "action": "upi_refund_owed",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "held_for_owner",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-2",
+    "amountPaise": "700"
+   }
+  },
+  {
+   "seq": 19,
+   "time": "2026-01-08T06:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-4",
+   "action": "upi_refund_kept",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-2"
+   }
+  },
+  {
+   "seq": 20,
+   "time": "2026-01-08T06:01:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-4",
+   "action": "upi_refund_kept",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "refundId": "upr-2"
+   }
+  },
+  {
+   "seq": 21,
+   "time": "2026-01-08T06:02:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-4",
+   "action": "upi_refund_kept",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {}
+  },
+  {
+   "seq": 22,
+   "time": "2026-01-09T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-5",
+   "action": "owner_marked_paid",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "upi-1",
+    "amountPaise": "9000"
+   }
+  },
+  {
+   "seq": 23,
+   "time": "2026-01-09T05:30:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-5",
+   "action": "owner_marked_paid",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "cash-1",
+    "amountPaise": "9100",
+    "via": "cash"
+   }
+  },
+  {
+   "seq": 24,
+   "time": "2026-01-09T05:31:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-5",
+   "action": "owner_marked_paid",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "amountPaise": "9100",
+    "via": "cash"
+   }
+  },
+  {
+   "seq": 25,
+   "time": "2026-01-09T06:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": null,
+   "action": "complete_booking",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {}
+  },
+  {
+   "seq": 26,
+   "time": "2026-01-09T06:01:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-5",
+   "action": "complete_booking",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "failed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {}
+  },
+  {
+   "seq": 27,
+   "time": "2026-01-09T06:02:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-5",
+   "action": "other_action",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "amountPaise": "1"
+   }
+  },
+  {
+   "seq": 28,
+   "time": "2026-01-10T05:00:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_6",
+    "amountPaise": "0x10"
+   }
+  },
+  {
+   "seq": 29,
+   "time": "2026-01-10T05:01:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_7",
+    "amountPaise": "05"
+   }
+  },
+  {
+   "seq": 30,
+   "time": "2026-01-10T05:02:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_8",
+    "amountPaise": " 5"
+   }
+  },
+  {
+   "seq": 31,
+   "time": "2026-01-10T05:03:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_9",
+    "amountPaise": "+5"
+   }
+  },
+  {
+   "seq": 32,
+   "time": "2026-01-10T05:04:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_10",
+    "amountPaise": "-5"
+   }
+  },
+  {
+   "seq": 33,
+   "time": "2026-01-10T05:05:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_11",
+    "amountPaise": "9007199254740993"
+   }
+  },
+  {
+   "seq": 34,
+   "time": "2026-01-10T05:06:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_12",
+    "amountPaise": "12.5"
+   }
+  },
+  {
+   "seq": 35,
+   "time": "2026-01-10T05:07:00.000Z",
+   "conversation": "919800000001",
+   "booking": "b-6",
+   "action": "record_deposit",
+   "inputsDigest": "44136fa355b3678a",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_13",
+    "amountPaise": "ten"
+   }
+  }
+ ],
+ "journal": {
+  "lines": [
+   {
+    "seq": 1,
+    "at": "2026-01-05T05:00:00.000Z",
+    "case": "b-1",
+    "account": "gateway",
+    "debitPaise": 50000,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway"
+   },
+   {
+    "seq": 1,
+    "at": "2026-01-05T05:00:00.000Z",
+    "case": "b-1",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 50000,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway"
+   },
+   {
+    "seq": 3,
+    "at": "2026-01-05T06:00:00.000Z",
+    "case": "b-1",
+    "account": "gateway",
+    "debitPaise": 30000,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway"
+   },
+   {
+    "seq": 3,
+    "at": "2026-01-05T06:00:00.000Z",
+    "case": "b-1",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 30000,
+    "kind": "received",
+    "evidence": "provider",
+    "method": "gateway"
+   },
+   {
+    "seq": 4,
+    "at": "2026-01-05T06:30:00.000Z",
+    "case": "b-1",
+    "account": "advances",
+    "debitPaise": 80000,
+    "creditPaise": 0,
+    "kind": "applied"
+   },
+   {
+    "seq": 4,
+    "at": "2026-01-05T06:30:00.000Z",
+    "case": "b-1",
+    "account": "revenue:bookings",
+    "debitPaise": 0,
+    "creditPaise": 80000,
+    "kind": "applied"
+   },
+   {
+    "seq": 6,
+    "at": "2026-01-06T05:00:00.000Z",
+    "case": "b-1",
+    "account": "returns",
+    "debitPaise": 30000,
+    "creditPaise": 0,
+    "kind": "refund_made",
+    "evidence": "provider",
+    "method": "gateway"
+   },
+   {
+    "seq": 6,
+    "at": "2026-01-06T05:00:00.000Z",
+    "case": "b-1",
+    "account": "gateway",
+    "debitPaise": 0,
+    "creditPaise": 30000,
+    "kind": "refund_made",
+    "evidence": "provider",
+    "method": "gateway"
+   },
+   {
+    "seq": 7,
+    "at": "2026-01-06T05:01:00.000Z",
+    "case": "b-2",
+    "account": "returns",
+    "debitPaise": 1000,
+    "creditPaise": 0,
+    "kind": "refund_made",
+    "evidence": "person_word",
+    "method": "gateway"
+   },
+   {
+    "seq": 7,
+    "at": "2026-01-06T05:01:00.000Z",
+    "case": "b-2",
+    "account": "gateway",
+    "debitPaise": 0,
+    "creditPaise": 1000,
+    "kind": "refund_made",
+    "evidence": "person_word",
+    "method": "gateway"
+   },
+   {
+    "seq": 11,
+    "at": "2026-01-07T05:00:00.000Z",
+    "case": "b-3",
+    "account": "returns",
+    "debitPaise": 5000,
+    "creditPaise": 0,
+    "kind": "refund_owed"
+   },
+   {
+    "seq": 11,
+    "at": "2026-01-07T05:00:00.000Z",
+    "case": "b-3",
+    "account": "refunds_owed",
+    "debitPaise": 0,
+    "creditPaise": 5000,
+    "kind": "refund_owed"
+   },
+   {
+    "seq": 14,
+    "at": "2026-01-07T06:00:00.000Z",
+    "case": "b-3",
+    "account": "refunds_owed",
+    "debitPaise": 5000,
+    "creditPaise": 0,
+    "kind": "refund_made",
+    "evidence": "owner_mark",
+    "method": "upi"
+   },
+   {
+    "seq": 14,
+    "at": "2026-01-07T06:00:00.000Z",
+    "case": "b-3",
+    "account": "upi",
+    "debitPaise": 0,
+    "creditPaise": 5000,
+    "kind": "refund_made",
+    "evidence": "owner_mark",
+    "method": "upi"
+   },
+   {
+    "seq": 18,
+    "at": "2026-01-08T05:00:00.000Z",
+    "case": "b-4",
+    "account": "returns",
+    "debitPaise": 700,
+    "creditPaise": 0,
+    "kind": "refund_owed"
+   },
+   {
+    "seq": 18,
+    "at": "2026-01-08T05:00:00.000Z",
+    "case": "b-4",
+    "account": "refunds_owed",
+    "debitPaise": 0,
+    "creditPaise": 700,
+    "kind": "refund_owed"
+   },
+   {
+    "seq": 19,
+    "at": "2026-01-08T06:00:00.000Z",
+    "case": "b-4",
+    "account": "refunds_owed",
+    "debitPaise": 700,
+    "creditPaise": 0,
+    "kind": "kept"
+   },
+   {
+    "seq": 19,
+    "at": "2026-01-08T06:00:00.000Z",
+    "case": "b-4",
+    "account": "revenue:kept",
+    "debitPaise": 0,
+    "creditPaise": 700,
+    "kind": "kept"
+   },
+   {
+    "seq": 22,
+    "at": "2026-01-09T05:00:00.000Z",
+    "case": "b-5",
+    "account": "upi",
+    "debitPaise": 9000,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "owner_mark",
+    "method": "upi"
+   },
+   {
+    "seq": 22,
+    "at": "2026-01-09T05:00:00.000Z",
+    "case": "b-5",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 9000,
+    "kind": "received",
+    "evidence": "owner_mark",
+    "method": "upi"
+   },
+   {
+    "seq": 23,
+    "at": "2026-01-09T05:30:00.000Z",
+    "case": "b-5",
+    "account": "cash",
+    "debitPaise": 9100,
+    "creditPaise": 0,
+    "kind": "received",
+    "evidence": "owner_mark",
+    "method": "cash"
+   },
+   {
+    "seq": 23,
+    "at": "2026-01-09T05:30:00.000Z",
+    "case": "b-5",
+    "account": "advances",
+    "debitPaise": 0,
+    "creditPaise": 9100,
+    "kind": "received",
+    "evidence": "owner_mark",
+    "method": "cash"
+   }
+  ],
+  "documents": [],
+  "problems": [
+   {
+    "seq": 2,
+    "why": "received:pay_1 was already counted at entry 1; this one is not counted again"
+   },
+   {
+    "seq": 8,
+    "why": "an older refund line has no payment id"
+   },
+   {
+    "seq": 9,
+    "why": "the amount is missing"
+   },
+   {
+    "seq": 10,
+    "why": "the amount \"1e3\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 12,
+    "why": "a refund is already owed under upr-1; it is not owed twice"
+   },
+   {
+    "seq": 13,
+    "why": "an older refund owed by the owner has no id"
+   },
+   {
+    "seq": 15,
+    "why": "an older refund marked sent has no id"
+   },
+   {
+    "seq": 16,
+    "why": "the amount \"\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 17,
+    "why": "the amount \"0\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 20,
+    "why": "no refund is owed under upr-2, so nothing can be kept from it"
+   },
+   {
+    "seq": 21,
+    "why": "an older refund kept by the owner has no id"
+   },
+   {
+    "seq": 24,
+    "why": "an older owner_marked_paid line has no payment id"
+   },
+   {
+    "seq": 28,
+    "why": "the amount \"0x10\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 29,
+    "why": "the amount \"05\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 30,
+    "why": "the amount \" 5\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 31,
+    "why": "the amount \"+5\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 32,
+    "why": "the amount \"-5\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 33,
+    "why": "the amount \"9007199254740993\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 34,
+    "why": "the amount \"12.5\" is not a whole number of paise above 0"
+   },
+   {
+    "seq": 35,
+    "why": "the amount \"ten\" is not a whole number of paise above 0"
+   }
+  ],
+  "seen": 35,
+  "identities": [
+   [
+    "received:pay_1",
+    1
+   ],
+   [
+    "received:pay_2",
+    3
+   ],
+   [
+    "applied:b-1",
+    4
+   ],
+   [
+    "made:rf_1",
+    6
+   ],
+   [
+    "made:b-2:pay_3:person_word",
+    7
+   ],
+   [
+    "made:upr-1",
+    14
+   ],
+   [
+    "kept:upr-2",
+    19
+   ],
+   [
+    "received:upi-1",
+    22
+   ],
+   [
+    "received:cash-1",
+    23
+   ]
+  ],
+  "owedList": [],
+  "balances": [
+   {
+    "case": "b-1",
+    "account": "gateway",
+    "paise": 50000
+   },
+   {
+    "case": "b-1",
+    "account": "advances",
+    "paise": 0
+   },
+   {
+    "case": "b-1",
+    "account": "revenue:bookings",
+    "paise": -80000
+   },
+   {
+    "case": "b-1",
+    "account": "returns",
+    "paise": 30000
+   },
+   {
+    "case": "b-1",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-1",
+    "account": "upi",
+    "paise": 0
+   },
+   {
+    "case": "b-1",
+    "account": "revenue:kept",
+    "paise": 0
+   },
+   {
+    "case": "b-1",
+    "account": "cash",
+    "paise": 0
+   },
+   {
+    "case": "b-2",
+    "account": "gateway",
+    "paise": -1000
+   },
+   {
+    "case": "b-2",
+    "account": "advances",
+    "paise": 0
+   },
+   {
+    "case": "b-2",
+    "account": "revenue:bookings",
+    "paise": 0
+   },
+   {
+    "case": "b-2",
+    "account": "returns",
+    "paise": 1000
+   },
+   {
+    "case": "b-2",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-2",
+    "account": "upi",
+    "paise": 0
+   },
+   {
+    "case": "b-2",
+    "account": "revenue:kept",
+    "paise": 0
+   },
+   {
+    "case": "b-2",
+    "account": "cash",
+    "paise": 0
+   },
+   {
+    "case": "b-3",
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": "b-3",
+    "account": "advances",
+    "paise": 0
+   },
+   {
+    "case": "b-3",
+    "account": "revenue:bookings",
+    "paise": 0
+   },
+   {
+    "case": "b-3",
+    "account": "returns",
+    "paise": 5000
+   },
+   {
+    "case": "b-3",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-3",
+    "account": "upi",
+    "paise": -5000
+   },
+   {
+    "case": "b-3",
+    "account": "revenue:kept",
+    "paise": 0
+   },
+   {
+    "case": "b-3",
+    "account": "cash",
+    "paise": 0
+   },
+   {
+    "case": "b-4",
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": "b-4",
+    "account": "advances",
+    "paise": 0
+   },
+   {
+    "case": "b-4",
+    "account": "revenue:bookings",
+    "paise": 0
+   },
+   {
+    "case": "b-4",
+    "account": "returns",
+    "paise": 700
+   },
+   {
+    "case": "b-4",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-4",
+    "account": "upi",
+    "paise": 0
+   },
+   {
+    "case": "b-4",
+    "account": "revenue:kept",
+    "paise": -700
+   },
+   {
+    "case": "b-4",
+    "account": "cash",
+    "paise": 0
+   },
+   {
+    "case": "b-5",
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": "b-5",
+    "account": "advances",
+    "paise": -18100
+   },
+   {
+    "case": "b-5",
+    "account": "revenue:bookings",
+    "paise": 0
+   },
+   {
+    "case": "b-5",
+    "account": "returns",
+    "paise": 0
+   },
+   {
+    "case": "b-5",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-5",
+    "account": "upi",
+    "paise": 9000
+   },
+   {
+    "case": "b-5",
+    "account": "revenue:kept",
+    "paise": 0
+   },
+   {
+    "case": "b-5",
+    "account": "cash",
+    "paise": 9100
+   },
+   {
+    "case": null,
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": null,
+    "account": "advances",
+    "paise": 0
+   },
+   {
+    "case": null,
+    "account": "revenue:bookings",
+    "paise": 0
+   },
+   {
+    "case": null,
+    "account": "returns",
+    "paise": 0
+   },
+   {
+    "case": null,
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": null,
+    "account": "upi",
+    "paise": 0
+   },
+   {
+    "case": null,
+    "account": "revenue:kept",
+    "paise": 0
+   },
+   {
+    "case": null,
+    "account": "cash",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "gateway",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "advances",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "revenue:bookings",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "returns",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "refunds_owed",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "upi",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "revenue:kept",
+    "paise": 0
+   },
+   {
+    "case": "b-6",
+    "account": "cash",
+    "paise": 0
+   }
+  ],
+  "cases": [
+   {
+    "case": "b-1",
+    "advances": 0,
+    "receivable": 0
+   },
+   {
+    "case": "b-2",
+    "advances": 0,
+    "receivable": 0
+   },
+   {
+    "case": "b-3",
+    "advances": 0,
+    "receivable": 0
+   },
+   {
+    "case": "b-4",
+    "advances": 0,
+    "receivable": 0
+   },
+   {
+    "case": "b-5",
+    "advances": 18100,
+    "receivable": 0
+   },
+   {
+    "case": "b-6",
+    "advances": 0,
+    "receivable": 0
+   }
+  ],
+  "openOwed": [
+   {
+    "key": "b-1:pay_1",
+    "open": 0
+   },
+   {
+    "key": "b-1:pay_2",
+    "open": 0
+   },
+   {
+    "key": "rf_1",
+    "open": 0
+   },
+   {
+    "key": "b-2:pay_3",
+    "open": 0
+   },
+   {
+    "key": "upr-1",
+    "open": 0
+   },
+   {
+    "key": "upr-9",
+    "open": 0
+   },
+   {
+    "key": "upr-2",
+    "open": 0
+   },
+   {
+    "key": "b-5:upi-1",
+    "open": 0
+   },
+   {
+    "key": "b-5:cash-1",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_6",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_7",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_8",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_9",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_10",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_11",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_12",
+    "open": 0
+   },
+   {
+    "key": "b-6:pay_13",
+    "open": 0
+   },
+   {
+    "key": "nothing",
+    "open": 0
+   },
+   {
+    "key": "k1",
+    "open": 0
+   }
+  ],
+  "linesOf": [
+   {
+    "seq": 1,
+    "n": 2
+   },
+   {
+    "seq": 2,
+    "n": 0
+   },
+   {
+    "seq": 3,
+    "n": 2
+   },
+   {
+    "seq": 4,
+    "n": 2
+   },
+   {
+    "seq": 5,
+    "n": 0
+   },
+   {
+    "seq": 6,
+    "n": 2
+   },
+   {
+    "seq": 7,
+    "n": 2
+   },
+   {
+    "seq": 8,
+    "n": 0
+   },
+   {
+    "seq": 9,
+    "n": 0
+   },
+   {
+    "seq": 10,
+    "n": 0
+   },
+   {
+    "seq": 11,
+    "n": 2
+   },
+   {
+    "seq": 12,
+    "n": 0
+   },
+   {
+    "seq": 13,
+    "n": 0
+   },
+   {
+    "seq": 14,
+    "n": 2
+   },
+   {
+    "seq": 15,
+    "n": 0
+   },
+   {
+    "seq": 16,
+    "n": 0
+   },
+   {
+    "seq": 17,
+    "n": 0
+   },
+   {
+    "seq": 18,
+    "n": 2
+   },
+   {
+    "seq": 19,
+    "n": 2
+   },
+   {
+    "seq": 20,
+    "n": 0
+   },
+   {
+    "seq": 21,
+    "n": 0
+   },
+   {
+    "seq": 22,
+    "n": 2
+   },
+   {
+    "seq": 23,
+    "n": 2
+   },
+   {
+    "seq": 24,
+    "n": 0
+   },
+   {
+    "seq": 25,
+    "n": 0
+   },
+   {
+    "seq": 26,
+    "n": 0
+   },
+   {
+    "seq": 27,
+    "n": 0
+   },
+   {
+    "seq": 28,
+    "n": 0
+   },
+   {
+    "seq": 29,
+    "n": 0
+   },
+   {
+    "seq": 30,
+    "n": 0
+   },
+   {
+    "seq": 31,
+    "n": 0
+   },
+   {
+    "seq": 32,
+    "n": 0
+   },
+   {
+    "seq": 33,
+    "n": 0
+   },
+   {
+    "seq": 34,
+    "n": 0
+   },
+   {
+    "seq": 35,
+    "n": 0
+   },
+   {
+    "seq": 0,
+    "n": 0
+   },
+   {
+    "seq": 99999,
+    "n": 0
+   }
+  ],
+  "balancesAll": {
+   "gateway": 49000,
+   "advances": -18100,
+   "revenue:bookings": -80000,
+   "returns": 36700,
+   "refunds_owed": 0,
+   "upi": 4000,
+   "revenue:kept": -700,
+   "cash": 9100
+  },
+  "balancesBy": [
+   {
+    "name": "whole",
+    "from": "1970-01-01T00:00:00.000Z",
+    "to": "2100-01-01T00:00:00.000Z",
+    "out": {
+     "gateway": 49000,
+     "advances": -18100,
+     "revenue:bookings": -80000,
+     "returns": 36700,
+     "refunds_owed": 0,
+     "upi": 4000,
+     "revenue:kept": -700,
+     "cash": 9100
+    }
+   },
+   {
+    "name": "2026-01",
+    "from": "2025-12-31T18:30:00.000Z",
+    "to": "2026-01-31T18:30:00.000Z",
+    "out": {
+     "gateway": 49000,
+     "advances": -18100,
+     "revenue:bookings": -80000,
+     "returns": 36700,
+     "refunds_owed": 0,
+     "upi": 4000,
+     "revenue:kept": -700,
+     "cash": 9100
+    }
+   },
+   {
+    "name": "25-26",
+    "from": "2025-03-31T18:30:00.000Z",
+    "to": "2026-03-31T18:30:00.000Z",
+    "out": {
+     "gateway": 49000,
+     "advances": -18100,
+     "revenue:bookings": -80000,
+     "returns": 36700,
+     "refunds_owed": 0,
+     "upi": 4000,
+     "revenue:kept": -700,
+     "cash": 9100
+    }
+   }
+  ],
+  "balancesFrom": {},
+  "balancesTo": {
+   "gateway": 49000,
+   "advances": -18100,
+   "revenue:bookings": -80000,
+   "returns": 36700,
+   "refunds_owed": 0,
+   "upi": 4000,
+   "revenue:kept": -700,
+   "cash": 9100
+  }
+ },
+ "stepwise": {
+  "lines": 22,
+  "problems": 20,
+  "seen": 35
+ },
+ "next": [
+  {
+   "series": "RCT",
+   "fy": "25-26",
+   "next": {
+    "series": "RCT",
+    "fy": "25-26",
+    "n": 1
+   }
+  },
+  {
+   "series": "RCT",
+   "fy": "26-27",
+   "next": {
+    "series": "RCT",
+    "fy": "26-27",
+    "n": 1
+   }
+  },
+  {
+   "series": "RCT",
+   "fy": "27-28",
+   "next": {
+    "series": "RCT",
+    "fy": "27-28",
+    "n": 1
+   }
+  },
+  {
+   "series": "BILL",
+   "fy": "25-26",
+   "next": {
+    "series": "BILL",
+    "fy": "25-26",
+    "n": 1
+   }
+  },
+  {
+   "series": "BILL",
+   "fy": "26-27",
+   "next": {
+    "series": "BILL",
+    "fy": "26-27",
+    "n": 1
+   }
+  },
+  {
+   "series": "BILL",
+   "fy": "27-28",
+   "next": {
+    "series": "BILL",
+    "fy": "27-28",
+    "n": 1
+   }
+  },
+  {
+   "series": "CN",
+   "fy": "25-26",
+   "next": {
+    "series": "CN",
+    "fy": "25-26",
+    "n": 1
+   }
+  },
+  {
+   "series": "CN",
+   "fy": "26-27",
+   "next": {
+    "series": "CN",
+    "fy": "26-27",
+    "n": 1
+   }
+  },
+  {
+   "series": "CN",
+   "fy": "27-28",
+   "next": {
+    "series": "CN",
+    "fy": "27-28",
+    "n": 1
+   }
+  }
+ ],
+ "summaries": [
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "summary": {
+    "accounts": [
+     {
+      "account": "advances",
+      "debitPaise": 80000,
+      "creditPaise": 98100
+     },
+     {
+      "account": "cash",
+      "debitPaise": 9100,
+      "creditPaise": 0
+     },
+     {
+      "account": "gateway",
+      "debitPaise": 80000,
+      "creditPaise": 31000
+     },
+     {
+      "account": "refunds_owed",
+      "debitPaise": 5700,
+      "creditPaise": 5700
+     },
+     {
+      "account": "returns",
+      "debitPaise": 36700,
+      "creditPaise": 0
+     },
+     {
+      "account": "revenue:bookings",
+      "debitPaise": 0,
+      "creditPaise": 80000
+     },
+     {
+      "account": "revenue:kept",
+      "debitPaise": 0,
+      "creditPaise": 700
+     },
+     {
+      "account": "upi",
+      "debitPaise": 9000,
+      "creditPaise": 5000
+     }
+    ],
+    "byKind": [
+     {
+      "kind": "applied",
+      "entries": 1,
+      "paise": 80000
+     },
+     {
+      "kind": "kept",
+      "entries": 1,
+      "paise": 700
+     },
+     {
+      "kind": "received",
+      "entries": 4,
+      "paise": 98100
+     },
+     {
+      "kind": "refund_made",
+      "entries": 3,
+      "paise": 36000
+     },
+     {
+      "kind": "refund_owed",
+      "entries": 2,
+      "paise": 5700
+     }
+    ],
+    "closing": {
+     "advancesPaise": 18100,
+     "refundsOwedPaise": 0,
+     "receivablePaise": 0
+    },
+    "documents": [],
+    "byWord": {
+     "entries": 1,
+     "paise": 1000
+    },
+    "problems": 20
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "summary": {
+    "accounts": [
+     {
+      "account": "advances",
+      "debitPaise": 80000,
+      "creditPaise": 98100
+     },
+     {
+      "account": "cash",
+      "debitPaise": 9100,
+      "creditPaise": 0
+     },
+     {
+      "account": "gateway",
+      "debitPaise": 80000,
+      "creditPaise": 31000
+     },
+     {
+      "account": "refunds_owed",
+      "debitPaise": 5700,
+      "creditPaise": 5700
+     },
+     {
+      "account": "returns",
+      "debitPaise": 36700,
+      "creditPaise": 0
+     },
+     {
+      "account": "revenue:bookings",
+      "debitPaise": 0,
+      "creditPaise": 80000
+     },
+     {
+      "account": "revenue:kept",
+      "debitPaise": 0,
+      "creditPaise": 700
+     },
+     {
+      "account": "upi",
+      "debitPaise": 9000,
+      "creditPaise": 5000
+     }
+    ],
+    "byKind": [
+     {
+      "kind": "applied",
+      "entries": 1,
+      "paise": 80000
+     },
+     {
+      "kind": "kept",
+      "entries": 1,
+      "paise": 700
+     },
+     {
+      "kind": "received",
+      "entries": 4,
+      "paise": 98100
+     },
+     {
+      "kind": "refund_made",
+      "entries": 3,
+      "paise": 36000
+     },
+     {
+      "kind": "refund_owed",
+      "entries": 2,
+      "paise": 5700
+     }
+    ],
+    "closing": {
+     "advancesPaise": 18100,
+     "refundsOwedPaise": 0,
+     "receivablePaise": 0
+    },
+    "documents": [],
+    "byWord": {
+     "entries": 1,
+     "paise": 1000
+    },
+    "problems": 20
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "summary": {
+    "accounts": [
+     {
+      "account": "advances",
+      "debitPaise": 80000,
+      "creditPaise": 98100
+     },
+     {
+      "account": "cash",
+      "debitPaise": 9100,
+      "creditPaise": 0
+     },
+     {
+      "account": "gateway",
+      "debitPaise": 80000,
+      "creditPaise": 31000
+     },
+     {
+      "account": "refunds_owed",
+      "debitPaise": 5700,
+      "creditPaise": 5700
+     },
+     {
+      "account": "returns",
+      "debitPaise": 36700,
+      "creditPaise": 0
+     },
+     {
+      "account": "revenue:bookings",
+      "debitPaise": 0,
+      "creditPaise": 80000
+     },
+     {
+      "account": "revenue:kept",
+      "debitPaise": 0,
+      "creditPaise": 700
+     },
+     {
+      "account": "upi",
+      "debitPaise": 9000,
+      "creditPaise": 5000
+     }
+    ],
+    "byKind": [
+     {
+      "kind": "applied",
+      "entries": 1,
+      "paise": 80000
+     },
+     {
+      "kind": "kept",
+      "entries": 1,
+      "paise": 700
+     },
+     {
+      "kind": "received",
+      "entries": 4,
+      "paise": 98100
+     },
+     {
+      "kind": "refund_made",
+      "entries": 3,
+      "paise": 36000
+     },
+     {
+      "kind": "refund_owed",
+      "entries": 2,
+      "paise": 5700
+     }
+    ],
+    "closing": {
+     "advancesPaise": 18100,
+     "refundsOwedPaise": 0,
+     "receivablePaise": 0
+    },
+    "documents": [],
+    "byWord": {
+     "entries": 1,
+     "paise": 1000
+    },
+    "problems": 20
+   }
+  }
+ ],
+ "reportAccounting": [
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "out": {
+    "summary": {
+     "accounts": [
+      {
+       "account": "advances",
+       "debitPaise": 80000,
+       "creditPaise": 98100
+      },
+      {
+       "account": "cash",
+       "debitPaise": 9100,
+       "creditPaise": 0
+      },
+      {
+       "account": "gateway",
+       "debitPaise": 80000,
+       "creditPaise": 31000
+      },
+      {
+       "account": "refunds_owed",
+       "debitPaise": 5700,
+       "creditPaise": 5700
+      },
+      {
+       "account": "returns",
+       "debitPaise": 36700,
+       "creditPaise": 0
+      },
+      {
+       "account": "revenue:bookings",
+       "debitPaise": 0,
+       "creditPaise": 80000
+      },
+      {
+       "account": "revenue:kept",
+       "debitPaise": 0,
+       "creditPaise": 700
+      },
+      {
+       "account": "upi",
+       "debitPaise": 9000,
+       "creditPaise": 5000
+      }
+     ],
+     "byKind": [
+      {
+       "kind": "applied",
+       "entries": 1,
+       "paise": 80000
+      },
+      {
+       "kind": "kept",
+       "entries": 1,
+       "paise": 700
+      },
+      {
+       "kind": "received",
+       "entries": 4,
+       "paise": 98100
+      },
+      {
+       "kind": "refund_made",
+       "entries": 3,
+       "paise": 36000
+      },
+      {
+       "kind": "refund_owed",
+       "entries": 2,
+       "paise": 5700
+      }
+     ],
+     "closing": {
+      "advancesPaise": 18100,
+      "refundsOwedPaise": 0,
+      "receivablePaise": 0
+     },
+     "documents": [],
+     "byWord": {
+      "entries": 1,
+      "paise": 1000
+     },
+     "problems": 20
+    },
+    "legacy": {
+     "received": [
+      {
+       "action": "record_deposit",
+       "outcome": "confirmed",
+       "for": "advance"
+      },
+      {
+       "action": "record_deposit",
+       "outcome": "blocked",
+       "for": "extra"
+      },
+      {
+       "action": "owner_marked_paid",
+       "outcome": "confirmed",
+       "for": "advance"
+      }
+     ],
+     "applied": [
+      {
+       "action": "complete_booking",
+       "account": "revenue:bookings"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "out": {
+    "summary": {
+     "accounts": [
+      {
+       "account": "advances",
+       "debitPaise": 80000,
+       "creditPaise": 98100
+      },
+      {
+       "account": "cash",
+       "debitPaise": 9100,
+       "creditPaise": 0
+      },
+      {
+       "account": "gateway",
+       "debitPaise": 80000,
+       "creditPaise": 31000
+      },
+      {
+       "account": "refunds_owed",
+       "debitPaise": 5700,
+       "creditPaise": 5700
+      },
+      {
+       "account": "returns",
+       "debitPaise": 36700,
+       "creditPaise": 0
+      },
+      {
+       "account": "revenue:bookings",
+       "debitPaise": 0,
+       "creditPaise": 80000
+      },
+      {
+       "account": "revenue:kept",
+       "debitPaise": 0,
+       "creditPaise": 700
+      },
+      {
+       "account": "upi",
+       "debitPaise": 9000,
+       "creditPaise": 5000
+      }
+     ],
+     "byKind": [
+      {
+       "kind": "applied",
+       "entries": 1,
+       "paise": 80000
+      },
+      {
+       "kind": "kept",
+       "entries": 1,
+       "paise": 700
+      },
+      {
+       "kind": "received",
+       "entries": 4,
+       "paise": 98100
+      },
+      {
+       "kind": "refund_made",
+       "entries": 3,
+       "paise": 36000
+      },
+      {
+       "kind": "refund_owed",
+       "entries": 2,
+       "paise": 5700
+      }
+     ],
+     "closing": {
+      "advancesPaise": 18100,
+      "refundsOwedPaise": 0,
+      "receivablePaise": 0
+     },
+     "documents": [],
+     "byWord": {
+      "entries": 1,
+      "paise": 1000
+     },
+     "problems": 20
+    },
+    "legacy": {
+     "received": [
+      {
+       "action": "record_deposit",
+       "outcome": "confirmed",
+       "for": "advance"
+      },
+      {
+       "action": "record_deposit",
+       "outcome": "blocked",
+       "for": "extra"
+      },
+      {
+       "action": "owner_marked_paid",
+       "outcome": "confirmed",
+       "for": "advance"
+      }
+     ],
+     "applied": [
+      {
+       "action": "complete_booking",
+       "account": "revenue:bookings"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "out": {
+    "summary": {
+     "accounts": [
+      {
+       "account": "advances",
+       "debitPaise": 80000,
+       "creditPaise": 98100
+      },
+      {
+       "account": "cash",
+       "debitPaise": 9100,
+       "creditPaise": 0
+      },
+      {
+       "account": "gateway",
+       "debitPaise": 80000,
+       "creditPaise": 31000
+      },
+      {
+       "account": "refunds_owed",
+       "debitPaise": 5700,
+       "creditPaise": 5700
+      },
+      {
+       "account": "returns",
+       "debitPaise": 36700,
+       "creditPaise": 0
+      },
+      {
+       "account": "revenue:bookings",
+       "debitPaise": 0,
+       "creditPaise": 80000
+      },
+      {
+       "account": "revenue:kept",
+       "debitPaise": 0,
+       "creditPaise": 700
+      },
+      {
+       "account": "upi",
+       "debitPaise": 9000,
+       "creditPaise": 5000
+      }
+     ],
+     "byKind": [
+      {
+       "kind": "applied",
+       "entries": 1,
+       "paise": 80000
+      },
+      {
+       "kind": "kept",
+       "entries": 1,
+       "paise": 700
+      },
+      {
+       "kind": "received",
+       "entries": 4,
+       "paise": 98100
+      },
+      {
+       "kind": "refund_made",
+       "entries": 3,
+       "paise": 36000
+      },
+      {
+       "kind": "refund_owed",
+       "entries": 2,
+       "paise": 5700
+      }
+     ],
+     "closing": {
+      "advancesPaise": 18100,
+      "refundsOwedPaise": 0,
+      "receivablePaise": 0
+     },
+     "documents": [],
+     "byWord": {
+      "entries": 1,
+      "paise": 1000
+     },
+     "problems": 20
+    },
+    "legacy": {
+     "received": [
+      {
+       "action": "record_deposit",
+       "outcome": "confirmed",
+       "for": "advance"
+      },
+      {
+       "action": "record_deposit",
+       "outcome": "blocked",
+       "for": "extra"
+      },
+      {
+       "action": "owner_marked_paid",
+       "outcome": "confirmed",
+       "for": "advance"
+      }
+     ],
+     "applied": [
+      {
+       "action": "complete_booking",
+       "account": "revenue:bookings"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "figures": [
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "options": {},
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 35000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 3
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "options": {
+    "ownerMarks": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 35000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 3
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "options": {
+    "ownerMarks": false
+   },
+   "out": {
+    "received": {
+     "count": 9,
+     "paise": 50000
+    },
+    "refunds": {
+     "count": 3,
+     "paise": 30000,
+     "ofDeposits": {
+      "count": 0,
+      "paise": 0
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 2
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 2,
+      "paise": 18100
+     },
+     "markedGivenBack": {
+      "count": 1,
+      "paise": 5000
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 18100,
+    "markedGivenBackPaise": 5000
+   }
+  },
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 37000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 1
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true,
+    "ownerMarks": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 37000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 1
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "whole",
+   "from": "1970-01-01T00:00:00.000Z",
+   "to": "2100-01-01T00:00:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true,
+    "ownerMarks": false
+   },
+   "out": {
+    "received": {
+     "count": 9,
+     "paise": 50000
+    },
+    "refunds": {
+     "count": 3,
+     "paise": 32000,
+     "ofDeposits": {
+      "count": 0,
+      "paise": 0
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 0
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 2,
+      "paise": 18100
+     },
+     "markedGivenBack": {
+      "count": 1,
+      "paise": 5000
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 18100,
+    "markedGivenBackPaise": 5000
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "options": {},
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 35000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 3
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "options": {
+    "ownerMarks": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 35000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 3
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "options": {
+    "ownerMarks": false
+   },
+   "out": {
+    "received": {
+     "count": 9,
+     "paise": 50000
+    },
+    "refunds": {
+     "count": 3,
+     "paise": 30000,
+     "ofDeposits": {
+      "count": 0,
+      "paise": 0
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 2
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 2,
+      "paise": 18100
+     },
+     "markedGivenBack": {
+      "count": 1,
+      "paise": 5000
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 18100,
+    "markedGivenBackPaise": 5000
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 37000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 1
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true,
+    "ownerMarks": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 37000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 1
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "2026-01",
+   "from": "2025-12-31T18:30:00.000Z",
+   "to": "2026-01-31T18:30:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true,
+    "ownerMarks": false
+   },
+   "out": {
+    "received": {
+     "count": 9,
+     "paise": 50000
+    },
+    "refunds": {
+     "count": 3,
+     "paise": 32000,
+     "ofDeposits": {
+      "count": 0,
+      "paise": 0
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 0
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 2,
+      "paise": 18100
+     },
+     "markedGivenBack": {
+      "count": 1,
+      "paise": 5000
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 18100,
+    "markedGivenBackPaise": 5000
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "options": {},
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 35000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 3
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "options": {
+    "ownerMarks": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 35000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 3
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "options": {
+    "ownerMarks": false
+   },
+   "out": {
+    "received": {
+     "count": 9,
+     "paise": 50000
+    },
+    "refunds": {
+     "count": 3,
+     "paise": 30000,
+     "ofDeposits": {
+      "count": 0,
+      "paise": 0
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 30000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 2
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 2,
+      "paise": 18100
+     },
+     "markedGivenBack": {
+      "count": 1,
+      "paise": 5000
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 18100,
+    "markedGivenBackPaise": 5000
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 37000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 1
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true,
+    "ownerMarks": true
+   },
+   "out": {
+    "received": {
+     "count": 11,
+     "paise": 68100
+    },
+    "refunds": {
+     "count": 5,
+     "paise": 37000,
+     "ofDeposits": {
+      "count": 2,
+      "paise": 5000
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 1
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 0,
+      "paise": 0
+     },
+     "markedGivenBack": {
+      "count": 0,
+      "paise": 0
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 0,
+    "markedGivenBackPaise": 0
+   }
+  },
+  {
+   "name": "25-26",
+   "from": "2025-03-31T18:30:00.000Z",
+   "to": "2026-03-31T18:30:00.000Z",
+   "options": {
+    "refundAmountFromPayment": true,
+    "ownerMarks": false
+   },
+   "out": {
+    "received": {
+     "count": 9,
+     "paise": 50000
+    },
+    "refunds": {
+     "count": 3,
+     "paise": 32000,
+     "ofDeposits": {
+      "count": 0,
+      "paise": 0
+     },
+     "ofSecondPayments": {
+      "count": 3,
+      "paise": 32000
+     }
+    },
+    "discounts": {
+     "count": 0,
+     "paise": 0
+    },
+    "lateFees": {
+     "count": 0,
+     "paise": 0
+    },
+    "missing": {
+     "depositAmounts": 8,
+     "refundAmounts": 0
+    },
+    "booksOnly": {
+     "paidTwice": {
+      "count": 1,
+      "paise": 30000
+     },
+     "markedReceived": {
+      "count": 2,
+      "paise": 18100
+     },
+     "markedGivenBack": {
+      "count": 1,
+      "paise": 5000
+     }
+    }
+   },
+   "booksOnly": {
+    "paidTwicePaise": 30000,
+    "markedReceivedPaise": 18100,
+    "markedGivenBackPaise": 5000
+   }
+  }
+ ],
+ "faults": [
+  {
+   "name": "as written",
+   "entries": null,
+   "books": [
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: the amount is missing",
+    "entry 10 could not be read as money: the amount \"1e3\" is not a whole number of paise above 0",
+    "entry 12 could not be read as money: a refund is already owed under upr-1; it is not owed twice",
+    "entry 13 could not be read as money: an older refund owed by the owner has no id",
+    "entry 15 could not be read as money: an older refund marked sent has no id",
+    "entry 16 could not be read as money: the amount \"\" is not a whole number of paise above 0",
+    "entry 17 could not be read as money: the amount \"0\" is not a whole number of paise above 0",
+    "entry 20 could not be read as money: no refund is owed under upr-2, so nothing can be kept from it",
+    "entry 21 could not be read as money: an older refund kept by the owner has no id",
+    "entry 24 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 28 could not be read as money: the amount \"0x10\" is not a whole number of paise above 0",
+    "entry 29 could not be read as money: the amount \"05\" is not a whole number of paise above 0",
+    "entry 30 could not be read as money: the amount \" 5\" is not a whole number of paise above 0",
+    "entry 31 could not be read as money: the amount \"+5\" is not a whole number of paise above 0",
+    "entry 32 could not be read as money: the amount \"-5\" is not a whole number of paise above 0",
+    "entry 33 could not be read as money: the amount \"9007199254740993\" is not a whole number of paise above 0",
+    "entry 34 could not be read as money: the amount \"12.5\" is not a whole number of paise above 0",
+    "entry 35 could not be read as money: the amount \"ten\" is not a whole number of paise above 0"
+   ],
+   "booksPrivate": [
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: the amount is missing",
+    "entry 10 could not be read as money: the amount \"1e3\" is not a whole number of paise above 0",
+    "entry 12 could not be read as money: a refund is already owed under upr-1; it is not owed twice",
+    "entry 13 could not be read as money: an older refund owed by the owner has no id",
+    "entry 15 could not be read as money: an older refund marked sent has no id",
+    "entry 16 could not be read as money: the amount \"\" is not a whole number of paise above 0",
+    "entry 17 could not be read as money: the amount \"0\" is not a whole number of paise above 0",
+    "entry 20 could not be read as money: no refund is owed under upr-2, so nothing can be kept from it",
+    "entry 21 could not be read as money: an older refund kept by the owner has no id",
+    "entry 24 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 28 could not be read as money: the amount \"0x10\" is not a whole number of paise above 0",
+    "entry 29 could not be read as money: the amount \"05\" is not a whole number of paise above 0",
+    "entry 30 could not be read as money: the amount \" 5\" is not a whole number of paise above 0",
+    "entry 31 could not be read as money: the amount \"+5\" is not a whole number of paise above 0",
+    "entry 32 could not be read as money: the amount \"-5\" is not a whole number of paise above 0",
+    "entry 33 could not be read as money: the amount \"9007199254740993\" is not a whole number of paise above 0",
+    "entry 34 could not be read as money: the amount \"12.5\" is not a whole number of paise above 0",
+    "entry 35 could not be read as money: the amount \"ten\" is not a whole number of paise above 0"
+   ],
+   "figures": [],
+   "figuresFromPayment": [
+    "owner marks counted: the books gave back 35000, the rows and booksOnly 37000",
+    "owner marks left out: the books gave back 35000, the rows and booksOnly 37000"
+   ]
+  },
+  {
+   "name": "no payment ids",
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-01-05T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "50000"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-01-05T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "50000"
+     }
+    },
+    {
+     "seq": 3,
+     "time": "2026-01-05T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "blocked",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "30000"
+     }
+    },
+    {
+     "seq": 4,
+     "time": "2026-01-05T06:30:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 5,
+     "time": "2026-01-05T06:31:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 6,
+     "time": "2026-01-06T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "rf_1",
+      "amountPaise": "30000"
+     }
+    },
+    {
+     "seq": 7,
+     "time": "2026-01-06T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "1000",
+      "confirmedBy": "caller"
+     }
+    },
+    {
+     "seq": 8,
+     "time": "2026-01-06T05:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "1000"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-01-06T05:03:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 10,
+     "time": "2026-01-06T05:04:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "1e3"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-01-07T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-1",
+      "amountPaise": "5000"
+     }
+    },
+    {
+     "seq": 12,
+     "time": "2026-01-07T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-1",
+      "amountPaise": "5000"
+     }
+    },
+    {
+     "seq": 13,
+     "time": "2026-01-07T05:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "5000"
+     }
+    },
+    {
+     "seq": 14,
+     "time": "2026-01-07T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-1"
+     }
+    },
+    {
+     "seq": 15,
+     "time": "2026-01-07T06:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "2"
+     }
+    },
+    {
+     "seq": 16,
+     "time": "2026-01-07T06:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-9",
+      "amountPaise": ""
+     }
+    },
+    {
+     "seq": 17,
+     "time": "2026-01-07T06:03:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-9"
+     }
+    },
+    {
+     "seq": 18,
+     "time": "2026-01-08T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-2",
+      "amountPaise": "700"
+     }
+    },
+    {
+     "seq": 19,
+     "time": "2026-01-08T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_kept",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-2"
+     }
+    },
+    {
+     "seq": 20,
+     "time": "2026-01-08T06:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_kept",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-2"
+     }
+    },
+    {
+     "seq": 21,
+     "time": "2026-01-08T06:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_kept",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 22,
+     "time": "2026-01-09T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-5",
+     "action": "owner_marked_paid",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "9000"
+     }
+    },
+    {
+     "seq": 23,
+     "time": "2026-01-09T05:30:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-5",
+     "action": "owner_marked_paid",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "9100",
+      "via": "cash"
+     }
+    },
+    {
+     "seq": 24,
+     "time": "2026-01-09T05:31:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-5",
+     "action": "owner_marked_paid",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "9100",
+      "via": "cash"
+     }
+    },
+    {
+     "seq": 25,
+     "time": "2026-01-09T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": null,
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 26,
+     "time": "2026-01-09T06:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-5",
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 27,
+     "time": "2026-01-09T06:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-5",
+     "action": "other_action",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "1"
+     }
+    },
+    {
+     "seq": 28,
+     "time": "2026-01-10T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "0x10"
+     }
+    },
+    {
+     "seq": 29,
+     "time": "2026-01-10T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "05"
+     }
+    },
+    {
+     "seq": 30,
+     "time": "2026-01-10T05:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": " 5"
+     }
+    },
+    {
+     "seq": 31,
+     "time": "2026-01-10T05:03:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "+5"
+     }
+    },
+    {
+     "seq": 32,
+     "time": "2026-01-10T05:04:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "-5"
+     }
+    },
+    {
+     "seq": 33,
+     "time": "2026-01-10T05:05:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "9007199254740993"
+     }
+    },
+    {
+     "seq": 34,
+     "time": "2026-01-10T05:06:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "12.5"
+     }
+    },
+    {
+     "seq": 35,
+     "time": "2026-01-10T05:07:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-6",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "ten"
+     }
+    }
+   ],
+   "books": [
+    "entry 1 could not be read as money: an older record_deposit line has no payment id",
+    "entry 2 could not be read as money: an older record_deposit line has no payment id",
+    "entry 3 could not be read as money: an older record_deposit line has no payment id",
+    "entry 6 could not be read as money: an older refund line has no payment id",
+    "entry 7 could not be read as money: an older refund line has no payment id",
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: an older refund line has no payment id",
+    "entry 10 could not be read as money: an older refund line has no payment id",
+    "entry 12 could not be read as money: a refund is already owed under upr-1; it is not owed twice",
+    "entry 13 could not be read as money: an older refund owed by the owner has no id",
+    "entry 15 could not be read as money: an older refund marked sent has no id",
+    "entry 16 could not be read as money: the amount \"\" is not a whole number of paise above 0",
+    "entry 17 could not be read as money: the amount \"0\" is not a whole number of paise above 0",
+    "entry 20 could not be read as money: no refund is owed under upr-2, so nothing can be kept from it",
+    "entry 21 could not be read as money: an older refund kept by the owner has no id",
+    "entry 22 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 23 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 24 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 28 could not be read as money: an older record_deposit line has no payment id",
+    "entry 29 could not be read as money: an older record_deposit line has no payment id",
+    "entry 30 could not be read as money: an older record_deposit line has no payment id",
+    "entry 31 could not be read as money: an older record_deposit line has no payment id",
+    "entry 32 could not be read as money: an older record_deposit line has no payment id",
+    "entry 33 could not be read as money: an older record_deposit line has no payment id",
+    "entry 34 could not be read as money: an older record_deposit line has no payment id",
+    "entry 35 could not be read as money: an older record_deposit line has no payment id"
+   ],
+   "booksPrivate": [
+    "entry 1 could not be read as money: an older record_deposit line has no payment id",
+    "entry 2 could not be read as money: an older record_deposit line has no payment id",
+    "entry 3 could not be read as money: an older record_deposit line has no payment id",
+    "entry 6 could not be read as money: an older refund line has no payment id",
+    "entry 7 could not be read as money: an older refund line has no payment id",
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: an older refund line has no payment id",
+    "entry 10 could not be read as money: an older refund line has no payment id",
+    "entry 12 could not be read as money: a refund is already owed under upr-1; it is not owed twice",
+    "entry 13 could not be read as money: an older refund owed by the owner has no id",
+    "entry 15 could not be read as money: an older refund marked sent has no id",
+    "entry 16 could not be read as money: the amount \"\" is not a whole number of paise above 0",
+    "entry 17 could not be read as money: the amount \"0\" is not a whole number of paise above 0",
+    "entry 20 could not be read as money: no refund is owed under upr-2, so nothing can be kept from it",
+    "entry 21 could not be read as money: an older refund kept by the owner has no id",
+    "entry 22 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 23 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 24 could not be read as money: an older owner_marked_paid line has no payment id",
+    "entry 28 could not be read as money: an older record_deposit line has no payment id",
+    "entry 29 could not be read as money: an older record_deposit line has no payment id",
+    "entry 30 could not be read as money: an older record_deposit line has no payment id",
+    "entry 31 could not be read as money: an older record_deposit line has no payment id",
+    "entry 32 could not be read as money: an older record_deposit line has no payment id",
+    "entry 33 could not be read as money: an older record_deposit line has no payment id",
+    "entry 34 could not be read as money: an older record_deposit line has no payment id",
+    "entry 35 could not be read as money: an older record_deposit line has no payment id"
+   ],
+   "figures": [],
+   "figuresFromPayment": []
+  },
+  {
+   "name": "first 11 entries",
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-01-05T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_1",
+      "amountPaise": "50000"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-01-05T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_1",
+      "amountPaise": "50000"
+     }
+    },
+    {
+     "seq": 3,
+     "time": "2026-01-05T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "blocked",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_2",
+      "amountPaise": "30000"
+     }
+    },
+    {
+     "seq": 4,
+     "time": "2026-01-05T06:30:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 5,
+     "time": "2026-01-05T06:31:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 6,
+     "time": "2026-01-06T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_2",
+      "refundId": "rf_1",
+      "amountPaise": "30000"
+     }
+    },
+    {
+     "seq": 7,
+     "time": "2026-01-06T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_3",
+      "amountPaise": "1000",
+      "confirmedBy": "caller"
+     }
+    },
+    {
+     "seq": 8,
+     "time": "2026-01-06T05:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "1000"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-01-06T05:03:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_3"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-01-06T05:04:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_3",
+      "amountPaise": "1e3"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-01-07T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-1",
+      "amountPaise": "5000"
+     }
+    }
+   ],
+   "books": [
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: the amount is missing",
+    "entry 10 could not be read as money: the amount \"1e3\" is not a whole number of paise above 0"
+   ],
+   "booksPrivate": [
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: the amount is missing",
+    "entry 10 could not be read as money: the amount \"1e3\" is not a whole number of paise above 0"
+   ],
+   "figures": [],
+   "figuresFromPayment": [
+    "owner marks counted: the books gave back 30000, the rows and booksOnly 32000",
+    "owner marks left out: the books gave back 30000, the rows and booksOnly 32000"
+   ]
+  },
+  {
+   "name": "first 23 entries",
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-01-05T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_1",
+      "amountPaise": "50000"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-01-05T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_1",
+      "amountPaise": "50000"
+     }
+    },
+    {
+     "seq": 3,
+     "time": "2026-01-05T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "record_deposit",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "blocked",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_2",
+      "amountPaise": "30000"
+     }
+    },
+    {
+     "seq": 4,
+     "time": "2026-01-05T06:30:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 5,
+     "time": "2026-01-05T06:31:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "complete_booking",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 6,
+     "time": "2026-01-06T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-1",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_2",
+      "refundId": "rf_1",
+      "amountPaise": "30000"
+     }
+    },
+    {
+     "seq": 7,
+     "time": "2026-01-06T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_3",
+      "amountPaise": "1000",
+      "confirmedBy": "caller"
+     }
+    },
+    {
+     "seq": 8,
+     "time": "2026-01-06T05:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "1000"
+     }
+    },
+    {
+     "seq": 9,
+     "time": "2026-01-06T05:03:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_3"
+     }
+    },
+    {
+     "seq": 10,
+     "time": "2026-01-06T05:04:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-2",
+     "action": "refund",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "pay_3",
+      "amountPaise": "1e3"
+     }
+    },
+    {
+     "seq": 11,
+     "time": "2026-01-07T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-1",
+      "amountPaise": "5000"
+     }
+    },
+    {
+     "seq": 12,
+     "time": "2026-01-07T05:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-1",
+      "amountPaise": "5000"
+     }
+    },
+    {
+     "seq": 13,
+     "time": "2026-01-07T05:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "5000"
+     }
+    },
+    {
+     "seq": 14,
+     "time": "2026-01-07T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-1"
+     }
+    },
+    {
+     "seq": 15,
+     "time": "2026-01-07T06:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "amountPaise": "2"
+     }
+    },
+    {
+     "seq": 16,
+     "time": "2026-01-07T06:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-9",
+      "amountPaise": ""
+     }
+    },
+    {
+     "seq": 17,
+     "time": "2026-01-07T06:03:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-3",
+     "action": "upi_refund_marked_done",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-9"
+     }
+    },
+    {
+     "seq": 18,
+     "time": "2026-01-08T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_owed",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "held_for_owner",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-2",
+      "amountPaise": "700"
+     }
+    },
+    {
+     "seq": 19,
+     "time": "2026-01-08T06:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_kept",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-2"
+     }
+    },
+    {
+     "seq": 20,
+     "time": "2026-01-08T06:01:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_kept",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "refundId": "upr-2"
+     }
+    },
+    {
+     "seq": 21,
+     "time": "2026-01-08T06:02:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-4",
+     "action": "upi_refund_kept",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {}
+    },
+    {
+     "seq": 22,
+     "time": "2026-01-09T05:00:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-5",
+     "action": "owner_marked_paid",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "upi-1",
+      "amountPaise": "9000"
+     }
+    },
+    {
+     "seq": 23,
+     "time": "2026-01-09T05:30:00.000Z",
+     "conversation": "919800000001",
+     "booking": "b-5",
+     "action": "owner_marked_paid",
+     "inputsDigest": "44136fa355b3678a",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "",
+     "refs": {
+      "paymentId": "cash-1",
+      "amountPaise": "9100",
+      "via": "cash"
+     }
+    }
+   ],
+   "books": [
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: the amount is missing",
+    "entry 10 could not be read as money: the amount \"1e3\" is not a whole number of paise above 0",
+    "entry 12 could not be read as money: a refund is already owed under upr-1; it is not owed twice",
+    "entry 13 could not be read as money: an older refund owed by the owner has no id",
+    "entry 15 could not be read as money: an older refund marked sent has no id",
+    "entry 16 could not be read as money: the amount \"\" is not a whole number of paise above 0",
+    "entry 17 could not be read as money: the amount \"0\" is not a whole number of paise above 0",
+    "entry 20 could not be read as money: no refund is owed under upr-2, so nothing can be kept from it",
+    "entry 21 could not be read as money: an older refund kept by the owner has no id"
+   ],
+   "booksPrivate": [
+    "entry 8 could not be read as money: an older refund line has no payment id",
+    "entry 9 could not be read as money: the amount is missing",
+    "entry 10 could not be read as money: the amount \"1e3\" is not a whole number of paise above 0",
+    "entry 12 could not be read as money: a refund is already owed under upr-1; it is not owed twice",
+    "entry 13 could not be read as money: an older refund owed by the owner has no id",
+    "entry 15 could not be read as money: an older refund marked sent has no id",
+    "entry 16 could not be read as money: the amount \"\" is not a whole number of paise above 0",
+    "entry 17 could not be read as money: the amount \"0\" is not a whole number of paise above 0",
+    "entry 20 could not be read as money: no refund is owed under upr-2, so nothing can be kept from it",
+    "entry 21 could not be read as money: an older refund kept by the owner has no id"
+   ],
+   "figures": [],
+   "figuresFromPayment": [
+    "owner marks counted: the books gave back 35000, the rows and booksOnly 37000",
+    "owner marks left out: the books gave back 35000, the rows and booksOnly 37000"
+   ]
+  }
+ ],
+ "obligations": [],
+ "views": [
+  {
+   "nowMs": 1770699600000,
+   "untold": [],
+   "view": {
+    "today": {
+     "received": {
+      "paise": 0,
+      "count": 0
+     },
+     "givenBack": {
+      "paise": 0,
+      "count": 0
+     }
+    },
+    "month": {
+     "received": {
+      "paise": 0,
+      "count": 0
+     },
+     "givenBack": {
+      "paise": 0,
+      "count": 0
+     },
+     "keptPaise": 0,
+     "gatewayChargesPaise": 0,
+     "stillToCome": null
+    },
+    "byWord": [],
+    "owedBack": [],
+    "notMatched": [],
+    "period": "2026-02",
+    "readsSettlements": false,
+    "payoutsUnchecked": true
+   },
+   "key": "0.0"
+  },
+  {
+   "nowMs": 1770699600000,
+   "untold": [
+    {
+     "case": "b-1",
+     "amountInr": 12.5
+    },
+    {
+     "case": "b-2",
+     "amountInr": 0.29
+    },
+    {
+     "case": "f-3",
+     "amountInr": 1234.57
+    }
+   ],
+   "view": {
+    "today": {
+     "received": {
+      "paise": 0,
+      "count": 0
+     },
+     "givenBack": {
+      "paise": 0,
+      "count": 0
+     }
+    },
+    "month": {
+     "received": {
+      "paise": 0,
+      "count": 0
+     },
+     "givenBack": {
+      "paise": 0,
+      "count": 0
+     },
+     "keptPaise": 0,
+     "gatewayChargesPaise": 0,
+     "stillToCome": null
+    },
+    "byWord": [],
+    "owedBack": [],
+    "notMatched": [
+     {
+      "kind": "untold_refund",
+      "case": "b-1",
+      "paise": 1250
+     },
+     {
+      "kind": "untold_refund",
+      "case": "b-2",
+      "paise": 29
+     },
+     {
+      "kind": "untold_refund",
+      "case": "f-3",
+      "paise": 123457
+     }
+    ],
+    "period": "2026-02",
+    "readsSettlements": false,
+    "payoutsUnchecked": true
+   },
+   "key": "0.1"
+  }
+ ]
+}

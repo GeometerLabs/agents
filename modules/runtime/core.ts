@@ -582,7 +582,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
         chat(handleHash: string, q: { after?: number; cid?: string }): ChatRead {
           const channel = (kit.parse(snapshot) as { channel?: ChannelState }).channel;
           const now = clock.now();
-          const read: ChatRead = chatThread(channel, handleHash, { ...(q.after !== undefined ? { after: q.after } : {}), retentionDays: options.retentionDays ?? CONVERSATION_RETENTION_DAYS, now, dayKey: chatDay(now, settings.timezone) });
+          const read: ChatRead = chatThread(channel, handleHash, { ...(q.after !== undefined ? { after: q.after } : {}), retentionDays: options.retentionDays ?? CONVERSATION_RETENTION_DAYS, now, dayKey: chatDay(now, settings.timezone), ...(policy.budget ? { budget: policy.budget } : {}) });
           const task = q.cid ? db.taskState?.(chatTaskKey(handleHash, q.cid)) : undefined;
           const character = (settings as { assistant?: { character?: { personality?: string } } }).assistant?.character;
           return { ...read, ...(task ? { send: task === "failed" ? "failed" as const : task === "done" ? "done" as const : "pending" as const } : {}), ...(character?.personality ? { personality: character.personality } : {}), ...(kit.channel!.chatVoice ? { listen: true as const } : {}) };
