@@ -9,7 +9,6 @@ package directory
 
 import (
 	"fmt"
-	"github.com/GeometerLabs/agents/go/internal/language"
 	"math"
 	"strconv"
 	"strings"
