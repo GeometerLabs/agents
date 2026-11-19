@@ -1,26 +1,28 @@
 // The CONTRACT of the owner's Stock page (block S, phase A3) on a listings-only shop: GET/POST /internal/channel/owner-stock, what each op does to the one stock count, what the
-// public read and the owner's listings show of it, the record's `stock` lines, the Confirm button's restore of a listing that sold itself at 0, and the count surviving a restart and
-// the two runtimes taking turns on one folder. Like listings.contract.test.ts it starts the shop as a separate process and talks to it only over HTTP; the one place it looks inside is
-// the shop's own file (agent.db, read with node:sqlite after the shop is stopped), for what no route shows: the record's lines, the low-mark alerts and the keys that stop a double count.
-// It must pass with LISTINGS_IMPL=ts first and then with go. Assertions are on status codes and machine fields (`why`, ids, counts), never on English sentences.
+// public read and the owner's listings show of it, the record's `stock` lines, the Confirm button's restore of a listing that sold itself at 0, and the count surviving restarts on
+// one folder (until 19 Nov 2026 the TypeScript and Go runtimes took turns on it; since the TypeScript runtime was deleted, decision 61 wave 1b, it is the Go shop stopped and started
+// again). Like listings.contract.test.ts it starts the shop as a separate process and talks to it only over HTTP; the one place it looks inside is the shop's own file (agent.db, read
+// with node:sqlite after the shop is stopped), for what no route shows: the record's lines, the low-mark alerts and the keys that stop a double count. Assertions are on status codes
+// and machine fields (`why`, ids, counts), never on English sentences.
 //
 // Two things in the TypeScript behaviour that the cases pin down because they are easy to get wrong in another language: lengths are UTF-16 units (31 emoji are 62), and a counted listing
 // takes its name from the listing in the OWNER's language when the page sends none (so a long listing title is refused in the step, after the page's pre-check passed).
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { canonicalJson } from "../../../../modules/record/record.ts";
 import { keyedDigest } from "../../../../modules/record/fingerprint.ts";
-import { PAGE, REPO, draftAnswer, makeShop, startFakeModel } from "./harness.ts";
+import { draftAnswer, makeShop, PAGE, SKIP, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
+import { goldenFor } from "./golden.ts";
 
 const shops: Shop[] = [];
 const fakes: FakeModel[] = [];
 after(async () => { for (const s of shops) { await s.stop(); s.cleanup(); } for (const f of fakes) await f.close(); });
-const goBin = process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings");
 
+const golden = goldenFor(import.meta.url);
 const PATH = "/internal/channel/owner-stock";
 const L1 = "listing:l-1";
 const L2 = "listing:l-2";
@@ -75,7 +77,7 @@ function savedRecord(s: Shop): { action: string; outcome: string; entry: any }[]
 }
 const recordKey = (s: Shop): Buffer => Buffer.from(readFileSync(join(s.root, "secrets", "record_key"), "utf8").trim(), "hex");
 
-describe("the Stock page needs the owner", () => {
+describe("the Stock page needs the owner", { skip: SKIP }, () => {
   test("no link, a wrong link or no channel token is refused; an empty shop has nothing to count", async () => {
     const s = await boot();
     assert.equal((await s.call(PATH)).status, 403);
@@ -90,7 +92,7 @@ describe("the Stock page needs the owner", () => {
   });
 });
 
-describe("what the owner may count", () => {
+describe("what the owner may count", { skip: SKIP }, () => {
   test("live listings are candidates, in creation order; counting one takes it off the list; a sold or removed one is not offered", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS);
@@ -108,11 +110,10 @@ describe("what the owner may count", () => {
     assert.equal(v.rows.length, 1); assert.equal(v.attention, 0);
   });
 
-  test("a listing the model wrote in four languages is offered in the language asked (the folder is prepared by TypeScript, the shop under test reads it)", async () => {
+  test("a listing the model wrote in four languages is offered in the language asked (drafted and shown through the card, then read after a restart)", async () => {
     const fake = await startFakeModel(() => ({ ...draftAnswer() as object, titles: { en: "Kittens", hi: "बिल्ली", ml: "പൂച്ച", kn: "ಬೆಕ್ಕು" } })); fakes.push(fake);
     const s = await makeShop({ modelPort: fake.port, budget: { monthlyMicroInr: 50_000_000, daily: { listing_draft: 10 } } }); shops.push(s);
-    // the draft and the owner's "Show it" tap on its card are routes only the TypeScript runtime has (go/TRIAL.md, Left out 1), so TypeScript makes this listing
-    await s.start("ts");
+    await s.start();
     await s.call("/internal/channel/events", { owner: s.owner, body: { events: [{ kind: "owner_message", id: "u-1", text: "Kittens for sale on my page, 500 rupees" }] } });
     await s.settle();
     const card = (await s.call("/internal/channel/owner", { owner: s.owner })).body.app.cards[0];
@@ -129,7 +130,7 @@ describe("what the owner may count", () => {
   });
 });
 
-describe("the five ops, and what the public sees of the count", () => {
+describe("the five ops, and what the public sees of the count", { skip: SKIP }, () => {
   test("start, sold, correct, low, stop: each shows in the next read, and a counted listing shows its count on the public page", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS); await withSwitch(s);
@@ -205,7 +206,7 @@ describe("the five ops, and what the public sees of the count", () => {
 });
 
 // `bad_id` cannot be reached through the page: the shape check answers 400 for an item id that does not look like one, and the page never sends the `aliases` that are its other cause.
-describe("the rules refuse at the page (422 with a why) and the shape is checked first (400)", () => {
+describe("the rules refuse at the page (422 with a why) and the shape is checked first (400)", { skip: SKIP }, () => {
   test("bad_count, bad_low and bad_text (a count, a low mark, a name or unit too long in UTF-16 units)", async () => {
     const s = await boot();
     for (const count of [-1, 1.5, 1_000_001]) await refused(s, "x-1", { op: "start", id: L1, count }, "bad_count");
@@ -278,7 +279,7 @@ describe("the rules refuse at the page (422 with a why) and the shape is checked
   });
 });
 
-describe("a request id counts once, and a low mark speaks once per crossing", () => {
+describe("a request id counts once, and a low mark speaks once per crossing", { skip: SKIP }, () => {
   test("the same request id again changes nothing (it is a retry); a new id is a new act", async () => {
     const s = await boot();
     await stock(s, "s-1", { op: "start", id: L1, count: 10 });
@@ -341,7 +342,7 @@ describe("a request id counts once, and a low mark speaks once per crossing", ()
   });
 });
 
-describe("the record keeps a line for every op", () => {
+describe("the record keeps a line for every op", { skip: SKIP }, () => {
   test("a `stock` line per op with the item, kind, change and who; a refused step is a blocked line", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS);
@@ -379,7 +380,7 @@ describe("the record keeps a line for every op", () => {
   });
 });
 
-describe("Confirm on a listing that sold itself at 0", () => {
+describe("Confirm on a listing that sold itself at 0", { skip: SKIP }, () => {
   test("it sets the count to the quantity the owner first said, or 1, and says so in the record before the listing's own line", async () => {
     const s = await boot();
     await listingOp(s, "r-1", { ...KITTENS, qty: 3 });
@@ -415,7 +416,7 @@ describe("Confirm on a listing that sold itself at 0", () => {
   });
 });
 
-describe("the count survives", () => {
+describe("the count survives", { skip: SKIP }, () => {
   test("a restart of the same runtime", async () => {
     const s = await boot();
     await listingOp(s, "r-1", KITTENS); await withSwitch(s);
@@ -430,38 +431,38 @@ describe("the count survives", () => {
     assert.equal((await page(s)).rows[0].isLow, true, "still the one crossing");
   });
 
-  describe("and TypeScript and Go take turns on one folder", { skip: !existsSync(goBin) && `no Go binary at ${goBin}` }, () => {
-    for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
-      test(`${first} counts, ${second} reads and counts, ${first} reads and counts again`, async () => {
-        const s = await makeShop(); shops.push(s);
-        await s.start(first);
-        await listingOp(s, "r-1", KITTENS); await withSwitch(s);
-        await stock(s, "t-1", { op: "start", id: L1, count: 6, low: 3, unit: "pc" });
-        await stock(s, "t-2", { op: "sold", id: L1, qty: 2 });
-        await s.stop();
+  describe("and restarted twice on one folder", () => {
+    test("it counts, is restarted, reads and counts, is restarted, reads and counts again", async () => {
+      const s = await makeShop(); shops.push(s);
+      await s.start();
+      await listingOp(s, "r-1", KITTENS); await withSwitch(s);
+      await stock(s, "t-1", { op: "start", id: L1, count: 6, low: 3, unit: "pc" });
+      await stock(s, "t-2", { op: "sold", id: L1, qty: 2 });
+      await s.stop();
 
-        await s.start(second);
-        let v = await page(s);
-        assert.deepEqual(rowsOf(v)[0], { id: L1, name: "Two Persian kittens", unit: "pc", count: 4, low: 3, isLow: false, soldOut: false, kind: "listing", moves: [{ kind: "sold", delta: -2, after: 4, by: "owner" }, { kind: "started", delta: 6, after: 6, by: "owner" }] });
-        assert.equal((await publicRead(s)).listings[0].qty, 4);
-        await stock(s, "t-3", { op: "sold", id: L1, qty: 1 });           // 3: the mark is reached
-        await stock(s, "t-4", { op: "start", id: L2, count: 2, name: "Lamp" });
-        await s.stop();
+      await s.start();
+      let v = await page(s);
+      assert.deepEqual(rowsOf(v)[0], { id: L1, name: "Two Persian kittens", unit: "pc", count: 4, low: 3, isLow: false, soldOut: false, kind: "listing", moves: [{ kind: "sold", delta: -2, after: 4, by: "owner" }, { kind: "started", delta: 6, after: 6, by: "owner" }] });
+      assert.equal((await publicRead(s)).listings[0].qty, 4);
+      await stock(s, "t-3", { op: "sold", id: L1, qty: 1 });           // 3: the mark is reached
+      await stock(s, "t-4", { op: "start", id: L2, count: 2, name: "Lamp" });
+      await s.stop();
 
-        await s.start(first);
-        v = await page(s);
-        assert.deepEqual(v.rows.map((r: any) => [r.id, r.count, r.isLow]), [[L1, 3, true], [L2, 2, false]], "what the other runtime wrote is read back, low first");
-        await stock(s, "t-5", { op: "correct", id: L1, to: 9, shown: 3 });
-        await stock(s, "t-6", { op: "sold", id: L1, qty: 7 });             // 2: a second crossing
-        assert.equal((await page(s)).rows.find((r: any) => r.id === L1).count, 2);
-        await s.stop();
+      await s.start();
+      v = await page(s);
+      assert.deepEqual(v.rows.map((r: any) => [r.id, r.count, r.isLow]), [[L1, 3, true], [L2, 2, false]], "what the last start wrote is read back, low first");
+      await stock(s, "t-5", { op: "correct", id: L1, to: 9, shown: 3 });
+      await stock(s, "t-6", { op: "sold", id: L1, qty: 7 });             // 2: a second crossing
+      assert.equal((await page(s)).rows.find((r: any) => r.id === L1).count, 2);
+      await s.stop();
 
-        const st = noClocks(savedStock(s));
-        assert.deepEqual(Object.keys(st.lines[0].applied), ["req:t-2", "req:t-3", "req:t-5", "req:t-6"], "the keys of both runtimes, in the order they were made");
-        assert.deepEqual(st.alerts, [{ line: L1, crossing: 1, count: 3, atMs: 0 }, { line: L1, crossing: 2, count: 2, atMs: 0 }]);
-        assert.equal(st.lines[0].crossings, 2);
-        assert.deepEqual(st.lines[0].moves.map((m: any) => m.kind), ["started", "sold", "sold", "corrected", "sold"]);
-      });
-    }
+      const st = noClocks(savedStock(s));
+      assert.deepEqual(Object.keys(st.lines[0].applied), ["req:t-2", "req:t-3", "req:t-5", "req:t-6"], "the keys of every start, in the order they were made");
+      assert.deepEqual(st.alerts, [{ line: L1, crossing: 1, count: 3, atMs: 0 }, { line: L1, crossing: 2, count: 2, atMs: 0 }]);
+      assert.equal(st.lines[0].crossings, 2);
+      assert.deepEqual(st.lines[0].moves.map((m: any) => m.kind), ["started", "sold", "sold", "corrected", "sold"]);
+      // the saved state, field for field, is the one the TypeScript runtime saved for the same ops (the golden answer: the file a shop moved between runtimes keeps)
+      await golden("the saved stock after three starts", async () => st);
+    });
   });
 });

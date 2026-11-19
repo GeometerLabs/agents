@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
-	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/GeometerLabs/agents/go/internal/language"
@@ -16,14 +15,8 @@ import (
 // utf16Len is JavaScript's `string.length`: UTF-16 code units. A Malayalam title's limit of 80 is counted the way the TypeScript side counts it.
 func utf16Len(s string) int { return language.UTF16Len(s) }
 
-// utf16Slice is JavaScript's `s.slice(0, n)`. (Kept here: a cut through a surrogate pair becomes U+FFFD, as this package has always written it; language.UTF16Slice drops the half.)
-func utf16Slice(s string, n int) string {
-	if utf16Len(s) <= n {
-		return s
-	}
-	units := utf16.Encode([]rune(s))
-	return string(utf16.Decode(units[:n]))
-}
+// utf16Slice is JavaScript's `s.slice(0, n)`, a cut through a surrogate pair becoming U+FFFD as this package has always written it (language.UTF16SliceFFFD; UTF16Slice drops the half).
+func utf16Slice(s string, n int) string { return language.UTF16SliceFFFD(s, n) }
 
 // isJSSpace is what JavaScript's `\s` matches. Go's unicode.IsSpace differs in two places: it takes U+0085 and not U+FEFF.
 func isJSSpace(r rune) bool { return language.IsJSSpace(r) }

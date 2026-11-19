@@ -7,6 +7,7 @@
 package directory
 
 import (
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"math"
 	"regexp"
 	"strconv"
@@ -89,7 +90,7 @@ func jsNumber(v any) float64 {
 	case float64:
 		return x
 	case string:
-		s := jsTrim(x)
+		s := language.TrimJS(x)
 		if s == "" {
 			return 0
 		}
@@ -121,10 +122,10 @@ func isSafeInt(f float64) bool { return f == math.Trunc(f) && math.Abs(f) <= 900
 // textOf is search.ts `text`: a string that is not blank, trimmed and cut to max UTF-16 units.
 func textOf(v any, max int) (string, bool) {
 	s, ok := v.(string)
-	if !ok || jsTrim(s) == "" {
+	if !ok || language.TrimJS(s) == "" {
 		return "", false
 	}
-	return sliceUTF16(jsTrim(s), max), true
+	return language.UTF16SliceFFFD(language.TrimJS(s), max), true
 }
 
 // ReadRequest is the buyer's request, cleaned: the words, category, point, town, radius and language, or what is wrong with it.

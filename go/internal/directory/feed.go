@@ -8,6 +8,7 @@ package directory
 
 import (
 	"encoding/json"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"math"
 	"regexp"
 	"strconv"
@@ -37,7 +38,7 @@ func isObj(v any) (obj, bool) { m, ok := v.(map[string]any); return m, ok }
 // str is feed.ts str: a well-formed string of 1 to max UTF-16 units.
 func str(v any, max int) (string, bool) {
 	s, ok := v.(string)
-	if !ok || s == "" || utf16Len(s) > max || !isWellFormed(s) {
+	if !ok || s == "" || language.UTF16Len(s) > max || !isWellFormed(s) {
 		return "", false
 	}
 	return s, true
@@ -73,7 +74,7 @@ func safeInt(v any) (int64, bool) {
 // httpsURL is feed.ts httpsUrl: an https address of at most 500 UTF-16 units with no user or password.
 func httpsURL(v any) (webURL, bool) {
 	s, ok := v.(string)
-	if !ok || utf16Len(s) > 500 {
+	if !ok || language.UTF16Len(s) > 500 {
 		return webURL{}, false
 	}
 	return parseHTTPS(s)

@@ -1,0 +1,317 @@
+{
+ "about": "What morning.contract.test.ts saw, recorded by golden.ts (LISTINGS_GOLDEN=write); masked: signatures, ISO instants, epoch ms.",
+ "impl": "ts",
+ "commit": "b253982ec2fd479af935472d9c1769855c1d58b0",
+ "entries": {
+  "the line in en": {
+   "at": 1795076408893,
+   "value": {
+    "lines": [
+     [
+      "attempted",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      "",
+      "en"
+     ],
+     [
+      "confirmed",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs",
+       "messageId": "m-",
+       "via": "text"
+      },
+      "",
+      "en"
+     ]
+    ],
+    "pushes": [
+     {
+      "title": "Glow Pets",
+      "body": "Good morning from the assistant of Glow Pets. Today, Thu 19 Nov: nothing. Recorded yesterday: nothing. Waiting for you: 1. Reply here to see more.",
+      "tag": "owner"
+     }
+    ]
+   }
+  },
+  "the line in hi": {
+   "at": 1795076412096,
+   "value": {
+    "lines": [
+     [
+      "attempted",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning_cheerful",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      "",
+      "hi"
+     ],
+     [
+      "confirmed",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning_cheerful",
+       "mood": "waiting_for_owner",
+       "face": "needs",
+       "messageId": "m-",
+       "via": "text"
+      },
+      "",
+      "hi"
+     ]
+    ],
+    "pushes": [
+     {
+      "title": "Glow Pets",
+      "body": "सुप्रभात! मैं Glow Pets का असिस्टेंट। आज, गुरुवार, 19 नवंबर: कुछ नहीं। कल दर्ज: कुछ नहीं। आपके लिए बाकी: 1। और देखने के लिए यहाँ जवाब दें। आपका दिन शुभ हो!",
+      "tag": "owner"
+     }
+    ]
+   }
+  },
+  "the line in ml": {
+   "at": 1795076415271,
+   "value": {
+    "lines": [
+     [
+      "attempted",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning_brief",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      "",
+      "ml"
+     ],
+     [
+      "confirmed",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning_brief",
+       "mood": "waiting_for_owner",
+       "face": "needs",
+       "messageId": "m-",
+       "via": "text"
+      },
+      "",
+      "ml"
+     ]
+    ],
+    "pushes": [
+     {
+      "title": "Glow Pets",
+      "body": "രാവിലത്തെ വിവരം: Glow Pets-ന്റെ അസിസ്റ്റന്റ്. ഇന്ന്, വ്യാഴം, 19 നവംബർ: ഒന്നുമില്ല. ഇന്നലെ രേഖപ്പെടുത്തിയത്: ഒന്നുമില്ല. നിങ്ങൾക്കായി കാത്തിരിക്കുന്നവ: 1. കൂടുതലിന് മറുപടി നൽകുക.",
+      "tag": "owner"
+     }
+    ]
+   }
+  },
+  "the line in kn": {
+   "at": 1795076418451,
+   "value": {
+    "lines": [
+     [
+      "attempted",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      "",
+      "kn"
+     ],
+     [
+      "confirmed",
+      {
+       "to": "owner",
+       "morning": "2026-11-19",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs",
+       "messageId": "m-",
+       "via": "text"
+      },
+      "",
+      "kn"
+     ]
+    ],
+    "pushes": [
+     {
+      "title": "Glow Pets",
+      "body": "ಶುಭೋದಯ, ನಾನು Glow Pets ನ ಸಹಾಯಕ. ಇಂದು, ಗುರುವಾರ, 19 ನವೆಂಬರ್: ಏನೂ ಇಲ್ಲ. ನಿನ್ನೆ ದಾಖಲಾದದ್ದು: ಏನೂ ಇಲ್ಲ. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: 1. ಹೆಚ್ಚು ನೋಡಲು ಇಲ್ಲಿ ಉತ್ತರಿಸಿ.",
+      "tag": "owner"
+     }
+    ]
+   }
+  },
+  "on the test clock": {
+   "at": 1795076421615,
+   "value": {
+    "lines": [
+     [
+      "attempted",
+      {
+       "to": "owner",
+       "morning": "day",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      ""
+     ],
+     [
+      "failed",
+      {
+       "to": "owner",
+       "morning": "day",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      "This shop has no WhatsApp number, and the owner has no phone with alerts on, so nothing was sent; the owner's app shows what waits for them."
+     ],
+     [
+      "attempted",
+      {
+       "to": "owner",
+       "morning": "day",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      ""
+     ],
+     [
+      "confirmed",
+      {
+       "to": "owner",
+       "morning": "day",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs",
+       "messageId": "m-",
+       "via": "text"
+      },
+      ""
+     ],
+     [
+      "attempted",
+      {
+       "to": "owner",
+       "morning": "day",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs"
+      },
+      ""
+     ],
+     [
+      "confirmed",
+      {
+       "to": "owner",
+       "morning": "day",
+       "templates": "owner_morning",
+       "mood": "waiting_for_owner",
+       "face": "needs",
+       "messageId": "m-",
+       "via": "text"
+      },
+      ""
+     ]
+    ],
+    "days": 2,
+    "pushes": [
+     "Good morning from the assistant of Glow Pets. Today, Fri D: nothing. Recorded yesterday: nothing. Waiting for you: 1. Reply here to see more.",
+     "Good morning from the assistant of Glow Pets. Today, Sat D: nothing. Recorded yesterday: nothing. Waiting for you: 1. Reply here to see more."
+    ]
+   }
+  },
+  "silent and stopped": {
+   "at": 1795076439626,
+   "value": {
+    "quiet": {
+     "lines": [],
+     "pushes": []
+    },
+    "stopped": {
+     "lines": [],
+     "pushes": []
+    }
+   }
+  },
+  "voice off": {
+   "at": 1795076452170,
+   "value": {
+    "calls": [
+     [
+      403,
+      {
+       "error": "The owner's link is not valid (it may have been revoked)."
+      }
+     ],
+     [
+      403,
+      {
+       "error": "The owner's link is not valid (it may have been revoked)."
+      }
+     ],
+     [
+      404,
+      {
+       "error": "Voice is not on for this shop's assistant."
+      }
+     ],
+     [
+      405,
+      {
+       "error": "Use POST here."
+      }
+     ],
+     [
+      401,
+      {
+       "error": "A bearer token is needed."
+      }
+     ],
+     [
+      404,
+      {
+       "error": "Voice is not on for this shop."
+      }
+     ],
+     [
+      405,
+      {
+       "error": "Use POST here."
+      }
+     ]
+    ],
+    "listen": false,
+    "status": {
+     "pending": 0,
+     "done": 0,
+     "failed": 0
+    }
+   }
+  }
+ }
+}

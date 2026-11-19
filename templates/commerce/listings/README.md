@@ -14,15 +14,22 @@ everything else with the assistant.
 
 ## Architecture
 
+**The runtime is Go** (decision 61, waves 1a to 1b, finished 19 Nov 2026): one shop alone is `go/cmd/listings`, and every listings-only shop of a server is held by ONE process,
+`go/cmd/listings-shared` (`go/internal/shared`), the `rt-listings` container, run from the programs' image the server builds from its own checkout (`bundle/lib/go-build.ts`). The
+TypeScript runtime that was here (`server/main.ts`, `shared-main.ts`, `start.ts`, `runtime.ts`, `store.ts`, `back-soon.ts`, `src/agent.ts`, `assistant.ts`, `channel.ts`) and the
+TypeScript shared process with its worker pool (`modules/runtime/shared*.ts`) are deleted; the Go runtime passes the contract in `contract/`, held to golden answers recorded from the
+TypeScript before it went. What stays TypeScript here is what the deployer, the panel and the generators read: `src/settings.ts` (the settings' shape), `src/chat-limits.ts`,
+`src/state.ts` and `server/snapshot.ts` (the saved store's shape, which `bundle/lib/listings-carry.ts` converts when a shop takes an agent), `server/config.ts` (the deployer's check of
+`runtime.json`) and `package.json` (the version).
+
 ```
               the inbox's front (modules/channels/front.ts)  ·  ops  ·  the deployer
                                    │  http://door-listings:8780/shop/<name>/...
                                    ▼
-   ┌──────────────────────  rt-listings: ONE container, ONE main thread + K worker threads  ───────────┐
-   │   router (modules/runtime/shared.ts)         looks at /shops every few seconds, pings the workers  │
-   │   /shop/<name>/…  ──►  the shop's own server 127.0.0.1:p, inside the worker that holds it           │
-   │        worker 1: glow-pets, …        worker 2: sree-cycles, …       (K = 4; ≤ 256 MB each)          │
-   │        quarantine worker: one shop that hurt a worker twice (128 MB)   ·   paused: "back soon"      │
+   ┌──────────────────────  rt-listings: ONE Go process (go/cmd/listings-shared)  ──────────────────────┐
+   │   finds the shops in /shops every few seconds, routes /shop/<name>/… to that shop                  │
+   │   a shop that panics or sticks is charged a strike; two put it in a child process of its own;      │
+   │   three failures there pause it ("back soon")                                                       │
    │   /healthz /readyz /shared/shops             (the process is up; which shops it holds or paused)   │
    └─────────────────────────────────────────────────────────────────────────────────────────────────────┘
         │ read-only mounts                                             │ one volume, a folder per shop
@@ -35,128 +42,26 @@ everything else with the assistant.
    only way out: the model Guard (g-model), on a network only it, the door and this container share
 ```
 
-Each shop in the process is exactly what a single shop's runtime is: `server/start.ts` is the same code `main.ts` runs alone. The shared process adds only the finding, the routing and
-the letting go.
-
 ### Why not one container per shop
 
 A container per shop (with its Guards, forwarders, network and reports folder) is what a shop that **moves money or messages** needs, because the Guards are what stop it. A listings-only
 shop has nothing to guard: it takes no payment and sends no message. A container, a door and a network for each would cost more than the shop earns (nothing, by design), and would cap a
-server at a few hundred shops. One process holds hundreds, each a few MB. What the shared process costs is that the shops live in one operating-system process, so **the code keeps them
-apart by construction** (next section), and the **one thing a shop can reach is the model Guard**.
+server at a few hundred shops. One Go process holds a hundred shops in about 104 MB (go/TRIAL.md). What it costs is that the shops live in one process, so **the code keeps them apart by
+construction**, and the **one thing a shop can reach is the model Guard**.
 
-### What the shared process costs, and what keeps one shop from taking the others down
+### What keeps one shop from another
 
-The shops share one operating-system process, so the code keeps their **data** apart by construction (next section). Their **failures** are kept apart in layers (the full account is the
-CRASH CONTAINMENT header of `modules/runtime/shared.ts`): a handler's error is a 500 for that request; a shop that stays broken is restarted alone with a back-off; and, since 19 Nov 2026, a
-shop that **blocks the event loop** (an endless loop, a pathological regex) or **runs out of memory** takes down only the **worker thread** it runs in.
+1. **Own credentials.** Each shop has its own token files (internal, channel, record key, the model Guard's agent credential), handed to that shop alone; a shop missing one is skipped.
+2. **Own routes.** The process routes by the shop's name, and **the shop checks its own token**: a request sent to the wrong shop is refused by that shop.
+3. **Own store.** Each shop's data folder is its own: `agent.db`, `owner-access.sqlite`, `push.sqlite`, `chat-identity.sqlite`; photos are a table of the shop's own `agent.db`.
+4. **One way out.** The container is on one network with the model Guard and its door, and nothing else; each shop reaches the Guard with its own credential, and what limits each shop's
+   model use is its own runtime budget (`runtime.json` `budget`). The Guard's own daily cap is one number for the server (Deferred: a cap per agent at the Guard).
+5. **One shop's failure is that shop's alone** (`go/internal/shared`, read its header): a panic in a request, the runner or the clock is recovered and charged to its shop; a stuck request
+   gets a deadline; two strikes move the shop to a child process of the same binary; three failures there pause it ("back soon", with `x-back-soon: 1`). What Go cannot recover (a stack
+   overflow, running out of memory, a concurrent map write) restarts the process, and nobody is charged.
 
-* **A pool, not a thread per shop.** Measured on Node 26: one worker thread that loads this template's start code and opens an HTTP server costs about **33 MB** and starts in about **0.17 s**.
-  Hundreds of always-on threads would not fit a 4 GB server, so the shops share **K worker threads** (`SHARED_WORKERS`, default 4; a new shop goes to the least loaded). Each shop's own server
-  still listens on the loopback address, now inside its worker; the router forwards by port as before.
-* **Memory limit.** Each worker has an old-generation heap limit (`SHARED_WORKER_MB`, default 256). A worker that runs out of memory exits and is started again with its shops.
-* **Watchdog.** The main thread pings every worker every 2 s; one that has not answered for 10 s is `terminate()`d (which stops even a busy loop) and started again. Its shops get a quick
-  `503` with `Retry-After` meanwhile; the other workers answer throughout.
-* **Finding the culprit.** A worker writes the shop it is running into a shared slot (around every request, tick and task), so the main thread can read it even when the worker is stuck.
-  That shop gets a **strike**; if the slot is empty, every shop of that worker with a request in flight does.
-* **Quarantine.** **2 strikes in 30 minutes** move a shop to a worker of its own with **half the memory** (128 MB). **3 failures there within an hour** **pause** it: its pages answer a
-  "back soon" page (`server/back-soon.ts`, in the visitor's language: `?lang=`, the browser's, or the shop's own; the Operator's Call and WhatsApp when the shop's `pages.json` names one).
-  The process says so in its log (`<shop>: PAUSED ...`) and names the shop in `/readyz` and `/shared/shops` (`paused`), which is where the Operator and the deployer look. It is tried
-  again after **6 hours**, or at once when its files change; on that second chance one more failure pauses it again.
-* **Fixed cost.** About 33 MB x 4 workers = 130 MB, plus a quarantine worker (about 33 MB, 128 MB at most) only for a shop that earned it. `SHARED_WORKERS=0` runs the shops in the main thread
-  with no isolation (the way it ran before), for a machine too small for threads.
-* **Not contained:** a shop that is only **slow** (a long but finite stretch under 10 s) holds its worker's other shops up for that long and is not struck (`bundle/Deferred.md`).
-
-### Adding, changing and letting go of a shop (no new container, no restart)
-
-* **Add.** The deployer writes the shop's folder under `generated/listings/<shop>/client/` and its secrets under `secrets/rt-listings/<shop>/`, `pathway.lock` last. The process
-  looks at `/shops` every `SCAN_SECONDS` (5) and starts a shop whose folder is whole. The compose entry of `rt-listings` does not change when a shop is added (its list of files is empty
-  and its mounts are folders, not shops), so nothing is recreated or restarted. Folders are looked at, not watched: file watching on a bind mount is not reliable.
-* **Change.** The process fingerprints `settings.json`, `runtime.json` and `pathway.lock` of each shop. When one changes, **that shop alone** is stopped and started again. `pages.json`,
-  `owner-grants.json`, `owner-link.json` and the like are read fresh on every request and need no restart.
-* **Let go.** Removing a shop, moving it into a runtime of its own, or restoring it from a backup first **takes its folder away** (`pathway.lock` first; `bundle/deploy.ts`
-  `letGoOfListings`). The process stops that shop (its step in hand finishes; its store is closed) and answers "nothing here" for it. The deployer then **waits until
-  `/shared/shops` no longer names the shop** before it copies or replaces the file, because a database that is open must not be copied (`bundle/lib/listings-move.ts` `letGoShared`).
-  `/shared/shops` names a shop until its store is **closed**, not only until it stops being served; and if the process cannot be asked, the deployer waits and then gives up: it never
-  takes silence for "let go" (only a container known to be down counts).
-* **Removal keeps the file.** Nothing deletes a shop's folder in the shared volume. A new shop with the name of a removed one is **refused** by the deployer (`shared-name-taken`), because it
-  would start on the old store and the old owner's passkey (every owner with no number has the same marker, so the passkey matches). A person moves the old folder aside first.
-* **A bad folder** (half written, the wrong version, a broken file) is logged once and skipped; the other shops run on. It is tried again when its files change.
-* **One version.** Every shop in the process runs this checkout's version of the template. A shop pinned to another version is refused by the deployer in words (`shared-version`),
-  before anything is written.
-
-## The data
-
-Everything the shop keeps is in its **store file**, `agent.db`, the same SQLite file every template's runtime keeps (tables `tasks`, `state`, `record`, `window`, `listing_photos`).
-
-```ts
-Settings {                       // templates/commerce/listings/src/settings.ts, the only thing the Operator writes
-  name: string; place: { town: string; pincode?: string }; trade?: string;       // trade: a label in the Operator's words
-  timezone: string; languages: Language[];
-  owner: { whatsapp: string; language: Language; noNumber?: true };              // whatsapp is the marker "+00000000000" when the owner gave no number
-  assistant: AssistantSettings;                                                  // always present (an empty block is the defaults)
-}
-Store { assistant?: AssistantState; ai?: AiState }   // src/state.ts. The listings are assistant.listings (modules/listings README); there are no cases
-```
-
-The saved state is `{"format":1,"assistant":{...},"ai":{...}}` (`server/snapshot.ts`). Beside `agent.db`, each shop's folder holds its owner's passkeys and sessions
-(`owner-access.sqlite`), its alert subscriptions (`push.sqlite`) and its chat identities, as any shop's data folder does.
-
-## What the Operator sets up (and what the owner does)
-
-The panel's first screen offers **"Only show what the shop has (free)"** (and the same under "Something else"). Three steps: the shop (name, town, pincode if known, what it sells in a few
-words), the languages and the owner (language, and a phone number only if they have one), and a last page that says what the shop is, saves it, and points at the owner's first sign-in.
-No payment, no WhatsApp, no limits, no character step. After that the owner uses their own app: what they have, "Still have it? Yes / Sold", the switch "Show my shop on Streetlist and in
-search" (off until they turn it on), the place and the registration, and "Get my shop's file" / "Change my Operator" (unchanged).
-
-## The first sign-in (an owner with no WhatsApp)
-
-**How an owner without WhatsApp signs in today.** The owner's app has two ways in (`modules/channels/owner-signin.ts`, `owner-access.ts`): a one-use **link sent to the owner's number**
-on WhatsApp, and a **passkey** (a fingerprint on their own phone). A shop with no WhatsApp has no link to send, so the passkey is its way in. The first passkey is made with a grant the
-**Operator** shows once: a **setup QR code** (one use, this shop only, 15 minutes; `modules/channels/owner-grants.ts`) or a **recovery card** (five one-use codes). Nothing new is built
-for listings-only shops: this is the existing path, and a listings-only shop uses it from day one.
-
-**The flow.** On the shop's page in the panel, once the server has set the shop up (a minute), the Operator makes the setup QR. The owner scans it with **their own phone**, which opens the
-shop's owner page, and touches the fingerprint reader: that makes the passkey, which is kept in the shop's own store (`owner-access.sqlite`). From then on the owner signs in with the
-passkey alone. A numberless owner can also be given a recovery card for a lost phone.
-
-**Who could pretend to be the owner, and how this stops it.**
-
-| Who | What they could try | What stops it |
-|---|---|---|
-| A stranger who finds the shop's page | Ask to sign in as the owner | There is no link to ask for (no number), no password, and the passkey ceremony needs a grant they do not have. The sign-in page only offers a passkey that **this shop's** store lists. |
-| Someone who sees the QR over the Operator's shoulder, or photographs it | Scan it first | It works **once** and for **15 minutes**; whoever scans first makes the passkey and uses it up (the owner then sees it did not work and the Operator makes a new one, and can remove the passkeys made before). The Operator hands it over in person, on the visit. |
-| Another listings-only shop's owner | Use their own grant, passkey or session on this shop | Each shop checks the grant **against its own file** (`owner-grants.json` holds this shop's hash only), keeps its own passkeys in its own `owner-access.sqlite`, and lists only those credentials; a session is a row in its own store. All the shops share one pages address (so one relying-party id), so the address does **not** separate them: each shop's own credential list does. `test/first-signin.test.ts` crosses every one of these. |
-| The Operator | Scan the first QR themselves, keep a copy of the card, or later remove the owner's passkeys and take the shop | **Closed on 19 Nov 2026 ("no Operator holds a shop hostage").** Until the owner's first sign-in the Operator can still make a QR (the visit needs one), and that is the one moment of trust left: the first scan is the owner's, in front of the Operator, and the owner's app then lists every phone ("Phones that can open your shop") so a second phone is seen. After the owner holds a passkey the shop's runtime refuses a QR or a card the Operator makes (`owner-access.ts`, whatever the panel's file says); the owner makes their OWN recovery codes (the Operator's printed card stops working); a new phone is announced on the owner's other phones (a banner and, with alerts on, a push); and "remove the owner's passkeys" is only a REQUEST that waits 48 hours, which the owner sees and can cancel on any phone. An Operator who kept the first QR, or a dispute, is handled by Geometer's reset (`geometer owner reset`). Every sign-in, phone, code set and request is written in the shop's record (`owner_session`). Why 48 hours: `bundle/Explanation.md`, "Who controls the owner's sign-in". |
-| Geometer | Read a code | The panel keeps only **hashes** of codes (a hash of a 256-bit random value cannot be turned back), and the shop's own server checks them; nothing passes through Geometer or Firebase. |
-
-What a passkey cannot do on a listings-only shop is limited by the shop itself: there is no money, no customer's number, no WhatsApp. The worst an impostor owner could do is **publish or
-remove listings** (which the owner sees, and every change is in the shop's record) and **download the shop's file**. That is why the first sign-in can rest on the Operator's visit, and why a
-phone check for an owner who **signs up alone** is not built yet (Deferred).
-
-## The isolation rules, and how the code keeps them
-
-1. **Own tokens.** Each shop is started with its own `internal_token`, `channel_token` and `record_key` as **files**; the process's environment names none, so a shop with a missing file
-   fails to start instead of running on another's. (`modules/runtime/start.ts` falls back to `INTERNAL_TOKEN_FILE` and friends when a file is not given: the shared process always gives them.)
-2. **Own server.** Each shop listens on `127.0.0.1:<its own port>`; the router forwards the request, credential and all, and **the shop checks its own token**. A request sent to the wrong shop
-   is refused by that shop. The router holds no shop's data and checks no token itself.
-3. **Own store.** Each shop's `dataDir` is its own folder: `agent.db`, `owner-access.sqlite`, `push.sqlite`, `chat-identity.sqlite`. Photos are a table of the shop's own `agent.db`.
-4. **No shared state in the code.** Checked on 18 Nov 2026: the runtime, channels, assistant, push and listings modules keep nothing about a shop at module level (the only module-level
-   caches are fonts and time formatters, the same for every shop). New code must keep it so: **never key a module-level map by anything a shop owns.**
-5. **One way out.** The container is on one network with the model Guard and its door, and nothing else. Each shop reaches the model Guard with **its own credential** (its own agent id),
-   so the model Guard **knows** each shop (its record names the agent, and the shop's agent can be switched off by itself: `ops stop <shop>`). **What limits each shop's model use is the
-   shop's own runtime budget** (`runtime.json` `budget`, from the caps module under the plan `listings-only`: the month's rupees and each feature's daily calls; inert until the owner approves the price list that has it), counted in that shop's own
-   store. The model Guard's own cap (`model-calls-per-day`) is **one number for the whole server**, shared by every shop on it: a flood from one shop's owner is stopped by that shop's
-   budget first, but a server-wide spike can still use up the day's calls for everyone (Deferred: a cap per agent at the Guard).
-6. **One shop's failure is that shop's alone** (`modules/runtime/shared.ts`, "crash containment"). A request's error is caught by that shop's server; a step that throws is that shop's failed
-   task; a start that fails is logged once and tried again after a back-off. A shop whose `/readyz` is bad three scans in a row (its store cannot be read, its queue is wedged) is stopped and
-   started again **alone**, after a pause that doubles (5 s up to 5 min). Anything that still escapes every `try` (an unhandled rejection or exception) is caught by a process-level handler,
-   logged once, and charged to the shop it came from (found through the async context the shop was started in), so that shop is restarted alone; the process does not exit. What this cannot
-   rule out is a shop that blocks the event loop or runs the process out of memory: that takes every shop with it. A process for each shop would stop it, at about 40 to 60 MB a shop instead
-   of a few; it is Deferred with its trigger.
-
-`templates/commerce/listings/test/shared-shops.test.ts` runs two real shops on one process and presents every credential of one to the other (channel token, internal token, owner link, grant,
-session, photo id); `modules/runtime/test/shared.test.ts` tests the finding, restarting and letting go with stand-ins.
+`contract/shared.contract.test.ts` runs the Go process on the deployer's folder layout (routing, another shop's token refused, a missing token file, a shop found and let go, a quarantine
+child); `go/internal/shared/host_test.go` tests the strikes, the quarantine and the pause with fake shops.
 
 ## Taking an agent, and leaving
 
@@ -172,11 +77,11 @@ The Operator changes the shop's pin and gives it the new template's settings (to
 
 ## Run it, test it, extend it
 
-* **One shop on its own:** `INTERNAL_TOKEN_FILE=token.txt node templates/commerce/listings/server/main.ts --client <folder>` (folder: `settings.json`, `runtime.json`, `pathway.lock`).
-* **The shared process:** `SHOPS_DIR=/shops SECRETS_DIR=/run/secrets node templates/commerce/listings/server/shared-main.ts`, as `rt-listings` runs it (`bundle/generate/compose.ts`).
+* **One shop on its own:** `INTERNAL_TOKEN_FILE=token.txt go/bin/listings --client <folder>` (folder: `settings.json`, `runtime.json`, `pathway.lock`; build it with `cd go && go build -o bin/listings ./cmd/listings`).
+* **The shared process:** `SHOPS_DIR=/shops SECRETS_DIR=/run/secrets go/bin/listings-shared`, as `rt-listings` runs it (`bundle/generate/compose.ts`).
 * **On a server:** `geometer shop add <name> --template listings` writes a folder with the example settings; or the panel's "Only show what the shop has (free)".
-* **Tests:** `node --test templates/commerce/listings/test/ modules/runtime/test/shared.test.ts bundle/test/listings-shop.test.ts` (written 18 Nov 2026, **not yet run**; not tested on
-  a real model, a real browser or real Docker).
+* **Tests:** the contract, `node --test --test-concurrency=1 templates/commerce/listings/contract/` (the Go binaries built first; `contract/README.md`), and
+  `node --test templates/commerce/listings/test/ bundle/test/listings-shop.test.ts` (the settings and the deployer's side).
 * **Extend:** a listings-only shop should stay small. A new field of the shop goes in `src/settings.ts` (and `bundle/panel/listings.ts`); a new thing the owner does with listings goes in
   `modules/listings` (it then works for every template). To give such shops something that needs a Guard (push, WhatsApp), they would stop being shared: use another template.
 

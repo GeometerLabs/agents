@@ -1,0 +1,401 @@
+{
+  "about": "The directory's Agent Card bodies, one per (assistant on or off) x (area named or not), with {origin}, {org}, {purl} and {area} slots that card.go fills before signing. Go source since 19 Nov 2026 (it was modules/discovery/card.ts directoryCard).",
+  "cards": {
+    "plain-none": {
+      "name": "Directory of local shops",
+      "description": "Finds what local shops have: pets, food, clothes, things for the home and more. Search in English, Hindi, Malayalam or Kannada. Results come in a fair order (the best fit, then the nearest, shops at the same distance take turns; never by payment, plan or Operator) and each is confirmed with its shop when the shop answers. The order is explained at {origin}/order.",
+      "supportedInterfaces": [
+        {
+          "url": "{origin}/mcp",
+          "protocolBinding": "MCP",
+          "protocolVersion": "2025-11-25"
+        },
+        {
+          "url": "{origin}/search",
+          "protocolBinding": "HTTPS-JSON",
+          "protocolVersion": "1"
+        }
+      ],
+      "provider": {
+        "organization": "{org}",
+        "url": "{purl}"
+      },
+      "version": "1.0.0",
+      "documentationUrl": "{origin}/order",
+      "capabilities": {
+        "streaming": false,
+        "pushNotifications": false
+      },
+      "defaultInputModes": [
+        "application/json"
+      ],
+      "defaultOutputModes": [
+        "application/json"
+      ],
+      "skills": [
+        {
+          "id": "search_listings",
+          "name": "Search what local shops have",
+          "description": "Words, a category (pets, food, clothes, home, electronics, vehicles_and_cycles, services, other), the buyer's map point or town and a radius in; listings in the fair order out, each confirmed by its shop where the shop answers. Also at GET /search.",
+          "tags": [
+            "search",
+            "local shops",
+            "listings"
+          ],
+          "examples": [
+            "Persian kitten near Thrissur",
+            "second-hand bicycle within 10 km of 10.52, 76.21"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "get_listing",
+          "name": "One listing, confirmed",
+          "description": "One listing by its shop's page address and id, with its words in every language and the shop's own confirmation that it is still there.",
+          "tags": [
+            "listing",
+            "availability"
+          ],
+          "examples": [
+            "Is l-3 at https://streetlist.in/rani-pets/ still there?"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "shop_page",
+          "name": "One shop",
+          "description": "A shop's name, trade, town, chat address and the listings it has.",
+          "tags": [
+            "shop"
+          ],
+          "examples": [
+            "Tell me about https://streetlist.in/rani-pets/"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        }
+      ]
+    },
+    "plain-area": {
+      "name": "Directory of local shops",
+      "description": "Finds what local shops have in {area}: pets, food, clothes, things for the home and more. Search in English, Hindi, Malayalam or Kannada. Results come in a fair order (the best fit, then the nearest, shops at the same distance take turns; never by payment, plan or Operator) and each is confirmed with its shop when the shop answers. The order is explained at {origin}/order.",
+      "supportedInterfaces": [
+        {
+          "url": "{origin}/mcp",
+          "protocolBinding": "MCP",
+          "protocolVersion": "2025-11-25"
+        },
+        {
+          "url": "{origin}/search",
+          "protocolBinding": "HTTPS-JSON",
+          "protocolVersion": "1"
+        }
+      ],
+      "provider": {
+        "organization": "{org}",
+        "url": "{purl}"
+      },
+      "version": "1.0.0",
+      "documentationUrl": "{origin}/order",
+      "capabilities": {
+        "streaming": false,
+        "pushNotifications": false
+      },
+      "defaultInputModes": [
+        "application/json"
+      ],
+      "defaultOutputModes": [
+        "application/json"
+      ],
+      "skills": [
+        {
+          "id": "search_listings",
+          "name": "Search what local shops have",
+          "description": "Words, a category (pets, food, clothes, home, electronics, vehicles_and_cycles, services, other), the buyer's map point or town and a radius in; listings in the fair order out, each confirmed by its shop where the shop answers. Also at GET /search.",
+          "tags": [
+            "search",
+            "local shops",
+            "listings"
+          ],
+          "examples": [
+            "Persian kitten near Thrissur",
+            "second-hand bicycle within 10 km of 10.52, 76.21"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "get_listing",
+          "name": "One listing, confirmed",
+          "description": "One listing by its shop's page address and id, with its words in every language and the shop's own confirmation that it is still there.",
+          "tags": [
+            "listing",
+            "availability"
+          ],
+          "examples": [
+            "Is l-3 at https://streetlist.in/rani-pets/ still there?"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "shop_page",
+          "name": "One shop",
+          "description": "A shop's name, trade, town, chat address and the listings it has.",
+          "tags": [
+            "shop"
+          ],
+          "examples": [
+            "Tell me about https://streetlist.in/rani-pets/"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        }
+      ]
+    },
+    "ask-none": {
+      "name": "Directory of local shops",
+      "description": "Finds what local shops have: pets, food, clothes, things for the home and more. Search in English, Hindi, Malayalam or Kannada. Results come in a fair order (the best fit, then the nearest, shops at the same distance take turns; never by payment, plan or Operator) and each is confirmed with its shop when the shop answers. The order is explained at {origin}/order.",
+      "supportedInterfaces": [
+        {
+          "url": "{origin}/mcp",
+          "protocolBinding": "MCP",
+          "protocolVersion": "2025-11-25"
+        },
+        {
+          "url": "{origin}/search",
+          "protocolBinding": "HTTPS-JSON",
+          "protocolVersion": "1"
+        }
+      ],
+      "provider": {
+        "organization": "{org}",
+        "url": "{purl}"
+      },
+      "version": "1.0.0",
+      "documentationUrl": "{origin}/order",
+      "capabilities": {
+        "streaming": false,
+        "pushNotifications": false
+      },
+      "defaultInputModes": [
+        "application/json"
+      ],
+      "defaultOutputModes": [
+        "application/json"
+      ],
+      "skills": [
+        {
+          "id": "search_listings",
+          "name": "Search what local shops have",
+          "description": "Words, a category (pets, food, clothes, home, electronics, vehicles_and_cycles, services, other), the buyer's map point or town and a radius in; listings in the fair order out, each confirmed by its shop where the shop answers. Also at GET /search.",
+          "tags": [
+            "search",
+            "local shops",
+            "listings"
+          ],
+          "examples": [
+            "Persian kitten near Thrissur",
+            "second-hand bicycle within 10 km of 10.52, 76.21"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "get_listing",
+          "name": "One listing, confirmed",
+          "description": "One listing by its shop's page address and id, with its words in every language and the shop's own confirmation that it is still there.",
+          "tags": [
+            "listing",
+            "availability"
+          ],
+          "examples": [
+            "Is l-3 at https://streetlist.in/rani-pets/ still there?"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "shop_page",
+          "name": "One shop",
+          "description": "A shop's name, trade, town, chat address and the listings it has.",
+          "tags": [
+            "shop"
+          ],
+          "examples": [
+            "Tell me about https://streetlist.in/rani-pets/"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "ask",
+          "name": "Ask in the buyer's own words",
+          "description": "The buyer's words in (English, Hindi, Malayalam, Kannada or Latin letters); a typed search (words, category, place, radius, highest price), the listings in the fair order and a short line in the buyer's language out. Phone numbers, names and addresses are removed before any model sees the words, and a shop never receives them. Within a daily and monthly cap; over it, the words are searched as given. Also by POST /search/ask (a form, so the words are not in an address).",
+          "tags": [
+            "search",
+            "natural language",
+            "local shops"
+          ],
+          "examples": [
+            "Persian kitten near Thrissur?",
+            "cheap second-hand bicycle within 5 km"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        }
+      ]
+    },
+    "ask-area": {
+      "name": "Directory of local shops",
+      "description": "Finds what local shops have in {area}: pets, food, clothes, things for the home and more. Search in English, Hindi, Malayalam or Kannada. Results come in a fair order (the best fit, then the nearest, shops at the same distance take turns; never by payment, plan or Operator) and each is confirmed with its shop when the shop answers. The order is explained at {origin}/order.",
+      "supportedInterfaces": [
+        {
+          "url": "{origin}/mcp",
+          "protocolBinding": "MCP",
+          "protocolVersion": "2025-11-25"
+        },
+        {
+          "url": "{origin}/search",
+          "protocolBinding": "HTTPS-JSON",
+          "protocolVersion": "1"
+        }
+      ],
+      "provider": {
+        "organization": "{org}",
+        "url": "{purl}"
+      },
+      "version": "1.0.0",
+      "documentationUrl": "{origin}/order",
+      "capabilities": {
+        "streaming": false,
+        "pushNotifications": false
+      },
+      "defaultInputModes": [
+        "application/json"
+      ],
+      "defaultOutputModes": [
+        "application/json"
+      ],
+      "skills": [
+        {
+          "id": "search_listings",
+          "name": "Search what local shops have",
+          "description": "Words, a category (pets, food, clothes, home, electronics, vehicles_and_cycles, services, other), the buyer's map point or town and a radius in; listings in the fair order out, each confirmed by its shop where the shop answers. Also at GET /search.",
+          "tags": [
+            "search",
+            "local shops",
+            "listings"
+          ],
+          "examples": [
+            "Persian kitten near Thrissur",
+            "second-hand bicycle within 10 km of 10.52, 76.21"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "get_listing",
+          "name": "One listing, confirmed",
+          "description": "One listing by its shop's page address and id, with its words in every language and the shop's own confirmation that it is still there.",
+          "tags": [
+            "listing",
+            "availability"
+          ],
+          "examples": [
+            "Is l-3 at https://streetlist.in/rani-pets/ still there?"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "shop_page",
+          "name": "One shop",
+          "description": "A shop's name, trade, town, chat address and the listings it has.",
+          "tags": [
+            "shop"
+          ],
+          "examples": [
+            "Tell me about https://streetlist.in/rani-pets/"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        },
+        {
+          "id": "ask",
+          "name": "Ask in the buyer's own words",
+          "description": "The buyer's words in (English, Hindi, Malayalam, Kannada or Latin letters); a typed search (words, category, place, radius, highest price), the listings in the fair order and a short line in the buyer's language out. Phone numbers, names and addresses are removed before any model sees the words, and a shop never receives them. Within a daily and monthly cap; over it, the words are searched as given. Also by POST /search/ask (a form, so the words are not in an address).",
+          "tags": [
+            "search",
+            "natural language",
+            "local shops"
+          ],
+          "examples": [
+            "Persian kitten near Thrissur?",
+            "cheap second-hand bicycle within 5 km"
+          ],
+          "inputModes": [
+            "application/json"
+          ],
+          "outputModes": [
+            "application/json"
+          ]
+        }
+      ]
+    }
+  }
+}

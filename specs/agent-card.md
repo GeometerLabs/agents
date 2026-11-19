@@ -24,7 +24,7 @@ The card follows the field names of the A2A specification, **version 1.0.1** (th
 members are: `name`, `description`, `supportedInterfaces` (each `url`, `protocolBinding`, `protocolVersion`), `provider` (`organization`,
 `url`), `version`, `documentationUrl`, `capabilities`, `defaultInputModes`, `defaultOutputModes`, `skills` (each `id`, `name`,
 `description`, `tags`, `examples`, `inputModes`, `outputModes`) and `signatures`. The code that builds a shop's card
-(`modules/listings/`) and a directory's card (`modules/discovery/card.ts`) follows them exactly; this table says what we put in, not the schema.
+(`modules/listings/`) and a directory's card (`go/internal/directory/words/cards.json`) follows them exactly; this table says what we put in, not the schema.
 
 | Content | Value |
 |---|---|
