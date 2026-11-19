@@ -6,7 +6,7 @@ import { after, describe } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { contract, makeShop, sleep } from "./harness.ts";
+import { contract, makeShop, openStart, sleep } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -30,7 +30,7 @@ describe("a Guard that is down", () => {
     assert.equal(answer.status, 200, "the request was saved before anything else");
     await sleep(1500);
     const st = await s.status();
-    assert.equal(st.tasks.pending, 1, "the request waits");
+    assert.equal(st.tasks.pending, 1, `the request waits: ${JSON.stringify(st)}\n${JSON.stringify(s.record().map((r) => [r.action, r.outcome]))}`);
     assert.ok(st.waitingForGuard !== null && st.waitingForGuard !== undefined, `the status says it waits for a Guard: ${JSON.stringify(st.waitingForGuard)}`);
     assert.equal(st.tasks.failed, 0);
     assert.equal(link(s), undefined);
@@ -49,13 +49,13 @@ describe("a Guard that is down", () => {
     s.guards!.calendar.down();
     assert.equal((await deliver(s, s.guards!.pay(link(s).id))).status, 200, "the webhook is saved even now: the inbox is told 200 and the provider does not send it again");
     await sleep(1500);
-    assert.equal((await s.request(hash)).body.status, "held", "not confirmed while the calendar cannot say");
+    assert.equal((await s.request(hash)).body.status, "checking", "not confirmed while the calendar cannot say: the page says it is checking");
     assert.equal(s.guards!.of("calendar", "PATCH").filter((c) => c.status === 200).length, 0);
     s.guards!.calendar.up();
     await until("the booking to be confirmed", async () => (await s.request(hash)).body.status === "booked");
     await s.settle();
     assert.equal(s.guards!.of("calendar", "PATCH").filter((c) => c.status === 200 && c.body.status === "confirmed").length, 1, "confirmed once");
-    const told = (await s.request(hash)).body.messages.filter((m: { text: string }) => /booked/iu.test(m.text));
+    const told = (await s.request(hash)).body.messages.filter((m: { text: string }) => /^You're booked!/u.test(m.text));
     assert.equal(told.length, 1, "told once");
   });
 
@@ -87,14 +87,14 @@ describe("the process is killed in the middle of a step", () => {
     const view = (await s.request(hash)).body;
     assert.equal(view.status, "held");
     assert.deepEqual(view.pay, { kind: "link", url: link(s).pay_url }, "the customer is given the link the first try made");
-    assert.equal(s.tasks().filter((t) => t.state === "done").length, 1);
+    assert.equal(s.tasks().filter((t) => t.kind === "channel_request" && t.state === "done").length, 1, JSON.stringify(s.tasks()));
   });
 
   contract("a request saved but not yet run when the shop dies is run when it starts again, once", async () => {
     const s = await boot();
     s.guards!.calendar.delay(2500, { times: 1, match: (c) => c.method === "POST" });
     const first = await s.book({ id: "req-a" });
-    const second = await s.channelEvents([{ kind: "channel_request", id: "req-b", channel: "web", op: "book", handle: "b".repeat(64), serviceId: "beard-trim", startMs: Date.now() + 5 * 24 * 3_600_000, name: "Ravi", phone: "+919822222222", language: "en" }]);
+    const second = await s.channelEvents([{ kind: "channel_request", id: "req-b", channel: "web", op: "book", handle: "b".repeat(64), serviceId: "beard-trim", startMs: openStart(Date.now(), 5), name: "Ravi", phone: "+919822222222", language: "en" }]);
     assert.equal(second.status, 200, "saved before the 200");
     SIGKILL(s);
     await s.start();
@@ -112,7 +112,8 @@ describe("the process is killed in the middle of a step", () => {
     await until("the request to be answered", async () => (await s.status()).tasks.pending === 0, 40);
     assert.equal(s.guards!.standins.fakes.payments.links().length, 1, "the link made behind the lost answer is the one used");
     assert.equal((await s.request(hash)).body.status, "held");
-    assert.equal(s.guards!.of("payments", "POST", /^\/v1\/payment_links$/u).length, 2, "asked twice, made once");
+    assert.equal(s.guards!.of("payments", "POST", /^\/v1\/payment_links$/u).length, 1, "the make was asked once: the lost answer was looked for, not asked again");
+    assert.ok(s.guards!.of("payments", "GET", /^\/v1\/payment_links$/u).some((c) => c.query.reference_id === "b-1"), "by the booking's id");
   });
 });
 
@@ -160,7 +161,8 @@ describe("the panel's to-do list asks the shop to look again", () => {
     await s.settle();
     assert.equal((await s.request(hash)).body.status, "booked");
     assert.equal(s.guards!.of("calendar", "PATCH").filter((c) => c.status === 200 && c.body.status === "confirmed").length, 1);
-    assert.equal((await s.request(hash)).body.messages.filter((m: { text: string }) => /booked/iu.test(m.text)).length, 1, "told once, and only now");
+    const toldBooked = (await s.request(hash)).body.messages.filter((m: { text: string }) => /^You're booked!/u.test(m.text));
+    assert.equal(toldBooked.length, 1, `told once, and only now: ${JSON.stringify((await s.request(hash)).body.messages.map((m: { text: string }) => m.text))}`);
   });
 });
 
@@ -171,12 +173,12 @@ describe("a shop put back from last night's snapshot", () => {
     await s.stop();
     cpSync(s.dataDir, `${s.dataDir}-snapshot`, { recursive: true });
     await s.start();
-    await s.book({ name: "Ravi", phone: "+919822222222", startMs: Date.now() + 6 * 24 * 3_600_000 }); // b-2, after it: its hold and link exist at the Guards
+    await s.book({ name: "Ravi", phone: "+919822222222", startMs: openStart(Date.now(), 6) }); // b-2, after it: its hold and link exist at the Guards
     await s.stop();
     rmSync(s.dataDir, { recursive: true, force: true });
     cpSync(`${s.dataDir}-snapshot`, s.dataDir, { recursive: true });   // the restore: the shop has no memory of b-2
     await s.start();
-    const third = await s.book({ name: "Meera", phone: "+919833333333", startMs: Date.now() + 7 * 24 * 3_600_000 });
+    const third = await s.book({ name: "Meera", phone: "+919833333333", startMs: openStart(Date.now(), 7) });
     const view = (await s.request(third.hash)).body;
     assert.notEqual(view.ref, "b-2", "b-2 belongs to the customer the snapshot did not know");
     assert.equal(view.status, "held");

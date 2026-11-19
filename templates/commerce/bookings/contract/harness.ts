@@ -174,8 +174,8 @@ export interface Shop {
   setMode(mode: "fakes" | "live"): void;
   /** The record's lines as the store keeps them (action, outcome, booking, refs), read from agent.db read-only. */
   record(): { action: string; outcome: string; booking: string | null; refs: Record<string, string> }[];
-  /** The task rows as the store keeps them: key, state, attempts. */
-  tasks(): { key: string; state: string; attempts: number }[];
+  /** The task rows as the store keeps them: id, kind, state, attempts. */
+  tasks(): { id: string; kind: string; state: string; attempts: number }[];
 }
 
 const merge = (a: any, b: any): any => {
@@ -340,7 +340,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     },
     tasks() {
       const db = new DatabaseSync(join(dataDir, "agent.db"), { readOnly: true });
-      try { return db.prepare("SELECT key, state, attempts FROM tasks ORDER BY seq").all() as { key: string; state: string; attempts: number }[]; } finally { db.close(); }
+      try { return db.prepare("SELECT id, kind, state, attempts FROM tasks ORDER BY seq").all() as { id: string; kind: string; state: string; attempts: number }[]; } finally { db.close(); }
     },
   };
   return shop;

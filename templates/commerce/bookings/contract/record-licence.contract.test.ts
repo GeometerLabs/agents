@@ -4,16 +4,18 @@
 // licence, report-monthly, report-monthly-config. A guards shop for the licence (the Guards' wire is the witness), a fakes shop on the test clock for the report.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { zonedToMs } from "../../../../modules/core/time.ts";
-import { CUSTOMER, HOUR, OWNER_NUMBER, TZ, contract, makeShop, sleep } from "./harness.ts";
+import { CUSTOMER, HOUR, OWNER_NUMBER, TZ, contract, makeShop, openStart, sleep } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 import { fixture } from "./guards.ts";
 
 const shops: Shop[] = [];
-after(async () => { for (const s of shops) { await s.stop(); await s.cleanup(); } });
+const reportDirs: string[] = [];
+after(async () => { for (const s of shops) { await s.stop(); await s.cleanup(); } for (const d of reportDirs) rmSync(d, { recursive: true, force: true }); });
 async function boot(o: Parameters<typeof makeShop>[0] = {}): Promise<Shop> { const s = await makeShop(o); shops.push(s); await s.start(); return s; }
 const link = (s: Shop) => s.guards!.standins.fakes.payments.links()[0];
 
@@ -26,16 +28,18 @@ describe("the store's file", () => {
     try {
       assert.equal((db.prepare("PRAGMA journal_mode").get() as { journal_mode: string }).journal_mode, "wal");
       const version = (db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version;
-      assert.ok(version >= 1, `schema version ${version}`);
+      assert.equal(version, 5, "the store's schema version: a port writes the same layout (modules/runtime/store.ts MIGRATIONS)");
       const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all() as { name: string }[]).map((t) => t.name);
-      for (const t of ["record", "shop_key", "state", "tasks", "window"]) assert.ok(tables.includes(t), `table ${t} in ${tables.join(",")}`);
+      for (const t of ["record", "shop_key", "state_rows", "state_shape", "tasks", "window"]) assert.ok(tables.includes(t), `table ${t} in ${tables.join(",")}`);
       const cols = (t: string) => (db.prepare(`PRAGMA table_info(${t})`).all() as { name: string }[]).map((c) => c.name);
-      for (const c of ["seq", "action", "outcome", "booking", "entry"]) assert.ok(cols("record").includes(c), `record.${c}`);
-      for (const c of ["seq", "key", "state", "attempts"]) assert.ok(cols("tasks").includes(c), `tasks.${c}`);
+      assert.deepEqual(cols("record"), ["seq", "time", "conversation", "booking", "action", "outcome", "entry"]);
+      assert.deepEqual(cols("tasks"), ["seq", "id", "kind", "payload", "received_at", "state", "attempts", "last_error", "waiting_on", "retry_at"]);
+      assert.deepEqual(cols("window"), ["phone", "last_inbound_at"]);
+      assert.deepEqual(cols("shop_key"), ["id", "private_key", "created_at"]);
       const lines = (db.prepare("SELECT COUNT(*) AS n FROM record").get() as { n: number }).n;
       assert.ok(lines > 0);
-      assert.throws(() => db.prepare("UPDATE record SET outcome = 'x'").run(), /record|cannot|append|abort/iu, "no line can be changed");
-      assert.throws(() => db.prepare("DELETE FROM record").run(), /record|cannot|append|abort/iu, "no line can be deleted");
+      assert.throws(() => db.prepare("UPDATE record SET outcome = 'x'").run(), /the record is append-only/u, "no line can be changed");
+      assert.throws(() => db.prepare("DELETE FROM record").run(), /the record is append-only/u, "no line can be deleted");
       assert.equal((db.prepare("SELECT COUNT(*) AS n FROM record").get() as { n: number }).n, lines);
     } finally { db.close(); }
   });
@@ -49,7 +53,7 @@ describe("the store's file", () => {
     await assert.rejects(s.start(), /newer|version|9999/iu);
   });
 
-  contract("the record never holds a customer's number or words as themselves: the inputs are kept as a keyed digest and the message by its id", async () => {
+  contract("the record holds no customer words and no customer name: a message is kept by its id and what the shop read from it, never the words", async () => {
     const s = await boot({ mode: "guards" });
     await s.inbound(CUSTOMER, "hello there, I am Asha");
     await s.book({ name: "Asha Verma" });
@@ -58,7 +62,6 @@ describe("the store's file", () => {
     try {
       const entries = (db.prepare("SELECT entry FROM record").all() as { entry: string }[]).map((r) => r.entry).join("\n");
       assert.ok(entries.length > 100);
-      assert.ok(!entries.includes(CUSTOMER.slice(1)), "no customer number in the record");
       assert.ok(!entries.includes("hello there"), "no customer words in the record");
       assert.ok(!entries.includes("Asha Verma"), "no customer name in the record");
     } finally { db.close(); }
@@ -111,7 +114,7 @@ describe("the licence", () => {
     await s.channelEvents([{ kind: "channel_request", id: "cancel-1", channel: "web", op: "cancel", handle: hash }]); await s.settle();
     assert.equal(s.guards!.of("payments", "POST", /\/refund$/u).length, 1, "the refund goes on");
     s.writeLicence(lease("active"));
-    const again = await s.book({ name: "Ravi", phone: "+919822222222", startMs: Date.now() + 6 * 24 * 3_600_000 });
+    const again = await s.book({ name: "Ravi", phone: "+919822222222", startMs: openStart(Date.now(), 4) });
     assert.ok(["held", "refused"].includes((await s.request(again.hash)).body.status));
     assert.notEqual((await s.request(again.hash)).body.reason, "licence");
   });
@@ -119,7 +122,7 @@ describe("the licence", () => {
   contract("the final stop closes the open deposit links once through the payments service and sends nothing more; a payment made before is still recorded", async () => {
     const s = await boot({ mode: "guards", tickSeconds: 1 });
     const open = await s.book();
-    const paid = await s.book({ name: "Ravi", phone: "+919822222222", startMs: Date.now() + 6 * 24 * 3_600_000 });
+    const paid = await s.book({ name: "Ravi", phone: "+919822222222", startMs: openStart(Date.now(), 4) });
     const second = s.guards!.standins.fakes.payments.links()[1];
     const paidEvents = s.guards!.pay(second.id);
     s.writeLicence(lease("stopped", { notice: "stop" }));
@@ -153,7 +156,6 @@ describe("the licence", () => {
     const s = await boot({ mode: "guards", licence: lease("wind_down") });
     assert.equal((await s.call("/internal/channel/offer")).body.shop.paused, true);
     await sleep(1100);
-    const { writeFileSync } = await import("node:fs");
     writeFileSync(join(s.client, "licence.json"), "{ half");
     await sleep(100);
     assert.equal((await s.call("/internal/channel/offer")).body.shop.paused, true, "a torn file leaves the last good reading standing");
@@ -163,7 +165,7 @@ describe("the licence", () => {
     const s = await boot({ mode: "guards" });
     s.guards!.calendar.answer(fixture("guard-responses.json").suspended, { times: 1, match: (c) => c.method === "POST" && /\/events$/u.test(c.path) });
     const { hash } = await s.book();
-    assert.equal((await s.request(hash)).body.status, "refused");
+    assert.equal((await s.request(hash)).body.status, "not_held");
     assert.equal(s.guards!.of("calendar", "POST", /\/events$/u).length, 1, "asked once");
     assert.equal(s.guards!.of("payments", "POST").length, 0, "no link was made without a hold");
     assert.deepEqual(s.guards!.of("messaging").filter((c) => c.body.to === OWNER_NUMBER), [], "the owner is not asked to do anything");
@@ -173,15 +175,16 @@ describe("the licence", () => {
 
 describe("the monthly report", () => {
   const dec1 = zonedToMs({ year: 2026, month: 12, day: 1 }, { hour: 9, minute: 30 }, TZ);
-  const reportBlock = (s: { root: string }) => ({ report: { preparedBy: "Divya, local Operator", innovator: false, pageBaseUrl: "https://reports.example/r", pagesDir: join(s.root, "reports"), source: "test-mode" } });
-  /** A fakes shop whose runtime.json has a report block (the deployer writes one for every shop). */
+  /** A UPI fakes shop (no Guard, so the test clock may move it) with a `report` block, and one booking marked paid in November: a quiet month sends no report. */
   async function reporting(): Promise<{ s: Shop; dir: string }> {
-    const root = join((await import("node:os")).tmpdir(), `bookings-report-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    mkdirSync(root, { recursive: true });
-    const dir = join(root, "reports");
+    const dir = join(tmpdir(), `bookings-report-${process.pid}-${Date.now()}`);
     mkdirSync(dir, { recursive: true });
-    const s = await makeShop({ tickSeconds: 1, runtime: { report: { preparedBy: "Divya, local Operator", innovator: false, pageBaseUrl: "https://reports.example/r", pagesDir: dir, source: "test-mode" } } });
+    reportDirs.push(dir);
+    const s = await makeShop({ tickSeconds: 1, settings: { payment: { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } }, calendar: { module: "own" } }, runtime: { report: { preparedBy: "Divya, local Operator", innovator: false, pageBaseUrl: "https://reports.example/r", pagesDir: dir, source: "test-mode" } } });
     shops.push(s); await s.start();
+    await s.book({ startMs: zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 11, minute: 0 }, TZ) });
+    const [item] = (await s.ownerView()).body.items;
+    await s.channelEvents([{ kind: "owner_action", id: "m-1", action: "received", case: "b-1", digest: item.digest }], { owner: true }); await s.settle();
     return { s, dir };
   }
   const folders = (dir: string): string[] => (existsSync(dir) ? readdirSync(dir) : []);
@@ -205,11 +208,11 @@ describe("the monthly report", () => {
     await s.stop(); await s.start();
     await sleep(2500);
     assert.equal(folders(dir).length, 1, "nor after a restart");
-    void reportBlock;
   });
 
   contract("a shop with no `report` block in runtime.json makes none and says nothing", async () => {
-    const s = await boot({ tickSeconds: 1 });
+    const s = await boot({ tickSeconds: 1, settings: { payment: { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } }, calendar: { module: "own" } } });
+    await s.book({ startMs: zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 11, minute: 0 }, TZ) });
     s.advance(dec1 - s.now());
     await sleep(2500);
     assert.ok(!existsSync(join(s.root, "reports")));

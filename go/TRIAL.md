@@ -215,3 +215,12 @@ Binaries: `listings` 23.3 MB (16.4 MB with `-ldflags "-s -w"`), `listings-shared
 **Not ported (wave 1b cannot delete these TypeScript parts yet):** the owner-talk model's answer for words no rule reads; the router's decision and language models; memory
 writes (remember, notes, forget); the morning line and with it the licence's final stop; voice; date phrases in money questions (flagged, not answered); first-step seeding of the
 Operator's town; `limitChanges` compaction.
+
+## Wave 2 preparation (19 Nov 2026): the Bookings contract, before any Go
+
+The HTTP contract suite for the Bookings shop runtime is written in TypeScript and passes on the TypeScript runtime; no Go for Bookings exists yet. It is
+`templates/commerce/bookings/contract/` (its README is the inventory a port starts from: every route, file, Guard call and timed job, and every one of the 85 unit test files mapped to
+"contract", "unit", "demo" or "other component"). `BOOKINGS_IMPL=go` with no binary skips every test with "no Go Bookings runtime yet (wave 2)". The generic harness pieces (process
+tracker, fake model, fake push Guard, test-clock file, process starter, HTTP caller, owner-control helpers) moved to `modules/test/contract/` and the listings contract uses them.
+One runtime file changed: `templates/commerce/bookings/server/main.ts` takes the test clock the way the listings shop's main does (nothing changes without the two variables, and a
+live shop refuses them). The Go Bookings binary must honour the same two variables for a "fakes" shop (`go/internal/testclock`).
