@@ -26,17 +26,40 @@ import { kindFor } from "./kinds.ts";
 import type { State } from "./state.ts";
 import { shopIndex, saveState } from "./state.ts";
 import { loadServer } from "./server.ts";
+import type { ServerConfig } from "./server.ts";
+import { FORWARDER_IMAGE } from "../generate/compose.ts";
+
+/**
+ * One GET of the shared process on its own loopback address, asked from inside its container. The Go process is in an image with no wget (and no `test`), so it answers through its own
+ * program (`/listings-shared get <url>`); the Node process of an older version has wget. Tried in that order, so a server in between the two is asked right too.
+ */
+async function sharedGet(ctx: Context, path: string) {
+  const url = `http://127.0.0.1:${RUNTIME_PORT}${path}`;
+  const go = await compose(ctx, ["exec", "-T", SHARED.runtime, "/listings-shared", "get", url], { timeoutMs: 20_000 });
+  return go.code === 0 ? go : compose(ctx, ["exec", "-T", SHARED.runtime, "wget", "-q", "-O", "-", url], { timeoutMs: 20_000 });
+}
+
+/**
+ * Does the shared data volume already hold a folder called `name`? Asked of the volume itself (a throw-away busybox container, no network, read-only), not of the shared container, which
+ * has no `test` on Go and is not always up. A volume that does not exist yet holds nothing.
+ */
+export async function sharedHasFolder(ctx: Context, server: ServerConfig, name: string): Promise<boolean> {
+  const volume = `${project(server)}_${SHARED.dataVolume}`;
+  if ((await ctx.runner.run(ctx.docker, ["volume", "inspect", volume], { timeoutMs: 20_000 })).code !== 0) return false;
+  const r = await ctx.runner.run(ctx.docker, ["run", "--rm", "--network", "none", "--user", "1000:1000", "--read-only", "--cap-drop", "ALL", "-v", `${volume}:/v:ro`, FORWARDER_IMAGE, "test", "-e", `/v/${name}`], { timeoutMs: 60_000 });
+  return r.code === 0;
+}
 
 /** The shops the shared process names now (held, or stopping with their store still open), or undefined when it cannot be asked. Asked inside its own container, on its own loopback address. */
 export async function sharedHeld(ctx: Context): Promise<string[] | undefined> {
-  const r = await compose(ctx, ["exec", "-T", SHARED.runtime, "wget", "-q", "-O", "-", `http://127.0.0.1:${RUNTIME_PORT}/shared/shops`], { timeoutMs: 20_000 });
+  const r = await sharedGet(ctx, "/shared/shops");
   if (r.code !== 0) return undefined;
   try { const j = JSON.parse(r.stdout) as { shops?: unknown }; return Array.isArray(j.shops) ? j.shops.filter((x): x is string => typeof x === "string") : undefined; } catch { return undefined; }
 }
 
 /** What `/shared/shops` says about shops the process has PAUSED (shared-pool.ts), or undefined when it cannot be asked: the deployer copies it into the shops' status files (lib/listings-paused.ts). */
 export async function sharedHeldDetail(ctx: Context): Promise<{ pausedDetail: { shop: string; why: string; until: number }[] } | undefined> {
-  const r = await compose(ctx, ["exec", "-T", SHARED.runtime, "wget", "-q", "-O", "-", `http://127.0.0.1:${RUNTIME_PORT}/shared/shops`], { timeoutMs: 20_000 });
+  const r = await sharedGet(ctx, "/shared/shops");
   if (r.code !== 0) return undefined;
   try {
     const j = JSON.parse(r.stdout) as { pausedDetail?: unknown };

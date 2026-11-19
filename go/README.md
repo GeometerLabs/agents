@@ -2,7 +2,7 @@
 
 A listings-only shop is the smallest kind: it only shows what it has (`templates/commerce/listings`). This folder is **the shop's runtime written in Go**, begun as a trial of whether code
 that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The trial's results, wave 1a (the rest of the listings shop) and wave 1 merged (with the
-owner control) are in [TRIAL.md](TRIAL.md). It is not wired into the deployer yet: `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads
+owner control) are in [TRIAL.md](TRIAL.md). The deployer runs it (wave 1b): a template folder that says `"runtime": "go"` in `template.json` (listings 0.2.0) is run from the programs' image, which the server builds from its own checkout (see "On a server" below). `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads
 the same folder; `cmd/listings-shared` runs every shop of a server in one process, the way `server/shared-main.ts` does.
 
 What stays TypeScript: the front (`modules/channels/front.ts`, with the shops' own MCP endpoints), the deployer, the panel. They call this runtime over HTTP and cannot tell which one answered;
@@ -25,6 +25,12 @@ INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_F
 The folder, the three token files and the environment are the TypeScript runtime's (`modules/runtime/shared.ts` `folderSource` describes the layout): `client/` holds `settings.json`,
 `runtime.json`, `pathway.lock` (written last), `owner-link.json`, `pages.json` and `owner-grants.json`; the secrets are `internal_token`, `channel_token` and `record_key`. `runtime.json`
 says where to listen (`host`, `port`) and where the data is (`dataDir`). Ctrl+C or SIGTERM finishes the step in hand and closes the store.
+
+`listings health <url>` and `listings-shared health <url>` do one GET and exit 0 on a 200, else 1: the container health check of an image that has no shell or wget.
+
+### On a server (wave 1b)
+
+The server compiles the programs itself, from its own checkout, in the official Go image pinned by digest in `bundle/release.json` (`go_image`, `go_image_digest`), at install (`install.sh`) and at `geometer update`; `geometer go-build` does it by hand. Source mounted read-only, `CGO_ENABLED=0`, `GOTOOLCHAIN=local`, `-trimpath -mod=readonly -buildvcs=false -ldflags "-s -w"`, a named volume `geo-go-cache` for the module and build cache. The result is `geo-go:<commit>`, an image `FROM scratch` of the programs alone (no shell, no tools, no certificates), run as `1000:1000`. To add a program (`cmd/directory`, `cmd/bookings`): one line in `GO_PROGRAMS` in `bundle/lib/go-build.ts`, and the template's `template.json` names it. The whole account is in `bundle/Explanation.md` ("How the Go runtimes reach a server"). Measured 19 Nov 2026 on an Apple-silicon Mac (Docker Desktop, 8 GB VM, linux/arm64): the image is **32.7 MB** (both programs); the compile took **12.3 s** from an empty build cache with the modules already in the cache volume (the first build on a server also downloads the modules, about 360 MB in the module cache, not measured here), **13.1 s** with the image made; peak memory of the compile container about **830 MB** (sampled once a second, so a floor). With the full-server settings (`-p 1`, `GOMAXPROCS=1`, `GOGC=50`, a 1536 MB wall) it is **46.7 s from an empty build cache and a peak of 1107 MB** by the container's own counter, about 730 MB of it process memory, the rest file cache. A fresh data volume came out owned by 1000:1000, and one shop's runtime and the shared process were both "healthy" 7 s after `up`, read-only, all capabilities dropped, with the `health` subcommand as their check.
 
 The contract against this binary (from the repository root; build both binaries first, the shared-process and cross-runtime tests use them):
 
@@ -59,6 +65,8 @@ internal/shared/         the multi-shop host (the Go twin of modules/runtime/sha
 cmd/directory/           main of the directory of local shops (the Go twin of bundle/services/directory.ts: CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change)
 internal/directory/      the directory (modules/discovery): signed feeds read, checked and indexed (SQLite + FTS5, the TypeScript's own file), the fair order, search, the pages, the MCP endpoint, the signed
                          Agent Card, the buyer's assistant; the words, style sheet, tool definitions and card text are GENERATED from the TypeScript (scripts/gen_directory.ts); read Explanation.md and Deferred.md
+
+internal/health/         the `health` subcommand both programs share (one GET of an address, exit 0 or 1)
 cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
                          owner's sign-in routes, the tick's owner part and the owner's side of push (who may subscribe, what ends a subscription, the alerts to the

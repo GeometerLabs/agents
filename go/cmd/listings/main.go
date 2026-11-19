@@ -1,6 +1,7 @@
 // listings runs ONE listings-only shop on its own, for a local try, a test or a small server: the Go twin of templates/commerce/listings/server/main.ts.
 //
 //	INTERNAL_TOKEN_FILE=token.txt CHANNEL_TOKEN_FILE=channel.txt RECORD_KEY_FILE=record.key listings --client <folder>
+//	listings health <url>      one GET of the address (the container's health check: the image has no wget); exit 0 on a 200, else 1
 //
 // The folder, the token files and the environment are the TypeScript runtime's, so a shop's folder starts on either. Press Ctrl+C (or send SIGTERM) to stop: the step in hand finishes and
 // the store is closed.
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/access"
+	"github.com/GeometerLabs/agents/go/internal/health"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
@@ -25,6 +27,12 @@ import (
 
 func main() {
 	args := os.Args[1:]
+	if len(args) == 2 && args[0] == "health" {
+		os.Exit(health.Check(args[1], func(line string) { fmt.Fprintln(os.Stderr, line) }))
+	}
+	if len(args) == 2 && args[0] == "get" {
+		os.Exit(health.Get(args[1], os.Stdout, func(line string) { fmt.Fprintln(os.Stderr, line) }))
+	}
 	for _, a := range args {
 		if a == "--help" || a == "-h" {
 			fmt.Println("Usage: INTERNAL_TOKEN_FILE=<file> listings --client <folder>")
