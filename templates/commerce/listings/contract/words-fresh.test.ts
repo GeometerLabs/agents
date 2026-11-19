@@ -40,3 +40,9 @@ test("words-fresh: the committed patterns and their vectors equal a fresh render
     assert.deepEqual(patterns.staleFiles(dir), ["patterns.json"], "the check is not vacuous");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("words-fresh: the Bookings unit vectors (go/internal/bookings/testdata) equal a fresh run of the TypeScript Bookings functions", async () => {
+  const bookings = await import("../../../../go/scripts/gen_bookings_vectors.ts");
+  assert.deepEqual([...(await bookings.generate()).keys()].sort(), ["guard-spec-vectors.json", "limits-vectors.json", "parser-vectors.json", "runner-vectors.json", "settings-vectors.json"]);
+  assert.deepEqual(await bookings.staleFiles(bookings.OUT), [], "a Bookings vector file is out of date: run  node go/scripts/gen_bookings_vectors.ts  and commit the result");
+});
