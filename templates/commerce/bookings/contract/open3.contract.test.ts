@@ -148,7 +148,7 @@ describe("the morning line", () => {
     const n = s.sent(OWNER_NUMBER).length;
     await sleep(3000);
     assert.equal(s.sent(OWNER_NUMBER).length, n, "not again the same day");
-    assert.equal(s.record().filter((r) => r.action === "send_message" && r.refs.morning !== undefined).length, 1);
+    assert.equal(s.record().filter((r) => r.action === "send_message" && r.refs.morning !== undefined && r.outcome === "confirmed").length, 1);
   });
 });
 
