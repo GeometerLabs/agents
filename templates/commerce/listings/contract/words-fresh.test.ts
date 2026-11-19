@@ -11,6 +11,9 @@ import { join } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { OUT, generate, staleFiles } from "../../../../go/scripts/gen_words.ts";
 import * as patterns from "../../../../go/scripts/gen_patterns.ts";
+import * as qrVectors from "../../../../go/scripts/gen_qr_vectors.ts";
+import * as reportWords from "../../../../go/scripts/gen_report_words.ts";
+import * as reportVectors from "../../../../go/scripts/gen_report_vectors.ts";
 
 test("words-fresh: the committed packed words equal a fresh render of the TypeScript words", () => {
   assert.deepEqual([...generate().keys()].sort(), ["en.json", "hi.json", "kn.json", "ml.json", "rules.json"]);
@@ -39,4 +42,35 @@ test("words-fresh: the committed patterns and their vectors equal a fresh render
     writeFileSync(join(dir, "patterns.json"), p.replace("tomorrow", "tomorrrow"));
     assert.deepEqual(patterns.staleFiles(dir), ["patterns.json"], "the check is not vacuous");
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("words-fresh: the committed QR vectors equal a fresh run of the TypeScript encoder", () => {
+  assert.deepEqual([...qrVectors.generate().keys()], ["qr/testdata/vectors.json"]);
+  assert.deepEqual(qrVectors.staleFiles(qrVectors.OUT), [], "the QR vectors are out of date: run  node go/scripts/gen_qr_vectors.ts  and commit the result");
+  const dir = mkdtempSync(join(tmpdir(), "qr-fresh-"));
+  try {
+    cpSync(join(qrVectors.OUT, "qr"), join(dir, "qr"), { recursive: true });
+    const p = join(dir, "qr", "testdata", "vectors.json");
+    writeFileSync(p, readFileSync(p, "utf8").replace("HELLO WORLD", "HELLO WORLDS"));
+    assert.deepEqual(qrVectors.staleFiles(dir), ["qr/testdata/vectors.json"], "the check is not vacuous");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("words-fresh: the report's words, style sheet, claim rules and Unicode tables (go/internal/report) equal a fresh render of the TypeScript", () => {
+  assert.deepEqual([...reportWords.generate().keys()].sort(), ["report/graphemes_gen.go", "report/words/words.json.gz"]);
+  assert.deepEqual(reportWords.staleFiles(reportWords.OUT), [], "a report words file is out of date: run  node go/scripts/gen_report_words.ts  and commit the result");
+  const dir = mkdtempSync(join(tmpdir(), "report-words-fresh-"));
+  try {
+    cpSync(join(reportWords.OUT, "report"), join(dir, "report"), { recursive: true });
+    const gz = join(dir, "report", "words", "words.json.gz");
+    const text = gunzipSync(readFileSync(gz)).toString("utf8");
+    assert.ok(text.includes("What this checks"));
+    writeFileSync(gz, gzipSync(Buffer.from(text.replace("What this checks", "What this checked"))));
+    assert.deepEqual(reportWords.staleFiles(dir), ["report/words/words.json.gz"], "the check is not vacuous");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("words-fresh: the report's test vectors (canonical JSON, seals, summaries, pages, grapheme cuts) equal a fresh run of the TypeScript", () => {
+  assert.deepEqual([...reportVectors.generate().keys()].sort(), ["report/testdata/graphemes.json", "report/testdata/vectors.json"]);
+  assert.deepEqual(reportVectors.staleFiles(reportVectors.OUT), [], "the report vectors are out of date: run  node go/scripts/gen_report_vectors.ts  and commit the result");
 });
