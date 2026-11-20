@@ -15,6 +15,7 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/guard"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
@@ -237,10 +238,16 @@ func (a *Agent) onChannel(ev map[string]any) error {
 	if op == "cancel" {
 		return a.onCancel(b.Customer) // its conversation holds only this booking, so this cancels exactly it
 	}
-	if !a.settings.OwnerMarked() {
+	if !a.ownerConfirms {
 		return nil
 	}
-	return runtime.Unported("an \"I have paid\" from the booking page of a UPI shop (the owner's marks)")
+	upiRef, _ := ev["upiRef"].(string)
+	if b.State == Expired {
+		a.onLateClaim(b, upiRef)
+		return nil
+	}
+	a.onPaidClaim(b.Customer, "button", upiRef)
+	return nil
 }
 
 func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
@@ -327,3 +334,61 @@ func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
 	return a.proceedToHold(b, nil, nil)
 }
 
+
+// ---- the owner's private page (item 11d) --------------------------------------------------------------------------------------------------------------------------------
+
+// onOwnerAction is agent.ts onOwnerAction: the owner pressed a button on their private page. The page showed an action with a digest of exactly what it showed (ownerItems); if what
+// waits now has another digest (a mark was made since, the amount changed, it was already answered) nothing is done. Otherwise it is handled by the same code as the owner's reply
+// on WhatsApp: the one-use code's button for a UPI mark, "approve b-3" and the like for what the agent asked the owner. A refund Guard holds is never here (the approvals relay's).
+func (a *Agent) onOwnerAction(ev map[string]any) error {
+	id, _ := ev["id"].(string)
+	action, _ := ev["action"].(string)
+	cs, _ := ev["case"].(string)
+	digest, _ := ev["digest"].(string)
+	refs := map[string]string{"channel": "owner_page", "action": action}
+	inputs := map[string]any{"action": action, "case": cs}
+	if action == "card_yes" || action == "card_no" {
+		if a.settings.Assistant == nil {
+			a.log(nil, a.owner(), "owner_page_action", "blocked", inputs, logMore{refs: refs, notes: "a card's answer came for a shop without the assistant: nothing was done"})
+			return nil
+		}
+		return runtime.Unported("an answer to the shop's assistant's card on the owner's page (item 11e)")
+	}
+	var item *ownerItem
+	for _, it := range ownerItems(a.store, a.now()) {
+		if it.Case == cs && it.Digest == digest && contains(it.Actions, action) {
+			item = &it
+			break
+		}
+	}
+	b := a.store.Booking(cs)
+	if item == nil {
+		a.log(b, a.owner(), "owner_page_action", "blocked", inputs, logMore{refs: refs, notes: "what the owner's page showed is not what waits now (already answered, a new mark or amount since, or gone): nothing was done"})
+		return nil
+	}
+	a.log(b, a.owner(), "owner_page_action", "confirmed", inputs, logMore{refs: refs, notes: "pressed by the owner on their private approvals page; handled exactly as the same reply on WhatsApp"})
+	msg := messaging.InboundMessage{ID: "owner-page:" + id, From: a.owner(), Timestamp: a.now()}
+	if item.Code != "" {
+		kind := ownermarked.ReplyRefunded
+		switch action {
+		case "received":
+			kind = ownermarked.ReplyReceived
+		case "kept":
+			kind = ownermarked.ReplyKept
+		}
+		msg.Reply = &messaging.Reply{ID: ownermarked.MarkButtonID(kind, item.Code), Kind: "button"}
+	} else {
+		msg.Text = action + " " + cs
+	}
+	return a.onOwnerMessage(msg)
+}
+
+// onOwnerPageMessage is agent.ts onOwnerPageMessage: the owner's talk box on their page is the shop's assistant's; a shop without one reads nothing.
+func (a *Agent) onOwnerPageMessage(ev map[string]any) error {
+	_, voice := ev["voice"]
+	if a.settings.Assistant == nil {
+		a.log(nil, a.owner(), "owner_page_message", "blocked", map[string]any{"voice": voice}, logMore{refs: map[string]string{"channel": "owner_page"}, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read"})
+		return nil
+	}
+	return runtime.Unported("the owner's words on their page to the shop's assistant (item 11e)")
+}

@@ -129,11 +129,27 @@ func run(folder string) error {
 		}
 		return p.Choice()
 	}
-	// the books (go-bk-books-19nov's adapters): the money lines' accounting and the settlement read. TODO(go-bk-agent): the monthly report needs a post-step save hook (TRIAL.md)
+	// the books (go-bk-books-19nov's adapters): the money lines' accounting and the settlement read; the monthly report runs after the beat's step (agent_after.go)
 	sr, _ := ports.Payments.(payments.SettlementReader)
 	ports.Books = bookings.NewBooks(bookings.BooksPorts{Messaging: ports.WhatsApp, Settlements: sr, Capabilities: ports.Capabilities})
+	if setup, err := bookings.ReportSetupOf(client.Config, client.Folder, kit.Settings, log); err != nil {
+		return err
+	} else if setup != nil {
+		kit.Report = ports.Books.NewMonthlyReport(*setup)
+	}
 	kit.Ports = ports
 	kit.Router = runtime.RouterFor[bookings.Intent](&client.Config, bookings.Reading{S: kit.Settings}, log)
+	// item 11h: where a WhatsApp booking's own page lives, read fresh from the deployer's pages.json (start.ts pageBase: the pages domain's address, else this server's)
+	kit.PageBase = func() string {
+		p := access.ReadPages(filepath.Join(client.Folder, access.PagesFile))
+		if p == nil {
+			return ""
+		}
+		if p.URL != "" {
+			return p.URL
+		}
+		return p.Base
+	}
 	var acc *access.Access
 	if channelToken != "" {
 		if acc, err = access.Open(filepath.Join(client.Config.DataDir, access.OwnerAccessFile)); err != nil {

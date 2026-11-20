@@ -19,6 +19,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"github.com/GeometerLabs/agents/go/internal/zone"
@@ -33,6 +34,10 @@ var (
 	// agent.ts DAY_WORDS
 	dayToday    = regexp.MustCompile(`(?i)^[` + language.JSSpace + `]*(?:today|bookings?|aaj|आज|ഇന്ന്|ಇಂದು)[` + language.JSSpace + `]*[.!?]*[` + language.JSSpace + `]*$`)
 	dayTomorrow = regexp.MustCompile(`(?i)^[` + language.JSSpace + `]*(?:tomorrow|kal|कल|നാളെ|ನಾಳೆ)[` + language.JSSpace + `]*[.!?]*[` + language.JSSpace + `]*$`)
+	// agent.ts PAID_CLAIM and NOT_PAID: "I paid" in the shop's four languages, and a "no" in the same message that makes it not a claim. `\b` is ASCII in both (JavaScript's
+	// with the u flag and no v; RE2's always); (?i) folds case by Unicode as the iu flags do.
+	paidClaim = regexp.MustCompile(`(?i)\b(?:paid|i have paid|payment done|sent the money|money sent|transferred)\b|पेमेंट कर दिया|भुगतान कर दिया|पैसे भेज दिए|पैसे भेजे|भेज दिया|പണം അടച്ചു|അടച്ചു|പണം അയച്ചു|ಪಾವತಿಸಿದ್ದೇನೆ|ಹಣ ಕಳುಹಿಸಿದ್ದೇನೆ|ಪಾವತಿ ಮಾಡಿದ್ದೇನೆ`)
+	notPaid   = regexp.MustCompile(`(?i)\b(?:not|haven'?t|hasn'?t|didn'?t|nahi|nahin|illa)\b|n't\b|नहीं|नही|ഇല്ല|അല്ല|ಇಲ್ಲ|ಆಗಿಲ್ಲ`)
 )
 
 func isRelayReply(m messaging.InboundMessage) bool {
@@ -84,9 +89,8 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 		return a.onOwnerMessage(msg)
 	}
 	if msg.Image {
-		if a.settings.OwnerMarked() {
-			return runtime.Unported("a picture on a UPI shop (a payment screenshot)")
-		}
+		a.onPicture(msg)
+		return nil
 	}
 	phone := msg.From
 	customer := a.store.Customer(phone)
@@ -94,8 +98,11 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 	if a.c.Snap != nil {
 		buttons = budgetButtons(&a.c.Snap.AI, a.c, a.now())
 	}
-	if a.settings.OwnerMarked() && msg.Reply == nil && !customer.OptedOut {
-		return runtime.Unported("a customer's message on a UPI shop (the owner-marked ledger)")
+	// UPI: "I paid" while a deposit waits is read from a few plain words before any model; it is a claim, and the owner is asked to look. It marks nothing paid.
+	if a.ownerConfirms && msg.Reply == nil && !customer.OptedOut && paidClaim.MatchString(msg.Text) && !notPaid.MatchString(msg.Text) && a.store.Latest(phone, []string{AwaitingDeposit}) != nil {
+		a.log(nil, phone, "receive_message", "confirmed", map[string]any{"text": msg.Text, "id": msg.ID}, logMore{refs: map[string]string{"messageId": msg.ID, "step": "rules"}})
+		a.onPaidClaim(phone, "words", "")
+		return nil
 	}
 	// a tap on a button or a list row is read by looking its id up: no words are read, so no model is asked
 	var tapped *Intent
@@ -166,6 +173,10 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 	case "keep":
 		return a.onKeep(phone)
 	case "paid":
+		if a.ownerConfirms {
+			a.onPaidClaim(phone, "button", "")
+			return nil
+		}
 		a.tellCustomer(nil, phone, []string{"didnt_understand"}, sayOpts{offer: servicesOffer("didnt_understand")})
 		return nil
 	case "greeting":
@@ -287,9 +298,6 @@ func (a *Agent) proceedToHold(b *Booking, prefix []string, shown []Decision) err
 		return nil
 	}
 	// TODO(go-bk-chat-19nov): a chat guest's hold counts in the shop's cap on unpaid holds (unpaidChannelHolds, chat_shop_busy)
-	if a.pay == nil {
-		return runtime.Unported("a hold on a UPI shop (the owner-marked request)")
-	}
 	held, err := a.tryHold(b)
 	if err != nil {
 		return err
@@ -351,6 +359,10 @@ func (a *Agent) proceedToHold(b *Booking, prefix []string, shown []Decision) err
 	b.LinkID, b.LinkURL = res.Link.ID, res.Link.PayURL
 	a.log(b, phone, "create_deposit_link", "confirmed", map[string]any{"amountPaise": a.depositPaise()}, logMore{refs: map[string]string{"linkId": res.Link.ID}})
 	_ = b.MoveTo(AwaitingDeposit)
+	if a.ownerConfirms {
+		a.sendMarkedRequest(b, prefix, append(append([]Decision{}, shown...), held.decisions...))
+		return nil
+	}
 	quote := "quote_and_link"
 	if contains(prefix, "price_floor") {
 		quote = "slot_and_link"
@@ -383,7 +395,7 @@ func (a *Agent) onBook(phone string, in *Intent) error {
 			a.settle(probe)
 		}
 		if !hasDetails || (probe.ServiceID == waiting.ServiceID && sameHold(probe.StartMs, waiting.StartMs)) {
-			a.tellCustomer(waiting, waiting.Customer, []string{"already_waiting"}, sayOpts{offer: cancelOrOwner})
+			a.tellAlreadyWaiting(waiting)
 			return nil
 		}
 		if err := a.cancelWaiting(waiting, "replaced by a new request from the customer"); err != nil {
@@ -441,7 +453,7 @@ func (a *Agent) onYes(phone string) error {
 		return a.proceedToHold(b, nil, nil)
 	}
 	if w := a.store.Latest(phone, []string{AwaitingDeposit}); w != nil {
-		a.tellCustomer(w, w.Customer, []string{"already_waiting"}, sayOpts{offer: cancelOrOwner})
+		a.tellAlreadyWaiting(w)
 		return nil
 	}
 	a.tellCustomer(nil, phone, []string{"didnt_understand"}, sayOpts{offer: servicesOffer("didnt_understand")})
@@ -553,9 +565,6 @@ func (a *Agent) onCancel(phone string) error {
 		a.tellCustomer(b, phone, []string{"cancelled_no_deposit"}, sayOpts{})
 		return nil
 	}
-	if a.pay == nil {
-		return runtime.Unported("a paid cancellation on a UPI shop (the refund the owner owes)")
-	}
 	// a paid booking: inside the cancellation window the deposit goes back; above the refund limit Guard holds it for the owner (asked once, by the relay); outside the window and
 	// within the limit, whether to give it back is the owner's call, and the agent asks
 	hoursLeft := float64(*b.StartMs-a.now()) / float64(Hour)
@@ -572,7 +581,13 @@ func (a *Agent) onCancel(phone string) error {
 		a.log(b, phone, "refund", "blocked", map[string]any{"paymentId": b.DepositPaymentID, "amountInr": amountInr}, logMore{decisions: []Decision{limit}, refs: refs})
 		return nil
 	}
-	if !inWindow && limit.Verdict == "allow" {
+	// a module that cannot refund by itself: inside the window the deposit is owed back by the owner, whatever the limit (the owner sends every such refund, so there is no
+	// Guard to hold one); outside it the owner decides, as below
+	if a.ownerRefunds && inWindow {
+		a.oweBack(b, b.DepositPaymentID, amountInr*100, "cancelled inside the cancellation window", oweOpts{customer: "upi_cancelled_refund_owed", decisions: []Decision{limit}})
+		return nil
+	}
+	if !inWindow && (limit.Verdict == "allow" || a.ownerRefunds) {
 		late := CheckRefundLimit(amountInr, a.settings.Cancellation.RefundLimitInr, amountInr, false, false)
 		b.Pending = append(b.Pending, rawPending(OwnerRefund{Kind: "refund", AmountInr: amountInr, PaymentID: b.DepositPaymentID, Reason: "late_cancellation"}))
 		a.log(b, phone, "refund", "held_for_owner", map[string]any{"paymentId": b.DepositPaymentID, "amountInr": amountInr}, logMore{decisions: []Decision{late}, refs: refs})
@@ -757,8 +772,18 @@ func (a *Agent) tellDay(day string) {
 
 // onOwnerMessage is agent.ts onOwnerMessage: the relay's code replies (not the agent's), the day's list, and the owner's commands about what the agent asked them.
 func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
-	if a.settings.OwnerMarked() {
-		return runtime.Unported("the owner's message on a UPI shop (the owner's marks)")
+	// owner-marked (B33): "received K7M2QX", "refunded K7M2QX" or a tap on one of those buttons. Only the owner's number reaches here
+	if a.marks != nil {
+		replyID := ""
+		if msg.Reply != nil {
+			replyID = msg.Reply.ID
+		}
+		if reply := ownermarked.ParseMarkReply(msg.Text, replyID); reply != nil {
+			return a.onOwnerMark(reply, msg)
+		}
+	}
+	if a.ownerConfirms && msg.Image {
+		return nil // a picture from the owner is not a mark: only the reply with its code is
 	}
 	if isRelayReply(msg) {
 		return nil // the approvals relay's: no reply and no record here
@@ -816,6 +841,10 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 		amountInr := *b.DepositInr
 		limit := CheckRefundLimit(amountInr, a.settings.Cancellation.RefundLimitInr, amountInr, true, true)
 		a.log(b, a.owner(), "owner_decision", "confirmed", map[string]any{"command": command}, logMore{refs: said})
+		if a.ownerRefunds {
+			a.oweBack(b, b.DepositPaymentID, amountInr*100, "the owner cancelled a booking the calendar could not confirm", oweOpts{customer: "upi_cancelled_refund_owed", decisions: []Decision{limit}})
+			return nil
+		}
 		result, err := a.requestRefund(b, b.DepositPaymentID, amountInr, []Decision{limit}, a.refunds.OverLimit(amountInr), nil)
 		if err != nil {
 			return err
@@ -853,6 +882,10 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 		}
 	}
 	b.Pending = keep
+	if a.ownerRefunds {
+		a.oweBack(b, r.PaymentID, r.AmountInr*100, "the owner approved a refund after a late cancellation", oweOpts{customer: "upi_refund_owed", decisions: []Decision{limit}})
+		return nil
+	}
 	result, err := a.requestRefund(b, r.PaymentID, r.AmountInr, []Decision{limit}, a.refunds.OverLimit(r.AmountInr), nil)
 	if err != nil {
 		return err

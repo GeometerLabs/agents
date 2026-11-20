@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 )
 
@@ -39,6 +40,7 @@ type licenceFile struct {
 	shop           *leaseShop
 	newestIssuedAt int64
 	extensionUntil int64
+	partner        string // the Operator who set the shop up, trimmed (rules.ts `partner.trim()`): the licence notice names them
 }
 
 var leaseStates = []string{"active", "reminder", "warning", "wind_down", "stopped"}
@@ -58,7 +60,7 @@ func parseLicence(b []byte) *licenceFile {
 	if o["schema"] != float64(1) || !isTime(o["newest_issued_at"]) || !isTime(o["extension_until"]) || !pok || len([]rune(p)) > 120 {
 		return nil
 	}
-	f := &licenceFile{newestIssuedAt: int64(o["newest_issued_at"].(float64)), extensionUntil: int64(o["extension_until"].(float64))}
+	f := &licenceFile{newestIssuedAt: int64(o["newest_issued_at"].(float64)), extensionUntil: int64(o["extension_until"].(float64)), partner: language.TrimJS(p)}
 	if o["shop"] == nil {
 		return f
 	}
@@ -114,6 +116,14 @@ func (r *Runtime) LicencePaidThrough() *int64 {
 		return &p
 	}
 	return nil
+}
+
+// LicencePartner is rules.ts licenceNow's `partner`: the Operator the lease names ("" with no lease file).
+func (r *Runtime) LicencePartner() string {
+	if f := r.licence; f != nil {
+		return f.partner
+	}
+	return ""
 }
 
 // ---- the morning line -----------------------------------------------------------------------------------------------------------------------------------
