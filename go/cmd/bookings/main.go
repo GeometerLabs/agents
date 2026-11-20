@@ -134,6 +134,17 @@ func run(folder string) error {
 	ports.Books = bookings.NewBooks(bookings.BooksPorts{Messaging: ports.WhatsApp, Settlements: sr, Capabilities: ports.Capabilities})
 	kit.Ports = ports
 	kit.Router = runtime.RouterFor[bookings.Intent](&client.Config, bookings.Reading{S: kit.Settings}, log)
+	// item 11h: where a WhatsApp booking's own page lives, read fresh from the deployer's pages.json (start.ts pageBase: the pages domain's address, else this server's)
+	kit.PageBase = func() string {
+		p := access.ReadPages(filepath.Join(client.Folder, access.PagesFile))
+		if p == nil {
+			return ""
+		}
+		if p.URL != "" {
+			return p.URL
+		}
+		return p.Base
+	}
 	var acc *access.Access
 	if channelToken != "" {
 		if acc, err = access.Open(filepath.Join(client.Config.DataDir, access.OwnerAccessFile)); err != nil {

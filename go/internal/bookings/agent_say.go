@@ -21,9 +21,10 @@ func detectLanguage(text string) string { return understanding.DetectLanguage(te
 // offer is agent.ts Offer: the shop's services, free times, a few buttons (by their keys: "yes", "no", "cancel", "owner", "cancelYes", "keep", "paid"); body are the templates whose
 // words sit above them (nil: the message's own).
 type offer struct {
-	kind    string // services, slots, buttons
+	kind    string // services, slots, buttons, owner_upi (the owner's UPI buttons, each carrying its one-use code: choices)
 	slots   []int64
 	buttons []string
+	choices []Choice
 	body    []string
 }
 
@@ -31,6 +32,9 @@ func servicesOffer(body ...string) *offer { return &offer{kind: "services", body
 func yesNo(body ...string) *offer         { return &offer{kind: "buttons", buttons: []string{"yes", "no"}, body: body} }
 
 var cancelOrOwner = &offer{kind: "buttons", buttons: []string{"cancel", "owner"}}
+
+// paidCancelOrOwner is agent.ts paidCancelOrOwner: a UPI shop's waiting customer may also say "I have paid".
+var paidCancelOrOwner = &offer{kind: "buttons", buttons: []string{"paid", "cancel", "owner"}}
 
 // sayExtra is SayArgs' Bookings members (agent.ts SayArgs): an amount, a time, a reminder's flag, a page link (never in the record).
 type sayExtra struct {
@@ -42,6 +46,10 @@ type sayExtra struct {
 	dayBookings []DayBooking
 	pageLink    string
 	talk        *talkFacts // block M: a talk reply (agent_talk.go)
+	// a UPI shop's: the owner's one-use code (never in the record), what was marked and what is left, in rupees (agent.ts SayArgs upiCode, markedInr, leftInr)
+	upiCode   string
+	markedInr *int64
+	leftInr   *int64
 }
 
 // sayOpts is tellCustomer's `more`.
@@ -53,6 +61,10 @@ type sayOpts struct {
 	action    string
 	offer     *offer
 	pageLink  string
+	image     *messaging.SayImage // a UPI request's QR picture before the words (nil: the words carry the link, the UPI ID and the amount)
+	upiCode   string
+	markedInr *int64
+	leftInr   *int64
 }
 
 func toMsgDecisions(ds []Decision) []messaging.Decision {
@@ -67,8 +79,8 @@ func toMsgDecisions(ds []Decision) []messaging.Decision {
 }
 
 func (a *Agent) sayArgs(b *Booking, phone, to string, templates []string, o sayOpts) *messaging.SayArgs {
-	x := &sayExtra{booking: b, offer: o.offer, refundInr: o.refundInr, slotMs: o.slotMs, pageLink: o.pageLink}
-	args := &messaging.SayArgs{Phone: phone, To: to, Templates: templates, Shown: toMsgDecisions(o.shown), Reminder: o.reminder, Action: o.action, Extra: x}
+	x := &sayExtra{booking: b, offer: o.offer, refundInr: o.refundInr, slotMs: o.slotMs, pageLink: o.pageLink, upiCode: o.upiCode, markedInr: o.markedInr, leftInr: o.leftInr}
+	args := &messaging.SayArgs{Phone: phone, To: to, Templates: templates, Shown: toMsgDecisions(o.shown), Reminder: o.reminder, Action: o.action, Image: o.image, Extra: x}
 	if b != nil {
 		args.Booking = b
 	}
@@ -177,6 +189,10 @@ func (a *Agent) factsFor(sa *messaging.SayArgs, lang string) *MessageFacts {
 	if x.pageLink != "" {
 		f.PageLink = S(x.pageLink)
 	}
+	if x.upiCode != "" {
+		f.UpiCode = S(x.upiCode)
+	}
+	f.MarkedInr, f.LeftInr = x.markedInr, x.leftInr
 	return f
 }
 
@@ -215,6 +231,8 @@ func (a *Agent) interactiveFor(sa *messaging.SayArgs, facts any, lang string) (*
 	case "slots":
 		l := SlotList(o.slots, a.settings.Loc, lang)
 		m.List = &messaging.InteractiveList{Button: l.Button, Rows: conv(l.Rows)}
+	case "owner_upi":
+		m.Buttons = conv(o.choices)
 	default:
 		m.Buttons = conv(ButtonsFor(lang, o.buttons...))
 	}
@@ -247,10 +265,23 @@ func (voice) Matches(text string, facts any) messaging.Decision { return matchAn
 // stoppedGate is agent.ts stoppedGate: in the licence's final stop nothing more is sent from here.
 var stoppedGate = Decision{"subscription_suspended", "block", "the shop's licence has reached its final stop, so nothing more is sent from here (the owner's one notice aside); the runtime's own check of the lease"}
 
-// checkConfirmOnlyWhenRecorded is limits.ts checkConfirmOnlyWhenRecorded over the record (a gateway shop: the deposit is a confirmed record_deposit line).
+// checkConfirmOnlyWhenRecorded is limits.ts checkConfirmOnlyWhenRecorded over the record: the deposit is a confirmed record_deposit line, or (a shop whose owner confirms the money,
+// `depositPaise` handed in) the owner's confirmed marks of this booking adding up to the whole deposit.
 func (a *Agent) checkConfirmOnlyWhenRecorded(booking string) Decision {
-	calendarShown, deposit := a.isConfirmed(booking, "confirm_booking"), a.isConfirmed(booking, "record_deposit")
+	calendarShown := a.isConfirmed(booking, "confirm_booking")
+	markedByOwner := false
+	if a.ownerConfirms {
+		var sum float64
+		for _, v := range a.confirmedRefs(booking, ActionMarked, "amountPaise") {
+			sum += jsNumber(v)
+		}
+		markedByOwner = sum >= float64(a.depositPaise())
+	}
+	deposit := a.isConfirmed(booking, "record_deposit") || markedByOwner
 	if calendarShown && deposit {
+		if markedByOwner {
+			return allow("confirm-only-when-recorded", "The calendar shows the booking and the owner has marked the whole deposit received.")
+		}
 		return allow("confirm-only-when-recorded", "The calendar shows the booking and the payment record shows the deposit.")
 	}
 	var missing []string
@@ -316,6 +347,9 @@ func (a *Agent) sayDeps() messaging.SayDeps {
 			}
 			if x.slotMs != nil {
 				out["slotMs"] = *x.slotMs
+			}
+			if x.markedInr != nil {
+				out["markedInr"] = *x.markedInr
 			}
 			return out
 		},
