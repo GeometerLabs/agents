@@ -100,3 +100,26 @@ are tried longest first, as a backtracking engine does with a greedy repetition 
 * **ownermark.go** is the UPI shop's side: `Store.UpiState` / `SetUpiState` (the ledger in the store's `upi` member, `internal/payments/ownermarked`), `Settings.UpiPayLink` and `OwnerMarkButtons` (proved equal on
   `testdata/ownermark-buttons-vectors.json`, all four languages).
 
+
+## Wave 2 finished in part (20 Nov, `go-bk-agent-20nov`)
+
+**A UPI shop's money (agent_marks.go).** agent.ts decides every payment branch by what the module can do, never its name, and so does the Go agent now: `ownerConfirms` (the module
+cannot confirm a payment by itself) and `ownerRefunds` (it cannot refund by itself) come from `Ports.Capabilities`. On a UPI shop `a.pay` is `ownermarked.View` over the store's
+ledger: made inside the agent as `markedPayments` is, so it is never watched (nothing in it can be down), and `reconcilePayments` reads the owner's marks (`reconcileMarks`). The
+ledger is typed once per store (`Store.ledger`, beside `own` and `channel`) and written back by `Members`, so the step's changes and the channel's reads see one copy; a UPI shop
+gets an empty one at the agent's creation, as `store.upi ??= emptyMarkState()` does, and a `upi` member this version cannot read fails every step rather than be saved as nothing.
+The owner's codes come from `assistant.NewCode` (approvals/code.ts's alphabet). The "booked" gate counts the owner's confirmed marks against the deposit, as limits.ts does when
+handed `depositPaise`.
+
+**The booking's own page link.** `Kit.PageBase` reads pages.json on every use (start.ts `pageBase`); `pageLinkFor` makes a fresh handle (24 random bytes, base64url) and keeps only
+its hash (handle.ts's `booking-handle:` prefix), once the message carrying it was accepted; the three links before stay good (`pageLinksBefore`).
+
+**The owner's page.** `ownerItems` is channel.ts's: deposit, late deposit (a hold that ended where money may have come, 48 hours, 14 days after a claim), refund owed, late
+refund, calendar, each with the digest of exactly what is shown; the code never leaves the runtime. `onOwnerAction` finds the item by case, digest and action and then takes the
+owner's own reply path (the mark's button with its code, or "approve b-3"), so the page adds no new way to act. The page's documents and the accountant's files are the books'
+(`accounting.CaseDocuments`, `accounting.AccountantFiles`, the runtime's optional `AccountantFiler`).
+
+**After the beat (agent_after.go).** core.ts runs the licence notice and the monthly report after the agent's own beat, each saving for itself. Go's `StepContext` has no save,
+so the runtime gives a template an optional `AfterTicker` whose `save` is `saveMid` (kit.go): the state and the record lines so far are committed and the step's recorder goes on
+from them. The notice is the shared `runtime.RunLicenceNotice` with Bookings' words (server/licence.ts); the report is `MonthlyReport.Run`. `ReportSetupOf` reads runtime.json's
+`report` block with config.ts's checks and words.
