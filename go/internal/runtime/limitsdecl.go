@@ -23,8 +23,9 @@ var limitWordsJSON []byte
 var (
 	limitWordsOnce sync.Once
 	limitWords     map[string]struct {
-		Name map[string]string `json:"name"`
-		Rule map[string]string `json:"rule"`
+		Name  map[string]string `json:"name"`
+		Rule  map[string]string `json:"rule"`
+		Words []string          `json:"words"` // the words that name it in the owner's message (the assistant's limit card)
 	}
 )
 
@@ -58,7 +59,9 @@ func (l *LimitDecl) looseness(v int64) float64 {
 	return -float64(v)
 }
 
-func (l *LimitDecl) strictlyTighter(inForce, proposed int64) bool { return l.looseness(proposed) < l.looseness(inForce) }
+func (l *LimitDecl) strictlyTighter(inForce, proposed int64) bool {
+	return l.looseness(proposed) < l.looseness(inForce)
+}
 
 // inForce is chat-limits.ts inForce: the file's value, moved by each active change from it, then by any pending tightening.
 func (l *LimitDecl) inForce(changes []limitChange) int64 {
@@ -161,10 +164,6 @@ func (r *Runtime) ownerLimit(snap *Snap, rec *recorder, ev map[string]any) {
 	}
 	to := toInt(ev["to"])
 	number, lang := r.owner()
-	var changes []map[string]any
-	dec := json.NewDecoder(bytes.NewReader(snap.assistant["limitChanges"]))
-	dec.UseNumber()
-	_ = dec.Decode(&changes)
 	typed := changesOf(snap.assistant["limitChanges"])
 	from := l.inForce(typed)
 	direction := "loosen"
@@ -178,21 +177,35 @@ func (r *Runtime) ownerLimit(snap *Snap, rec *recorder, ev map[string]any) {
 			Refs:  map[string]string{"limit": l.ID, "from": strconv.FormatInt(from, 10), "to": strconv.FormatInt(to, 10), "by": "owner_app", "why": why}})
 		return
 	}
-	id := snap.A.NextID("l")
-	change := map[string]any{"id": id, "limit": l.ID, "path": l.Path, "from": from, "to": to, "direction": direction, "by": "owner_app", "state": "pending", "atMs": r.o.Now()}
-	changes = append(changes, change)
-	raw, err := marshalChanges(changes)
+	id, err := r.pushLimitChange(snap, l, from, to, direction, "owner_app")
 	if err != nil {
 		r.o.Log("A limit change could not be saved: " + err.Error())
 		return
 	}
-	snap.assistant["limitChanges"] = raw
 	notes := "the owner loosened it in their app behind their passkey, within the template's bounds; it is Pending until Guard reports the new value, and the Operator is told, never asked"
 	if direction == "tighten" {
 		notes = "the owner tightened it in their app behind their passkey; the runtime obeys it now and the deployer is asked to put it where Guard's spec is made"
 	}
 	refs := map[string]string{"limit": l.ID, "path": l.Path, "change": id, "from": strconv.FormatInt(from, 10), "to": strconv.FormatInt(to, 10), "direction": direction, "by": "owner_app", "state": "pending"}
 	rec.append(NewLine{Conversation: number, Action: "limit_change", Outcome: "unconfirmed", Inputs: map[string]any{"limit": l.ID, "change": id}, Language: lang, Notes: notes, Refs: refs})
+}
+
+// pushLimitChange keeps a new Pending change (chat-limits.ts LimitChange) in the assistant's list, by the owner's own page ("owner_app") or a card's tap ("owner_chat"), and gives
+// its id. The list is carried raw, so every other change keeps its bytes.
+func (r *Runtime) pushLimitChange(snap *Snap, l *LimitDecl, from, to int64, direction, by string) (string, error) {
+	snap.ensureAssistant()
+	var changes []map[string]any
+	dec := json.NewDecoder(bytes.NewReader(snap.assistant["limitChanges"]))
+	dec.UseNumber()
+	_ = dec.Decode(&changes)
+	id := snap.A.NextID("l")
+	changes = append(changes, map[string]any{"id": id, "limit": l.ID, "path": l.Path, "from": from, "to": to, "direction": direction, "by": by, "state": "pending", "atMs": r.o.Now()})
+	raw, err := marshalChanges(changes)
+	if err != nil {
+		return "", err
+	}
+	snap.assistant["limitChanges"] = raw
+	return id, nil
 }
 
 func toInt(v any) int64 {

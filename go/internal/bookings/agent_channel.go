@@ -334,7 +334,6 @@ func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
 	return a.proceedToHold(b, nil, nil)
 }
 
-
 // ---- the owner's private page (item 11d) --------------------------------------------------------------------------------------------------------------------------------
 
 // onOwnerAction is agent.ts onOwnerAction: the owner pressed a button on their private page. The page showed an action with a digest of exactly what it showed (ownerItems); if what
@@ -352,7 +351,15 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 			a.log(nil, a.owner(), "owner_page_action", "blocked", inputs, logMore{refs: refs, notes: "a card's answer came for a shop without the assistant: nothing was done"})
 			return nil
 		}
-		return runtime.Unported("an answer to the shop's assistant's card on the owner's page (item 11e)")
+		// item 11e on the page: an answer to one of the assistant's cards, by the card's id and the digest the page showed (cards.ts judgeCard decides, as for a tap)
+		answer := "yes"
+		if action == "card_no" {
+			answer = "no"
+		}
+		if as := a.assistantOf(); as != nil {
+			as.OnPageCard(cs, digest, answer)
+		}
+		return a.stepErr
 	}
 	var item *ownerItem
 	for _, it := range ownerItems(a.store, a.now()) {
@@ -390,5 +397,21 @@ func (a *Agent) onOwnerPageMessage(ev map[string]any) error {
 		a.log(nil, a.owner(), "owner_page_message", "blocked", map[string]any{"voice": voice}, logMore{refs: map[string]string{"channel": "owner_page"}, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read"})
 		return nil
 	}
-	return runtime.Unported("the owner's words on their page to the shop's assistant (item 11e)")
+	as := a.assistantOf()
+	if as == nil {
+		return nil
+	}
+	id, _ := ev["id"].(string)
+	if !voice {
+		text, _ := ev["text"].(string)
+		if err := as.OnPageMessage("owner-page:"+id, text, a.now()); err != nil {
+			return err
+		}
+		return a.stepErr
+	}
+	ref, _ := ev["voice"].(string)
+	if err := as.OnPageVoice("owner-page:"+id, a.c.OwnerAudio(ref)); err != nil {
+		return err
+	}
+	return a.stepErr
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/access"
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
@@ -184,6 +185,12 @@ func (r *Runtime) kitStep(ev map[string]any, taskID string, lastTry bool) (err e
 			recordMessageStatus(rec, st, r.statusCtx())
 		case "owner_access":
 			r.ownerAccess(rec, ev)
+		case "owner_signin":
+			var wa messaging.Messaging
+			if sk, ok := r.o.Kit.(SigninKit); ok {
+				wa = sk.SigninMessaging()
+			}
+			r.sendLink(rec, wa, "page")
 		case "limit_settled", "owner_limit":
 			r.limitEvent(snap, rec, ev)
 		case "chat_link":

@@ -8,14 +8,17 @@
 package bookings
 
 import (
-	"encoding/json"
 	"context"
+	"encoding/json"
 
-	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"github.com/GeometerLabs/agents/go/internal/payments"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"time"
 
+	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/terms"
+	speech "github.com/GeometerLabs/agents/go/internal/voice" // named speech: the package has its own type voice (agent_say.go)
 )
 
 // Pathway and Version are what a Bookings folder's pathway.lock must name: the number in templates/commerce/bookings/package.json (the contract suite pins a folder to it).
@@ -43,9 +46,32 @@ type Kit struct {
 	Report      *MonthlyReport
 	reportErr   string
 	reportErrAt int64
+	// Terms is the shop terms now (B72: client/terms.json, read again when it changes, terms.NewReader); nil, or a nil answer: the feature is off
+	Terms func() *terms.File
+	// Voice is the shop's voice service (runtime.json `speech`, internal/voice); nil: voice is off, and a voice note gets the one line asking to type
+	Voice *speech.Service
+	// shared is the part of the settings every shop has (the assistant's character), for the owner page's assistant view
+	shared *runtime.Settings
 	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.
 	given map[string]bool
 }
+
+// OwnerVoiceOn: the owner's page may send a recording to the shop's assistant (TypeScript: the kit's ownerVoice, only with a voice service and the assistant).
+func (k *Kit) OwnerVoiceOn() bool {
+	return k.Voice != nil && k.Settings != nil && k.Settings.Assistant != nil
+}
+
+var _ runtime.OwnerVoiceKit = (*Kit)(nil)
+
+// SigninMessaging is the shop's WhatsApp for the owner's sign-in link (owner-signin.ts whatsappOf: never a push); nil when the shop has none.
+func (k *Kit) SigninMessaging() messaging.Messaging {
+	if k.Ports.WhatsApp == nil {
+		return nil
+	}
+	return k.Ports.WhatsApp
+}
+
+var _ runtime.SigninKit = (*Kit)(nil)
 
 func (k *Kit) givenUp() map[string]bool {
 	if k.given == nil {
@@ -86,6 +112,7 @@ func (k *Kit) ReadSettings(in map[string]any, raw []byte, shared *runtime.Settin
 	shared.Name, shared.Timezone, shared.Language = s.Name, s.Timezone, s.Languages
 	shared.Owner.Whatsapp, shared.Owner.Language = s.Owner.Whatsapp, s.Owner.Language
 	shared.ReadAssistant(in["assistant"])
+	k.shared = shared
 	return s, nil
 }
 

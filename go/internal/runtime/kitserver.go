@@ -135,6 +135,11 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 			return true, nothing
 		}
 		return true, s.chatVoice(w, r)
+	case "/internal/channel/owner-voice":
+		if _, ok := rt.o.Kit.(OwnerVoiceKit); !ok {
+			return false, nil // the shared route: voice is off for this shop's assistant
+		}
+		return true, s.ownerVoice(w, r)
 	case "/internal/channel/chat-id":
 		if ch == nil {
 			return true, nothing

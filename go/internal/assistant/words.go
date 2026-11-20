@@ -183,15 +183,22 @@ type RuleWords struct {
 	LeaveFile      []string `json:"leaveFile"`
 	LeaveOperator  []string `json:"leaveOperator"`
 	Remember, List []string
-	// Router is the router's reading for this shop's kinds (intents.ts ownerReading): the language model's prompt and schema, the decision model's question.
-	Router struct {
-		Prompt       string         `json:"prompt"`
-		Schema       map[string]any `json:"schema"`
-		Instructions string         `json:"instructions"`
-		Criteria     [][2]string    `json:"criteria"`
-	} `json:"router"`
+	// Router is the router's reading for a listings-only shop's kinds (intents.ts ownerReading): the language model's prompt and schema, the decision model's question;
+	// RouterBookings the same for a Bookings shop's kinds (KindsBookings).
+	Router         routerWords `json:"router"`
+	RouterBookings routerWords `json:"routerBookings"`
+	KindsBookings  []string    `json:"kindsBookings"`
+	// LimitPhrasing are limits-card.ts PHRASING's words: a sentence with one of them, a digit and a declared limit's own word is a rule about that limit.
+	LimitPhrasing []string `json:"limitPhrasing"`
 	// TalkSchema is the owner's talk's answer schema (talk-prompt.ts ownerPrompt with no limits).
 	TalkSchema map[string]any `json:"talkSchema"`
+}
+
+type routerWords struct {
+	Prompt       string         `json:"prompt"`
+	Schema       map[string]any `json:"schema"`
+	Instructions string         `json:"instructions"`
+	Criteria     [][2]string    `json:"criteria"`
 }
 
 var (

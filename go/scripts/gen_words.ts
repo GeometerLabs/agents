@@ -18,7 +18,9 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { write, cardQuestion } from "../../modules/assistant/words.ts";
+import { write, cardQuestion, CARD_LABELS } from "../../modules/assistant/words.ts";
+import { limitCardLine, limitLine, NOT_TIGHTER_REFUSAL } from "../../modules/assistant/limits-card.ts";
+import type { LimitView } from "../../modules/assistant/limits-card.ts";
 import type { MessageData, MessageId } from "../../modules/assistant/words.ts";
 import { LISTING_WORDS } from "../../modules/listings/words.ts";
 import { DAY_FEATURES } from "../../modules/assistant/words-budget.ts";
@@ -27,11 +29,12 @@ import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
 import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT, dayAndTime } from "../../modules/channels/owner-phones.ts";
-import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../modules/channels/owner-signin.ts";
+import { OWNER_CHANGE_ALERT, REMOVAL_ALERT, SIGNIN_MESSAGE } from "../../modules/channels/owner-signin.ts";
 import { KIND_MEANING, OWNER_KINDS, RULES_ONLY, WANT_INSTRUCTIONS, ownerReading } from "../../modules/assistant/intents.ts";
 import type { OwnerKind } from "../../modules/assistant/intents.ts";
 import { ownerPrompt } from "../../modules/assistant/talk-prompt.ts";
-import { MORNING_TEMPLATE_OF, morningFacts, render, templateNameOf } from "../../modules/assistant/templates.ts";
+import { MORNING_TEMPLATE_OF, dayFacts, morningFacts, render, templateNameOf } from "../../modules/assistant/templates.ts";
+import type { AssistantTemplateId } from "../../modules/assistant/templates.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "..");
@@ -42,6 +45,9 @@ const S = (name: string): string => `${name}`;
 const N = 7654321; // a count: written by the real function as digits, found again and turned into {n}
 const KINDS = ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget", "leave_file", "leave_operator"]; // conversation.ts kindsOf for this shop
 const TZ = "Asia/Kolkata";
+// The kinds of a Bookings shop's assistant (conversation.ts kindsOf over wire.ts's skills: Bookings, which has day, closeDay and move, the limits and the listings): the help and
+// "didn't get that" lines list the examples of these, and the router reads only these. Keys made for this profile end in "@bookings".
+const BOOKINGS_KINDS = [...KINDS, "day", "close_day", "reopen_day", "move"];
 
 type Bag = Record<string, string>;
 
@@ -94,6 +100,8 @@ function alerts(l: Language, m: Bag): void {
   m["alert.removal_asked"] = slots(REMOVAL_ALERT("")[l]);
   m["alert.removal_asked.by"] = slots(REMOVAL_ALERT(S("by"))[l]);
   m["alert.owner_change_asked"] = slots(OWNER_CHANGE_ALERT[l]);
+  // the sign-in link sent in the owner's open WhatsApp window (owner-signin.ts SIGNIN_MESSAGE)
+  m["signin.link"] = slots(SIGNIN_MESSAGE[l](S("shop"), S("link")));
 }
 
 /** One language's messages. */
@@ -175,12 +183,128 @@ function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; h
     const id = MORNING_TEMPLATE_OF[p];
     m[`morning.${p}`] = slots(render(id, { language: l, values: { shop: S("shop"), date: S("date"), today: S("today"), money: S("money"), waiting: S("waiting") }, check: undefined as never }));
     m[`morning.${p}.name`] = templateNameOf(id);
+    // the order its values go to Meta in, for the approved template outside the owner's window
+    const body = m[`morning.${p}`];
+    m[`morning.${p}.order`] = ["shop", "date", "today", "money", "waiting"].map((k) => [k, body.indexOf(`{${k}}`)] as const).filter(([, i]) => i >= 0).sort((a, b) => a[1] - b[1]).map(([k]) => k).join(",");
   }
   const quiet = morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [], moneyPaise: 0, waiting: 0 }).values as Bag;
   m["morning.nothing"] = quiet.today;
   m["morning.low"] = slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ low: N }], moneyPaise: 0, waiting: 0 }).values as Bag).today);
+  bookingsWords(l, m, D, dateText);
   alerts(l, m);
   return { m, cat, stamp: stampOf(l) };
+}
+
+/**
+ * The words of a Bookings shop's assistant (wave 2, step 5): the day's list, closing and opening a day, moving a booking, the cards of a cancel, a refund, a message, an answer
+ * to something waiting and a limit, the line under a card, the card's buttons, the "done" lines, every refusal, the limit lines, and the two templates a customer gets about a
+ * closed or reopened day. Each is rendered by the real write() / cardQuestion() / limitLine() with sentinels; a message whose shape depends on a list (the day's rows, the
+ * customers not reached) is cut into its fixed parts here and joined on the Go side the way words.ts joins them (internal/assistant/bookingwords.go says how).
+ */
+function bookingsWords(l: Language, m: Bag, D: { year: number; month: number; day: number }, dateText: string): void {
+  const withDate = (text: string): string => { if (!text.includes(dateText)) throw new Error(`the date is not in: ${text}`); return text.replaceAll(dateText, "{date}"); };
+  // a moment whose time and slot text are found again and turned into {time} / {slot}: 4:05 pm on 18 Nov in India
+  const AT = Date.UTC(2026, 10, 18, 10, 35);
+  const timeText = formatTime({ hour: 16, minute: 5 }, l);
+  const slotText = `${dateText}, ${timeText}`;
+  const withSlot = (text: string): string => { if (!text.includes(slotText)) throw new Error(`the slot is not in: ${text}`); return text.replaceAll(slotText, "{slot}"); };
+  const withTime = (text: string): string => { if (!text.includes(timeText)) throw new Error(`the time is not in: ${text}`); return text.replaceAll(timeText, "{time}"); };
+  const INR = "₹1,23,456";
+  const P = 12345600;
+  const withInr = (text: string): string => { if (!text.includes(INR)) throw new Error(`the amount is not in: ${text}`); return text.replaceAll(INR, "{inr}"); };
+  for (const p of PERSONALITIES) {
+    m[`help.${p}.plain@bookings`] = say(l, "help", { shop: S("shop"), kinds: BOOKINGS_KINDS, personality: p });
+    m[`help.${p}.named@bookings`] = say(l, "help", { name: S("name"), shop: S("shop"), kinds: BOOKINGS_KINDS, personality: p });
+  }
+  m["not_understood@bookings"] = say(l, "not_understood", { kinds: BOOKINGS_KINDS });
+  // the day's list: none, the head, one row, "and N more", and the closed-day line after it
+  m["day_list.none"] = withDate(say(l, "day_list", { date: D, rows: [], closed: false }));
+  const closedNone = withDate(say(l, "day_list", { date: D, rows: [], closed: true }));
+  if (!closedNone.startsWith(m["day_list.none"])) throw new Error("the closed-day line is not a suffix");
+  m["day_list.closed"] = closedNone.slice(m["day_list.none"].length);
+  const row = { case: S("case"), startMs: AT, what: S("what"), who: S("who"), state: "confirmed" };
+  const one = say(l, "day_list", { date: D, rows: [row], closed: false }).split("\n");
+  if (one.length !== 2) throw new Error(`the day's list is not head and row: ${one.join(" / ")}`);
+  // the head with one row says "1": the count is the only "1" in it (the date is the 18th)
+  m["day_list.head"] = withDate(slots(write("day_list", { date: D, rows: [row], closed: false }, l, TZ).text.split("\n")[0])).replace(/(^|\D)1(\D|$)/u, "$1{n}$2");
+  m["day_list.row"] = withTime(one[1]);
+  const many = write("day_list", { date: D, rows: Array.from({ length: 13 }, () => ({ ...row, case: "b-1", what: "x", who: "y" })), closed: false }, l, TZ).text.split("\n");
+  m["day_list.more"] = many.at(-1)!.replace("1", "{n}");
+  // closing a day: no bookings or some, and the ones the message could not reach
+  m["closed.zero"] = withDate(say(l, "closed", { date: D, booked: 0, missed: [] }));
+  m["closed.n"] = withDate(say(l, "closed", { date: D, booked: N, missed: [] }));
+  const missed = withDate(say(l, "closed", { date: D, booked: N, missed: [{ case: S("mcase"), who: S("mwho") }] }));
+  if (!missed.includes("{mcase} ({mwho})")) throw new Error(`the missed list is not in: ${missed}`);
+  m["closed.n.missed"] = missed.replace("{mcase} ({mwho})", "{missed}");
+  for (const id of ["already_closed", "weekday_closed", "not_closed", "past_day"] as const) m[id] = withDate(say(l, id, { date: D }));
+  m["reopened.zero"] = withDate(say(l, "reopened", { date: D, told: 0 }));
+  m["reopened.n"] = withDate(say(l, "reopened", { date: D, told: N }));
+  m["need_ref.move"] = say(l, "need_ref", { kind: "move", rows: [] });
+  const refRows = say(l, "need_ref", { kind: "cancel", rows: [row] }).split("\n");
+  m["need_ref.row"] = withSlot(refRows[1]);
+  for (const kind of ["close_day", "reopen_day"] as const) m[`need_date.${kind}`] = say(l, "need_date", { kind });
+  m.need_when = say(l, "need_when", { ref: S("ref") });
+  m.moved = withSlot(say(l, "moved", { ref: S("ref"), toMs: AT }));
+  m.moved_back = withSlot(say(l, "moved_back", { ref: S("ref"), toMs: AT }));
+  for (const why of ["no_case", "not_live", "outside_hours", "taken", "past", "failed"] as const) {
+    m[`move_failed.${why}`] = say(l, "move_failed", { ref: S("ref"), why });
+    m[`move_failed.${why}.to`] = withSlot(say(l, "move_failed", { ref: S("ref"), why, toMs: AT }));
+  }
+  // every refusal (the listings shop's four are above; the ones naming a customer say who, or the reference when there is no who)
+  for (const why of ["already_back", "cancel_first", "not_booked", "nothing_paid", "nothing_waiting", "amount_not_on_record", "busy", "limit_not_tighter"] as const) m[`refusal.${why}`] = say(l, "refusal", { why, ref: S("ref") });
+  m["refusal.too_much"] = withInr(say(l, "refusal", { why: "too_much", ref: S("ref"), paidPaise: P }));
+  for (const why of ["no_window", "opted_out"] as const) m[`refusal.${why}`] = say(l, "refusal", { why, ref: S("ref"), who: S("who") });
+  if (m["refusal.limit_not_tighter"] !== NOT_TIGHTER_REFUSAL[l]) throw new Error("the not-tighter refusal is not the fixed line");
+  // the cards' questions (cardQuestion, the skill "bookings"), the line under every card, and the card's buttons
+  const card = { skill: "bookings", who: S("who"), ref: S("ref"), what: S("what"), code: "", hasNo: true };
+  m["card.cancel.paid"] = withInr(slots(cardQuestion({ ...card, kind: "cancel", amountPaise: P }, l, TZ)));
+  m["card.cancel.free"] = slots(cardQuestion({ ...card, kind: "cancel", amountPaise: 0 }, l, TZ));
+  m["card.refund"] = withInr(slots(cardQuestion({ ...card, kind: "refund", amountPaise: P }, l, TZ)));
+  m["card.message"] = slots(cardQuestion({ ...card, kind: "message", amountPaise: 0, words: S("words") }, l, TZ));
+  m["card.answer"] = withInr(slots(cardQuestion({ ...card, kind: "answer", amountPaise: P }, l, TZ)));
+  for (const itemKind of ["late_refund", "calendar", "deposit", "refund_owed"]) m[`card.answer.${itemKind}`] = withInr(slots(cardQuestion({ ...card, kind: "answer", itemKind, amountPaise: P }, l, TZ)));
+  // a limit card: the rule with its value is filled on the Go side from limitwords (the rule's {v}), so here the rule is one slot and the value now another
+  const lw = { inr: () => S("now"), n: () => S("now"), lit: (t: string) => t };
+  const view = (rule: string): LimitView => ({ id: "x", unit: "inr", zeroIsOff: false, name: { en: S("name"), hi: S("name"), ml: S("name"), kn: S("name") }, rule: { en: rule, hi: rule, ml: rule, kn: rule } });
+  m["card.limit"] = slots(limitCardLine({ ...view(S("rule")), now: 1, to: 1 }, l, lw));
+  const full = (d: Parameters<typeof write<"card">>[1]) => slots(write("card", d, l, TZ).text);
+  const foot = (aboveLimit: boolean, hasNo: boolean) => full({ ...card, kind: "cancel", amountPaise: 0, code: S("code"), hasNo, ...(aboveLimit ? { aboveLimit } : {}) }).split("\n")[1];
+  m["card.foot.yes"] = foot(false, false);
+  m["card.foot.yesno"] = foot(false, true);
+  m["card.foot.above.yes"] = foot(true, false);
+  m["card.foot.above.yesno"] = foot(true, true);
+  const labels = CARD_LABELS[l];
+  m["label.approve"] = labels.approve; m["label.refuse"] = labels.refuse; m["label.send"] = labels.send; m["label.dont_send"] = labels.dontSend;
+  m["label.listing.show"] = LISTING_WORDS[l].show; m["label.listing.no"] = LISTING_WORDS[l].no; m["label.listing.yes"] = LISTING_WORDS[l].yes; m["label.listing.sold"] = LISTING_WORDS[l].sold;
+  // after a tap
+  for (const note of ["cancelled", "refund_sent", "held_by_guard", "owed_by_owner", "sent", "answered", "failed", "not_sent"] as const) m[`done.${note}`] = withInrIf(say(l, "done", { note, who: S("who"), ref: S("ref"), amountPaise: P }));
+  // the limit lines: the rule (with its value) and the values are slots; the Go side writes a value as limits-card.ts valueText does ("never" for an off big-order amount)
+  const seq = (names: string[]) => { let i = 0; return { inr: () => S(names[i++]), n: () => S(names[i++]), lit: (t: string) => t }; };
+  m["limit.pending"] = slots(limitLine({ what: "pending", limit: view(S("rule")), to: 1 }, l, seq([])));
+  m["limit.active"] = slots(limitLine({ what: "active", limit: view(S("rule")), to: 1 }, l, seq([])));
+  m["limit.failed"] = slots(limitLine({ what: "failed", limit: view(S("rule")), from: 1 }, l, seq([])));
+  m["limit.not_tighter"] = slots(limitLine({ what: "not_tighter", limit: view(S("rule")), now: 1, to: 2 }, l, seq(["now", "to"])));
+  m["limit.need_value.inr"] = slots(limitLine({ what: "need_value", limit: view(S("rule")) }, l, seq([])));
+  m["limit.need_value.count"] = slots(limitLine({ what: "need_value", limit: { ...view(S("rule")), unit: "count" } }, l, seq([])));
+  m["limit.which.some"] = slots(limitLine({ what: "which", limits: [view(S("rule"))] }, l, { inr: () => "", n: () => "", lit: () => S("names") }));
+  m["limit.never"] = slots(limitLine({ what: "active", limit: { ...view("{v}"), zeroIsOff: true }, to: 0 }, l, seq([]))).replace(/^.*?: /u, "").replace(/\.$/u, "");
+  m.limit_no = say(l, "limit_no", {});
+  m.voice_unheard = say(l, "voice_unheard", {});
+  m.owner_words = say(l, "owner_words", { shop: S("shop"), words: S("words") });
+  // the two templates a customer gets about a closed or reopened day: the text (the body filled in) and the order its values go to Meta in
+  for (const id of ["day_closed", "day_open"] as AssistantTemplateId[]) {
+    const facts = dayFacts({ language: l, timeZone: TZ, shop: "SHOP", date: D, startMs: AT });
+    const values = { shop: S("shop"), date: S("date"), time: S("time") };
+    const text = slots(render(id, { ...facts, values }));
+    m[`tmpl.${id}`] = text;
+    m[`tmpl.${id}.name`] = templateNameOf(id);
+    m[`tmpl.${id}.order`] = ["shop", "date", "time"].map((k) => [k, text.indexOf(`{${k}}`)] as const).filter(([, i]) => i >= 0).sort((a, b) => a[1] - b[1]).map(([k]) => k).join(",");
+  }
+  // the morning line's Bookings part (templates.ts MORNING_PARTS): "bookings: N, the first at T", or "no bookings"
+  const withBookings = (morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ bookings: N, firstMs: AT }], moneyPaise: 0, waiting: 0 }).values as Bag).today;
+  m["morning.bookings"] = withTime(slots(withBookings));
+  m["morning.no_bookings"] = (morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ bookings: 0 }], moneyPaise: 0, waiting: 0 }).values as Bag).today;
+  function withInrIf(t: string): string { return t.replaceAll(INR, "{inr}"); }
 }
 
 /** The word lists the rules read the owner's commands from, taken out of the TypeScript source (they are `const`s that are not exported, and the TypeScript is not changed for this). */
@@ -197,10 +321,21 @@ function rules(): unknown {
   const leave = readFileSync(join(ROOT, "modules", "assistant", "intents-leave.ts"), "utf8");
   const memory = readFileSync(join(ROOT, "modules", "assistant", "intents-memory.ts"), "utf8");
   // the router's reading of the owner's words for this shop's kinds (intents.ts ownerReading): the language model's prompt and schema, and the decision model's question
-  const context = { kinds: KINDS as OwnerKind[] };
-  const offered = OWNER_KINDS.filter((k) => KINDS.includes(k) && !RULES_ONLY.includes(k));
+  const routerOf = (kinds: string[]) => {
+    const context = { kinds: kinds as OwnerKind[] };
+    const offered = OWNER_KINDS.filter((k) => kinds.includes(k) && !RULES_ONLY.includes(k));
+    return { prompt: ownerReading.prompt(context), schema: ownerReading.schema(context), instructions: WANT_INSTRUCTIONS, criteria: offered.map((k) => [k, KIND_MEANING[k as Exclude<OwnerKind, "unknown">]]) };
+  };
+  // the words that make a sentence a rule about a limit (limits-card.ts PHRASING, a const that is not exported): its word list, taken out of the source
+  const limitsCard = readFileSync(join(ROOT, "modules", "assistant", "limits-card.ts"), "utf8");
+  const phrasingAt = limitsCard.indexOf("const PHRASING = wordRe([") + "const PHRASING = wordRe(".length;
+  const phrasing = new Function(`return ${limitsCard.slice(phrasingAt, limitsCard.indexOf('], "iu")', phrasingAt) + 1)}`)() as string[];
   return {
-    router: { prompt: ownerReading.prompt(context), schema: ownerReading.schema(context), instructions: WANT_INSTRUCTIONS, criteria: offered.map((k) => [k, KIND_MEANING[k as Exclude<OwnerKind, "unknown">]]) },
+    router: routerOf(KINDS),
+    kindsBookings: BOOKINGS_KINDS,
+    limitPhrasing: phrasing,
+    // the same reading for a Bookings shop's kinds (BOOKINGS_KINDS)
+    routerBookings: routerOf(BOOKINGS_KINDS),
     talkSchema: ownerPrompt({ shop: { name: "x" }, language: "en", sources: [], limits: [] }).schema,
     leaveFile: listAfter(leave, "const FILE = new RegExp([", "\n].join"),
     leaveOperator: listAfter(leave, "const OPERATOR = new RegExp([", "\n].join"),

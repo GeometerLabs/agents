@@ -54,6 +54,8 @@ type Settings struct {
 		MorningOff                                    bool // "morning": false
 		MorningHour, MorningMinute                    int
 	}
+	// HasAssistant: the settings have an `assistant` block, so a template's shop has the owner's assistant (wire.ts: none without one).
+	HasAssistant bool
 	// Own is a template's own settings (template.go Kit.ReadSettings), nil for the listings shop. Raw is settings.json as read, for a template that reads a member again.
 	Own any
 	Raw map[string]any
@@ -279,6 +281,7 @@ func (s *Settings) readAssistant(raw any) {
 	a := &s.Assistant
 	a.Style, a.Personality, a.MorningHour, a.MorningMinute = "clay", "warm", 8, 0
 	block, _ := raw.(map[string]any)
+	s.HasAssistant = block != nil
 	switch m := block["morning"].(type) {
 	case bool:
 		a.MorningOff = !m

@@ -153,9 +153,9 @@ func (s *State) RefusedBefore(digest string, now int64) *Refused {
 	return nil
 }
 
-// MakeCard is cards.ts `makeCard`: a new card for this action. Any open card for the same skill, kind and case is void first (one live card per thing). Returns the card, and the
-// cards it voided.
-func (s *State) MakeCard(a Action, proposal Raw, now int64) (*Card, []*Card) {
+// MakeCard is cards.ts `makeCard`: a new card for this action. Any open card for the same skill, kind and case is void first (one live card per thing). Returns the card, its
+// one-use code (only its hash is kept: the code goes into the WhatsApp text and the button ids, never to the page), and the cards it voided.
+func (s *State) MakeCard(a Action, proposal Raw, now int64) (*Card, string, []*Card) {
 	digest := ActionDigest(a)
 	id := s.NextID("c")
 	var voided []*Card
@@ -184,7 +184,7 @@ func (s *State) MakeCard(a Action, proposal Raw, now int64) (*Card, []*Card) {
 	}
 	a.Fields = fields
 	s.Cards = append(s.Cards, Card{ID: id, CodeHash: CodeHash(code), Action: a, Proposal: proposal, Digest: digest, State: "open", CreatedAtMs: now, ExpiresAtMs: now + CardForMs})
-	return &s.Cards[len(s.Cards)-1], voided
+	return &s.Cards[len(s.Cards)-1], code, voided
 }
 
 // CardByID is the card with this id ("c-3"), whatever its state; the owner's page answers by id and digest, never by code.

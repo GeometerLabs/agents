@@ -129,8 +129,9 @@ func IntentFromReply(id string, s *Settings) *Intent {
 		if p.Hour >= 12 {
 			period = "pm"
 		}
-		// the very minute, as a calendar date and a time with am/pm, so nothing is left to read back or to guess
-		return &Intent{Kind: "book", Date: map[string]any{"kind": "calendar", "day": p.Day, "month": p.Month}, Time: map[string]any{"hour": hour, "minute": p.Minute, "period": period}}
+		// the very minute, as a calendar date and a time with am/pm, so nothing is left to read back or to guess; the numbers are float64, as every other Intent's are (decoded JSON,
+		// which the readers of a date and a time take), so the tap is read like the typed words
+		return &Intent{Kind: "book", Date: map[string]any{"kind": "calendar", "day": float64(p.Day), "month": float64(p.Month)}, Time: map[string]any{"hour": float64(hour), "minute": float64(p.Minute), "period": period}}
 	}
 	return nil
 }

@@ -6,11 +6,12 @@ package runtime
 // saved state, never from a step in progress.
 
 import (
+	"context"
 	"crypto/rand"
-	"errors"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -24,6 +25,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/listings"
+	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/signing"
 	"github.com/GeometerLabs/agents/go/internal/store"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
@@ -58,6 +60,8 @@ type Runtime struct {
 	router *understanding.Router[assistant.Intent] // the owner's router (nil: the rules alone read the owner's words)
 	// the morning line's day already done (morning.go), and the last good licence.json read and its modified time
 	morningDone string
+	// ownerAudio are the owner's recordings from their page, in memory only until their step listens (voice.go)
+	ownerAudio  audioDrop
 	licence     *licenceFile
 	licenceSeen int64
 	o           Options
@@ -510,7 +514,17 @@ func (r *Runtime) ownerNumberRead() string {
 
 // ownerSignin is a press of "send me a link" on the owner's page. A listings-only shop has no WhatsApp, so no link is sent: the owner signs in with their passkey. The attempt is
 // counted first, as every request is, so the record cannot be flooded by asking.
-func (r *Runtime) ownerSignin(rec *recorder) {
+func (r *Runtime) ownerSignin(rec *recorder) { r.sendLink(rec, nil, "page") }
+
+// SigninKit is a template's Kit that has WhatsApp: a sign-in link goes to the owner through it (owner-signin.ts whatsappOf: on WhatsApp only, never as a push). Nil: the shop has
+// no WhatsApp, and its owner signs in with their passkey.
+type SigninKit interface {
+	SigninMessaging() messaging.Messaging
+}
+
+// sendLink is owner-signin.ts sendLink: one link, if the shop's limits allow it, issued and sent in the owner's open window, its outcome recorded under the link's short id. wa nil:
+// the shop has no WhatsApp (the listings-only shop, or a template's without it).
+func (r *Runtime) sendLink(rec *recorder, wa messaging.Messaging, via string) {
 	lang := r.o.Client.Settings.Owner.Language
 	if r.o.Access == nil {
 		r.o.Log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.")
@@ -531,8 +545,46 @@ func (r *Runtime) ownerSignin(rec *recorder) {
 		r.o.Log("A sign-in link was asked for more often than the shop's limit (3 a quarter of an hour, 10 a day): none was sent.")
 		return
 	}
-	rec.append(NewLine{Conversation: w.Owner, Action: "owner_signin", Outcome: "blocked", Inputs: map[string]any{"via": "page"}, Language: lang, Refs: map[string]string{"to": "owner", "via": "page"},
-		Notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the Operator's setup QR or recovery card)."})
+	if wa == nil {
+		rec.append(NewLine{Conversation: w.Owner, Action: "owner_signin", Outcome: "blocked", Inputs: map[string]any{"via": via}, Language: lang, Refs: map[string]string{"to": "owner", "via": via},
+			Notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the Operator's setup QR or recovery card)."})
+		return
+	}
+	ctx := context.Background()
+	// the window first: a link cannot go as free text when it is closed, and nothing is issued that could not be sent
+	if open, err := wa.IsWindowOpen(ctx, w.Owner); err != nil || !open {
+		rec.append(NewLine{Conversation: w.Owner, Action: "owner_signin", Outcome: "blocked", Inputs: map[string]any{"via": via}, Language: lang, Refs: map[string]string{"to": "owner", "via": via},
+			Notes: "The owner's WhatsApp window is closed, so a sign-in link cannot go as a message. The page tells the owner to send \"open my app\" to the shop's number."})
+		return
+	}
+	r.ownerMu.Lock()
+	id, token, _, err := r.o.Access.Issue(w, via, r.o.Now())
+	r.ownerMu.Unlock()
+	if err != nil {
+		r.o.Log("A sign-in link could not be made: " + err.Error())
+		return
+	}
+	text := assistant.Words(lang).Say("signin.link", "shop", r.o.Client.Settings.Name, "link", w.Base+"/in/"+token)
+	refs := map[string]string{"to": "owner", "via": via, "link": id}
+	outcome, notes := "unconfirmed", ""
+	sent, err := wa.SendText(ctx, w.Owner, text)
+	if err == nil {
+		refs["messageId"] = sent.ID
+		if seen, gerr := wa.GetMessage(ctx, sent.ID); gerr == nil && seen != nil {
+			outcome = "confirmed"
+		} else if gerr != nil {
+			notes = gerr.Error()
+		}
+	} else {
+		notes = err.Error()
+		if messaging.NothingWasSent(err) {
+			outcome = "failed"
+			r.ownerMu.Lock()
+			r.o.Access.Unsent(id) // nobody has it: it can never be used
+			r.ownerMu.Unlock()
+		}
+	}
+	rec.append(NewLine{Conversation: w.Owner, Action: "owner_signin", Outcome: outcome, Inputs: map[string]any{"via": via, "link": id}, Language: lang, Refs: refs, Notes: notes})
 }
 
 // beat is the clock's beat, in TypeScript's order (core.ts: the agent's own work, then the sign-in's tick): the assistant's beat; once a day the stock's tidy and the clean-up of
