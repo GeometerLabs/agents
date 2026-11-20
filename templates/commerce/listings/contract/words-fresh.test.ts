@@ -17,6 +17,7 @@ import * as booksWords from "../../../../go/scripts/gen_books_words.ts";
 import * as booksVectors from "../../../../go/scripts/gen_books_vectors.ts";
 import * as bookingsReportWords from "../../../../go/scripts/gen_bookings_report_words.ts";
 import * as bookingsReportVectors from "../../../../go/scripts/gen_bookings_report_vectors.ts";
+import * as voiceVectors from "../../../../go/scripts/gen_voice_vectors.ts";
 
 test("words-fresh: the committed packed words equal a fresh render of the TypeScript words", () => {
   assert.deepEqual([...generate().keys()].sort(), ["en.json", "hi.json", "kn.json", "ml.json", "rules.json"]);
@@ -144,3 +145,8 @@ test("words-fresh: the Bookings words and the shared formats (go/internal/bookin
     assert.deepEqual(bookings.staleFiles(dir, new Map([["formats.json", files.get(name)!]])), ["formats.json"]);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("words-fresh: the voice vectors the Go voice module is proved on (go/internal/voice/testdata) equal a fresh render of the TypeScript voice module", () => {
+  assert.equal(voiceVectors.stale(), false, "the voice vectors are out of date: run  node go/scripts/gen_voice_vectors.ts  and commit the result");
+});
+

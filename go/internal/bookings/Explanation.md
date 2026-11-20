@@ -123,3 +123,15 @@ owner's own reply path (the mark's button with its code, or "approve b-3"), so t
 so the runtime gives a template an optional `AfterTicker` whose `save` is `saveMid` (kit.go): the state and the record lines so far are committed and the step's recorder goes on
 from them. The notice is the shared `runtime.RunLicenceNotice` with Bookings' words (server/licence.ts); the report is `MonthlyReport.Run`. `ReportSetupOf` reads runtime.json's
 `report` block with config.ts's checks and words.
+
+## The shop's assistant, voice and the rest (wave 2, steps 5 and 6, 20 Nov 2026)
+
+`agent_assistant.go` is src/assistant.ts: Bookings as a skill of the shop's assistant. The conversation, its cards and its words are the shared runtime's (runtime/assistant.go):
+this file is only what is Bookings' own, its reads (a day's list, what waits, read from the owner page's own items so both always agree, the opening hours) and its acts over the
+agent's own paths (a cancel is the owner's "approve b-3" with the deposit back through the same refund path and limit; an answer to something waiting sends the very reply the
+owner could type or tap; a move is the customer's own reschedule; a closed day tells each customer through the assistant's template and cancels nothing). The agent turns the
+assistant on with `StepContext.Assistant` on a shop with an `assistant` block, hands the owner's words to it after the fixed phrases, a card from the page, the talk box and a
+recording to it, and runs its beat. The owner's tightened refund limit is in force for the agent's own checks (`StepContext.InForce`).
+
+Voice (internal/voice): a customer's note is heard and read like typed text, with the voice marks on its record line; the owner's goes to the assistant (`HearOwner`). The terms
+(internal/terms) read the owner's "terms" and "I agree". `agent_mode.go` is reader.ts's button-mode and step-pause lines. The morning line runs in AfterTick after the report.
