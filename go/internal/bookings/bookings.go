@@ -15,7 +15,9 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"time"
 
+	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/terms"
 	speech "github.com/GeometerLabs/agents/go/internal/voice" // named speech: the package has its own type voice (agent_say.go)
 )
 
@@ -44,6 +46,8 @@ type Kit struct {
 	Report      *MonthlyReport
 	reportErr   string
 	reportErrAt int64
+	// Terms is the shop terms now (B72: client/terms.json, read again when it changes, terms.NewReader); nil, or a nil answer: the feature is off
+	Terms func() *terms.File
 	// Voice is the shop's voice service (runtime.json `speech`, internal/voice); nil: voice is off, and a voice note gets the one line asking to type
 	Voice *speech.Service
 	// shared is the part of the settings every shop has (the assistant's character), for the owner page's assistant view
@@ -58,6 +62,16 @@ func (k *Kit) OwnerVoiceOn() bool {
 }
 
 var _ runtime.OwnerVoiceKit = (*Kit)(nil)
+
+// SigninMessaging is the shop's WhatsApp for the owner's sign-in link (owner-signin.ts whatsappOf: never a push); nil when the shop has none.
+func (k *Kit) SigninMessaging() messaging.Messaging {
+	if k.Ports.WhatsApp == nil {
+		return nil
+	}
+	return k.Ports.WhatsApp
+}
+
+var _ runtime.SigninKit = (*Kit)(nil)
 
 func (k *Kit) givenUp() map[string]bool {
 	if k.given == nil {

@@ -5,9 +5,10 @@ package bookings
 // so its signature is kept stable (go-bk-chat-19nov calls it).
 //
 // Not ported here yet, each answered with runtime.Unported or left as the TypeScript's "off" path (Deferred.md):
-// the shop terms (B72), the handover code, approvers other than the owner (B37), and the WhatsApp booking's own page link (batch 5).
+// the handover code, approvers other than the owner (B37).
 
 import (
+	"context"
 	"encoding/json"
 	"regexp"
 	"sort"
@@ -21,6 +22,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/terms"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 	speech "github.com/GeometerLabs/agents/go/internal/voice" // named speech: the package has its own type voice (agent_say.go)
 	"github.com/GeometerLabs/agents/go/internal/zone"
@@ -176,6 +178,7 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 		notes = append(notes, "the customer sent a voice note; this is its transcript")
 	}
 	a.log(nil, phone, "receive_message", "confirmed", inputs, logMore{notes: strings.Join(notes, "; "), refs: refs})
+	defer a.announceButtonMode() // reader.ts: after the customer has their answer, whatever it was (agent.ts's `finally`)
 
 	if in.Kind == "stop" {
 		return a.onStop(phone)
@@ -817,7 +820,13 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 	if isRelayReply(msg) {
 		return nil // the approvals relay's: no reply and no record here
 	}
-	// TODO(go-bk-agent): the handover code (approvals/handover.ts) and the shop terms (B72) read the owner's words before the commands
+	// B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (internal/terms, modules/terms/owner.ts). Off unless the shop was handed a terms file.
+	if a.kit.Terms != nil {
+		if setup := a.kit.Terms(); setup != nil && terms.HandleOwner(a.ctx, termsMessage(msg), a.termsDeps(setup)) {
+			return nil
+		}
+	}
+	// TODO(go-bk-agent): the handover code (approvals/handover.ts) reads the owner's words before the commands
 	if dayToday.MatchString(msg.Text) {
 		a.tellDay("today")
 		return nil
@@ -942,6 +951,59 @@ func (a *Agent) onStop(phone string) error {
 	a.log(nil, phone, "opt_out", "confirmed", map[string]any{"by": "STOP"}, logMore{notes: "no more messages to this customer, not even a reply; any reminder that falls due is stopped by the limits"})
 	a.tellOwner(nil, phone, "owner_opted_out", sayOpts{})
 	return nil
+}
+
+// termsMessage is the owner's message as the terms read it: its id, its words, the button they tapped.
+func termsMessage(m messaging.InboundMessage) terms.Message {
+	out := terms.Message{ID: m.ID, Text: m.Text}
+	if m.Reply != nil {
+		id := m.Reply.ID
+		out.ReplyID = &id
+	}
+	return out
+}
+
+// termsDeps is agent.ts's handleOwnerTerms call: the shop's terms now, the agent's messaging, its record and its log (the case is none).
+func (a *Agent) termsDeps(setup *terms.File) terms.Deps {
+	return terms.Deps{
+		Setup: setup, ShopName: a.settings.Name, OwnerNumber: a.owner(), OwnerLanguage: a.settings.Owner.Language, Messaging: termsMessaging{a.msg}, Record: termsRecord{a},
+		Log: func(action, outcome string, inputs any, more terms.LogMore) {
+			a.log(nil, a.owner(), action, outcome, inputs, logMore{notes: more.Notes, refs: more.Refs})
+		},
+	}
+}
+
+// termsMessaging is the agent's messaging as the terms send with it (an interactive message when the provider has buttons).
+type termsMessaging struct{ m messaging.Messaging }
+
+func (t termsMessaging) SendText(ctx context.Context, to, body string) error {
+	_, err := t.m.SendText(ctx, to, body)
+	return err
+}
+
+func (t termsMessaging) SendInteractive(ctx context.Context, to string, m terms.Interactive) error {
+	inter, ok := t.m.(messaging.Interactive)
+	if !ok {
+		_, err := t.m.SendText(ctx, to, m.Body)
+		return err
+	}
+	var bs []messaging.Choice
+	for _, b := range m.Buttons {
+		bs = append(bs, messaging.Choice{ID: b.ID, Title: b.Title})
+	}
+	_, err := inter.SendInteractive(ctx, to, messaging.InteractiveMessage{Body: m.Body, Buttons: bs})
+	return err
+}
+
+// termsRecord is the step's record as the terms read it.
+type termsRecord struct{ a *Agent }
+
+func (t termsRecord) Entries() []terms.Entry {
+	var out []terms.Entry
+	for _, e := range t.a.c.Rec.Entries() {
+		out = append(out, terms.Entry{Action: e.Action, Outcome: e.Outcome, Refs: e.Refs})
+	}
+	return out
 }
 
 // listen is agent.ts's shared listener (turn.ts createListener): the owner and the other approvers type their commands, and a customer who sent STOP is not listened to.

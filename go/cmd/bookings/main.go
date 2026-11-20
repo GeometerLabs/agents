@@ -24,6 +24,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/terms"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"github.com/GeometerLabs/agents/go/internal/voice"
@@ -139,6 +140,8 @@ func run(folder string) error {
 		kit.Report = ports.Books.NewMonthlyReport(*setup)
 	}
 	kit.Ports = ports
+	// B72: the shop terms, read from the client folder again whenever the file changes; no file: the feature is off
+	kit.Terms = terms.NewReader(client.Folder)
 	// B29: the shop's voice service, from runtime.json `speech` (internal/voice); left out, voice is off and a voice note gets the one line asking to type
 	if raw, ok := client.Config.Raw["speech"]; ok {
 		c, problems := voice.Read(raw, client.Folder)
