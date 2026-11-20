@@ -38,6 +38,11 @@ type Kit struct {
 	// PageBase is where a WhatsApp booking's own page lives (item 11h; start.ts pageBase: the deployer's pages.json, read fresh on every use: its `url` on the pages domain,
 	// else `base`, this server's). nil or "": the shop has no page, and no page link is sent.
 	PageBase func() string
+	// Report is the monthly report job (books.go), made once per process from runtime.json's `report` block; nil: the shop has none, and nothing is sent. reportErr and
+	// reportErrAt are core.ts lastReportError: a report that cannot be made is said once, and again each hour it goes on.
+	Report      *MonthlyReport
+	reportErr   string
+	reportErrAt int64
 	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.
 	given map[string]bool
 }

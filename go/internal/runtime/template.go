@@ -119,8 +119,9 @@ type StepContext struct {
 	Owner func() (number, language string)
 	// Licence is the shop's licence now: "" (in order), "paused" (the wind-down) or "stopped" (the final stop) (modules/licence/rules.ts state).
 	Licence func() string
-	// PaidThrough is the lease's paid_through (seconds), nil when the shop is not in a lease (rules.ts licenceNow `paidThrough`).
+	// PaidThrough is the lease's paid_through (seconds), nil when the shop is not in a lease (rules.ts licenceNow `paidThrough`); Partner the Operator the lease names.
 	PaidThrough func() *int64
+	Partner     func() string
 	// LastTry: the wait for a Guard is over, so this step runs with waiting off (tasks.ts lastTry).
 	LastTry bool
 	// Task is the step's task id ("" for a tick).
@@ -131,6 +132,13 @@ type StepContext struct {
 	Clock  budget.Clock
 	// rt is the runtime that made the step: a customer's talk (talkcustomer.go) asks it for the model, the budget and the clock. Unset in a step a test builds by hand.
 	rt *Runtime
+}
+
+// AfterTicker is an Agent with work that rides on the clock's beat AFTER its own and saves for itself (core.ts step: the licence notice and the monthly report, each with
+// `save: () => save(store, record)`). save commits the state and the record lines so far, so a claim written before a send is on disk before the send goes; what the
+// work appends after the last save is saved with the beat. Only a tick runs it, never a task's step (a task's step is saved whole or not at all).
+type AfterTicker interface {
+	AfterTick(save func() error)
 }
 
 // ErrUnported is a kind of event this Go runtime does not take yet. The task ends failed at once (no retries: it would fail the same way), with the sentence in the task's error.

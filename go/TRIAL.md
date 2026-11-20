@@ -653,3 +653,11 @@ contract runs once at the end):
    approval decision nobody waits for PANICKED the Go process (refunds.go logs it with a nil case; `bookingOfCase` asserted the type), which killed two limits tests.
    `money`, `owner` and `limits-approvals` on Go: 34 of 35 (the one left is the owner's talk box, step 5). Count: **about 119 of 143** (the documents, the passkey session's
    files, the approved resend and the malformed approval event join; the other files not run again).
+4. **The monthly report and the licence notice: done.** The runtime has a post-step hook for the beat, `runtime.AfterTicker` (`AfterTick(save)`), run by `kitStep` after the
+   agent's Tick and the owner's beat; its `save` is `saveMid` (the state and the record lines so far are committed, and the step's recorder goes on from them), core.ts's
+   `save: () => save(store, record)`. The Bookings agent's AfterTick runs the licence notice (modules/licence/notice.ts ported as the shared `runtime.RunLicenceNotice`, with
+   Bookings' words from server/licence.ts and the lease's Operator now read from licence.json) and then `MonthlyReport.Run` with that save; the `report` block of runtime.json
+   is read and checked as config.ts readReport and start.ts monthlyReportSetup do (`ReportSetupOf`: signing key, go-live file, the name re-read when the file changes). Go
+   test `TestMonthlyReportARestartAfterTheClaimNeverSendsTheMonthTwice`: a real runtime and store; the store's files are copied at the instant the report is handed to
+   WhatsApp (what a crash then leaves), and a runtime started on the copy sends nothing and closes the claim as unconfirmed. `record-licence.contract.test.ts` on Go: 12 of
+   12. Count: **about 122 of 143**.
