@@ -628,3 +628,55 @@ wait for the agent core are listed in the final report of this branch; `scenario
 **Measured (19 Nov, after this branch):** `go build ./...`, `go vet ./...` and `go test ./...` pass (27 packages, `internal/chatid` is new). The Bookings chat contract on Go (`chat.contract.test.ts`) is **4 of 17**: the empty and unknown thread
 and the 400s, a tap nothing offered, the 12-new-guests-an-hour 429 pass; the 13 that wait for the agent core are every one that needs the shop to answer (the send answered, the same send again, delete my chat after a
 booking, the three languages and Hinglish, the 8 a minute test (its 429 comes at the right send, but its last line counts the saved guest lines), and the five model tests). The listings contract on Go: 202 tests, 202 pass.
+
+## Wave 2: the Bookings agent finished (20 Nov 2026, `go-bk-agent-20nov`, in progress)
+
+Started from agents main f1e56749 (Bookings contract on Go 101 of 143). The steps of the brief, most useful first; the count after each (narrow contract files only; the whole
+contract runs once at the end):
+
+1. **The three Guard-outage tests: done.** The cause was not the watch but the queue: in `runtime.drain` the step's error was assigned to a `:=`-shadowed `err` inside the
+   `json.Unmarshal` if, so EVERY failed step looked like one that went through without being saved; the task ran again until "too many interrupted tries" and was never parked
+   for its Guard (and an `Unported` step was tried four times, not failed at once). Fixed in `internal/runtime/runtime.go`. `recovery.contract.test.ts` on Go: 11 of 11
+   (the three outage tests were failing). Count: **104 of 143** (101 + 3; the other files not run again).
+2. **A UPI shop's money: done.** `internal/bookings/agent_marks.go` is agent.ts's owner-marked section (requestOf, sendMarkedRequest, tellAlreadyWaiting,
+   reconcileMarks, lateMark, oweBack, onPaidClaim, noteClaim, onLateClaim, onPicture, onOwnerMark, markAskAgain, remindOwedRefunds) over `internal/payments/ownermarked`; the
+   agent asks the module's capabilities (`ownerConfirms`, `ownerRefunds`) as agent.ts does, a UPI shop's `a.pay` is the ledger's `ownermarked.View` (made in the agent, never
+   watched), and the ledger is typed once on the store and written back field for field. Also, because the UPI tests need them: the "booked" gate's owner-marked branch,
+   the WhatsApp booking's own page link (`Kit.PageBase` from pages.json, `pageLinkFor`, `keepPageLink`, the booked message's link inside the window), the page's UPI pay block,
+   `canSayPaid`, the refund on the page, and the owner's page items with their digests (deposit, late_deposit, refund_owed) and `owner_action` by digest. Not done: the QR
+   picture (Deferred.md). `flow`, `money` and `owner` contract files on Go: 31 of 34 (the 3 left are steps 3, 5 and 6: the accountant's files after a passkey session, the
+   owner's talk box, a page's documents). Count: **about 113 of 143** (104 + the 8 UPI tests + the owner told by template outside the window; the other files not run again).
+3. **The owner's page: done.** `owner_action` by digest for every item (received, refunded, kept on the UPI items; approve, deny, retry on the late refund and the calendar items)
+   goes through the owner's own reply path, as agent.ts onOwnerAction does; `owner_message` and a card's answer on a shop without the assistant are refused in the record
+   (with one: step 5). The page's documents (`Documents`: accounting.CaseDocuments over the record, by the page's own lookup) and the accountant's files
+   (`/internal/channel/accounting`, a new optional `runtime.AccountantFiler`, accounting.AccountantFiles with the Tally files) are wired. Found and fixed on the way: an
+   approval decision nobody waits for PANICKED the Go process (refunds.go logs it with a nil case; `bookingOfCase` asserted the type), which killed two limits tests.
+   `money`, `owner` and `limits-approvals` on Go: 34 of 35 (the one left is the owner's talk box, step 5). Count: **about 119 of 143** (the documents, the passkey session's
+   files, the approved resend and the malformed approval event join; the other files not run again).
+4. **The monthly report and the licence notice: done.** The runtime has a post-step hook for the beat, `runtime.AfterTicker` (`AfterTick(save)`), run by `kitStep` after the
+   agent's Tick and the owner's beat; its `save` is `saveMid` (the state and the record lines so far are committed, and the step's recorder goes on from them), core.ts's
+   `save: () => save(store, record)`. The Bookings agent's AfterTick runs the licence notice (modules/licence/notice.ts ported as the shared `runtime.RunLicenceNotice`, with
+   Bookings' words from server/licence.ts and the lease's Operator now read from licence.json) and then `MonthlyReport.Run` with that save; the `report` block of runtime.json
+   is read and checked as config.ts readReport and start.ts monthlyReportSetup do (`ReportSetupOf`: signing key, go-live file, the name re-read when the file changes). Go
+   test `TestMonthlyReportARestartAfterTheClaimNeverSendsTheMonthTwice`: a real runtime and store; the store's files are copied at the instant the report is handed to
+   WhatsApp (what a crash then leaves), and a runtime started on the copy sends nothing and closes the claim as unconfirmed. `record-licence.contract.test.ts` on Go: 12 of
+   12. Count, every file run narrowly after this step (recovery 11/11, flow 14/14, money + owner + limits-approvals 34/35, record-licence 12/12, open-cases + open2 + open3
+   + chat + smoke + cross-restart 52/71): **123 of 143**.
+5. **The shop's assistant for Bookings: NOT started** (where the stream stopped). Sized on the Go side first: the Go assistant (`runtime/assistant.go`) is the listings shop's,
+   page-only (no WhatsApp), with one skill hard-wired; the reading (`assistant/rules.go`) already knows the kinds (day, close_day, reopen_day, move, message, cancel, limit), but the
+   WORDS are missing: none of the sentences these tests expect ("Closed ... Reply undo to open it again", "Moved b-1 to ...", "I couldn't move ...", "Send this to ...", "would
+   loosen it") is in `assistant/words/*.json.gz`. The plan, one commit each: (0) generate modules/assistant/templates.ts and words.ts's Bookings and limit lines into the packs
+   (gen_words.ts); (a) grow runtime/assistant.go behind a skill seam (conversation.ts `createAssistant` over `OwnerSkill`, no second copy), with a WhatsApp way out through the
+   shared say and the assistant's approved template outside the window, and the page talk box and app view; (b) the Bookings skill (src/assistant.ts: day, waiting, prepare,
+   execute over the agent's own paths) with the cancel and message cards; (c) close a day and move, with undo; (d) the limit card (limits-card.ts); (e) the morning line in
+   AfterTick; (f) voice (modules/voice: the speech Guard client, the listener) for the owner's voice note and the WebM recording, which also unblocks step 6's voice note.
+   Tests waiting on it (11): open3's day list and money, close a day, move, message a customer, the two limit cards, the morning line, the owner's voice note, the WebM
+   recording; open2's cancel card; owner's talk box on the page.
+6. **The rest: not started** (9 left; two chairs, the documents, the template outside the window, the approval event's checks and both cross-restart tests already pass): the
+   shop terms (2: modules/terms), a customer's voice note (1: voice), the decision model's step-breaker and pause (3), the button flow's payloads (1), the cancel buttons and
+   talk to the owner (1), the WhatsApp sign-in link (1).
+
+**Measured at the end of this stream (20 Nov, through the heat lock, once):** `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1
+templates/commerce/bookings/contract/`: **123 of 143** (was 101; 20 fail, 0 skipped, no Go panic). The 20 are steps 5 (11) and 6 (9) above. `go build ./...`, `go vet ./...` and
+`go test ./...` pass (29 packages). The listings and directory contracts were not run (the lead runs them before merging); the queue fix in runtime.go changes a listings
+shop's failing step too (it is now retried with the delays instead of spinning to "too many interrupted tries").

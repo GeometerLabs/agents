@@ -12,7 +12,11 @@ package bookings
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"regexp"
+
+	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/budget"
@@ -30,6 +34,9 @@ const (
 
 var receiptBooking = regexp.MustCompile(`^(b-\d+):`)
 
+// errBadLedger: the saved `upi` member is not one this version can read; a step that went on would save the owner's marks as nothing.
+var errBadLedger = errors.New("The shop's UPI ledger (upi in the saved state) cannot be read by this version, so nothing is done until it is fixed or the TypeScript runtime runs the shop.")
+
 // Agent is one step's agent.
 type Agent struct {
 	c        *runtime.StepContext
@@ -40,7 +47,12 @@ type Agent struct {
 	watch    *watch
 	cal      calendar.Calendar
 	ownList  bool
-	pay      payments.Payments // nil: a UPI shop (the owner's marks are its payment record; not ported yet)
+	pay      payments.Payments // the gateway behind its Guard, watched; on a UPI shop the owner-marked ledger seen as payments (ownermarked.View, never watched: it is the store)
+	// ownerConfirms: the module cannot confirm a payment by itself (UPI), so the owner's marks are its payment record; ownerRefunds: it cannot refund by itself, so the owner
+	// owes every refund (agent.ts `ownerConfirms`, `ownerRefunds`, from the module's capabilities, never its name). marks is the ledger both use (nil when neither holds).
+	ownerConfirms, ownerRefunds bool
+	marks                       *ownermarked.State
+	badLedger                   bool // the store's `upi` member could not be read: every step fails rather than lose the owner's marks
 	msg      messaging.Messaging
 	say      *messaging.Say
 	refunds  *payments.Refunds
@@ -60,7 +72,18 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 		a.ownList = a.settings.Calendar == "own"
 		a.cal = ownCal{st, c.Now}
 	}
-	if k.Ports.Payments != nil {
+	a.ownerConfirms, a.ownerRefunds = !a.can.ConfirmsAutomatically, !a.can.RefundsAutomatically
+	if a.ownerConfirms || a.ownerRefunds {
+		// agent.ts `store.upi ??= emptyMarkState()`: the ledger is the store's, so it is saved with the step
+		if a.marks = st.ledger(true); a.marks == nil {
+			a.badLedger, a.marks = true, ownermarked.Empty()
+		}
+	}
+	switch {
+	case a.ownerConfirms:
+		// agent.ts `markedPayments(markState, marked.payLink, clock)`: made inside the agent, so it is not watched (nothing in it can be down)
+		a.pay = ownermarked.View{State: a.marks, PayLink: a.settings.UpiPayLink(), Now: a.now, Codes: assistant.NewCode}
+	case k.Ports.Payments != nil:
 		a.pay = wPayments{a.watch, k.Ports.Payments}
 	}
 	a.msg = a.channelMessaging(watchedMessaging(a.watch, a.ownerMessaging(k.Ports.WhatsApp)))
@@ -124,6 +147,9 @@ func (a *Agent) log(b *Booking, phone, action, outcome string, inputs any, more 
 
 // Handle is agent.ts handle, then core.ts step's decision on what the watched services saw.
 func (a *Agent) Handle(ev map[string]any) error {
+	if a.badLedger {
+		return errBadLedger
+	}
 	a.noteLicence()
 	return a.finish(ev, a.handle(ev))
 }
@@ -150,20 +176,24 @@ func (a *Agent) handle(ev map[string]any) error {
 	case "approval_decision":
 		approval, _ := ev["approval"].(string)
 		decision, _ := ev["decision"].(string)
-		if a.pay == nil {
-			return runtime.Unported("an approval decision on a UPI shop (the owner's marks)")
-		}
 		return a.refunds.OnApprovalDecision(a.ctx, approval, decision)
 	case "channel_request":
 		return a.onChannel(ev)
 	case "chat_message":
 		return a.onChatMessage(ev)
+	case "owner_action":
+		return a.onOwnerAction(ev)
+	case "owner_message":
+		return a.onOwnerPageMessage(ev)
 	}
 	return runtime.Unported("a " + kind + " event of a Bookings shop")
 }
 
 // Tick is agent.ts onTick, under the same watch (a tick is never kept waiting: it is thrown away whole when it fails, and the next beat starts again).
 func (a *Agent) Tick() error {
+	if a.badLedger {
+		return errBadLedger
+	}
 	a.noteLicence()
 	return a.finish(nil, a.onTick())
 }
