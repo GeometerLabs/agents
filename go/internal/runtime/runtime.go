@@ -270,8 +270,10 @@ func (r *Runtime) drain() {
 			r.fail("The queue could not count an attempt", err)
 			return
 		}
+		// the step's error is the SAME err the decision below reads (a `:=` here once shadowed it, so every failed step looked like a step that went through and was not saved,
+		// and its task ran again until "too many interrupted tries", never parked for its Guard); a payload that is not JSON is a failed try like any other
 		var ev map[string]any
-		if err := json.Unmarshal([]byte(task.Payload), &ev); err == nil {
+		if err = json.Unmarshal([]byte(task.Payload), &ev); err == nil {
 			err = r.stepTask(ev, task.ID, lastTry)
 		}
 		if err == nil {

@@ -628,3 +628,13 @@ wait for the agent core are listed in the final report of this branch; `scenario
 **Measured (19 Nov, after this branch):** `go build ./...`, `go vet ./...` and `go test ./...` pass (27 packages, `internal/chatid` is new). The Bookings chat contract on Go (`chat.contract.test.ts`) is **4 of 17**: the empty and unknown thread
 and the 400s, a tap nothing offered, the 12-new-guests-an-hour 429 pass; the 13 that wait for the agent core are every one that needs the shop to answer (the send answered, the same send again, delete my chat after a
 booking, the three languages and Hinglish, the 8 a minute test (its 429 comes at the right send, but its last line counts the saved guest lines), and the five model tests). The listings contract on Go: 202 tests, 202 pass.
+
+## Wave 2: the Bookings agent finished (20 Nov 2026, `go-bk-agent-20nov`, in progress)
+
+Started from agents main f1e56749 (Bookings contract on Go 101 of 143). The steps of the brief, most useful first; the count after each (narrow contract files only; the whole
+contract runs once at the end):
+
+1. **The three Guard-outage tests: done.** The cause was not the watch but the queue: in `runtime.drain` the step's error was assigned to a `:=`-shadowed `err` inside the
+   `json.Unmarshal` if, so EVERY failed step looked like one that went through without being saved; the task ran again until "too many interrupted tries" and was never parked
+   for its Guard (and an `Unported` step was tried four times, not failed at once). Fixed in `internal/runtime/runtime.go`. `recovery.contract.test.ts` on Go: 11 of 11
+   (the three outage tests were failing). Count: **104 of 143** (101 + 3; the other files not run again).
