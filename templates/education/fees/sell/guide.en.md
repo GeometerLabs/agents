@@ -265,7 +265,7 @@ Say this, word for word: "No fee marked paid without your confirmation; every re
 
 ## 6. Price
 
-Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 19 November 2026.
+Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 21 November 2026.
 
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |

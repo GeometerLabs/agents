@@ -1,4 +1,4 @@
-// One shop's own model budget (19 Nov 2026): the budget grows with the messages the shop bought this month (the same rule as fleet's cap), and the server admin may give ONE shop numbers of
+// One shop's own model budget (19 Nov 2026; numbers of the list in force, 21 Nov): the budget grows with the messages the shop bought this month (the same rule as fleet's cap), and the server admin may give ONE shop numbers of
 // its own, in shops/<shop>/budget-override.json, with `geometer shop budget`. Covers the scaling, the override file (valid, invalid, clear), the merge for an agent shop and a
 // listings-only shop, the read of fleet's `bought`, the redeploy on a change, the command, and the Operator's read-only panel line. Nothing here calls a model, a service or Docker.
 import { test } from "node:test";
@@ -34,9 +34,9 @@ function answer(t: ReturnType<typeof tempServer>, shop: string, fields: Record<s
 test("the budget grows with the messages bought, the way fleet's cap does: monthly = ai.budget.<plan> x (allowance + bought) / allowance, rounded up; the per-1,000 daily caps follow", () => {
   assert.deepEqual(budgetFor("basic", inForce), budgetFor("basic", inForce, { bought: 0 }), "nothing bought: exactly the list's numbers");
   const basic = budgetFor("basic", inForce, { bought: 1000 })!;
-  assert.equal(basic.monthlyMicroInr, 40 * RUPEE, "Basic: 1,000 bought doubles INR 20, and fleet's cap is INR 40 for 2,000 messages");
-  assert.deepEqual(basic.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 120, router: 200 }, "customer_talk and router follow the message count; the owner's talk and drafts do not");
-  assert.equal(budgetFor("business", inForce, { bought: 500 })!.monthlyMicroInr, 80 * RUPEE, "Business: 500 bought counts as one step of 1,000 (BOUGHT_STEP), so 60 x 4,000 / 3,000");
+  assert.equal(basic.monthlyMicroInr, 60 * RUPEE, "Basic: 1,000 bought doubles INR 30, and fleet's cap is INR 60 for 2,000 messages");
+  assert.deepEqual(basic.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 240, router: 200 }, "customer_talk and router follow the message count; the owner's talk and drafts do not");
+  assert.equal(budgetFor("business", inForce, { bought: 500 })!.monthlyMicroInr, 120 * RUPEE, "Business: 500 bought counts as one step of 1,000 (BOUGHT_STEP), so 90 x 4,000 / 3,000");
   assert.deepEqual(budgetFor("business", inForce, { bought: 100 }), budgetFor("business", inForce, { bought: 1000 }), "every block inside one step gives the same budget, so it redeploys the shop once a step");
   assert.equal(isBudgetConfig(basic), true);
   // fleet's own wall for the same shop is never below the shop's budget: ai.cap x messages / 1,000
@@ -48,7 +48,7 @@ test("the budget grows with the messages bought, the way fleet's cap does: month
   for (const bad of [-5, 1.5, Number.NaN]) assert.deepEqual(budgetFor("basic", inForce, { bought: bad }), budgetFor("basic", inForce), String(bad));
   // a listings-only shop is free and buys nothing
   assert.deepEqual(budgetFor("listings-only", inForce, { bought: 5000 }), budgetFor("listings-only", inForce));
-  assert.equal(planBudget("basic", inForce, 1000)!.monthlyMicroInr, 40 * RUPEE, "the plan's own numbers, before any override");
+  assert.equal(planBudget("basic", inForce, 1000)!.monthlyMicroInr, 60 * RUPEE, "the plan's own numbers, before any override");
 });
 
 test("the override file: valid, whole numbers and known features only, a reason, a name and a real day; plain-word errors", () => {
@@ -100,7 +100,7 @@ test("the override replaces the numbers it names and leaves the plan's others; w
   assert.equal(isBudgetConfig(merged), true);
   // it replaces, it does not scale: bought messages do not move a number the admin chose
   assert.equal(budgetFor("basic", inForce, { bought: 1000, override: OVERRIDE })!.monthlyMicroInr, 40 * RUPEE);
-  assert.equal(budgetFor("basic", inForce, { bought: 1000, override: OVERRIDE })!.daily.customer_talk, 120, "the daily caps it does not name still follow the plan and the messages bought");
+  assert.equal(budgetFor("basic", inForce, { bought: 1000, override: OVERRIDE })!.daily.customer_talk, 240, "the daily caps it does not name still follow the plan and the messages bought");
   assert.deepEqual(applyOverride(undefined, OVERRIDE), { monthlyMicroInr: 40 * RUPEE, daily: {} });
   assert.equal(applyOverride(plan, undefined), plan);
 });
@@ -108,27 +108,27 @@ test("the override replaces the numbers it names and leaves the plan's others; w
 test("an agent shop: fleet's bought messages and the override reach the shop's budget when its folder is read; a stale answer from an earlier month is not trusted", () => {
   const t = tempServer(); try {
     answer(t, "glow-salon", { bought: 1000 });
-    assert.equal(readShop(t.root, "glow-salon", NOW).budget!.monthlyMicroInr, 40 * RUPEE, "a top-up bought mid-month: the next read has the larger budget");
+    assert.equal(readShop(t.root, "glow-salon", NOW).budget!.monthlyMicroInr, 60 * RUPEE, "a top-up bought mid-month: the next read has the larger budget");
     assert.equal(readShop(t.root, "glow-salon", NOW).boughtThisMonth, 1000);
-    assert.equal(readShop(t.root, "glow-salon", new Date("2026-12-01T00:30:00Z")).budget!.monthlyMicroInr, 20 * RUPEE, "the month turned and fleet has not answered yet: back to the plan's");
+    assert.equal(readShop(t.root, "glow-salon", new Date("2026-12-01T00:30:00Z")).budget!.monthlyMicroInr, 30 * RUPEE, "the month turned and fleet has not answered yet: back to the plan's");
     answer(t, "glow-salon", {});
-    assert.equal(readShop(t.root, "glow-salon", NOW).budget!.monthlyMicroInr, 20 * RUPEE, "nothing bought");
+    assert.equal(readShop(t.root, "glow-salon", NOW).budget!.monthlyMicroInr, 30 * RUPEE, "nothing bought");
     writeOverride(t.paths.shop("glow-salon"), { ...OVERRIDE, daily: { owner_talk: 50 } });
     const f = readShop(t.root, "glow-salon", NOW);
     assert.equal(f.budget!.monthlyMicroInr, 40 * RUPEE);
     assert.equal(f.budget!.daily.owner_talk, 50);
-    assert.equal(f.budget!.daily.customer_talk, 60, "what the override does not name stays the plan's");
+    assert.equal(f.budget!.daily.customer_talk, 120, "what the override does not name stays the plan's");
     assert.deepEqual(f.planBudget, budgetFor("basic", inForce), "the plan's numbers stay visible beside it");
     assert.deepEqual(f.problems, []);
     // a change of the budget is a change of what the shop is asked to be, so the deployer redeploys it on its next pass (no manual deploy)
     const before = desiredHashOf({ ...f, budget: planBudget("basic", inForce) });
     assert.notEqual(desiredHashOf(f), before);
     clearOverride(t.paths.shop("glow-salon"));
-    assert.equal(readShop(t.root, "glow-salon", NOW).budget!.monthlyMicroInr, 20 * RUPEE);
+    assert.equal(readShop(t.root, "glow-salon", NOW).budget!.monthlyMicroInr, 30 * RUPEE);
     // a file that cannot be used stops being silently ignored: it is said, and the plan's budget is what is applied meanwhile
     writeFileSync(join(t.paths.shop("glow-salon"), OVERRIDE_FILE), "{}");
     const broken = readShop(t.root, "glow-salon", NOW);
-    assert.equal(broken.budget!.monthlyMicroInr, 20 * RUPEE);
+    assert.equal(broken.budget!.monthlyMicroInr, 30 * RUPEE);
     assert.ok(broken.problems.some((p) => /budget-override\.json is not usable/u.test(p)));
   } finally { t.done(); }
 });
@@ -167,12 +167,12 @@ test("geometer shop budget: shows the plan's numbers, sets the override with a r
     const shown = await geometer(t.root, "shop", "budget", "glow-salon");
     assert.equal(shown.code, 0);
     assert.match(shown.out, /the plan's model budget/u);
-    assert.match(shown.out, /a month: INR 20/u);
+    assert.match(shown.out, /a month: INR 30/u);
     assert.match(shown.out, /no budget of its own/u);
     const set = await geometer(t.root, "shop", "budget", "glow-salon", "--monthly-inr", "40", "--reason", "busy shop, owner asked", "--set-by", "Naval", "--daily", "owner_talk=50");
     assert.equal(set.code, 0, set.out);
     assert.match(set.out, /INR 40 a month/u);
-    assert.match(set.out, /fleet's cap for this shop must be raised too.*shop ai-cap acme-vps-1 glow-salon --monthly-inr 40/u, "40 is above Basic's INR 20 at fleet");
+    assert.match(set.out, /fleet's cap for this shop must be raised too.*shop ai-cap acme-vps-1 glow-salon --monthly-inr 40/u, "40 is above Basic's INR 30 at fleet");
     const file = JSON.parse(readFileSync(join(t.paths.shop("glow-salon"), OVERRIDE_FILE), "utf8"));
     assert.deepEqual([file.monthlyInr, file.daily, file.reason, file.setBy], [40, { owner_talk: 50 }, "busy shop, owner asked", "Naval"]);
     assert.match(file.date, /^\d{4}-\d{2}-\d{2}$/u);
