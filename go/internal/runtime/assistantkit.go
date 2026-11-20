@@ -22,6 +22,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
+	"github.com/GeometerLabs/agents/go/internal/voice"
 )
 
 // Shown is what a card says, from the same fields as its action (skill.ts Prepared.shown).
@@ -67,7 +68,9 @@ type DayRow struct {
 type LocalDate struct{ Year, Month, Day int }
 
 // Iso is conversation.ts isoDate: "2026-11-16".
-func (d LocalDate) Iso() string { return time.Date(d.Year, time.Month(d.Month), d.Day, 12, 0, 0, 0, time.UTC).Format("2006-01-02") }
+func (d LocalDate) Iso() string {
+	return time.Date(d.Year, time.Month(d.Month), d.Day, 12, 0, 0, 0, time.UTC).Format("2006-01-02")
+}
 
 // AddDays is core/time.ts addDays.
 func (d LocalDate) AddDays(n int) LocalDate {
@@ -129,6 +132,9 @@ type AssistantHooks struct {
 	// LanguageOf and OptedOut are a customer's language and STOP.
 	LanguageOf func(phone string) string
 	OptedOut   func(phone string) bool
+	// Listen is the owner's voice note heard through the agent's shared listener (conversation.ts AssistantDeps.hearing: the same switches, day's count and month's spend as a
+	// customer's); nil: voice is off for the shop, and the owner's voice note gets the line asking to type. It answers nil when nothing was listened to.
+	Listen func(msg messaging.InboundMessage, audio *PageAudio) *voice.Heard
 }
 
 // InForce is a declared limit's value in force for this step (runtime-limits.ts apply: the file's value moved by the saved changes); ok false for a limit the template does not
@@ -181,6 +187,71 @@ func (a *Assistant) OnPageMessage(id, text string, at int64) (err error) {
 		err = a.c.onOwnerMessage(messaging.InboundMessage{ID: id, From: a.c.number, Text: text, Timestamp: at}, "o:"+id)
 	})
 	return err
+}
+
+// SetListen hands the assistant the agent's listener for the owner's voice notes (AssistantHooks.Listen), once the agent has made its assistant.
+func (a *Assistant) SetListen(l func(msg messaging.InboundMessage, audio *PageAudio) *voice.Heard) {
+	a.c.hooks.Listen = l
+}
+
+// HearOwner is conversation.ts hearOwner: the owner's voice note as words. nil: not listened to (no voice service, button mode, no allowance left); a message with no text: it
+// could not be made out, and the owner was told to type it; otherwise the heard words, to be read like the owner's typed message (the fixed phrases first).
+func (a *Assistant) HearOwner(msg messaging.InboundMessage) *messaging.InboundMessage {
+	return a.c.hearOwner(msg, nil)
+}
+
+// OnPageVoice is conversation.ts onPageVoice: a recording the owner made on their page (nil when this process no longer holds it: the owner is asked to type), heard by the same
+// listener as their WhatsApp notes, then read like the talk box's words; everything is shown on the page.
+func (a *Assistant) OnPageVoice(id string, audio *PageAudio) (err error) {
+	c := a.c
+	c.onPage(func() {
+		msg := messaging.InboundMessage{ID: id, From: c.number, Timestamp: c.now, VoiceNote: true}
+		var heard *messaging.InboundMessage
+		if audio != nil {
+			heard = c.hearOwner(msg, audio)
+		}
+		if heard == nil {
+			c.say("voice_unheard") // not listened to (the recording is gone, button mode, no allowance): type it
+			return
+		}
+		if heard.Text == "" {
+			return // could not be made out: hearOwner said so
+		}
+		c.a.AddTalk("owner", heard.Text, c.now)
+		err = c.onOwnerMessage(*heard, "o:"+heard.ID)
+	})
+	return err
+}
+
+func (c *conv) hearOwner(msg messaging.InboundMessage, audio *PageAudio) *messaging.InboundMessage {
+	if c.hooks == nil || c.hooks.Listen == nil {
+		return nil
+	}
+	h := c.hooks.Listen(msg, audio)
+	if h == nil {
+		return nil
+	}
+	// what listening cost goes on an owner_assistant line now, whatever the words turn out to be (a fixed phrase such as "today" never reaches the read line), in the shape the
+	// cost meter prices; the listener already added it to the month's AI spend
+	refs := map[string]string{"intent": "voice_note"}
+	if !h.OK {
+		for k, v := range voice.FailedMarks(*h) {
+			refs[k] = v
+		}
+		c.logLine("owner_assistant", "confirmed", map[string]any{"voiceNote": true}, refs, "the owner's voice note could not be made out; they were asked to type it, and the audio was not kept")
+		c.say("voice_unheard")
+		out := msg
+		out.Text = ""
+		return &out
+	}
+	for k, v := range voice.Marks(*h) {
+		refs[k] = v
+	}
+	for k, v := range voice.SpeechRead(*h) {
+		refs[k] = v
+	}
+	c.logLine("owner_assistant", "confirmed", map[string]any{"voiceNote": true}, refs, "the owner's voice note, heard as words; they go on as if typed (the fixed phrases first, then the assistant), and the audio was not kept")
+	return &messaging.InboundMessage{ID: msg.ID, From: msg.From, Text: h.Text, Timestamp: msg.Timestamp}
 }
 
 // OnTick is conversation.ts onTick.

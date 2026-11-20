@@ -7,10 +7,10 @@ package runtime
 
 import (
 	"crypto/rand"
-	"errors"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -58,6 +58,8 @@ type Runtime struct {
 	router *understanding.Router[assistant.Intent] // the owner's router (nil: the rules alone read the owner's words)
 	// the morning line's day already done (morning.go), and the last good licence.json read and its modified time
 	morningDone string
+	// ownerAudio are the owner's recordings from their page, in memory only until their step listens (voice.go)
+	ownerAudio  audioDrop
 	licence     *licenceFile
 	licenceSeen int64
 	o           Options

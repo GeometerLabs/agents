@@ -26,6 +26,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	speech "github.com/GeometerLabs/agents/go/internal/voice" // named speech: the package has its own type voice (agent_say.go)
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
@@ -47,6 +48,12 @@ func (a *Agent) assistantOf() *runtime.Assistant {
 			LanguageOf: func(phone string) string { return a.languageOf(phone, nil) },
 			OptedOut:   func(phone string) bool { c := a.store.FindCustomer(phone); return c != nil && c.OptedOut },
 		})
+		if a.asst != nil && a.kit.Voice != nil {
+			// the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
+			a.asst.SetListen(func(msg messaging.InboundMessage, audio *runtime.PageAudio) *speech.Heard {
+				return a.c.Listen(a.kit.Voice, msg, audio, false, false)
+			})
+		}
 	}
 	return a.asst
 }
@@ -202,7 +209,7 @@ func jsonString(s string) json.RawMessage {
 	_ = enc.Encode(s)
 	return json.RawMessage(strings.TrimRight(b.String(), "\n"))
 }
-func jsonNum(n int64) json.RawMessage     { return json.RawMessage(strconv.FormatInt(n, 10)) }
+func jsonNum(n int64) json.RawMessage { return json.RawMessage(strconv.FormatInt(n, 10)) }
 
 func rawStr(v json.RawMessage) string {
 	var s string

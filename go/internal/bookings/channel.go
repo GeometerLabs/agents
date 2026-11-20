@@ -7,10 +7,10 @@ package bookings
 // ("Chat guest 3") on the owner's items.
 
 import (
-	"fmt"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -530,7 +530,7 @@ func (k *channelKit) Owner(kst runtime.KitState, sn *runtime.Snap, _ []store.Ent
 	kv := []any{"shop", ordered2("name", s.Name, "timezone", s.Timezone, "ownerLanguage", s.Owner.Language), "services", publicServices(s, nil), "items", items, "upcoming", upcoming}
 	// item 11e: the shop's assistant's view (app/view.ts ownerAppView over a read-only Bookings skill), on a shop with the assistant
 	if s.Assistant != nil && k.kit.shared != nil && sn != nil {
-		kv = append(kv, "app", runtime.OwnerAppView(sn, k.kit.shared, &bookingsSkill{k.kit.readAgent(st)}, now, s.Loc, false))
+		kv = append(kv, "app", runtime.OwnerAppView(sn, k.kit.shared, &bookingsSkill{k.kit.readAgent(st)}, now, s.Loc, k.kit.OwnerVoiceOn()))
 	}
 	return ordered2(kv...)
 }

@@ -705,3 +705,9 @@ Started from agents main a5a80095 (Bookings contract on Go 123 of 143; on TypeSc
   claim, the send and the ending; `morningWords`: today's parts, yesterday's money, what waits, the mood); the listings shop sends it as a push as before, a template's shop through
   `StepContext.Morning` as text in the owner's open window, else the approved template (its values in Meta's order, generated). Bookings runs it in AfterTick after the monthly
   report. Not done: the mood picture as a sticker and as the template's header (Deferred.md). Count: **132 of 143**.
+- **(f) Voice: done.** `internal/voice` (new) is modules/voice: the `speech` block of runtime.json checked in the TypeScript's sentences, Geometer's own speech service (POST /stt,
+  multipart) and the WhatsApp media fetch through their Guards, the length of Ogg Opus and WebM Opus read from the bytes, the cost, low confidence, the day's limit and the
+  half-hour memo (proved on the TypeScript's own answers: `scripts/gen_voice_vectors.ts`). `runtime/voice.go` is the listener (turn.ts: not in button mode or over the AI cap,
+  the day's count and the cost in the saved AI state) and the owner's recordings held in memory with `POST /internal/channel/owner-voice`. The assistant hears the owner
+  (`HearOwner`, `OnPageVoice`: an owner_assistant line with the voice marks, never the words); Bookings listens to a customer's note and reads it like typed text (step 6's
+  voice test too). Count: **135 of 143** (the owner's voice note, the WebM recording, a customer's voice note).
