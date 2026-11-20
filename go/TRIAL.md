@@ -675,3 +675,8 @@ contract runs once at the end):
 6. **The rest: not started** (9 left; two chairs, the documents, the template outside the window, the approval event's checks and both cross-restart tests already pass): the
    shop terms (2: modules/terms), a customer's voice note (1: voice), the decision model's step-breaker and pause (3), the button flow's payloads (1), the cancel buttons and
    talk to the owner (1), the WhatsApp sign-in link (1).
+
+**Measured at the end of this stream (20 Nov, through the heat lock, once):** `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1
+templates/commerce/bookings/contract/`: **123 of 143** (was 101; 20 fail, 0 skipped, no Go panic). The 20 are steps 5 (11) and 6 (9) above. `go build ./...`, `go vet ./...` and
+`go test ./...` pass (29 packages). The listings and directory contracts were not run (the lead runs them before merging); the queue fix in runtime.go changes a listings
+shop's failing step too (it is now retried with the delays instead of spinning to "too many interrupted tries").
