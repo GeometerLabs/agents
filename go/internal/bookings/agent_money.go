@@ -628,7 +628,7 @@ func (a *Agent) backfillCalendar(now int64) error {
 	return nil
 }
 
-// onTick is agent.ts onTick. Not ported here yet (Deferred.md): the button-mode announcement, yesterday's settlement rows for the books, the assistant's cards.
+// onTick is agent.ts onTick. Not ported here yet (Deferred.md): the button-mode announcement, yesterday's settlement rows for the books.
 func (a *Agent) onTick() error {
 	now := a.now()
 	if err := a.backfillCalendar(now); err != nil {
@@ -681,7 +681,11 @@ func (a *Agent) onTick() error {
 			}
 		}
 	}
-	return nil
+	// item 11e: cards past their time close, the limit changes that settled are told; the morning line is the runtime's own job (AfterTick)
+	if as := a.assistantOf(); as != nil {
+		as.OnTick()
+	}
+	return a.stepErr
 }
 
 // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------------------

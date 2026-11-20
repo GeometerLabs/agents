@@ -1,20 +1,21 @@
 package runtime
 
-// The owner's assistant for a listings-only shop, run inside a step: the Go twin of modules/assistant/conversation.ts for the one skill this shop has (the listings: a draft's card, and
-// the morning "Still have it?"). Everything it says goes into the page's talk list (`assistant.talk`, shown by GET /internal/channel/owner), nothing to WhatsApp: this shop has none.
+// The owner's assistant, run inside a step: the Go twin of modules/assistant/conversation.ts. One conversation for every shop, over the skills the shop has (assistantkit.go):
+//   - the listings-only shop (no Kit) has one skill, its listings (a draft's card, and the morning "Still have it?"), and everything it says goes into the page's talk list
+//     (`assistant.talk`, shown by GET /internal/channel/owner): it has no WhatsApp;
+//   - a template's shop (Bookings) has [its own skill, the declared limits, the listings] (wire.ts), and answers the owner on WhatsApp through the shared say, or on the page
+//     while the owner acts from there (conversation.ts `toPage`).
 //
 // What is here, and where it is copied from:
 //   - the card binding (answerCard, onPageCard): one verdict for an answer to a card (assistant.JudgeCard = cards.ts judgeCard): unknown, closed, expired, a no, "gone", "changed" (the old
-//     card is void and a new one is made), or do. A yes publishes the draft through the existing listing code, but only while the draft still has exactly the fields the card showed;
-//   - a draft makes a card (listingFromWords, in draft.go: the model, the checks, then `offerCard` here);
-//   - the owner's other words, read by rule (onOwnerMessage, readIntent): help, what needs me, undo, a limit, the leave asks, a cancel or refund or message of a case (none here), money;
-//   - the clock's beat (onTick): cards past their time closed, what is no longer needed taken off, the morning question.
+//     card is void and a new one is made), or do. A yes does the saved action only while the skill's action now has the card's digest;
+//   - propose and offerCard: a card for a prepared action, unless the owner said no to this same action in the last day; a message only while the customer's window is open;
+//   - the owner's words (onOwnerMessage, readIntent): a card's reply, a listing, then the router's reading and the answer: a day's list, what needs me, money, close or reopen a day,
+//     move a booking, undo, cancel / refund / message by card, a limit by card, the memory and the leave asks, help;
+//   - the clock's beat (onTick): cards past their time closed, what is no longer needed taken off, the limit changes that settled told, the morning question.
 //
-// The rest of the owner's assistant is beside this file: the shop's memory (notes.go), the router's reading and the owner's talk with the model (talk.go), the morning line
-// (morning.go). The lines said here are written from the shop's own saved values by the packed words, so the outgoing check TypeScript runs over each has nothing to catch; the
-// one line a model writes (the talk's reply) goes through it (talk.go).
-//
-// Differences from TypeScript, on purpose: lines are written to the talk list only (TypeScript's `toPage` mode); the owner's own talk line is added first, as `onPageMessage` does.
+// The rest of the owner's assistant is beside this file: the seam and the ways out (assistantkit.go), the closed days, moves and limits (assistantacts.go), the shop's memory
+// (notes.go), the router's reading and the owner's talk with the model (talk.go), the morning line (morning.go).
 
 import (
 	"crypto/rand"
@@ -22,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +33,8 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/memory"
+	"github.com/GeometerLabs/agents/go/internal/messaging"
+	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
 // conv is the assistant for one step: it works on the step's own state (so what it does is saved with the step, whole or not at all) and the step's record.
@@ -44,23 +48,49 @@ type conv struct {
 	number string
 	lang   string
 	memory *memory.State // the step's notes, read on first use (notes.go)
+	// hooks are a template's (nil: the listings-only shop); toPage is conversation.ts `toPage` (always on for the listings-only shop, which has no WhatsApp)
+	hooks   *AssistantHooks
+	toPage  bool
+	skills  []OwnerSkill
+	reading assistant.OwnerReading
+	say_    *messaging.Say
 }
 
+// assistantFor is the listings-only shop's assistant: its listings are its one skill, and it talks on the page.
 func (r *Runtime) assistantFor(snap *Snap, rec *recorder, now int64) *conv {
 	snap.ensureA()
 	number, lang := r.owner()
-	return &conv{r: r, snap: snap, rec: rec, now: now, a: snap.A, pack: assistant.Words(lang), number: number, lang: lang}
+	c := &conv{r: r, snap: snap, rec: rec, now: now, a: snap.A, pack: assistant.Words(lang), number: number, lang: lang, toPage: true}
+	c.skills = []OwnerSkill{listingsSkill{c}}
+	return c
 }
 
 func (c *conv) ls() *listings.State { return c.snap.Touch() }
 
-// say writes a line of the assistant's into the page's talk (conversation.ts `tell` with toPage on).
+// say writes a line of the assistant's from the packed words (conversation.ts `tell`): to the page's talk, or to the owner on WhatsApp.
 func (c *conv) say(key string, vals ...string) {
-	c.a.AddTalk("assistant", c.pack.Say(key, vals...), c.now)
+	c.sayAbout("", key, vals...)
 }
 
-// logLine is conversation.ts `logLine`: a line of the record for the owner, in the owner's language.
+// sayAbout is say for a line about a case (the record's line names it).
+func (c *conv) sayAbout(caseID, key string, vals ...string) {
+	c.tellText(idOf(key), c.pack.Say(key, vals...), caseID, nil)
+}
+
+// logLine is conversation.ts `logLine`: a line of the record for the owner, in the owner's language, about a case or none.
 func (c *conv) logLine(action, outcome string, inputs any, refs map[string]string, notes string) {
+	c.logCase("", action, outcome, inputs, refs, notes)
+}
+
+func (c *conv) logCase(caseID, action, outcome string, inputs any, refs map[string]string, notes string) {
+	if c.hooks != nil {
+		more := messaging.LogMore{Refs: refs, Language: c.lang}
+		if notes != "" {
+			more.Notes = &notes
+		}
+		c.hooks.Log(caseID, c.number, action, outcome, inputs, more)
+		return
+	}
 	c.rec.append(NewLine{Conversation: c.number, Action: action, Outcome: outcome, Inputs: inputs, Language: c.lang, Refs: refs, Notes: notes})
 }
 
@@ -69,11 +99,30 @@ func (c *conv) localTime(ms int64) string {
 	return c.pack.TimeOfDay(t.Hour(), t.Minute())
 }
 
-// ---- the listings skill (listing-card.ts) ------------------------------------------------------------------------------------------------------------------
+// slotText is format.ts formatSlot in the owner's language: "Wed 25 Nov, 3:00 pm".
+func (c *conv) slotText(ms int64) string { return language.Formats(c.lang).Slot(ms, c.r.loc) }
 
-var listingCase = regexp.MustCompile(`^listing:(l-\d{1,9})$`)
+// today is the shop's date now.
+func (c *conv) today() LocalDate { return dateIn(c.now, c.r.loc) }
 
-func caseOfListing(id string) string { return "listing:" + id }
+func dateIn(ms int64, loc *time.Location) LocalDate {
+	t := time.UnixMilli(ms).In(loc)
+	return LocalDate{t.Year(), int(t.Month()), t.Day()}
+}
+
+// dateOf is conversation.ts dateOf: the date the words name, resolved against the shop's clock (nil when none, or one that does not exist).
+func (c *conv) dateOf(in assistant.Intent) *LocalDate {
+	if in.Date == nil {
+		return nil
+	}
+	y, m, d, ok := language.ResolveDate(*in.Date, time.UnixMilli(c.now).In(c.r.loc))
+	if !ok {
+		return nil
+	}
+	return &LocalDate{y, int(m), d}
+}
+
+// ---- JSON helpers for a card's fields ------------------------------------------------------------------------------------------------------------------------
 
 // jstring is a JSON string as the saved text writes it: Go's json.Marshal escapes `<`, `>` and `&` and TypeScript does not, so the encoder has HTML escaping off.
 func jstring(s string) json.RawMessage {
@@ -85,33 +134,6 @@ func jstring(s string) json.RawMessage {
 }
 
 func jnum(n int64) json.RawMessage { return json.RawMessage(strconv.FormatInt(n, 10)) }
-
-// listingFields is listing-card.ts `listingFields`: flat, everything the owner is shown and everything a tap publishes.
-func listingFields(l *listings.Listing) assistant.Raw {
-	ids := make([]string, len(l.Photos))
-	for i, p := range l.Photos {
-		ids[i] = p.ID
-	}
-	f := assistant.Raw{"category": jstring(l.Category), "ownerLang": jstring(l.OwnerLang), "from": jstring(l.From), "photos": jstring(strings.Join(ids, ","))}
-	for _, k := range listings.Langs {
-		if w, ok := l.Words[k]; ok {
-			f["title_"+k], f["text_"+k] = jstring(w.Title), jstring(w.Text)
-		}
-	}
-	if l.PricePaise != 0 {
-		f["pricePaise"] = jnum(l.PricePaise)
-	}
-	if l.PriceNote != "" {
-		f["priceNote"] = jstring(l.PriceNote)
-	}
-	if l.Qty != 0 {
-		f["qty"] = jnum(l.Qty)
-	}
-	if len(l.Claims) > 0 {
-		f["claims"] = jstring(strings.Join(l.Claims, " | "))
-	}
-	return f
-}
 
 func rawString(v json.RawMessage) string {
 	var s string
@@ -127,163 +149,176 @@ func rawInt(v json.RawMessage) int64 {
 	return int64(n)
 }
 
-type shown struct {
-	who, what, words string
-	amountPaise      int64
+// isNumber: the raw member is a JSON number (`typeof x === "number"`).
+func isNumber(v json.RawMessage) bool {
+	b := strings.TrimSpace(string(v))
+	return b != "" && (b[0] == '-' || (b[0] >= '0' && b[0] <= '9'))
 }
 
-func (c *conv) findListing(id string) *listings.Listing {
-	s := c.ls()
-	for i := range s.Items {
-		if s.Items[i].ID == id {
-			return &s.Items[i]
+// ---- the skills -----------------------------------------------------------------------------------------------------------------------------------------
+
+func (c *conv) skillOf(ref string) OwnerSkill {
+	for _, s := range c.skills {
+		if s.Owns(ref) {
+			return s
 		}
 	}
 	return nil
 }
 
-// prepare is listing-card.ts `prepare`: the action as the store holds it NOW, and what the owner is shown; or why it cannot be done.
-func (c *conv) prepare(p assistant.Raw) (assistant.Action, shown, string) {
-	kind, cs := rawString(p["kind"]), rawString(p["case"])
-	if kind != "listing" && kind != "listing_ask" {
-		return assistant.Action{}, shown{}, "not_here"
-	}
-	m := listingCase.FindStringSubmatch(cs)
-	var l *listings.Listing
-	if m != nil {
-		l = c.findListing(m[1])
-	}
-	if l == nil {
-		return assistant.Action{}, shown{}, "no_case"
-	}
-	title := listings.TextIn(l, c.lang).Title
-	if kind == "listing" {
-		if l.State != "draft" {
-			return assistant.Action{}, shown{}, "not_live"
+func (c *conv) skillNamed(name string) OwnerSkill {
+	for _, s := range c.skills {
+		if s.Name() == name {
+			return s
 		}
-		return assistant.Action{Kind: "listing", Skill: "listings", Case: cs, Fields: listingFields(l)}, shown{who: c.pack.Category(l.Category), what: title, amountPaise: l.PricePaise, words: l.PriceNote}, ""
 	}
-	confirmed := rawInt(p["confirmedMs"])
-	if l.State != "live" || l.ConfirmedMs != confirmed {
-		return assistant.Action{}, shown{}, "not_live"
-	}
-	return assistant.Action{Kind: "listing_ask", Skill: "listings", Case: cs, Fields: assistant.Raw{"title": jstring(title), "confirmedMs": jnum(confirmed)}}, shown{what: title}, ""
+	return nil
 }
 
-// offerCard is conversation.ts `offerCard`: a card for a prepared action, unless the owner said no to this same action in the last day. In the page's talk a card is not a line (it is
-// shown in the page's own list of cards, with its buttons); the question is kept on the card.
-func (c *conv) offerCard(proposal assistant.Raw, act assistant.Action, sh shown) bool {
-	digest := assistant.ActionDigest(act)
-	if no := c.a.RefusedBefore(digest, c.now); no != nil {
-		c.say("refused_before", "time", c.localTime(no.AtMs))
-		return false
-	}
-	card, _ := c.a.MakeCard(act, proposal, c.now)
-	refs := map[string]string{"card": card.ID, "skill": "listings", "kind": rawString(proposal["kind"]), "digest": digest, "case": rawString(proposal["case"])}
-	if sh.amountPaise > 0 {
-		refs["amountPaise"] = strconv.FormatInt(sh.amountPaise, 10)
-	}
-	c.logLine("owner_card", "held_for_owner", map[string]any{"card": card.ID, "kind": rawString(proposal["kind"])}, refs, "a card with the exact change was shown to the owner; nothing is done until they tap it")
-	switch act.Kind {
+// kinds are conversation.ts kindsOf over the shop's skills.
+func (c *conv) kinds() []string { return c.reading.Kinds() }
+
+// ---- cards ----------------------------------------------------------------------------------------------------------------------------------------------
+
+// buttonsFor is conversation.ts buttonsFor: a message's are Send / Don't send, a listing's its own words, every other card's Approve / Refuse; "no" only when it means something.
+func (c *conv) buttonsFor(kind, code string, hasNo bool) []messaging.Choice {
+	yes, no := c.pack.Say("label.approve"), c.pack.Say("label.refuse")
+	switch kind {
+	case "message":
+		yes, no = c.pack.Say("label.send"), c.pack.Say("label.dont_send")
+	case "listing":
+		yes, no = c.pack.Say("label.listing.show"), c.pack.Say("label.listing.no")
 	case "listing_ask":
-		card.Question = c.pack.Say("card.listing_ask", "title", sh.what)
-	default:
-		if sh.amountPaise > 0 {
-			price := assistant.INR(sh.amountPaise)
-			if sh.words != "" {
-				price += " " + sh.words
+		yes, no = c.pack.Say("label.listing.yes"), c.pack.Say("label.listing.sold")
+	}
+	out := []messaging.Choice{{ID: "card-yes:" + code, Title: yes}}
+	if hasNo {
+		out = append(out, messaging.Choice{ID: "card-no:" + code, Title: no})
+	}
+	return out
+}
+
+// cardQuestion is words.ts cardQuestion: the question a card asks, by its skill and what it does (the listings' own words, a limit's rule, or the shared ones).
+func (c *conv) cardQuestion(skill, kind, itemKind, ref string, sh Shown) string {
+	if sh.Limit != nil {
+		return c.pack.Say("card.limit", "rule", c.ruleText(sh.Limit.LimitView, sh.Limit.To), "now", c.valueText(sh.Limit.LimitView, sh.Limit.Now))
+	}
+	if skill == "listings" {
+		switch kind {
+		case "listing_ask":
+			return c.pack.Say("card.listing_ask", "title", sh.What)
+		case "listing":
+			if sh.AmountPaise > 0 {
+				price := assistant.INR(sh.AmountPaise)
+				if sh.Words != "" {
+					price += " " + sh.Words
+				}
+				return c.pack.Say("card.listing.priced", "title", sh.What, "who", sh.Who, "price", price)
 			}
-			card.Question = c.pack.Say("card.listing.priced", "title", sh.what, "who", sh.who, "price", price)
-		} else {
-			card.Question = c.pack.Say("card.listing.ask", "title", sh.what, "who", sh.who)
+			return c.pack.Say("card.listing.ask", "title", sh.What, "who", sh.Who)
 		}
 	}
+	inr := assistant.INR(sh.AmountPaise)
+	switch {
+	case kind == "cancel" && sh.AmountPaise > 0:
+		return c.pack.Say("card.cancel.paid", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+	case kind == "cancel":
+		return c.pack.Say("card.cancel.free", "ref", ref, "who", sh.Who, "what", sh.What)
+	case kind == "refund":
+		return c.pack.Say("card.refund", "ref", ref, "who", sh.Who, "inr", inr)
+	case kind == "message":
+		return c.pack.Say("card.message", "ref", ref, "who", sh.Who, "words", sh.Words)
+	}
+	if c.pack.Has("card.answer." + itemKind) {
+		return c.pack.Say("card.answer."+itemKind, "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+	}
+	return c.pack.Say("card.answer", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+}
+
+// cardFoot is words.ts CARD_FOOT: the line under every card on WhatsApp, with the card's code (never on the page).
+func (c *conv) cardFoot(code string, hasNo, aboveLimit bool) string {
+	key := "card.foot."
+	if aboveLimit {
+		key += "above."
+	}
+	if hasNo {
+		key += "yesno"
+	} else {
+		key += "yes"
+	}
+	return c.pack.Say(key, "code", code)
+}
+
+// offerCard is conversation.ts `offerCard`: a card for a prepared action, unless the owner said no to this same action in the last day. Returns whether a card went.
+func (c *conv) offerCard(skill OwnerSkill, proposal assistant.Raw, prep Prepared) bool {
+	act, sh := prep.Action, prep.Shown
+	cs := rawString(proposal["case"])
+	digest := assistant.ActionDigest(act)
+	if no := c.a.RefusedBefore(digest, c.now); no != nil {
+		c.sayAbout(cs, "refused_before", "time", c.localTime(no.AtMs))
+		return false
+	}
+	card, code, _ := c.a.MakeCard(act, proposal, c.now)
+	hasNo := card.HasNo()
+	kind := rawString(proposal["kind"])
+	refs := map[string]string{"card": card.ID, "skill": skill.Name(), "kind": kind, "digest": digest, "case": cs}
+	if sh.AmountPaise > 0 {
+		refs["amountPaise"] = strconv.FormatInt(sh.AmountPaise, 10)
+	}
+	c.logCase(cs, "owner_card", "held_for_owner", map[string]any{"card": card.ID, "kind": kind}, refs, "a card with the exact change was shown to the owner; nothing is done until they tap it")
+	itemKind := ""
+	if kind == "answer" {
+		itemKind = rawString(proposal["itemKind"])
+	}
+	// the owner's page shows the same question beside the card's buttons, without the code (items 11d and 11e together)
+	q := c.cardQuestion(skill.Name(), kind, itemKind, cs, sh)
+	card.Question = q
+	c.tellText("card", q+"\n"+c.cardFoot(code, hasNo, prep.AboveLimit), cs, c.buttonsFor(kind, code, hasNo))
 	return true
 }
 
-// propose is conversation.ts `propose`: prepare and offer; a refusal is said in words.
+// refusal is conversation.ts tell("refusal", ...): why a proposal cannot become a card, by the skill's words.
+func (c *conv) refusal(why, ref, who string) {
+	key := "refusal." + why
+	if !c.pack.Has(key) {
+		key = "refusal.not_here"
+	}
+	if who == "" {
+		who = ref
+	}
+	c.sayAbout(ref, key, "ref", ref, "who", who, "inr", assistant.INR(0))
+}
+
+// propose is conversation.ts `propose`: prepare and offer; a refusal is said in words. A message is offered only while the customer's window is open.
 func (c *conv) propose(proposal assistant.Raw) {
 	cs := rawString(proposal["case"])
-	if !listingCase.MatchString(cs) {
-		c.say("refusal.no_case", "ref", cs) // no skill's references match: "Nothing has the number b-14."
+	skill := c.skillOf(cs)
+	if skill == nil {
+		c.say("refusal.no_case", "ref", cs) // "Nothing has the number b-14."
 		return
 	}
-	act, sh, why := c.prepare(proposal)
+	prep, why := skill.Prepare(proposal)
 	if why != "" {
-		c.say("refusal."+why, "ref", cs)
+		c.refusal(why, cs, "")
 		return
 	}
-	c.offerCard(proposal, act, sh)
+	if prep.Action.Kind == "message" && !c.windowOpen(rawString(prep.Action.Fields["phone"])) {
+		c.refusal("no_window", cs, prep.Shown.Who)
+		return
+	}
+	c.offerCard(skill, proposal, prep)
 }
 
-// execute is listing-card.ts `execute`: the saved action, by the skill that owns it. Returns whether it worked.
-func (c *conv) execute(act assistant.Action, answerNo bool) bool {
-	m := listingCase.FindStringSubmatch(act.Case)
-	if m == nil {
-		return false
-	}
-	l := c.findListing(m[1])
-	if l == nil {
-		return false
-	}
-	s := c.ls()
-	switch act.Kind {
-	case "listing":
-		// the tap is the owner's: the authority comes from the door the draft came through, only after the card's digest matched the draft as it is now
-		got, why := s.Publish(l.ID, c.now)
-		if why != "" {
-			return false
-		}
-		if rawString(act.Fields["from"]) == "whatsapp" {
-			got.From = "whatsapp"
-		}
-		words := map[string]any{}
-		for k, w := range got.Words {
-			words[k] = map[string]any{"title": w.Title, "text": w.Text}
-		}
-		inputs := map[string]any{"listing": got.ID, "category": got.Category, "words": words}
-		if got.PricePaise != 0 {
-			inputs["pricePaise"] = got.PricePaise
-		}
-		c.logLine("listing", "confirmed", inputs, refsOf(got, "published"), "the owner tapped Show it; the listing is on the shop's page now, with the fields the card showed")
-		return true
-	case "listing_ask":
-		if answerNo {
-			got, why := s.MarkSold(l.ID, c.now)
-			if why != "" {
-				return false
-			}
-			c.logLine("listing", "confirmed", map[string]any{"listing": got.ID}, refsOf(got, "sold"), "the owner said it is sold; the listing is off the shop's page")
-			return true
-		}
-		confirmed := rawInt(act.Fields["confirmedMs"])
-		got, why := s.Confirm(l.ID, c.now, confirmed)
-		if why != "" {
-			return false
-		}
-		c.logLine("listing", "confirmed", map[string]any{"listing": got.ID}, refsOf(got, "confirmed"), "the owner said the shop still has it; the listing was confirmed today")
-		// a counted listing that had sold itself at 0: "Yes, I still have it" is the owner's correction of the count
-		if c.snap.Stock != nil && c.snap.Stock.RestoreAfterYes(got.ID, got.Qty, fmt.Sprintf("ask-%s-%d", got.ID, confirmed), c.now) {
-			item := listings.ListingStockID(got.ID)
-			to := got.Qty
-			if to == 0 {
-				to = 1
-			}
-			c.logLine("stock", "confirmed", map[string]any{"op": "correct", "item": item, "to": to}, listings.StockRefs(item, "corrected", "owner"), "the owner said the shop still has a listing that had sold itself at 0, so the count was set to the number they first said")
-		}
-		return true
-	}
-	return false
-}
-
-// answerCard is conversation.ts `answerCard`: an answer to a card, whichever door it came through (the owner's page, or a typed code). `via` is "page" or "typed".
+// answerCard is conversation.ts `answerCard`: an answer to a card, whichever door it came through (WhatsApp: a tap or a typed code; the owner's page). via is "button", "typed" or
+// "page".
 func (c *conv) answerCard(found *assistant.Card, answer, via string) {
 	cur := func(cd *assistant.Card) (assistant.Action, string, bool) {
-		if cd.Action.Skill != "listings" {
+		skill := c.skillNamed(cd.Action.Skill)
+		if skill == nil {
 			return assistant.Action{}, "not_yours", false
 		}
-		act, _, why := c.prepare(cd.Proposal)
-		return act, why, why == ""
+		prep, why := skill.Prepare(cd.Proposal)
+		return prep.Action, why, why == ""
 	}
 	v := assistant.JudgeCard(found, answer, c.now, cur)
 	refs := func(cd *assistant.Card, decision string) map[string]string {
@@ -299,46 +334,109 @@ func (c *conv) answerCard(found *assistant.Card, answer, via string) {
 	cardIn := map[string]any{"card": card.ID}
 	switch v.Kind {
 	case "closed":
-		c.logLine("owner_card", "blocked", cardIn, refs(card, answer), "the card is already "+card.State+": nothing was done")
-		c.say("card_closed")
+		c.logCase(cs, "owner_card", "blocked", cardIn, refs(card, answer), "the card is already "+card.State+": nothing was done")
+		c.sayAbout(cs, "card_closed")
 	case "expired":
 		c.a.Close(card, "expired", c.now)
-		c.logLine("owner_card", "blocked", cardIn, refs(card, answer), "the card ran out before the tap: nothing was done")
-		c.say("card_expired")
+		c.logCase(cs, "owner_card", "blocked", cardIn, refs(card, answer), "the card ran out before the tap: nothing was done")
+		c.sayAbout(cs, "card_expired")
 	case "refuse":
 		c.refuse(card, refs, cardIn)
 	case "gone":
 		c.a.Close(card, "void", c.now)
-		c.logLine("owner_card", "blocked", cardIn, refs(card, "yes"), fmt.Sprintf("the action can no longer be done (%s): nothing was done", v.Why))
-		c.say("refusal."+v.Why, "ref", cs)
+		c.logCase(cs, "owner_card", "blocked", cardIn, refs(card, "yes"), fmt.Sprintf("the action can no longer be done (%s): nothing was done", v.Why))
+		c.refusal(v.Why, cs, "")
 	case "changed":
 		// The fields are not what the card showed. Nothing is done: the old card is void and a new one shows the action as it is now.
 		c.a.Close(card, "void", c.now)
-		c.logLine("owner_card", "blocked", cardIn, refs(card, "yes"), "what the card showed is not what the store holds now (a changed amount, payment or customer): nothing was done, and a new card was made")
-		c.say("card_changed")
-		if act, sh, why := c.prepare(card.Proposal); why == "" {
-			c.offerCard(card.Proposal, act, sh)
+		c.logCase(cs, "owner_card", "blocked", cardIn, refs(card, "yes"), "what the card showed is not what the store holds now (a changed amount, payment or customer): nothing was done, and a new card was made")
+		c.sayAbout(cs, "card_changed")
+		if skill := c.skillNamed(card.Action.Skill); skill != nil {
+			if prep, why := skill.Prepare(card.Proposal); why == "" {
+				c.offerCard(skill, card.Proposal, prep)
+			}
 		}
 	case "do":
-		ok := c.execute(card.Action, false)
+		skill := c.skillNamed(card.Action.Skill)
+		var ex Executed
+		if card.Action.Kind == "message" {
+			ex = c.sendWords(card)
+		} else {
+			ex = skill.Execute(card.Action)
+		}
 		c.a.Close(card, "done", c.now)
-		outcome, note := "confirmed", "done"
-		if !ok {
-			outcome, note = "failed", "failed"
+		outcome := "confirmed"
+		if !ex.OK {
+			outcome = "failed"
 		}
 		r := refs(card, "yes")
-		r["result"] = note
-		c.logLine("owner_card", outcome, cardIn, r, "the owner tapped yes; the skill did the card's saved action")
-		if !ok {
+		r["result"] = ex.Note
+		c.logCase(cs, "owner_card", outcome, cardIn, r, "the owner tapped yes; the skill did the card's saved action")
+		c.afterDo(card, ex)
+	}
+}
+
+// afterDo is the owner's answer after a card's yes (conversation.ts, the end of answerCard).
+func (c *conv) afterDo(card *assistant.Card, ex Executed) {
+	cs := card.Action.Case
+	switch card.Action.Kind {
+	case "listing", "listing_ask":
+		if !ex.OK {
 			c.say("listing_line.gone")
-			return
-		}
-		if card.Action.Kind == "listing" {
+		} else if card.Action.Kind == "listing" {
 			c.say("listing_line.published", "title", c.listingTitle(card))
 		} else {
 			c.say("listing_line.confirmed", "title", rawString(card.Action.Fields["title"]))
 		}
+		return
+	case "limit":
+		// a limit's tap makes a Pending change: the owner's words say so (and say Active, or that the previous limit stays, when the deployer reports, on the beat)
+		l := c.declaredLimit(rawString(card.Action.Fields["limit"]))
+		if ex.OK && l != nil {
+			c.sayLimit("pending", l.view(), rawInt(card.Action.Fields["to"]), 0)
+		} else {
+			c.say("refusal.limit_not_tighter")
+		}
+		return
 	}
+	var amount int64
+	if v, ok := card.Action.Fields["amountPaise"]; ok && isNumber(v) {
+		amount = rawInt(v)
+	}
+	// "done" in the owner's words: a cancel that gave money back says the money is on its way, a cancel with nothing paid says cancelled
+	kind, note := card.Action.Kind, ex.Note
+	if note == "done" {
+		switch {
+		case kind == "refund" || (kind == "cancel" && amount > 0):
+			note = "refund_sent"
+		case kind == "cancel":
+			note = "cancelled"
+		case kind == "message":
+			note = "sent"
+		default:
+			note = "answered"
+		}
+	}
+	who := cs
+	if v, ok := card.Action.Fields["who"]; ok {
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			who = s
+		}
+	}
+	c.sayAbout(cs, "done."+note, "who", who, "ref", cs, "inr", assistant.INR(amount))
+}
+
+// sendWords is conversation.ts sendWords: a message card's yes, only while the customer's window is open (checked again: it may have closed since the card).
+func (c *conv) sendWords(card *assistant.Card) Executed {
+	phone := rawString(card.Action.Fields["phone"])
+	if !c.windowOpen(phone) {
+		return Executed{false, "not_sent"}
+	}
+	if c.tellCustomerWords(card.Action.Case, phone, rawString(card.Action.Fields["words"])) {
+		return Executed{true, "sent"}
+	}
+	return Executed{false, "not_sent"}
 }
 
 // listingTitle is the title a listing card names, in the owner's language first (conversation.ts, after a tap).
@@ -352,38 +450,70 @@ func (c *conv) listingTitle(card *assistant.Card) string {
 	return card.Action.Case
 }
 
-// refuse is the "no" half of answerCard: a no to a drafted listing drops the draft (nothing was ever public); a no to the morning question IS "Sold"; any other no changes nothing.
+// refuse is the "no" half of answerCard: a no to a drafted listing drops the draft (nothing was ever public); a no to the morning question IS "Sold"; a no to something already
+// waiting IS the owner's own "deny", sent to the skill while the item is still the one the card showed; any other no changes nothing.
 func (c *conv) refuse(card *assistant.Card, refs func(*assistant.Card, string) map[string]string, cardIn map[string]any) {
 	cs := card.Action.Case
-	if card.Action.Skill == "listings" && card.Action.Kind == "listing" {
+	skill := c.skillNamed(card.Action.Skill)
+	if skill != nil && card.Action.Kind == "listing" {
 		if m := listingCase.FindStringSubmatch(cs); m != nil {
 			if l := c.findListing(m[1]); l != nil {
 				c.ls().Remove(l.ID, c.now)
 			}
 		}
 		c.a.Close(card, "refused", c.now)
-		c.logLine("owner_card", "confirmed", cardIn, refs(card, "no"), "the owner said no; the draft listing was dropped and was never public")
+		c.logCase(cs, "owner_card", "confirmed", cardIn, refs(card, "no"), "the owner said no; the draft listing was dropped and was never public")
 		c.say("listing_line.dropped")
 		return
 	}
-	if card.Action.Skill == "listings" && card.Action.Kind == "listing_ask" {
-		if act, _, why := c.prepare(card.Proposal); why == "" && assistant.ActionDigest(act) == card.Digest {
-			ok := c.execute(card.Action, true)
-			c.a.Close(card, "refused", c.now)
-			outcome, note := "confirmed", "done"
-			if !ok {
-				outcome, note = "failed", "failed"
+	sameNow := func() bool {
+		prep, why := skill.Prepare(card.Proposal)
+		return why == "" && assistant.ActionDigest(prep.Action) == card.Digest
+	}
+	answerNo := func() assistant.Action {
+		a := card.Action
+		f := assistant.Raw{}
+		for k, v := range a.Fields {
+			f[k] = v
+		}
+		f["answer"] = jstring("no")
+		a.Fields = f
+		return a
+	}
+	if skill != nil && card.Action.Kind == "listing_ask" && sameNow() {
+		ex := skill.Execute(answerNo())
+		c.a.Close(card, "refused", c.now)
+		outcome := "confirmed"
+		if !ex.OK {
+			outcome = "failed"
+		}
+		r := refs(card, "no")
+		r["result"] = ex.Note
+		c.logCase(cs, "owner_card", outcome, cardIn, r, "the owner said it is sold: the listing is off the shop's page")
+		c.say("listing_line.sold", "title", rawString(card.Action.Fields["title"]))
+		return
+	}
+	denied := ""
+	if skill != nil && card.Action.Kind == "answer" {
+		for _, it := range skill.Waiting() {
+			if it.Case == cs && it.Kind == rawString(card.Action.Fields["itemKind"]) && it.No != "" && sameNow() {
+				skill.Execute(answerNo())
+				denied = it.No
+				break
 			}
-			r := refs(card, "no")
-			r["result"] = note
-			c.logLine("owner_card", outcome, cardIn, r, "the owner said it is sold: the listing is off the shop's page")
-			c.say("listing_line.sold", "title", rawString(card.Action.Fields["title"]))
-			return
 		}
 	}
 	c.a.Close(card, "refused", c.now)
-	c.logLine("owner_card", "confirmed", cardIn, refs(card, "no"), "the owner said no; the same action is not offered again for 24 hours")
-	c.say("refused")
+	r := refs(card, "no")
+	note := "the owner said no; the same action is not offered again for 24 hours"
+	if denied != "" {
+		r["sent"] = denied
+		note = fmt.Sprintf("the owner said no; their %q was sent to the skill, so it no longer waits", denied)
+	}
+	c.logCase(cs, "owner_card", "confirmed", cardIn, r, note)
+	if denied == "" {
+		c.sayAbout(cs, "refused")
+	}
 }
 
 // onPageCard is conversation.ts `onPageCard`: the owner answered a card on their page (an `owner_action` card_yes / card_no, checked at the runtime against the owner's link or session
@@ -391,7 +521,11 @@ func (c *conv) refuse(card *assistant.Card, refs func(*assistant.Card, string) m
 func (c *conv) onPageCard(id, digest, answer string) {
 	card := c.a.CardByID(id)
 	if card == nil || card.Digest != digest {
-		c.logLine("owner_card", "blocked", map[string]any{"card": id}, map[string]string{"card": id, "decision": answer, "via": "page"}, "the owner's page posted a card that is not one the assistant holds with that digest: nothing was done")
+		cs := ""
+		if card != nil {
+			cs = card.Action.Case
+		}
+		c.logCase(cs, "owner_card", "blocked", map[string]any{"card": id}, map[string]string{"card": id, "decision": answer, "via": "page"}, "the owner's page posted a card that is not one the assistant holds with that digest: nothing was done")
 		c.say("card_unknown")
 		return
 	}
@@ -403,33 +537,55 @@ func (c *conv) onPageCard(id, digest, answer string) {
 var (
 	relayReply = regexp.MustCompile(`(?i)^[\s\x{00a0}\x{feff}]*(approve|deny)[\s\x{00a0}\x{feff}]+[A-HJKMNP-Za-hjkmnp-z2-9]{4,6}[\s\x{00a0}\x{feff}]*$`)
 	typedReply = regexp.MustCompile(`(?i)^[\s\x{00a0}\x{feff}]*(yes|no)[\s\x{00a0}\x{feff}]+([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})[\s\x{00a0}\x{feff}]*$`)
+	// cards.ts BUTTON_RE: a tap on a card's button, "card-yes:K7M2QX"
+	buttonReply = regexp.MustCompile(`^card-(yes|no):([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})$`)
 )
 
-// ownerMessage is `onPageMessage` + `onOwnerMessage`: the owner's words from the talk box. The owner's line is kept first; then a typed card reply, then a listing, then the rules' reading.
+// ownerMessage is the listings-only shop's `onPageMessage`: the owner's words from the talk box, the owner's line kept first. The key is TypeScript's: o:<the page's message id>, and
+// the page's id is owner-page:<event id>.
 func (r *Runtime) ownerMessage(snap *Snap, rec *recorder, ev map[string]any, now int64) error {
 	text, _ := ev["text"].(string)
 	id, _ := ev["id"].(string)
 	c := r.assistantFor(snap, rec, now)
 	c.a.AddTalk("owner", text, now)
+	return c.onOwnerMessage(messaging.InboundMessage{ID: "owner-page:" + id, From: c.number, Text: text, Timestamp: now}, "o:owner-page:"+id)
+}
+
+// onOwnerMessage is conversation.ts `onOwnerMessage` after the sender is known to be the owner: the relay's replies dropped, a card's reply, a listing, then the reading.
+func (c *conv) onOwnerMessage(msg messaging.InboundMessage, key string) error {
+	text := msg.Text
 	if relayReply.MatchString(text) {
 		return nil // the approvals relay's own reply, not ours: dropped without a word
 	}
-	// A typed "yes K7M2QX" is a card's reply only when a card has that code; otherwise it is words to read ("no thanks")
-	if m := typedReply.FindStringSubmatch(text); m != nil {
-		hash := assistant.CodeHash(m[2])
-		for i := range c.a.Cards {
-			if c.a.Cards[i].CodeHash == hash {
-				c.answerCard(&c.a.Cards[i], strings.ToLower(m[1]), "typed")
-				return nil
-			}
+	// a tap is always a card's; typed, "no thanks" has the shape of "no <code>": it is a card's reply only when a card has that code, otherwise it is words to read
+	if msg.Reply != nil {
+		if m := buttonReply.FindStringSubmatch(msg.Reply.ID); m != nil {
+			c.answerCard(c.cardByCode(m[2]), m[1], "button")
+			return nil
 		}
 	}
-	// the key is TypeScript's: o:<the page's message id>, and the page's id is owner-page:<event id>
-	taken, err := c.listingFromWords(text, "o:owner-page:"+id)
+	if m := typedReply.FindStringSubmatch(text); m != nil {
+		if card := c.cardByCode(m[2]); card != nil {
+			c.answerCard(card, strings.ToLower(m[1]), "typed")
+			return nil
+		}
+	}
+	taken, err := c.listingFromWords(text, key)
 	if err != nil || taken {
 		return err
 	}
-	c.readIntent(text, "o:owner-page:"+id)
+	c.readIntent(text, key)
+	return nil
+}
+
+// cardByCode is cards.ts cardByCode: the card with this code's hash, whatever its state (nil when none).
+func (c *conv) cardByCode(code string) *assistant.Card {
+	hash := assistant.CodeHash(code)
+	for i := range c.a.Cards {
+		if c.a.Cards[i].CodeHash == hash {
+			return &c.a.Cards[i]
+		}
+	}
 	return nil
 }
 
@@ -445,14 +601,14 @@ func (c *conv) readIntent(text, key string) {
 	switch kind {
 	case "help":
 		p := c.r.o.Client.Settings.Assistant
+		suffix := c.profile()
 		if p.Name != "" {
-			c.say("help."+p.Personality+".named", "name", p.Name, "shop", c.r.o.Client.Settings.Name)
+			c.say("help."+p.Personality+".named"+suffix, "name", p.Name, "shop", c.r.o.Client.Settings.Name)
 		} else {
-			c.say("help."+p.Personality+".plain", "shop", c.r.o.Client.Settings.Name)
+			c.say("help."+p.Personality+".plain"+suffix, "shop", c.r.o.Client.Settings.Name)
 		}
 	case "limit":
-		// a listings-only shop declares no limit, so "which limit?" lists none (TypeScript's own line, empty list and all)
-		c.say("limit_which")
+		c.onLimit(text, "")
 	case "remember":
 		c.remember(read.Words)
 	case "notes":
@@ -463,55 +619,147 @@ func (c *conv) readIntent(text, key string) {
 		c.leave("file")
 	case "leave_operator":
 		c.leave("operator")
+	case "day":
+		d := c.today()
+		if p := c.dateOf(read); p != nil {
+			d = *p
+		}
+		var rows []DayRow
+		for _, s := range c.skills {
+			if ds, ok := s.(DaySkill); ok {
+				rows = append(rows, ds.Day(d)...)
+			}
+		}
+		sort.SliceStable(rows, func(i, j int) bool { return rows[i].StartMs < rows[j].StartMs })
+		c.tellText("day_list", c.dayList(d, rows, c.isClosedDay(d)), "", nil)
 	case "waiting":
 		c.showWaiting()
 	case "money":
 		c.money(read.Date)
+	case "close_day", "reopen_day":
+		d := c.dateOf(read)
+		if d == nil {
+			c.say("need_date." + kind)
+		} else if kind == "close_day" {
+			c.closeDay(*d)
+		} else {
+			c.reopenDay(*d)
+		}
 	case "undo":
 		c.undoLast()
+	case "move":
+		c.move(read)
 	case "cancel", "refund", "message":
 		if read.Ref == "" {
-			c.say("need_ref." + kind)
+			c.needRef(kind, read)
 			return
 		}
 		if kind == "message" && read.Words == "" {
 			c.say("need_words", "ref", read.Ref)
 			return
 		}
-		c.say("refusal.no_case", "ref", read.Ref) // no skill of this shop holds a case: "Nothing has the number b-14."
+		p := assistant.Raw{"kind": jstring(kind), "case": jstring(read.Ref)}
+		if kind == "refund" && read.AmountPaise > 0 {
+			p["amountPaise"] = jnum(read.AmountPaise)
+		}
+		if kind == "message" {
+			p["words"] = jstring(read.Words)
+		}
+		c.propose(p)
 	default:
 		// the words no rule or model could place: answered as a conversation when the talk may ask a model (talk.go), otherwise the fixed answer
 		if !c.talkToOwner(text, key) {
-			c.say("not_understood")
+			c.say("not_understood" + c.profile())
 		}
 	}
 }
 
-// undoLast is conversation.ts `undoLast`: the newest undo record still in time. A listings-only shop makes only the "remember" kind (it closes no day and moves no booking); any
-// other kind (from a shop that once ran another template) is answered "doesn't handle that".
-func (c *conv) undoLast() {
-	for i := len(c.a.Undo) - 1; i >= 0; i-- {
-		u := &c.a.Undo[i]
-		if u.Done || u.UntilMs <= c.now {
+// profile is the packed words' suffix for this shop's kinds ("" for a listings-only shop, "@bookings" for a Bookings shop).
+func (c *conv) profile() string {
+	if c.reading.Bookings {
+		return "@bookings"
+	}
+	return ""
+}
+
+// needRef is conversation.ts tell("need_ref", {kind, rows: candidates(intent)}): which one, with the cases the owner might mean (the named day's, or today's and the next two days').
+func (c *conv) needRef(kind string, read assistant.Intent) {
+	var rows []DayRow
+	for _, s := range c.skills {
+		ds, ok := s.(DaySkill)
+		if !ok {
 			continue
 		}
-		if u.Kind == "remember" {
-			u.Done, u.HasDone = true, true
-			c.undoRemember(u.Case)
-			return
+		days := []LocalDate{c.today(), c.today().AddDays(1), c.today().AddDays(2)}
+		if d := c.dateOf(read); d != nil {
+			days = []LocalDate{*d}
 		}
-		c.say("not_offered")
-		return
+		for _, d := range days {
+			rows = append(rows, ds.Day(d)...)
+		}
+		break // conversation.ts `skills.find((s) => s.day)`: the first skill with a day
 	}
-	c.say("undo_none")
+	text := c.pack.Say("need_ref." + kind)
+	for i, r := range rows {
+		if i >= listRows {
+			break
+		}
+		text += "\n" + c.pack.Say("need_ref.row", "slot", c.slotText(r.StartMs), "what", r.What, "who", r.Who, "case", r.Case)
+	}
+	c.tellText("need_ref", text, "", nil)
 }
 
-// showWaiting is conversation.ts `showWaiting`: each skill's waiting items (none here) and any card the owner was shown and has not answered, shown again as a NEW card (the old is void).
+// listRows is words.ts LIST_ROWS: how many rows a list shows; the rest are counted ("and 4 more").
+const listRows = 12
+
+// dayList is words.ts day_list: none, or the head and the rows (at most 12, then "and N more"), and the closed-day line.
+func (c *conv) dayList(d LocalDate, rows []DayRow, closed bool) string {
+	date := c.pack.DateText(d.Year, d.Month, d.Day)
+	var text string
+	if len(rows) == 0 {
+		text = c.pack.Say("day_list.none", "date", date)
+	} else {
+		text = c.pack.Say("day_list.head", "date", date, "n", strconv.Itoa(len(rows)))
+		for i, r := range rows {
+			if i >= listRows {
+				break
+			}
+			text += "\n" + c.pack.Say("day_list.row", "time", c.localTime(r.StartMs), "what", r.What, "who", r.Who, "case", r.Case)
+		}
+		if len(rows) > listRows {
+			text += "\n" + c.pack.Say("day_list.more", "n", strconv.Itoa(len(rows)-listRows))
+		}
+	}
+	if closed {
+		text += c.pack.Say("day_list.closed")
+	}
+	return text
+}
+
+// showWaiting is conversation.ts `showWaiting`: each skill's waiting items as cards (the oldest first), and any card the owner was shown and has not answered, shown again as a NEW
+// card (the old is void).
 func (c *conv) showWaiting() {
-	var offers []assistant.Raw
+	type offer struct {
+		skill    OwnerSkill
+		proposal assistant.Raw
+	}
+	var offers []offer
+	for _, s := range c.skills {
+		for _, it := range s.Waiting() {
+			offers = append(offers, offer{s, assistant.Raw{"kind": jstring("answer"), "case": jstring(it.Case), "answer": jstring("yes"), "itemKind": jstring(it.Kind)}})
+		}
+	}
 	for _, cd := range c.a.OpenCards(c.now) {
-		if cd.Action.Skill == "listings" {
-			offers = append(offers, cd.Proposal)
+		s := c.skillNamed(cd.Action.Skill)
+		if s == nil {
+			continue
+		}
+		dup := false
+		for _, o := range offers {
+			dup = dup || (rawString(o.proposal["case"]) == rawString(cd.Proposal["case"]) && rawString(o.proposal["kind"]) == rawString(cd.Proposal["kind"]))
+		}
+		if !dup {
+			offers = append(offers, offer{s, cd.Proposal})
 		}
 	}
 	if len(offers) == 0 {
@@ -519,19 +767,18 @@ func (c *conv) showWaiting() {
 	} else {
 		c.say("waiting_head.n", "n", strconv.Itoa(len(offers)))
 	}
-	for i, p := range offers {
+	for i, o := range offers {
 		if i >= 5 { // CARDS_PER_ASK
 			break
 		}
-		if act, sh, why := c.prepare(p); why == "" {
-			c.offerCard(p, act, sh)
+		if prep, why := o.skill.Prepare(o.proposal); why == "" {
+			c.offerCard(o.skill, o.proposal, prep)
 		}
 	}
 }
 
-// money is "money in" for a date (conversation.ts, the "money" kind): the payments the record holds on it (a listings-only shop takes none, so it is "nothing recorded"). The date is the
-// one the words name (language.FindDatePhrase, resolved by language.ResolveDate with dates.ts's rules), or today; a date that does not exist (31 November) is today, as
-// `dateOf(intent) ?? today()` makes it.
+// money is "money in" for a date (conversation.ts, the "money" kind): the payments the record holds on it. The date is the one the words name (language.FindDatePhrase, resolved by
+// language.ResolveDate with dates.ts's rules), or today; a date that does not exist (31 November) is today, as `dateOf(intent) ?? today()` makes it.
 func (c *conv) money(d *language.DatePhrase) {
 	t := time.UnixMilli(c.now).In(c.r.loc)
 	y, m, day := t.Date()
@@ -543,10 +790,7 @@ func (c *conv) money(d *language.DatePhrase) {
 	from := time.Date(y, m, day, 0, 0, 0, 0, c.r.loc).UnixMilli()
 	to := time.Date(y, m, day+1, 0, 0, 0, 0, c.r.loc).UnixMilli()
 	var paise, payments int64
-	c.r.mu.RLock()
-	entries := append(append(c.r.entries[:0:0], c.r.entries...), c.rec.fresh...)
-	c.r.mu.RUnlock()
-	for _, e := range entries {
+	for _, e := range c.entries() {
 		if e.Outcome != "confirmed" || (e.Action != "record_deposit" && e.Action != "record_payment" && e.Action != "owner_marked_paid") {
 			continue
 		}
@@ -564,6 +808,13 @@ func (c *conv) money(d *language.DatePhrase) {
 		return
 	}
 	c.say("money_in.some", "date", date, "inr", assistant.INR(paise), "n", strconv.FormatInt(payments, 10))
+}
+
+// entries is the record as this step sees it: the saved lines, then the step's own.
+func (c *conv) entries() []store.Entry {
+	c.r.mu.RLock()
+	defer c.r.mu.RUnlock()
+	return append(append(c.r.entries[:0:0], c.r.entries...), c.rec.fresh...)
 }
 
 // ---- leaving with the shop (approvals/leave.ts) ---------------------------------------------------------------------------------------------------------
@@ -586,17 +837,18 @@ func (c *conv) leave(kind string) {
 	if kind == "operator" {
 		note = "the owner asked for another Operator; the move itself still needs the owner's code"
 	}
-	c.logLine(action, "confirmed", map[string]any{"kind": kind}, map[string]string{"ask": "ask_" + hex.EncodeToString(b), "via": "page"}, note)
+	via := "page"
+	if !c.toPage {
+		via = "whatsapp"
+	}
+	c.logLine(action, "confirmed", map[string]any{"kind": kind}, map[string]string{"ask": "ask_" + hex.EncodeToString(b), "via": via}, note)
 	c.say(asked)
 }
 
 // mayAskAgain is leave.ts: not within an hour of the latest confirmed ask of this kind in the record (this step's lines included).
 func (c *conv) mayAskAgain(action string) bool {
 	var last int64 = -1 << 62
-	c.r.mu.RLock()
-	entries := append(append(c.r.entries[:0:0], c.r.entries...), c.rec.fresh...)
-	c.r.mu.RUnlock()
-	for _, e := range entries {
+	for _, e := range c.entries() {
 		if e.Action != action || e.Outcome != "confirmed" || !askID.MatchString(e.Refs["ask"]) {
 			continue
 		}
@@ -609,10 +861,11 @@ func (c *conv) mayAskAgain(action string) bool {
 
 // ---- the clock's beat ----------------------------------------------------------------------------------------------------------------------------------
 
-// onTick is conversation.ts `onTick`: cards past their time are closed, what is no longer needed is taken off, and the morning question is asked.
+// onTick is conversation.ts `onTick`: cards past their time are closed, what is no longer needed is taken off, the month's budget notices, the limit changes that settled, and
+// the morning question.
 func (c *conv) onTick() {
 	for _, cd := range c.a.Expire(c.now) {
-		c.logLine("owner_card", "blocked", map[string]any{"card": cd.ID}, map[string]string{"card": cd.ID, "skill": cd.Action.Skill, "kind": cd.Action.Kind, "digest": cd.Digest, "decision": "none"}, "the card ran out without a tap: nothing was done")
+		c.logCase(cd.Action.Case, "owner_card", "blocked", map[string]any{"card": cd.ID}, map[string]string{"card": cd.ID, "skill": cd.Action.Skill, "kind": cd.Action.Kind, "digest": cd.Digest, "decision": "none"}, "the card ran out without a tap: nothing was done")
 	}
 	c.a.Compact(c.now, c.r.today(c.now))
 	c.notesTick()
@@ -623,12 +876,12 @@ func (c *conv) onTick() {
 		c.snap.Stock.Tidy(c.now)
 	}
 	c.budgetBeat()
-	c.a.MarkChangesTold() // limits-card.ts `unannounced`: a listings-only shop declares no limit, so a settled change is marked told and nothing is said
+	c.announceLimits()
 	c.askFresh()
 }
 
-// budgetBeat is conversation.ts `budgetBeat`: the month's two notices, each once ("most of the budget is used", "used up"). To the owner's page (its talk list), and then to WhatsApp, which
-// a listings-only shop does not have: TypeScript's attempt fails and says so in the record ("send_message failed"), so this writes that line too, to leave the same record.
+// budgetBeat is conversation.ts `budgetBeat`: the month's two notices, each once ("most of the budget is used", "used up"). To the owner's page (its talk list), and then to WhatsApp:
+// a listings-only shop has none, and TypeScript's attempt fails and says so in the record ("send_message failed"), so this writes that line too, to leave the same record.
 func (c *conv) budgetBeat() {
 	cfg := c.r.policy.Budget
 	if cfg == nil {
@@ -636,7 +889,9 @@ func (c *conv) budgetBeat() {
 	}
 	for _, line := range budget.TakeNotices(&c.snap.AI, cfg, c.r.clock, c.now) {
 		c.tellBudget(line, "")
-		c.logLine("send_message", "failed", map[string]any{"to": "owner", "templates": []string{"assistant_budget_line"}}, map[string]string{"to": "owner"}, "this reply has no approved WhatsApp template, so it goes only while the person's 24-hour window is open")
+		if c.hooks == nil {
+			c.logLine("send_message", "failed", map[string]any{"to": "owner", "templates": []string{"assistant_budget_line"}}, map[string]string{"to": "owner"}, "this reply has no approved WhatsApp template, so it goes only while the person's 24-hour window is open")
+		}
 		notes := "the owner was told that most of this month's model budget is used"
 		if line == "full" {
 			notes = "the owner was told that this month's model budget is used up: the language model is off until the 1st; buttons, rules and fixed answers go on"

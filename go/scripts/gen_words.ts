@@ -181,6 +181,9 @@ function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; h
     const id = MORNING_TEMPLATE_OF[p];
     m[`morning.${p}`] = slots(render(id, { language: l, values: { shop: S("shop"), date: S("date"), today: S("today"), money: S("money"), waiting: S("waiting") }, check: undefined as never }));
     m[`morning.${p}.name`] = templateNameOf(id);
+    // the order its values go to Meta in, for the approved template outside the owner's window
+    const body = m[`morning.${p}`];
+    m[`morning.${p}.order`] = ["shop", "date", "today", "money", "waiting"].map((k) => [k, body.indexOf(`{${k}}`)] as const).filter(([, i]) => i >= 0).sort((a, b) => a[1] - b[1]).map(([k]) => k).join(",");
   }
   const quiet = morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [], moneyPaise: 0, waiting: 0 }).values as Bag;
   m["morning.nothing"] = quiet.today;

@@ -60,9 +60,18 @@ func ParseSnap(text string) (*Snap, error) {
 		s.A = assistant.FromMembers(raw.Assistant)
 		s.assistant = s.A.Rest
 	}
+	if err := s.readAssistantParts(); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// readAssistantParts reads the parts of the assistant's state this runtime types (the listings and the stock count) out of its raw members, for every shop: the listings-only shop,
+// and a template's (a Bookings shop's assistant has the listings skill too, wire.ts).
+func (s *Snap) readAssistantParts() error {
 	if l, ok := s.assistant["listings"]; ok {
 		if err := json.Unmarshal(l, &s.Listings); err != nil {
-			return nil, fmt.Errorf("the saved listings cannot be read: %w", err)
+			return fmt.Errorf("the saved listings cannot be read: %w", err)
 		}
 		s.hasList = true
 		if s.Listings.Items == nil {
@@ -87,7 +96,7 @@ func ParseSnap(text string) (*Snap, error) {
 			s.Stock = &stock
 		}
 	}
-	return s, nil
+	return nil
 }
 
 // ParseSnapKit reads a template's snapshot: the shared parts (the owner's assistant, the AI counts) as ParseSnap reads them, and every other top-level member, in its order, to
@@ -128,6 +137,9 @@ func ParseSnapKit(text string, kit Kit) (*Snap, error) {
 			if isObject(p.Raw) && json.Unmarshal(p.Raw, &members) == nil {
 				s.A = assistant.FromMembers(members)
 				s.assistant = s.A.Rest
+				if err := s.readAssistantParts(); err != nil {
+					return nil, err
+				}
 			}
 		default:
 			own = append(own, p)
@@ -205,7 +217,11 @@ func (s *Snap) serializeKit() (string, error) {
 			}
 		case "assistant":
 			if s.A != nil {
-				raw, err := signing.Marshal(s.A.Members())
+				members, err := s.assistantMembers()
+				if err != nil {
+					return "", err
+				}
+				raw, err := signing.Marshal(members)
 				if err != nil {
 					return "", err
 				}
@@ -239,23 +255,33 @@ func (s *Snap) Serialize() (string, error) {
 		AI        *budget.AI                 `json:"ai,omitempty"`
 	}{Format: Format, AI: s.AI}
 	if s.A != nil {
-		out.Assistant = s.A.Members()
-		if s.hasList {
-			l, err := signing.Marshal(s.Listings)
-			if err != nil {
-				return "", err
-			}
-			out.Assistant["listings"] = l
+		members, err := s.assistantMembers()
+		if err != nil {
+			return "", err
 		}
-		// the stock count is written back whenever this runtime holds it (a state whose stock could not be read stays as the raw member it was carried as)
-		if s.Stock != nil {
-			st, err := signing.Marshal(s.Stock)
-			if err != nil {
-				return "", err
-			}
-			out.Assistant["stock"] = st
-		}
+		out.Assistant = members
 	}
 	b, err := signing.Marshal(out)
 	return string(b), err
+}
+
+// assistantMembers is the assistant's state as members: its own, with the listings and the stock count written back whenever this runtime holds them (a state whose stock could
+// not be read stays as the raw member it was carried as).
+func (s *Snap) assistantMembers() (map[string]json.RawMessage, error) {
+	m := s.A.Members()
+	if s.hasList {
+		l, err := signing.Marshal(s.Listings)
+		if err != nil {
+			return nil, err
+		}
+		m["listings"] = l
+	}
+	if s.Stock != nil {
+		st, err := signing.Marshal(s.Stock)
+		if err != nil {
+			return nil, err
+		}
+		m["stock"] = st
+	}
+	return m, nil
 }

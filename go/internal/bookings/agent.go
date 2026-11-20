@@ -58,6 +58,10 @@ type Agent struct {
 	refunds  *payments.Refunds
 	can      payments.Capabilities
 	acct     accounting.Accounting // the step's books, made on the first money line
+	// asst is the shop's assistant of this step (agent_assistant.go), made on first use; stepErr is an error one of its acts met deep in the agent's own paths (a Guard
+	// found down), handed back by the step after the assistant returns, so the step is thrown away whole as TypeScript's thrown error throws it away
+	asst    *runtime.Assistant
+	stepErr error
 }
 
 // newAgent is createAgent: the services of this step, watched, and the shared pieces built over them (say, refunds).
@@ -85,6 +89,13 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 		a.pay = ownermarked.View{State: a.marks, PayLink: a.settings.UpiPayLink(), Now: a.now, Codes: assistant.NewCode}
 	case k.Ports.Payments != nil:
 		a.pay = wPayments{a.watch, k.Ports.Payments}
+	}
+	// runtime-limits.ts apply: a limit the owner tightened (Pending) or changed (Active) is in force for this step, so the agent's own checks use it; a copy, so the file's value
+	// (the base the changes are judged from, Kit.Limits) is never touched
+	if v, ok := c.InForce("refund_limit"); ok && v != a.settings.Cancellation.RefundLimitInr {
+		cp := *a.settings
+		cp.Cancellation.RefundLimitInr = v
+		a.settings = &cp
 	}
 	a.msg = a.channelMessaging(watchedMessaging(a.watch, a.ownerMessaging(k.Ports.WhatsApp)))
 	a.say = messaging.NewSay(a.sayDeps())

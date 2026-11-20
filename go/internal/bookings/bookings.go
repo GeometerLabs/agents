@@ -43,6 +43,8 @@ type Kit struct {
 	Report      *MonthlyReport
 	reportErr   string
 	reportErrAt int64
+	// shared is the part of the settings every shop has (the assistant's character), for the owner page's assistant view
+	shared *runtime.Settings
 	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.
 	given map[string]bool
 }
@@ -86,6 +88,7 @@ func (k *Kit) ReadSettings(in map[string]any, raw []byte, shared *runtime.Settin
 	shared.Name, shared.Timezone, shared.Language = s.Name, s.Timezone, s.Languages
 	shared.Owner.Whatsapp, shared.Owner.Language = s.Owner.Whatsapp, s.Owner.Language
 	shared.ReadAssistant(in["assistant"])
+	k.shared = shared
 	return s, nil
 }
 

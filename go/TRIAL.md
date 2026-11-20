@@ -692,3 +692,12 @@ Started from agents main a5a80095 (Bookings contract on Go 123 of 143; on TypeSc
   kinds, `@bookings`), and `rules.json` carries the router's reading for those kinds and the limit-rule phrasing (limits-card.ts PHRASING, read from the source). Three
   regular expressions that are not exported (intents.ts AMOUNT_RE, the two of readLimitRequest) are built by JavaScript from their source in `gen_patterns.ts`; the limit kinds'
   own words are in `limitwords/words.json` (`gen_limit_words.ts`). `words-fresh.test.ts` checks the packs as before, plus one Bookings line. Count: **123 of 143** (no Go yet).
+- **(a) to (d) The assistant behind a skill seam, the Bookings skill, a closed day and a move with undo, the limit card: done.** The one conversation (`runtime/assistant.go`) now
+  serves every shop over `OwnerSkill`s (`runtime/assistantkit.go`, skill.ts): the listings-only shop keeps its one built-in skill (`listingskill.go`) and its page-only talk; a
+  template's agent turns it on with `StepContext.Assistant(AssistantHooks{...})` and gets [its skill, the declared limits, the listings] (wire.ts), answers on WhatsApp through the
+  shared `messaging.Say` (the card with its buttons and code, the approved template for a customer's closed or reopened day) or on the page while the owner acts from there.
+  Closing and opening a day, a move and undo, and the limit card are `runtime/assistantacts.go`; the reading takes the shop's kinds, the time of day, a refund's amount and the
+  limit rule (`assistant.Context`, `OwnerReading{Bookings, LimitRule}`); a card returns its code (`MakeCard`); the owner page's `app` view is shared (`OwnerAppView`, with the
+  mood of mood.ts); the owner's tightened refund limit is in force for the agent's own checks (`StepContext.InForce`). Bookings' skill is `bookings/agent_assistant.go`
+  (assistant.ts, its acts the agent's own paths). Count (open3, open2, owner on Go): **131 of 143** (the day's list, close a day, move, message, the two limit cards, the cancel
+  card, the owner's talk box). The listings contract on Go after (a): **197 of 197**.
