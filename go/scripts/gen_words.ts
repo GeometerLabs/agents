@@ -29,7 +29,7 @@ import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
 import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT, dayAndTime } from "../../modules/channels/owner-phones.ts";
-import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../modules/channels/owner-signin.ts";
+import { OWNER_CHANGE_ALERT, REMOVAL_ALERT, SIGNIN_MESSAGE } from "../../modules/channels/owner-signin.ts";
 import { KIND_MEANING, OWNER_KINDS, RULES_ONLY, WANT_INSTRUCTIONS, ownerReading } from "../../modules/assistant/intents.ts";
 import type { OwnerKind } from "../../modules/assistant/intents.ts";
 import { ownerPrompt } from "../../modules/assistant/talk-prompt.ts";
@@ -100,6 +100,8 @@ function alerts(l: Language, m: Bag): void {
   m["alert.removal_asked"] = slots(REMOVAL_ALERT("")[l]);
   m["alert.removal_asked.by"] = slots(REMOVAL_ALERT(S("by"))[l]);
   m["alert.owner_change_asked"] = slots(OWNER_CHANGE_ALERT[l]);
+  // the sign-in link sent in the owner's open WhatsApp window (owner-signin.ts SIGNIN_MESSAGE)
+  m["signin.link"] = slots(SIGNIN_MESSAGE[l](S("shop"), S("link")));
 }
 
 /** One language's messages. */

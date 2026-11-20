@@ -636,12 +636,13 @@ func (a *Agent) backfillCalendar(now int64) error {
 	return nil
 }
 
-// onTick is agent.ts onTick. Not ported here yet (Deferred.md): the button-mode announcement, yesterday's settlement rows for the books.
+// onTick is agent.ts onTick. Not ported here yet (Deferred.md): yesterday's settlement rows for the books.
 func (a *Agent) onTick() error {
 	now := a.now()
 	if err := a.backfillCalendar(now); err != nil {
 		return err
 	}
+	a.announceButtonMode() // the outside switch can change between messages; the owner hears of it on the next beat
 	if a.pay != nil {
 		if err := a.refunds.Sweep(a.ctx, now); err != nil { // refunds first, whatever state their booking is in
 			return err

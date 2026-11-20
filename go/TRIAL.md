@@ -711,3 +711,9 @@ Started from agents main a5a80095 (Bookings contract on Go 123 of 143; on TypeSc
   the day's count and the cost in the saved AI state) and the owner's recordings held in memory with `POST /internal/channel/owner-voice`. The assistant hears the owner
   (`HearOwner`, `OnPageVoice`: an owner_assistant line with the voice marks, never the words); Bookings listens to a customer's note and reads it like typed text (step 6's
   voice test too). Count: **135 of 143** (the owner's voice note, the WebM recording, a customer's voice note).
+- **Step 6, the rest: done.** The shop terms (`internal/terms` was ported already; the agent now reads "terms" and "I agree" with it, the file read again when it changes); the
+  decision model's step-breaker lines and button mode (`bookings/agent_mode.go`: reader.ts announceButtonMode, announceSteps, announceModelOff, after a customer's answer and on
+  the beat; `budget.TakeAnnouncements`); the button payloads and the cancel buttons (a Go bug: a tapped time's intent carried `int` numbers where every reader takes decoded
+  JSON's `float64`, so the tap was "not understood"; `IntentFromReply` now writes `float64`); the WhatsApp sign-in link for a template's shop (`runtime.sendLink` with the
+  kit's WhatsApp, `access.Issue` and `Unsent`, the message generated from owner-signin.ts SIGNIN_MESSAGE); a customer's voice note (step 5 (f)). open3, open2 and open-cases
+  on Go: 40 of 40.

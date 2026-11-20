@@ -380,6 +380,26 @@ func (a *Access) TryAttempt(now int64) bool {
 	return true
 }
 
+// Issue is owner-access.ts issue: a new sign-in link for the owner (by their number) and this address; any link still issued is replaced, so only the newest works. The token
+// goes into the message and is never kept: only its hash is.
+func (a *Access) Issue(who Who, via string, now int64) (id, token string, expiresAt int64, err error) {
+	token, id, expiresAt = newToken(), newID(), now+SigninLinkMs
+	err = a.tx(func(x execer) error {
+		if _, err := x.Exec("UPDATE links SET state = 'replaced' WHERE state = 'issued'"); err != nil {
+			return err
+		}
+		_, err := x.Exec("INSERT INTO links (id, hash, made_at, expires_at, state, via, owner_key, base) VALUES (?, ?, ?, ?, 'issued', ?, ?, ?)", id, linkHash(token), now, expiresAt, via, OwnerKey(who.Owner), who.Base)
+		return err
+	})
+	return id, token, expiresAt, err
+}
+
+// Unsent is owner-access.ts unsent: the send failed before anything went out, so the link can never be used (nobody has it).
+func (a *Access) Unsent(id string) {
+	_, err := a.db.Exec("UPDATE links SET state = 'unsent' WHERE id = ? AND state = 'issued'", id)
+	must(err)
+}
+
 // Link limits: 3 requests a quarter of an hour, 10 a day. A person who taps twice is served; a flood is not.
 var linkLimits = []struct{ max, perMs int64 }{{3, 15 * 60_000}, {10, day}}
 

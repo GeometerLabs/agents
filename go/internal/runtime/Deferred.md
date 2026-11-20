@@ -11,3 +11,11 @@
 * **`chat_link`** (the WhatsApp message with a guest's one-use link, `chat-link-send.ts`): the route makes the same answers and saves the event; its step ends failed as not ported. See `internal/chatid/Deferred.md`.
 * **The free times and the customer's own case in a customer's prompt** are the template's `publicContext` (`CustomerTalkInput.Sources`); Bookings' is the agent core's.
 * `(?i)` in the shared claim and banned word lists is Go's, which also folds U+017F and U+212A (the report package's `Deferred.md` says the same).
+
+## The owner's assistant for a template's shop (20 Nov 2026)
+
+| Part | TypeScript | Why not yet | What it does instead |
+|------|-----------|-------------|----------------------|
+| The outgoing check over the assistant's own lines | conversation.ts sayVoice.matches over words.ts Writer facts | the lines are the packed words filled with the record's own values, so it has nothing to catch | recorded as allowed; the talk's reply is checked |
+| "open my app" from the owner on WhatsApp for a template's shop | owner-signin.ts `takes` for a message | the sign-in event (`owner_signin`) is ported for a template's shop, the WhatsApp phrase not yet | the owner asks from their page |
+| A limit change made by a card, applied to the rest of the SAME step | limits-card.ts applyInForce | the agent reads the limit in force when the step starts (StepContext.InForce) | the next step uses it |
