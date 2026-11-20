@@ -717,3 +717,9 @@ Started from agents main a5a80095 (Bookings contract on Go 123 of 143; on TypeSc
   JSON's `float64`, so the tap was "not understood"; `IntentFromReply` now writes `float64`); the WhatsApp sign-in link for a template's shop (`runtime.sendLink` with the
   kit's WhatsApp, `access.Issue` and `Unsent`, the message generated from owner-signin.ts SIGNIN_MESSAGE); a customer's voice note (step 5 (f)). open3, open2 and open-cases
   on Go: 40 of 40.
+
+**Measured at the end of this stream (20 Nov, through the heat lock, once):** `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1
+templates/commerce/bookings/contract/`: **143 of 143** (0 fail, 0 skipped). `node --test --test-concurrency=1 templates/commerce/listings/contract/` on Go: **197 of 197** (the
+words-fresh test included). `go build ./...`, `go vet ./...` and `go test ./...` pass (`internal/voice` is new). TypeScript was not changed (only go/scripts generators and one
+assertion in words-fresh.test.ts); no TypeScript bug was found. Not done (Deferred.md of bookings and runtime): the outgoing check over the assistant's own lines (recorded as
+allowed), a message to a chat guest and a guest's label, the morning line's picture, Sarvam, a chat guest's hold-to-talk, "open my app" on WhatsApp for a template's shop.
