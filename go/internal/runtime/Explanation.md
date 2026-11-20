@@ -33,3 +33,16 @@ Where it differs from the brief: the customer's talk is in `internal/assistant` 
 
 `chat_test.go` is `channels/test/chat.test.ts`'s own cases over a fake template step, plus the saved state's round trip. `assistant/talkcustomer_test.go` runs 97 checks, 20 model answers and 25 prompts the
 TypeScript made (`go/scripts/gen_customer_talk_vectors.ts`). `internal/chatid` has its own tests with a software passkey.
+
+## Work after a beat that saves for itself, and the licence notice (20 Nov 2026)
+
+core.ts step runs the licence notice, the monthly report and the morning line after the agent's own beat, each given `save: () => save(store, record)` so its claim is on disk
+before it sends and its ending after. Here that is the optional `AfterTicker` (template.go) on a template's Agent, run by `kitStep` on a tick only; its `save` is `saveMid`
+(kit.go): `save` with no task, then the step's recorder takes the saved lines as its base, so the beat's own save at the end writes only what came after. The work never
+changes the template's state (only the record), so the saved state the channels read is not changed under them. `RunLicenceNotice` (notice.go) is modules/licence/notice.ts for
+every template; the lease's Operator (`partner`) is read from licence.json with the rest (morning.go) and handed to a step as `StepContext.Partner`.
+
+`AccountantFiler` (template.go) is the channel kit's optional `accountantFiles`: without it `/internal/channel/accounting` answers 404 after the session check, as http.ts does.
+
+The queue (runtime.go drain) once lost every failed step's error to a shadowed `err`; a failed step now reaches the decision (park for a Guard, end, retry), so a template step
+that fails is retried with the delays, and a listings shop's failing step is too (it used to spin until "too many interrupted tries").

@@ -660,4 +660,18 @@ contract runs once at the end):
    is read and checked as config.ts readReport and start.ts monthlyReportSetup do (`ReportSetupOf`: signing key, go-live file, the name re-read when the file changes). Go
    test `TestMonthlyReportARestartAfterTheClaimNeverSendsTheMonthTwice`: a real runtime and store; the store's files are copied at the instant the report is handed to
    WhatsApp (what a crash then leaves), and a runtime started on the copy sends nothing and closes the claim as unconfirmed. `record-licence.contract.test.ts` on Go: 12 of
-   12. Count: **about 122 of 143**.
+   12. Count, every file run narrowly after this step (recovery 11/11, flow 14/14, money + owner + limits-approvals 34/35, record-licence 12/12, open-cases + open2 + open3
+   + chat + smoke + cross-restart 52/71): **123 of 143**.
+5. **The shop's assistant for Bookings: NOT started** (where the stream stopped). Sized on the Go side first: the Go assistant (`runtime/assistant.go`) is the listings shop's,
+   page-only (no WhatsApp), with one skill hard-wired; the reading (`assistant/rules.go`) already knows the kinds (day, close_day, reopen_day, move, message, cancel, limit), but the
+   WORDS are missing: none of the sentences these tests expect ("Closed ... Reply undo to open it again", "Moved b-1 to ...", "I couldn't move ...", "Send this to ...", "would
+   loosen it") is in `assistant/words/*.json.gz`. The plan, one commit each: (0) generate modules/assistant/templates.ts and words.ts's Bookings and limit lines into the packs
+   (gen_words.ts); (a) grow runtime/assistant.go behind a skill seam (conversation.ts `createAssistant` over `OwnerSkill`, no second copy), with a WhatsApp way out through the
+   shared say and the assistant's approved template outside the window, and the page talk box and app view; (b) the Bookings skill (src/assistant.ts: day, waiting, prepare,
+   execute over the agent's own paths) with the cancel and message cards; (c) close a day and move, with undo; (d) the limit card (limits-card.ts); (e) the morning line in
+   AfterTick; (f) voice (modules/voice: the speech Guard client, the listener) for the owner's voice note and the WebM recording, which also unblocks step 6's voice note.
+   Tests waiting on it (11): open3's day list and money, close a day, move, message a customer, the two limit cards, the morning line, the owner's voice note, the WebM
+   recording; open2's cancel card; owner's talk box on the page.
+6. **The rest: not started** (9 left; two chairs, the documents, the template outside the window, the approval event's checks and both cross-restart tests already pass): the
+   shop terms (2: modules/terms), a customer's voice note (1: voice), the decision model's step-breaker and pause (3), the button flow's payloads (1), the cancel buttons and
+   talk to the owner (1), the WhatsApp sign-in link (1).
