@@ -7,10 +7,10 @@ package bookings
 // ("Chat guest 3") on the owner's items.
 
 import (
-	"fmt"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -497,7 +497,7 @@ func ownerItems(st *Store, now int64) []ownerItem {
 }
 
 // Owner is channel.ts ownerView without the Money section (not ported yet): the shop, the services, what waits for the owner (never its code), the coming week.
-func (k *channelKit) Owner(kst runtime.KitState, _ *runtime.Snap, _ []store.Entry) any {
+func (k *channelKit) Owner(kst runtime.KitState, sn *runtime.Snap, _ []store.Entry) any {
 	st := kst.(*Store)
 	s := k.kit.Settings
 	now := k.kit.now()
@@ -527,7 +527,12 @@ func (k *channelKit) Owner(kst runtime.KitState, _ *runtime.Snap, _ []store.Entr
 		kv = append(kv, "customer", ownerCustomer(b, b.Customer), "channel", ownerChannel(b), "state", b.State)
 		upcoming = append(upcoming, ordered2(kv...))
 	}
-	return ordered2("shop", ordered2("name", s.Name, "timezone", s.Timezone, "ownerLanguage", s.Owner.Language), "services", publicServices(s, nil), "items", items, "upcoming", upcoming)
+	kv := []any{"shop", ordered2("name", s.Name, "timezone", s.Timezone, "ownerLanguage", s.Owner.Language), "services", publicServices(s, nil), "items", items, "upcoming", upcoming}
+	// item 11e: the shop's assistant's view (app/view.ts ownerAppView over a read-only Bookings skill), on a shop with the assistant
+	if s.Assistant != nil && k.kit.shared != nil && sn != nil {
+		kv = append(kv, "app", runtime.OwnerAppView(sn, k.kit.shared, &bookingsSkill{k.kit.readAgent(st)}, now, s.Loc, k.kit.OwnerVoiceOn()))
+	}
+	return ordered2(kv...)
 }
 
 // Documents is channel.ts documentsOf: the receipts and refund notes of the booking the page with this handle's hash opens (the page's own lookup, so another booking's number is

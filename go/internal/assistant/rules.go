@@ -11,8 +11,11 @@ package assistant
 //     "unknown" as TypeScript's `coerce` does;
 //   - the case reference (`b-14`), the message-first rule, the leave words ("get my shop's file", "change my Operator"), the memory words (remember, notes, forget) and the date a
 //     message names (language.FindDatePhrase);
-//   - NOT ported: the amount ("refund b-14 ₹500": a listings-only shop has no case to refund, so the amount never matters), the time of day (only a booking move reads one), and a message's
-//     own words beyond "are there any" (a shop with no customers never sends one).
+//   - the amount ("refund b-14 ₹500", intents.ts amountOf over its AMOUNT_RE, generated into patterns.json), the time of day (a booking's move: language.FindTimePhrase), and the
+//     rule about a declared limit (`Context.LimitRule`, limits-card.ts looksLikeLimitRule), each only where the shop's kinds use it (wave 2, step 5: a Bookings shop).
+//
+// A shop's kinds come in a Context (conversation.ts kindsOf): the listings-only shop's are OfferedKinds (the zero Context), a Bookings shop's add a day's list, closing and opening a
+// day and moving a booking (BookingsKinds, generated with the router's reading for them).
 //
 // JavaScript against Go: the memory patterns (intents-memory.ts) have a look-ahead in their middle, which language.Regex does not take, so here the keyword is a group and the
 // character after it is checked by hand (`notLetterAfter`). `\s` is JavaScript's (language.JSSpace), and lengths are counted in UTF-16 units where TypeScript counts `.length`.
@@ -40,9 +43,51 @@ type Intent struct {
 	Kind     string
 	Language string // the language the words' script shows ("" for Latin letters: English or Hindi typed in Latin letters, not clear)
 	Ref      string // "b-14", lower case
-	Words    string // remember: the note's words
+	Words    string // remember: the note's words; message: the words to send
 	Note     string // forget: "n-3"
 	Date     *language.DatePhrase
+	Time     *language.TimePhrase // a time of day the words name (a move); nil when none
+	// AmountPaise is a refund's amount written with a rupee sign or word; 0 when none (intents.ts leaves the member out)
+	AmountPaise int64
+}
+
+// Context is intents.ts OwnerContext: the kinds this shop's assistant takes, and whether a text states a rule about one of its declared limits (nil: nothing is a limit rule).
+type Context struct {
+	Kinds     []string
+	LimitRule func(text string) bool
+}
+
+// KindsOf is the context's kinds, the listings shop's when none are given.
+func (c Context) KindsOf() []string {
+	if c.Kinds == nil {
+		return OfferedKinds
+	}
+	return c.Kinds
+}
+
+// AmountOf is intents.ts amountOf: the amount written with a rupee sign or word, in paise; 0 when there is none (a bare number is never money).
+func AmountOf(text string) int64 {
+	m := language.P("intents.amount").Find(text)
+	if m == nil {
+		return 0
+	}
+	whole, frac := m.Group(1), m.Group(2)
+	if whole == "" {
+		whole, frac = m.Group(3), m.Group(4)
+	}
+	rupees, err := strconv.ParseInt(strings.ReplaceAll(whole, ",", ""), 10, 64)
+	if err != nil {
+		return 0
+	}
+	for len(frac) < 2 {
+		frac += "0" // `padEnd(2, "0")`
+	}
+	paise, _ := strconv.ParseInt(frac, 10, 64)
+	total := rupees*100 + paise
+	if total <= 0 || total > 9007199254740991 { // Number.isSafeInteger(total) && total > 0
+		return 0
+	}
+	return total
 }
 
 // jsSpace is what JavaScript's `\s` matches, as RE2 class content.
@@ -153,18 +198,21 @@ func messageWords(text, ref string) (string, bool) {
 	return after, after != ""
 }
 
-// ReadOwnerRules is intents.ts `readOwnerRules` for this shop's kinds: the first kind whose words are in the message, and the values the words give, with the language the
+// ReadOwnerRules is intents.ts `readOwnerRules` for a listings-only shop (no limit rule).
+func ReadOwnerRules(text string) Intent { return ReadOwnerRulesIn(text, Context{}) }
+
+// ReadOwnerRulesIn is intents.ts `readOwnerRules` for this shop's context: the first kind whose words are in the message, and the values the words give, with the language the
 // words' script shows.
-func ReadOwnerRules(text string) Intent {
+func ReadOwnerRulesIn(text string, ctx Context) Intent {
 	text = rules().guest.Replace(text, "g-$1")
-	in := readOwnerRules(text)
+	in := readOwnerRules(text, ctx)
 	if l := language.LanguageOfScript(text); l != "en" {
 		in.Language = l
 	}
 	return in
 }
 
-func readOwnerRules(text string) Intent {
+func readOwnerRules(text string, ctx Context) Intent {
 	c := rules()
 	plainText := language.Canon(text)
 	var ref string
@@ -175,6 +223,8 @@ func readOwnerRules(text string) Intent {
 		withoutRef = plainText[:m.Start()] + " " + plainText[m.End():]
 	}
 	date := language.FindDatePhrase(withoutRef)
+	tm := language.FindTimePhrase(withoutRef)
+	amount := AmountOf(withoutRef)
 	// leaving with the shop: by rule only, before every other kind (not when a case is named); then the shop's memory, which a named case does not stop
 	if ref == "" {
 		if k := readLeave(c, text); k != "" {
@@ -206,11 +256,14 @@ func readOwnerRules(text string) Intent {
 			}
 			if all {
 				w, _ := messageWords(text, ref)
-				return Intent{Kind: "message", Ref: ref, Words: w, Date: date}
+				return Intent{Kind: "message", Ref: ref, Words: w, Date: date, Time: tm}
 			}
 		}
 	}
-	// (intents.ts reads a rule about a declared limit here; a listings-only shop declares none)
+	// a rule about a limit ("refunds above ₹500 need my OK") names no case: it is read as a limit before the kind words can take it for a refund or a list
+	if ref == "" && ctx.LimitRule != nil && ctx.LimitRule(text) {
+		return Intent{Kind: "limit", Date: date, Time: tm}
+	}
 	for _, k := range c.kinds {
 		if !k.re.Test(withoutRef) {
 			continue
@@ -220,12 +273,15 @@ func readOwnerRules(text string) Intent {
 				continue
 			}
 			w, _ := messageWords(text, ref)
-			return Intent{Kind: "message", Ref: ref, Words: w, Date: date}
+			return Intent{Kind: "message", Ref: ref, Words: w, Date: date, Time: tm}
 		}
-		return Intent{Kind: k.kind, Ref: ref, Date: date}
+		if k.kind == "refund" {
+			return Intent{Kind: k.kind, Ref: ref, Date: date, Time: tm, AmountPaise: amount}
+		}
+		return Intent{Kind: k.kind, Ref: ref, Date: date, Time: tm}
 	}
-	// a day and nothing else ("Sunday?", "16 Nov") asks for that day's list: the kind "day", which this shop does not offer
-	if date != nil && len([]rune(strings.Map(func(r rune) rune {
+	// a day and nothing else ("Sunday?", "16 Nov") asks for that day's list; a time alone says nothing
+	if date != nil && tm == nil && len([]rune(strings.Map(func(r rune) rune {
 		if isSpaceRune(r) || r == '?' || r == '.' || r == '!' {
 			return -1
 		}
@@ -233,7 +289,7 @@ func readOwnerRules(text string) Intent {
 	}, withoutRef))) <= 24 {
 		return Intent{Kind: "day", Ref: ref, Date: date}
 	}
-	return Intent{Kind: "unknown", Ref: ref, Date: date}
+	return Intent{Kind: "unknown", Ref: ref, Date: date, Time: tm}
 }
 
 func readLeave(c *compiled, text string) string {
@@ -298,12 +354,15 @@ func readMemory(c *compiled, text string) *Intent {
 	return nil
 }
 
-// Offered is conversation.ts `offered` after intents.ts `coerce`: a kind this shop's assistant does not take is read as unknown (the model reader does the same), except help and limit.
-func Offered(kind string) string {
+// Offered is OfferedIn for a listings-only shop.
+func Offered(kind string) string { return OfferedIn(kind, OfferedKinds) }
+
+// OfferedIn is intents.ts `coerce`'s kind: a kind this shop's assistant does not take is read as unknown (the model reader does the same), except help and limit.
+func OfferedIn(kind string, kinds []string) string {
 	if kind == "unknown" || kind == "help" || kind == "limit" {
 		return kind
 	}
-	for _, k := range OfferedKinds {
+	for _, k := range kinds {
 		if k == kind {
 			return kind
 		}

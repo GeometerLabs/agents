@@ -680,3 +680,46 @@ contract runs once at the end):
 templates/commerce/bookings/contract/`: **123 of 143** (was 101; 20 fail, 0 skipped, no Go panic). The 20 are steps 5 (11) and 6 (9) above. `go build ./...`, `go vet ./...` and
 `go test ./...` pass (29 packages). The listings and directory contracts were not run (the lead runs them before merging); the queue fix in runtime.go changes a listings
 shop's failing step too (it is now retried with the delays instead of spinning to "too many interrupted tries").
+
+## Wave 2: the shop's assistant for Bookings and the rest (20 Nov 2026, `go-bk-assistant-20nov`, in progress)
+
+Started from agents main a5a80095 (Bookings contract on Go 123 of 143; on TypeScript 143 of 143). Steps 5 and 6 of the section above, most useful first; the count after each
+(narrow contract files only; the whole contract runs once at the end):
+
+- **(0) The words: done.** `go/scripts/gen_words.ts` now also renders the Bookings assistant's words with the real `write()`, `cardQuestion()`, `limitLine()` and
+  `limitCardLine()` (keys `day_list.*`, `closed.*`, `moved`, `move_failed.*`, `card.*`, `card.foot.*`, `label.*`, `done.*`, `limit.*`, the refusals, the two customer templates
+  `tmpl.day_closed` / `tmpl.day_open` with their Meta names and value order, the morning line's Bookings part, and the help and "didn't get that" lines for a Bookings shop's
+  kinds, `@bookings`), and `rules.json` carries the router's reading for those kinds and the limit-rule phrasing (limits-card.ts PHRASING, read from the source). Three
+  regular expressions that are not exported (intents.ts AMOUNT_RE, the two of readLimitRequest) are built by JavaScript from their source in `gen_patterns.ts`; the limit kinds'
+  own words are in `limitwords/words.json` (`gen_limit_words.ts`). `words-fresh.test.ts` checks the packs as before, plus one Bookings line. Count: **123 of 143** (no Go yet).
+- **(a) to (d) The assistant behind a skill seam, the Bookings skill, a closed day and a move with undo, the limit card: done.** The one conversation (`runtime/assistant.go`) now
+  serves every shop over `OwnerSkill`s (`runtime/assistantkit.go`, skill.ts): the listings-only shop keeps its one built-in skill (`listingskill.go`) and its page-only talk; a
+  template's agent turns it on with `StepContext.Assistant(AssistantHooks{...})` and gets [its skill, the declared limits, the listings] (wire.ts), answers on WhatsApp through the
+  shared `messaging.Say` (the card with its buttons and code, the approved template for a customer's closed or reopened day) or on the page while the owner acts from there.
+  Closing and opening a day, a move and undo, and the limit card are `runtime/assistantacts.go`; the reading takes the shop's kinds, the time of day, a refund's amount and the
+  limit rule (`assistant.Context`, `OwnerReading{Bookings, LimitRule}`); a card returns its code (`MakeCard`); the owner page's `app` view is shared (`OwnerAppView`, with the
+  mood of mood.ts); the owner's tightened refund limit is in force for the agent's own checks (`StepContext.InForce`). Bookings' skill is `bookings/agent_assistant.go`
+  (assistant.ts, its acts the agent's own paths). Count (open3, open2, owner on Go): **131 of 143** (the day's list, close a day, move, message, the two limit cards, the cancel
+  card, the owner's talk box). The listings contract on Go after (a): **197 of 197**.
+- **(e) The morning line: done.** `runtime/morning.go` is now morning.ts once for every shop (`runMorning`: when, once even if the process dies, silent on a closed or quiet day, the
+  claim, the send and the ending; `morningWords`: today's parts, yesterday's money, what waits, the mood); the listings shop sends it as a push as before, a template's shop through
+  `StepContext.Morning` as text in the owner's open window, else the approved template (its values in Meta's order, generated). Bookings runs it in AfterTick after the monthly
+  report. Not done: the mood picture as a sticker and as the template's header (Deferred.md). Count: **132 of 143**.
+- **(f) Voice: done.** `internal/voice` (new) is modules/voice: the `speech` block of runtime.json checked in the TypeScript's sentences, Geometer's own speech service (POST /stt,
+  multipart) and the WhatsApp media fetch through their Guards, the length of Ogg Opus and WebM Opus read from the bytes, the cost, low confidence, the day's limit and the
+  half-hour memo (proved on the TypeScript's own answers: `scripts/gen_voice_vectors.ts`). `runtime/voice.go` is the listener (turn.ts: not in button mode or over the AI cap,
+  the day's count and the cost in the saved AI state) and the owner's recordings held in memory with `POST /internal/channel/owner-voice`. The assistant hears the owner
+  (`HearOwner`, `OnPageVoice`: an owner_assistant line with the voice marks, never the words); Bookings listens to a customer's note and reads it like typed text (step 6's
+  voice test too). Count: **135 of 143** (the owner's voice note, the WebM recording, a customer's voice note).
+- **Step 6, the rest: done.** The shop terms (`internal/terms` was ported already; the agent now reads "terms" and "I agree" with it, the file read again when it changes); the
+  decision model's step-breaker lines and button mode (`bookings/agent_mode.go`: reader.ts announceButtonMode, announceSteps, announceModelOff, after a customer's answer and on
+  the beat; `budget.TakeAnnouncements`); the button payloads and the cancel buttons (a Go bug: a tapped time's intent carried `int` numbers where every reader takes decoded
+  JSON's `float64`, so the tap was "not understood"; `IntentFromReply` now writes `float64`); the WhatsApp sign-in link for a template's shop (`runtime.sendLink` with the
+  kit's WhatsApp, `access.Issue` and `Unsent`, the message generated from owner-signin.ts SIGNIN_MESSAGE); a customer's voice note (step 5 (f)). open3, open2 and open-cases
+  on Go: 40 of 40.
+
+**Measured at the end of this stream (20 Nov, through the heat lock, once):** `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1
+templates/commerce/bookings/contract/`: **143 of 143** (0 fail, 0 skipped). `node --test --test-concurrency=1 templates/commerce/listings/contract/` on Go: **197 of 197** (the
+words-fresh test included). `go build ./...`, `go vet ./...` and `go test ./...` pass (`internal/voice` is new). TypeScript was not changed (only go/scripts generators and one
+assertion in words-fresh.test.ts); no TypeScript bug was found. Not done (Deferred.md of bookings and runtime): the outgoing check over the assistant's own lines (recorded as
+allowed), a message to a chat guest and a guest's label, the morning line's picture, Sarvam, a chat guest's hold-to-talk, "open my app" on WhatsApp for a template's shop.

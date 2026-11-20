@@ -46,3 +46,15 @@ every template; the lease's Operator (`partner`) is read from licence.json with 
 
 The queue (runtime.go drain) once lost every failed step's error to a shadowed `err`; a failed step now reaches the decision (park for a Guard, end, retry), so a template step
 that fails is retried with the delays, and a listings shop's failing step is too (it used to spin until "too many interrupted tries").
+
+## The owner's assistant over skills (wave 2, step 5, 20 Nov 2026)
+
+There is one assistant (`assistant.go`, conversation.ts) and it serves every shop over `OwnerSkill`s (`assistantkit.go`, skill.ts). A skill has two halves kept apart: its reads (a
+day's list, what waits) are pure over the step's store, its acts (`Prepare`, `Execute`) go through the template's own paths. A card is made from `Prepare`; on the tap `Prepare`
+runs again and must give the same digest before `Execute` (assistant.JudgeCard). The optional halves are interfaces a skill may implement: `DaySkill`, `HoursSkill`,
+`CloseDaySkill`, `MoveSkill`. The listings-only shop has one built-in skill (`listingskill.go`) and talks on its page only, exactly as before; a template's agent turns the
+assistant on with `StepContext.Assistant(AssistantHooks{...})` and gets wire.ts's skills in its order: its own, the declared limits (`assistantacts.go`, limits-card.ts), the
+listings. On WhatsApp the assistant speaks through the shared `messaging.Say` with its own voice (each line `assistant_<id>`, a card with its buttons and its code, a customer's
+closed or reopened day as the approved template); on the page while the owner acts from there (`onPage`). The words are packed (`gen_words.ts`) and filled with the shop's
+saved values. The morning line (`morning.go`) is the same job for every shop; the listings shop sends it as a push, a template's shop as text in the owner's window, else the
+template. Voice (`voice.go`, internal/voice) is the listener every template shares and the owner's page recordings held in memory.

@@ -48,8 +48,12 @@ func (r *Runtime) nextMonthStart(now int64) (int, int, int) {
 	return t.Year(), int(t.Month()) + 1, 1
 }
 
-// tellBudget is conversation.ts `tellBudget` in the page's mode: one budget line in the talk.
+// tellBudget is conversation.ts `tellBudget`: a budget line in BOTH places, the page's talk always (it is there when the owner's 24-hour window is closed) and WhatsApp for a
+// template's shop; when the owner is already on the page, the one line goes there.
 func (c *conv) tellBudget(line, feature string) {
+	if c.hooks != nil && !c.toPage {
+		c.onPage(func() { c.tellBudget(line, feature) })
+	}
 	if line == "day" {
 		c.say("budget.day." + feature)
 		return
@@ -77,7 +81,7 @@ func (c *conv) listingFromWords(text, key string) (bool, error) {
 	if len(waiting) == 0 && !cue {
 		return false, nil
 	}
-	rules := assistant.ReadOwnerRules(text)
+	rules := c.reading.Rules(text)
 	strong := false
 	for _, k := range assistant.Strong {
 		strong = strong || k == rules.Kind
@@ -150,7 +154,10 @@ func (c *conv) listingFromWords(text, key string) (bool, error) {
 		c.refusedDraft(string(why), "")
 		return true, nil
 	}
-	made.From = "app" // the owner wrote from their page
+	made.From = "whatsapp"
+	if c.toPage {
+		made.From = "app" // the owner wrote from their page
+	}
 	rec.append(NewLine{Conversation: number, Action: "listing", Outcome: "confirmed", Inputs: map[string]any{"listing": made.ID, "category": made.Category}, Language: lang, Refs: refsOf(made, "drafted"),
 		Notes: "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it"})
 	c.propose(assistant.Raw{"kind": jstring("listing"), "case": jstring(caseOfListing(made.ID))})

@@ -8,7 +8,7 @@ package runtime
 
 import (
 	"encoding/json"
-	"strings"
+	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/memory"
 )
@@ -77,48 +77,112 @@ func inScopeNotes(raw json.RawMessage, now int64) []noteView {
 // OwnerPage is the answer of GET /internal/channel/owner.
 func (r *Runtime) OwnerPage() map[string]any {
 	s := r.current()
-	now := r.o.Now()
 	set := r.o.Client.Settings
+	return map[string]any{
+		"shop": map[string]any{"name": set.Name, "timezone": set.Timezone, "ownerLanguage": set.Owner.Language}, "kind": "listings", "services": []any{}, "items": []any{}, "upcoming": []any{},
+		"app": OwnerAppView(s, &set, nil, r.o.Now(), r.loc, false),
+	}
+}
+
+// shopMood is conversation.ts shopMood: the mood (mood.ts moodOf) from the skill's reads, the assistant's open cards and closed days, and the clock, and the picture that shows it to
+// the owner (character.ts FACE_OF_MOOD). Something wrong beats waiting for the owner, beats closed (or outside the hours), beats busy (a booking within the hour, or a full day),
+// beats quiet.
+func shopMood(s *Snap, skill OwnerSkill, now int64, loc *time.Location) (mood, face string) {
+	d := dateIn(now, loc)
+	problems, waiting := 0, 0
+	var starts []int64
+	closed, outside := IsClosedDay(s, d), false
+	if skill != nil {
+		problems, waiting = skill.Problems(), len(skill.Waiting())
+		if ds, ok := skill.(DaySkill); ok {
+			for _, r := range ds.Day(d) {
+				starts = append(starts, r.StartMs)
+			}
+		}
+		if hs, ok := skill.(HoursSkill); ok {
+			open, close, ok := hs.Hours(d)
+			closed = closed || !ok
+			// mood.ts outsideHours: before opening or after closing (always, on a weekday with no hours)
+			outside = !ok || now < time.Date(d.Year, time.Month(d.Month), d.Day, open/60, open%60, 0, 0, loc).UnixMilli() || now >= time.Date(d.Year, time.Month(d.Month), d.Day, close/60, close%60, 0, 0, loc).UnixMilli()
+		}
+	}
+	if s.A != nil {
+		waiting += len(s.A.OpenCards(now))
+	}
+	soon := false
+	for _, st := range starts {
+		soon = soon || (st >= now-3_600_000 && st <= now+3_600_000)
+	}
+	switch {
+	case problems > 0:
+		return "something_wrong", "wrong"
+	case waiting > 0:
+		return "waiting_for_owner", "needs"
+	case closed || outside:
+		return "closed", "closed"
+	case soon || len(starts) >= 8: // mood.ts BUSY_DAY
+		return "busy", "busy"
+	}
+	return "quiet", "well"
+}
+
+type waitingView struct {
+	Case        string `json:"case"`
+	Kind        string `json:"kind"`
+	AmountPaise int64  `json:"amountPaise"`
+	Who         string `json:"who"`
+	What        string `json:"what"`
+	Money       bool   `json:"money"`
+	Yes         string `json:"yes"`
+	No          string `json:"no,omitempty"`
+	Skill       string `json:"skill"`
+}
+
+type dayRowView struct {
+	Case    string `json:"case"`
+	StartMs int64  `json:"startMs"`
+	What    string `json:"what"`
+	Who     string `json:"who"`
+	State   string `json:"state"`
+}
+
+// OwnerAppView is modules/assistant/app/view.ts ownerAppView over the last saved state: the character, the mood (mood.ts moodOf from the skill's reads, the open cards and the closed
+// days), today's rows, each waiting item, the open cards (answered by card id and digest, never by code), the talk and the notes. skill is the template's own (read-only), nil
+// for the listings-only shop. listen: the page may record a voice note (the shop has a voice service).
+func OwnerAppView(s *Snap, set *Settings, skill OwnerSkill, now int64, loc *time.Location, listen bool) any {
 	v := appView{Character: characterView{Name: set.Assistant.Name, Style: set.Assistant.Style, Personality: set.Assistant.Personality, Seed: set.Assistant.Seed, Colour: set.Assistant.Colour, Paint: set.Assistant.Paint},
-		Today: []any{}, Waiting: []any{}, Cards: []cardView{}, Talk: []talkView{}, Notes: []noteView{}}
-	waiting := 0
+		Today: []any{}, Waiting: []any{}, Cards: []cardView{}, Talk: []talkView{}, Notes: []noteView{}, Listen: listen}
+	d := dateIn(now, loc)
+	if skill != nil {
+		if ds, ok := skill.(DaySkill); ok {
+			for _, r := range ds.Day(d) {
+				v.Today = append(v.Today, dayRowView{r.Case, r.StartMs, r.What, r.Who, r.State})
+			}
+		}
+		for _, w := range skill.Waiting() {
+			v.Waiting = append(v.Waiting, waitingView{w.Case, w.Kind, w.AmountPaise, w.Who, w.What, w.Money, w.Yes, w.No, skill.Name()})
+		}
+	}
 	if a := s.A; a != nil {
 		for _, c := range a.OpenCards(now) {
 			amount := int64(0)
-			if raw, ok := c.Action.Fields["amountPaise"]; ok {
-				if b := strings.TrimSpace(string(raw)); b != "" && (b[0] == '-' || (b[0] >= '0' && b[0] <= '9')) {
-					amount = rawInt(raw) // a number only (view.ts: `typeof ... === "number"`)
-				}
+			if raw, ok := c.Action.Fields["amountPaise"]; ok && isNumber(raw) {
+				amount = rawInt(raw) // a number only (view.ts: `typeof ... === "number"`)
 			}
 			who := c.Action.Case
 			if raw, ok := c.Action.Fields["who"]; ok {
 				who = rawString(raw)
 			}
 			v.Cards = append(v.Cards, cardView{ID: c.ID, Digest: c.Digest, Skill: c.Action.Skill, Kind: c.Action.Kind, Case: c.Action.Case, AmountPaise: amount, Who: who, ExpiresAtMs: c.ExpiresAtMs, Question: c.Question, HasNo: c.HasNo()})
-			waiting++
 		}
 		for _, l := range a.Talk {
 			v.Talk = append(v.Talk, talkView{AtMs: l.AtMs, From: l.From, Text: l.Text})
 		}
 		v.Notes = inScopeNotes(a.Rest["memory"], now)
-		today := r.today(now)
-		for _, d := range a.ClosedDays {
-			v.ClosedToday = v.ClosedToday || d == today
-		}
 	}
-	// mood.ts moodOf for a shop with no problems, no hours and no bookings: waiting for the owner beats closed beats quiet
-	switch {
-	case waiting > 0:
-		v.Mood, v.Face = "waiting_for_owner", "needs"
-	case v.ClosedToday:
-		v.Mood, v.Face = "closed", "closed"
-	default:
-		v.Mood, v.Face = "quiet", "well"
-	}
-	return map[string]any{
-		"shop": map[string]any{"name": set.Name, "timezone": set.Timezone, "ownerLanguage": set.Owner.Language}, "kind": "listings", "services": []any{}, "items": []any{}, "upcoming": []any{},
-		"app": v,
-	}
+	v.ClosedToday = IsClosedDay(s, d)
+	v.Mood, v.Face = shopMood(s, skill, now, loc)
+	return v
 }
 
 // ownerAction runs an owner_action in a step: a card's yes or no goes through the card binding; every other action name is the TypeScript templates' (a deposit received, a refund sent...) and

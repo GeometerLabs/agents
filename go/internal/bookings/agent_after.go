@@ -28,7 +28,7 @@ var WhoSetItUp = map[string]string{"en": "the person who set it up", "hi": "เคเ
 
 var _ runtime.AfterTicker = (*Agent)(nil)
 
-// AfterTick is core.ts's licence notice and monthly report on a beat, in that order. A failure is said in the log and never holds up the beat.
+// AfterTick is core.ts's licence notice, monthly report and morning line on a beat, in that order. A failure is said in the log and never holds up the beat.
 func (a *Agent) AfterTick(save func() error) {
 	saveLogged := func() {
 		if err := save(); err != nil {
@@ -46,12 +46,18 @@ func (a *Agent) AfterTick(save func() error) {
 	}); err != nil {
 		a.c.Log("The owner's licence notice could not be sent: " + err.Error())
 	}
-	// in the licence's final stop the shop sends nothing more, so no report goes
-	if a.kit.Report == nil || a.c.Licence() == "stopped" {
+	// in the licence's final stop the shop sends nothing more, so no report and no morning line go
+	if a.c.Licence() == "stopped" {
 		return
 	}
-	if _, err := a.kit.Report.Run(ReportTick{Settings: a.settings, Store: a.store, Rec: a.c.Rec, Now: a.now, Licence: a.c.Licence(), Save: saveLogged, Log: a.c.Log}); err != nil {
-		a.kit.reportFailed(err, a.now(), a.c.Log)
+	if a.kit.Report != nil {
+		if _, err := a.kit.Report.Run(ReportTick{Settings: a.settings, Store: a.store, Rec: a.c.Rec, Now: a.now, Licence: a.c.Licence(), Save: saveLogged, Log: a.c.Log}); err != nil {
+			a.kit.reportFailed(err, a.now(), a.c.Log)
+		}
+	}
+	// item 11e: the owner's morning line (morning.ts), after the report, with the same save so its claim is on disk before it goes; the skill reads the store, read-only
+	if err := a.c.Morning(runtime.MorningContext{Skill: &bookingsSkill{a}, Messaging: a.ownerMessaging(a.kit.Ports.WhatsApp), Save: save}); err != nil {
+		a.c.Log("The owner's morning line could not be made: " + err.Error())
 	}
 }
 

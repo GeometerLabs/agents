@@ -93,7 +93,7 @@ func (c *conv) listNotes() {
 		text += "\n" + c.pack.Say("notes_list.line."+n.Audience, "id", n.ID, "text", n.Text)
 	}
 	text += "\n" + c.pack.Say("notes_list.foot")
-	c.a.AddTalk("assistant", text, c.now)
+	c.tellText("notes_list", text, "", nil)
 }
 
 // forgetNote is notes.ts `forget`.

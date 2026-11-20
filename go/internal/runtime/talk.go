@@ -64,11 +64,13 @@ func (c *conv) readOwner(text string) (assistant.Intent, string, map[string]stri
 	u := understanding.Rules()
 	reason := ""
 	if r.router == nil {
-		in = assistant.ReadOwnerRules(text)
+		in = c.reading.Rules(text)
 	} else {
-		in, u, reason = r.router.Parse(text, understanding.Options{RulesOnly: buttons, SkipSteps: skip}, now)
+		router := *r.router // the shop's router with this shop's reading (its kinds, its limit rule)
+		router.Reading = c.reading
+		in, u, reason = router.Parse(text, understanding.Options{RulesOnly: buttons, SkipSteps: skip}, now)
 	}
-	in = assistant.CoerceIntent(in)
+	in = assistant.CoerceIntentIn(in, c.reading.Kinds())
 	note := ""
 	if reason != "" {
 		note = fmt.Sprintf("the model could not be used (%s), so the rule parser read the message", reason)
@@ -293,15 +295,16 @@ func (c *conv) talkToOwner(text, key string) bool {
 	c.talkLine(meter, "checked", checked.Text, "the talk reply passed the five checks; it goes out through the outgoing check, and the record keeps only its digest", 0)
 	c.chatLine("owner", text)
 	if answer.Limit != "" {
-		// the model only names which declared limit is meant; a listings-only shop declares none, so the limits half answers "which limit?" (conversation.ts onLimit)
-		c.say("limit_which")
+		// the model only names which declared limit is meant; the value is read from the owner's words by rule (conversation.ts onLimit); a listings-only shop declares none, so
+		// the limits half answers "which limit?"
+		c.onLimit(text, answer.Limit)
 		return true
 	}
 	// talk_reply: the words as they are, through the outgoing check the page's every line has (conversation.ts `tell`)
 	if problems := language.CheckText(checked.Text, checked.Facts); len(problems) > 0 {
 		c.logLine("send_message", "blocked", map[string]any{"templates": []string{"assistant_talk_reply"}}, map[string]string{"to": "owner", "channel": "owner_page"}, "the answer failed the outgoing check and was not shown: "+strings.Join(problems, " "))
 	} else {
-		c.a.AddTalk("assistant", checked.Text, c.now)
+		c.tellText("talk_reply", checked.Text, "", nil)
 	}
 	c.chatLine("assistant", checked.Text)
 	// a note the talk proposes is shown with Remember / No buttons, which the owner's page does not have: none is made here (notes.ts `proposeNote`)

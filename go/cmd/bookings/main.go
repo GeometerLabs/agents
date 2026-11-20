@@ -24,8 +24,10 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/terms"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
+	"github.com/GeometerLabs/agents/go/internal/voice"
 )
 
 func main() {
@@ -138,6 +140,18 @@ func run(folder string) error {
 		kit.Report = ports.Books.NewMonthlyReport(*setup)
 	}
 	kit.Ports = ports
+	// B72: the shop terms, read from the client folder again whenever the file changes; no file: the feature is off
+	kit.Terms = terms.NewReader(client.Folder)
+	// B29: the shop's voice service, from runtime.json `speech` (internal/voice); left out, voice is off and a voice note gets the one line asking to type
+	if raw, ok := client.Config.Raw["speech"]; ok {
+		c, problems := voice.Read(raw, client.Folder)
+		if len(problems) > 0 {
+			return runtime.ClientError{Msg: "runtime.json: " + strings.Join(problems, " ")}
+		}
+		if kit.Voice, err = voice.Build(c, kit.Settings.Languages, now, log); err != nil {
+			return runtime.ClientError{Msg: err.Error()}
+		}
+	}
 	kit.Router = runtime.RouterFor[bookings.Intent](&client.Config, bookings.Reading{S: kit.Settings}, log)
 	// item 11h: where a WhatsApp booking's own page lives, read fresh from the deployer's pages.json (start.ts pageBase: the pages domain's address, else this server's)
 	kit.PageBase = func() string {

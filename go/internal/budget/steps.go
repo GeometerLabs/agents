@@ -5,8 +5,8 @@ package budget
 // left out for `pauseMinutes` and step 2 reads the message at once; the next message after the pause is a try, and a try that fails pauses it again at once.
 //
 // Kept in the month's AI state as `steps` (`AI.Steps`, raw JSON so a member this version does not know is carried through), field for field as TypeScript writes it:
-// { "decision": { "fails": [ms...], "pausedUntilMs": ms, "announce": ["paused" | "resumed"] } }. Moments only, never a word of a message. The announcements are TypeScript's to
-// take (a customer's reader writes them to the record); the owner's reader never takes them, so here they are only kept.
+// { "decision": { "fails": [ms...], "pausedUntilMs": ms, "announce": ["paused" | "resumed"] } }. Moments only, never a word of a message. The announcements are taken by a
+// customer's reader (TakeAnnouncements, which writes them to the record, once each); the owner's reader never takes them.
 
 import (
 	"bytes"
@@ -79,6 +79,11 @@ func NoteStep(ai **AI, step string, ok bool, c Clock, nowMs int64) {
 	}
 	b, _ := json.Marshal(next)
 	steps[step] = b
+	a.Steps = writeSteps(steps)
+}
+
+// writeSteps writes the steps' health back, by step name.
+func writeSteps(steps map[string]json.RawMessage) json.RawMessage {
 	keys := make([]string, 0, len(steps))
 	for k := range steps {
 		keys = append(keys, k)
@@ -96,7 +101,41 @@ func NoteStep(ai **AI, step string, ok bool, c Clock, nowMs int64) {
 		out.Write(steps[k])
 	}
 	out.WriteByte('}')
-	a.Steps = out.Bytes()
+	return out.Bytes()
+}
+
+// StepEvent is ai-state.ts StepEvent: a step's pause or its resumption, to be put in the record once.
+type StepEvent struct {
+	Step, Event string
+	UntilMs     *int64 // a pause: until when
+}
+
+// breakerSteps is ai-state.ts BREAKER_STEPS.
+var breakerSteps = []string{"decision"}
+
+// TakeAnnouncements is ai-state.ts takeAnnouncements: each step's pending pauses and resumptions, taken off the state so each is put in the record once.
+func TakeAnnouncements(ai **AI, c Clock, nowMs int64) []StepEvent {
+	a := For(ai, c, nowMs)
+	steps := readSteps(a.Steps)
+	var out []StepEvent
+	for _, step := range breakerSteps {
+		var h StepHealth
+		if json.Unmarshal(steps[step], &h) != nil || len(h.Announce) == 0 {
+			continue
+		}
+		for _, e := range h.Announce {
+			ev := StepEvent{Step: step, Event: e}
+			if e == "paused" && h.PausedUntilMs != nil {
+				ev.UntilMs = h.PausedUntilMs
+			}
+			out = append(out, ev)
+		}
+		h.Announce = nil
+		b, _ := json.Marshal(h)
+		steps[step] = b
+		a.Steps = writeSteps(steps)
+	}
+	return out
 }
 
 // TakeDayNotice is budget.ts `takeDayNotice`: true (and noted) the first time today a feature is told it reached its daily cap; false after.
