@@ -61,7 +61,7 @@ func TestStateRoundTripKeepsUnknownMembers(t *testing.T) {
 func TestMakeJudgeClose(t *testing.T) {
 	s := Fresh()
 	act := Action{Kind: "listing", Skill: "listings", Case: "listing:l-1", Fields: Raw{"title_en": jstr("A")}}
-	c1, _ := s.MakeCard(act, Raw{"kind": jstr("listing")}, 1000)
+	c1, _, _ := s.MakeCard(act, Raw{"kind": jstr("listing")}, 1000)
 	if c1.ID != "c-1" || c1.Digest != ActionDigest(act) {
 		t.Fatal("first card", c1.ID, c1.Digest)
 	}
@@ -85,7 +85,7 @@ func TestMakeJudgeClose(t *testing.T) {
 	if v := JudgeCard(nil, "yes", 0, same); v.Kind != "unknown" {
 		t.Fatal(v.Kind)
 	}
-	c2, voided := s.MakeCard(act, Raw{}, 3000) // a second card for the same thing voids the first
+	c2, _, voided := s.MakeCard(act, Raw{}, 3000) // a second card for the same thing voids the first
 	if len(voided) != 1 || s.Cards[0].State != "void" || s.Cards[0].ReplacedBy != c2.ID || c2.ID != "c-2" {
 		t.Fatal("void", voided, s.Cards[0].State)
 	}

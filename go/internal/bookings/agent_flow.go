@@ -788,7 +788,7 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 	if isRelayReply(msg) {
 		return nil // the approvals relay's: no reply and no record here
 	}
-	// TODO(go-bk-agent): the handover code (approvals/handover.ts), the shop terms (B72) and the shop's assistant (item 11e) read the owner's words before the commands
+	// TODO(go-bk-agent): the handover code (approvals/handover.ts) and the shop terms (B72) read the owner's words before the commands
 	if dayToday.MatchString(msg.Text) {
 		a.tellDay("today")
 		return nil
@@ -797,8 +797,20 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 		a.tellDay("tomorrow")
 		return nil
 	}
+	// item 11e: the shop's assistant reads what no fixed phrase is (this command is one); a shop without an "assistant" block: exactly as before
 	if a.settings.Assistant != nil && !ownerCommand.MatchString(msg.Text) {
-		return runtime.Unported("the owner's own words to the shop's assistant (item 11e)")
+		if as := a.assistantOf(); as != nil {
+			taken, err := as.OnOwnerMessage(msg)
+			if err != nil {
+				return err
+			}
+			if a.stepErr != nil {
+				return a.stepErr
+			}
+			if taken {
+				return nil
+			}
+		}
 	}
 	m := ownerCommand.FindStringSubmatch(msg.Text)
 	var b *Booking
