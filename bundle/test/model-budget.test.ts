@@ -1,5 +1,5 @@
-// The shop's model budget on the bundle's side (decision 60, "caps everywhere"): the price list of 19 Nov (the 18 Nov proposal, approved by the owner and in force from 19 Nov)
-// holds the numbers and nothing else holds them; a shop's budget is worked out from the plan and the list IN FORCE, so a proposed list never gives a shop a budget; it reaches the shop's generated runtime.json only if the runtime
+// The shop's model budget on the bundle's side (decision 60, "caps everywhere"; decision 62, the higher chat caps): the price list in force (21 Nov: the 20 Nov proposal, approved by the
+// owner on 20 Nov; before it 19 Nov: the 18 Nov proposal, approved on 18 Nov) holds the numbers and nothing else holds them; a shop's budget is worked out from the plan and the list IN FORCE, so a proposed list never gives a shop a budget; it reaches the shop's generated runtime.json only if the runtime
 // knows the key; the Operator's panel line reads the runtime's status field by field; a listing's draft is counted in the usage meter; and the model Guard's wall is checked
 // against the budgets. Nothing here calls a model.
 import { test } from "node:test";
@@ -18,25 +18,25 @@ import { serverConfig, tempServer } from "./helpers.ts";
 
 const proposed = loadPriceList(new URL("2026-11-18.json", PRICES_DIR).pathname);
 const inForce = latestPriceList();
+const nov19 = loadPriceList(new URL("2026-11-19.json", PRICES_DIR).pathname); // the 18 Nov proposal in force from 19 Nov to 20 Nov: the first budgets
 const before = loadPriceList(new URL("2026-11-14.json", PRICES_DIR).pathname); // the list in force before 19 Nov: no budget in it
 const RUPEE = 1_000_000;
 
 test("the 18 Nov proposal is superseded by the 19 Nov list in force, with the same numbers; a proposed list never gives a shop a budget", () => {
   assert.equal(proposed.status, "proposed", "the 18 Nov file stays what it was");
-  assert.equal(latestProposedPriceList()?.date, "2026-11-20", "only the 20 Nov proposal (decision 62) waits");
-  assert.equal(inForce.date, "2026-11-19");
-  assert.equal(inForce.status, "in-force");
+  assert.equal(latestProposedPriceList(), null, "nothing is waiting any more: the 20 Nov proposal is in force from 21 Nov");
+  assert.equal(nov19.status, "in-force");
   for (const [id, r] of Object.entries(proposed.rates)) {
     if (!id.startsWith("ai.")) continue;
     // every number, unit and source is the proposal's; what the owner's yes changes is the note, the read day and how sure we are ("assumed" became "official": decided by the owner)
     const { note: _a, read: _b, quality: _q1, ...was } = r as unknown as Record<string, unknown>;
-    const { note: _c, read: _d, quality: _q2, ...now } = inForce.rates[id] as unknown as Record<string, unknown>;
+    const { note: _c, read: _d, quality: _q2, ...now } = nov19.rates[id] as unknown as Record<string, unknown>;
     assert.deepEqual(now, was, `${id}: approved as proposed, no number moved`);
-    assert.equal(inForce.rates[id].quality, "official", `${id}: a number the owner decided`);
-    assert.doesNotMatch(inForce.rates[id].note, /Needs the owner's yes|PROPOSED/u, id);
+    assert.equal(nov19.rates[id].quality, "official", `${id}: a number the owner decided`);
+    assert.doesNotMatch(nov19.rates[id].note, /Needs the owner's yes|PROPOSED/u, id);
   }
   // from 19 Nov a plan's budget applies; before it, and in a folder where the only newer list is a proposal, nothing does
-  assert.notEqual(budgetFor("basic", inForce), undefined);
+  assert.notEqual(budgetFor("basic", nov19), undefined);
   assert.equal(budgetFor("basic", before), undefined);
   const dir = mkdtempSync(join(tmpdir(), "geo-prices-"));
   for (const f of ["2026-11-14.json", "2026-11-18.json"]) copyFileSync(new URL(f, PRICES_DIR).pathname, join(dir, f));
@@ -44,8 +44,8 @@ test("the 18 Nov proposal is superseded by the 19 Nov list in force, with the sa
   assert.equal(budgetFor("basic", latestPriceList(dir)), undefined, "so a shop gets no budget from a proposal");
 });
 
-test("the proposed numbers: a budget for each plan, equal to ai.cap for the plan's allowance, a small one for a listings-only shop, and the directory's", () => {
-  const r = inForce.rates;
+test("the 19 Nov numbers: a budget for each plan, equal to ai.cap for the plan's allowance, a small one for a listings-only shop, and the directory's", () => {
+  const r = nov19.rates;
   assert.equal(r["ai.cap"].micro, 20 * RUPEE);
   for (const plan of ["basic", "business", "operations"] as const) {
     assert.equal(r[`ai.budget.${plan}`].micro, (r["ai.cap"].micro! * r[`plan.${plan}.allowance`].count!) / 1000, `${plan}: the shop's own budget is the same rupee as fleet's outer wall`);
@@ -56,15 +56,24 @@ test("the proposed numbers: a budget for each plan, equal to ai.cap for the plan
   assert.ok(r["ai.budget.discovery"].micro! > 0 && r["ai.daily.discovery.per-buyer"].count! > 0);
 });
 
-// Decision 62 (owner, 19 Nov: "yeah do higher chat caps"): the 20 Nov list is PROPOSED. It holds the new numbers (and the per-guest turns that used to be a code constant); until the
-// owner's yes with the fleet and bundle deploys it is not the list in force, so no shop gets them. These numbers are the list's: they changed from the 19 Nov list on purpose.
+// Decision 62 (owner, 19 Nov: "yeah do higher chat caps"): the 20 Nov list was PROPOSED; the owner's yes came on 20 Nov ("commit, push and deploy"), so the 21 Nov list puts the same
+// numbers in force (and the per-guest turns that used to be a code constant). These numbers are the list's: they changed from the 19 Nov list on purpose.
 const raised = loadPriceList(new URL("2026-11-20.json", PRICES_DIR).pathname);
-test("the 20 Nov proposal: chat caps raised, still equal to ai.cap for the plan's allowance, and no shop gets them while it is only proposed", () => {
-  assert.equal(raised.status, "proposed");
+test("the 20 Nov proposal is in force from 21 Nov with the same numbers: chat caps raised, still equal to ai.cap for the plan's allowance; a proposal alone never gave a shop them", () => {
+  assert.equal(raised.status, "proposed", "the 20 Nov file stays what it was");
+  assert.equal(inForce.date, "2026-11-21");
+  assert.equal(inForce.status, "in-force");
+  for (const [id, r] of Object.entries(raised.rates)) {
+    if (!id.startsWith("ai.")) continue;
+    const { note: _a, read: _b, quality: _q1, ...was } = r as unknown as Record<string, unknown>;
+    const { note: _c, read: _d, quality: _q2, ...now } = inForce.rates[id] as unknown as Record<string, unknown>;
+    assert.deepEqual(now, was, `${id}: approved as proposed, no number moved`);
+    assert.doesNotMatch(inForce.rates[id].note, /proposed from 20 Nov|Needs the owner's yes|PROPOSED/u, id);
+  }
   assert.equal(raised.rates["ai.cap"].micro, 30 * RUPEE);
   for (const plan of ["basic", "business", "operations"] as const) {
     assert.equal(raised.rates[`ai.budget.${plan}`].micro, (raised.rates["ai.cap"].micro! * raised.rates[`plan.${plan}.allowance`].count!) / 1000, plan);
-    assert.equal(raised.rates[`plan.${plan}.fee`].micro, inForce.rates[`plan.${plan}.fee`].micro, `${plan}: no plan fee moves`);
+    assert.equal(raised.rates[`plan.${plan}.fee`].micro, nov19.rates[`plan.${plan}.fee`].micro, `${plan}: no plan fee moves`);
     assert.ok(raised.rates[`ai.budget.${plan}`].micro! < raised.rates[`plan.${plan}.fee`].micro! / 3, `${plan}: the raised budget is under a third of the plan's fee`);
   }
   const basic = budgetFor("basic", raised)!;
@@ -73,26 +82,27 @@ test("the 20 Nov proposal: chat caps raised, still equal to ai.cap for the plan'
   assert.deepEqual([budgetFor("operations", raised)!.monthlyMicroInr, budgetFor("operations", raised)!.daily.customer_talk], [300 * RUPEE, 1200]);
   assert.deepEqual(budgetFor("listings-only", raised), { monthlyMicroInr: 6 * RUPEE, daily: { owner_talk: 10, listing_draft: 10, customer_talk: 60 }, });
   assert.equal(isBudgetConfig(basic), true);
-  assert.equal(budgetFor("basic", inForce)!.guestTurnsPerDay, undefined, "the list in force has no per-guest number: the chat's fallback is used, nothing is made up here");
+  assert.equal(budgetFor("basic", inForce)!.guestTurnsPerDay, 40, "the list in force carries the per-guest number");
+  assert.equal(budgetFor("basic", nov19)!.guestTurnsPerDay, undefined, "the 19 Nov list has no per-guest number: the chat's fallback is used, nothing is made up here");
   const dir = mkdtempSync(join(tmpdir(), "geo-prices-"));
   for (const f of ["2026-11-19.json", "2026-11-20.json"]) copyFileSync(new URL(f, PRICES_DIR).pathname, join(dir, f));
   assert.equal(latestPriceList(dir).date, "2026-11-19", "a proposal never prices or caps anything");
 });
 
 test("a shop's budget is worked out from its plan and the list; a number the list lacks is never made up", () => {
-  const basic = budgetFor("basic", inForce)!;
+  const basic = budgetFor("basic", nov19)!;
   assert.equal(basic.monthlyMicroInr, 20 * RUPEE);
   assert.deepEqual(basic.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 60, router: 100 }, "customers' and the router's caps scale with the 1,000 messages");
-  assert.deepEqual(budgetFor("business", inForce)!.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 180, router: 300 });
-  assert.deepEqual(budgetFor("operations", inForce)!.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 600, router: 1000 });
-  assert.deepEqual(budgetFor("listings-only", inForce), { monthlyMicroInr: 6 * RUPEE, daily: { owner_talk: 10, listing_draft: 10, customer_talk: 30 } });
-  for (const b of ["basic", "business", "operations", "listings-only"] as const) assert.equal(isBudgetConfig(budgetFor(b, inForce)), true, b);
+  assert.deepEqual(budgetFor("business", nov19)!.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 180, router: 300 });
+  assert.deepEqual(budgetFor("operations", nov19)!.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 600, router: 1000 });
+  assert.deepEqual(budgetFor("listings-only", nov19), { monthlyMicroInr: 6 * RUPEE, daily: { owner_talk: 10, listing_draft: 10, customer_talk: 30 } });
+  for (const b of ["basic", "business", "operations", "listings-only"] as const) assert.equal(isBudgetConfig(budgetFor(b, nov19)), true, b);
   assert.equal(budgetFor("basic", before), undefined, "the list before 19 Nov has none");
-  assert.equal(budgetFor(null, inForce), undefined);
-  assert.equal(budgetFor("platinum", inForce), undefined);
-  const lacking = { rates: { ...inForce.rates, "ai.daily.router": undefined } };
+  assert.equal(budgetFor(null, nov19), undefined);
+  assert.equal(budgetFor("platinum", nov19), undefined);
+  const lacking = { rates: { ...nov19.rates, "ai.daily.router": undefined } };
   assert.equal(budgetFor("basic", lacking), undefined);
-  const d = discoveryBudgetFor(inForce)!;
+  const d = discoveryBudgetFor(nov19)!;
   assert.deepEqual([d.monthlyMicroInr, d.daily.buyer, d.perBuyerPerDay], [2500 * RUPEE, 1500, 12]);
   assert.equal(discoveryBudgetFor(before), undefined);
 });
