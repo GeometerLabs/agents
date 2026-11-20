@@ -55,6 +55,12 @@ type Words struct {
 	Limits    struct {
 		Buttons, ButtonTitle, Rows, RowTitle, RowDescription, ListButton, Body, ID int
 	} `json:"limits"`
+	// Generic are templates.ts TEMPLATE_NAMES: the names a message that is none of the approved templates goes out under (the same in every language).
+	Generic struct {
+		Customer string `json:"customer"`
+		Reminder string `json:"reminder"`
+		Owner    string `json:"owner"`
+	} `json:"generic"`
 	parts map[string][]part
 }
 

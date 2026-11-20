@@ -9,6 +9,8 @@ package bookings
 // whole as raw JSON. The ai and assistant members are the shared runtime's (Snap.AI, Snap.A); this state only says where they go.
 
 import (
+	"github.com/GeometerLabs/agents/go/internal/calendar"
+	"github.com/GeometerLabs/agents/go/internal/payments"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -61,22 +63,39 @@ type Contact struct {
 	Phone string `json:"phone"`
 }
 
-// Pending is one thing waiting on a booking (booking.ts Pending), kept whole as JSON; Kind and the guard_hold fields are read from it.
-type Pending struct {
-	Kind        string   `json:"kind"`
-	AmountInr   int64    `json:"amountInr"`
-	PaymentID   string   `json:"paymentId"`
-	Receipt     string   `json:"receipt"`
-	Approval    string   `json:"approval"`
-	ExpiresAtMs *int64   `json:"expiresAtMs"`
-	RequestedBy []string `json:"requestedBy"`
-	Raw         json.RawMessage
+// A booking's pending list is the refunds package's own (payments.Pending: a guard_hold and a refund_retry are modelled there, anything else is carried raw as
+// payments.OtherPending), so the refund code changes the very list that is saved (agent_refunds.go). The agent's own kinds are "calendar" (the deposit is in and the calendar
+// would not confirm it) and "refund" (a late cancellation's refund, the owner's to decide): OwnerRefundOf reads the second.
+
+// OwnerRefund is booking.ts Pending `{kind: "refund", amountInr, paymentId, reason}`.
+type OwnerRefund struct {
+	Kind      string `json:"kind"`
+	AmountInr int64  `json:"amountInr"`
+	PaymentID string `json:"paymentId"`
+	Reason    string `json:"reason"`
 }
 
-// RefundIssue is refunds.ts RefundIssue, read for its kind (the rest kept raw).
-type RefundIssue struct {
-	Kind string `json:"kind"`
-	Raw  json.RawMessage
+// OwnerRefundOf is the late cancellation's refund this entry is, or nil.
+func OwnerRefundOf(p payments.Pending) *OwnerRefund {
+	o, ok := p.(*payments.OtherPending)
+	if !ok || o.Kind != "refund" {
+		return nil
+	}
+	var r OwnerRefund
+	if json.Unmarshal(o.Raw, &r) != nil {
+		return nil
+	}
+	return &r
+}
+
+// rawPending is an entry of the agent's own kinds, as JSON.
+func rawPending(v any) *payments.OtherPending {
+	b, _ := json.Marshal(v)
+	var k struct {
+		Kind string `json:"kind"`
+	}
+	_ = json.Unmarshal(b, &k)
+	return &payments.OtherPending{Kind: k.Kind, Raw: b}
 }
 
 // Booking is booking.ts Booking. Optional numbers are pointers (nil: the member is not there).
@@ -96,13 +115,16 @@ type Booking struct {
 	DepositInr            *int64
 	HandledPayments       []string
 	Reminders             json.RawMessage // modules/reminders Reminder[], kept whole until the reminders are ported
-	Pending               []Pending
-	RefundIssues          []RefundIssue
+	Pending               []payments.Pending
+	// RefundIssues, StoppedRefunds and RefundsUntold are refunds.ts's members of the case (`refundIssues`, `stoppedRefunds`, `refundsUntold`); nil: the member is not there.
+	RefundIssues   []*payments.RefundIssue
+	StoppedRefunds []string
+	RefundsUntold  []*payments.UntoldRefund
 	Channel               string
 	Handle                string
 	PageLink              string
 	Contact               *Contact
-	// Extra is every other member, raw, in the order it was read (date, timePhrase, time, reschedule, stoppedRefunds, refundsUntold, claims, page links before, ...).
+	// Extra is every other member, raw, in the order it was read (date, timePhrase, time, reschedule, claims, page links before, ...).
 	Extra []runtime.Member
 }
 
@@ -128,6 +150,11 @@ type Store struct {
 	Upi, OwnCalendar, CalendarState, Channel json.RawMessage
 	// Unknown is any top-level member a later version adds, kept in the order it was read (written after the known ones).
 	Unknown []runtime.Member
+	// own is `ownCalendar` once a step used the shop's own booking list (agent_offer.go ownCal), and channel the `channel` block once a step changed it (agent_channel.go);
+	// Members writes each back. nil: the raw member as read is kept.
+	own     *calendar.OwnState
+	channel *runtime.ChannelState
+	reqs    *chanRequests
 }
 
 // NewStore is booking.ts createStore.
@@ -163,7 +190,7 @@ func (s *Store) Register(b *Booking) *Booking {
 
 // NewDraft is booking.ts newDraft.
 func NewDraft(customer, language string) *Booking {
-	return &Booking{Customer: customer, Language: language, State: Enquiry, HandledPayments: []string{}, Reminders: json.RawMessage("[]"), Pending: []Pending{}}
+	return &Booking{Customer: customer, Language: language, State: Enquiry, HandledPayments: []string{}, Reminders: json.RawMessage("[]"), Pending: []payments.Pending{}}
 }
 
 // Latest is booking.ts latestBooking: the customer's most recent booking in one of these states.
@@ -300,7 +327,7 @@ func parseBooking(raw json.RawMessage) (*Booking, error) {
 	if !ok {
 		return nil, errUnreadable
 	}
-	b := &Booking{HandledPayments: []string{}, Reminders: json.RawMessage("[]"), Pending: []Pending{}}
+	b := &Booking{HandledPayments: []string{}, Reminders: json.RawMessage("[]"), Pending: []payments.Pending{}}
 	str := func(r json.RawMessage) string { var s string; _ = json.Unmarshal(r, &s); return s }
 	num := func(r json.RawMessage) *int64 {
 		var f *float64
@@ -351,22 +378,20 @@ func parseBooking(raw json.RawMessage) (*Booking, error) {
 		case "pending":
 			var list []json.RawMessage
 			_ = json.Unmarshal(m.Raw, &list)
-			for _, p := range list {
-				var x Pending
-				_ = json.Unmarshal(p, &x)
-				x.Raw = append(json.RawMessage(nil), p...)
-				b.Pending = append(b.Pending, x)
+			for _, raw := range list {
+				if x, err := payments.DecodePending(raw); err == nil {
+					b.Pending = append(b.Pending, x)
+				}
 			}
 		case "refundIssues":
-			var list []json.RawMessage
-			_ = json.Unmarshal(m.Raw, &list)
-			b.RefundIssues = []RefundIssue{}
-			for _, p := range list {
-				var x RefundIssue
-				_ = json.Unmarshal(p, &x)
-				x.Raw = append(json.RawMessage(nil), p...)
-				b.RefundIssues = append(b.RefundIssues, x)
-			}
+			b.RefundIssues = []*payments.RefundIssue{}
+			_ = json.Unmarshal(m.Raw, &b.RefundIssues)
+		case "stoppedRefunds":
+			b.StoppedRefunds = []string{}
+			_ = json.Unmarshal(m.Raw, &b.StoppedRefunds)
+		case "refundsUntold":
+			b.RefundsUntold = []*payments.UntoldRefund{}
+			_ = json.Unmarshal(m.Raw, &b.RefundsUntold)
 		case "channel":
 			b.Channel = str(m.Raw)
 		case "handle":
@@ -461,7 +486,8 @@ func (b *Booking) json() json.RawMessage {
 	o.put("reminders", b.Reminders)
 	pending := make([]json.RawMessage, 0, len(b.Pending))
 	for _, p := range b.Pending {
-		pending = append(pending, p.Raw)
+		raw, _ := json.Marshal(p)
+		pending = append(pending, raw)
 	}
 	o.put("pending", pending)
 	str := func(name, v string) {
@@ -484,11 +510,13 @@ func (b *Booking) json() json.RawMessage {
 	str("depositPaymentId", b.DepositPaymentID)
 	num("depositInr", b.DepositInr)
 	if b.RefundIssues != nil {
-		list := make([]json.RawMessage, 0, len(b.RefundIssues))
-		for _, x := range b.RefundIssues {
-			list = append(list, x.Raw)
-		}
-		o.put("refundIssues", list)
+		o.put("refundIssues", b.RefundIssues)
+	}
+	if b.StoppedRefunds != nil {
+		o.put("stoppedRefunds", b.StoppedRefunds)
+	}
+	if b.RefundsUntold != nil {
+		o.put("refundsUntold", b.RefundsUntold)
 	}
 	str("channel", b.Channel)
 	str("handle", b.Handle)
@@ -552,6 +580,15 @@ func (s *Store) Members() ([]runtime.Member, error) {
 		}
 		b, _ := json.Marshal(l)
 		return b
+	}
+	if s.own != nil {
+		s.OwnCalendar, _ = json.Marshal(s.own)
+	}
+	if s.channel != nil {
+		if s.reqs != nil {
+			s.channel.Requests = s.reqs.json()
+		}
+		s.Channel = s.channel.Marshal()
 	}
 	out := []runtime.Member{
 		{Name: "bookings", Raw: pairs(ids, s.Bookings, (*Booking).json)},

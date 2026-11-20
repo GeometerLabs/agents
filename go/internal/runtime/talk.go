@@ -22,9 +22,15 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
-// ownerRouter is modules/runtime/start.ts `buildUnderstanding` with assistant/understanding.ts OWNER_UNDERSTANDING: the decision model from runtime.json `decision` (off, with a
-// line, when its key is not in the environment) and the language model from `parser`; nil when the shop has neither (the rules alone read the words).
+// ownerRouter is modules/runtime/start.ts `buildUnderstanding` with assistant/understanding.ts OWNER_UNDERSTANDING over RouterSteps; nil when the shop has neither model (the rules
+// alone read the words).
 func ownerRouter(cfg *Config, _ *understanding.Model, log func(string)) *understanding.Router[assistant.Intent] {
+	return RouterFor[assistant.Intent](cfg, assistant.OwnerReading{}, log)
+}
+
+// RouterFor is start.ts `buildUnderstanding`'s router for any reading (the owner's, a template's customer reading): the decision model from runtime.json `decision` (off, with a
+// line, when its key is not in the environment) and the language model from `parser`; nil when the shop has neither.
+func RouterFor[I any](cfg *Config, reading understanding.Reading[I], log func(string)) *understanding.Router[I] {
 	var decision *understanding.SystemOne
 	if cfg.Decision != nil {
 		if decision = understanding.NewSystemOne(cfg.Decision); decision == nil {
@@ -35,7 +41,7 @@ func ownerRouter(cfg *Config, _ *understanding.Model, log func(string)) *underst
 	if decision == nil && model == nil {
 		return nil
 	}
-	r := &understanding.Router[assistant.Intent]{Reading: assistant.OwnerReading{}, Decision: decision, Model: model}
+	r := &understanding.Router[I]{Reading: reading, Decision: decision, Model: model}
 	if cfg.Decision != nil {
 		if cfg.Decision.Threshold != nil {
 			r.Threshold = *cfg.Decision.Threshold
@@ -83,8 +89,13 @@ func has(xs []string, s string) bool {
 // countUnderstood is reader.ts `countUnderstood`: the message in the month's totals; the router's call against the budget when the language step was asked; a model step that
 // was asked and could not answer starts the fault pause; the decision model's breaker.
 func (c *conv) countUnderstood(u understanding.Understood) {
-	r, now := c.r, c.now
-	month := budget.For(&c.snap.AI, r.clock, now)
+	CountUnderstood(&c.snap.AI, c.r.policy, c.r.clock, c.now, u)
+}
+
+// CountUnderstood is reader.ts countUnderstood, for every reader (the owner's here, a template's customer reader): what reading one message cost goes into the month, the router's
+// daily cap counts a call of the language model, a model that failed puts the shop in button mode for PauseMinutes, and the decision model's run of failures is noted.
+func CountUnderstood(ai **budget.AI, policy budget.Policy, clock budget.Clock, now int64, u understanding.Understood) {
+	month := budget.For(ai, clock, now)
 	switch u.Step {
 	case "decision":
 		month.Decision++
@@ -103,16 +114,16 @@ func (c *conv) countUnderstood(u understanding.Understood) {
 		if u.Step == "model" {
 			cost = u.CostMicroInr
 		}
-		budget.Record(&c.snap.AI, r.policy.Budget, "router", cost, "", r.clock, now)
+		budget.Record(ai, policy.Budget, "router", cost, "", clock, now)
 	}
 	if u.Step == "rules" && len(u.Failed) > 0 {
-		pause := now + r.policy.PauseMinutes*60_000
-		budget.For(&c.snap.AI, r.clock, now).PausedUntilMs = &pause
+		pause := now + policy.PauseMinutes*60_000
+		budget.For(ai, clock, now).PausedUntilMs = &pause
 	}
 	if has(u.Tried, "decision") {
 		failed := has(u.Failed, "decision")
 		if !failed || (has(u.Tried, "model") && !has(u.Failed, "model")) {
-			budget.NoteStep(&c.snap.AI, "decision", !failed, r.clock, now)
+			budget.NoteStep(ai, "decision", !failed, clock, now)
 		}
 	}
 }

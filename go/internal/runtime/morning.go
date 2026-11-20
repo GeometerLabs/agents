@@ -30,8 +30,9 @@ import (
 // ---- the licence (rules.ts) ---------------------------------------------------------------------------------------------------------------------------------
 
 type leaseShop struct {
-	State   string `json:"state"`
-	Expires int64  `json:"expires"`
+	State       string `json:"state"`
+	Expires     int64  `json:"expires"`
+	PaidThrough int64  `json:"paid_through"`
 }
 
 type licenceFile struct {
@@ -69,7 +70,7 @@ func parseLicence(b []byte) *licenceFile {
 	if !has(leaseStates, state) {
 		return nil
 	}
-	f.shop = &leaseShop{State: state, Expires: int64(s["expires"].(float64))}
+	f.shop = &leaseShop{State: state, Expires: int64(s["expires"].(float64)), PaidThrough: int64(s["paid_through"].(float64))}
 	return f
 }
 
@@ -104,6 +105,15 @@ func (r *Runtime) licenceState(nowMs int64) string {
 		return "wind_down"
 	}
 	return f.shop.State
+}
+
+// LicencePaidThrough is rules.ts `licenceNow(...).paidThrough`: the lease's paid_through (seconds), nil with no lease (read as licenceState last read the file).
+func (r *Runtime) LicencePaidThrough() *int64 {
+	if f := r.licence; f != nil && f.shop != nil {
+		p := f.shop.PaidThrough
+		return &p
+	}
+	return nil
 }
 
 // ---- the morning line -----------------------------------------------------------------------------------------------------------------------------------

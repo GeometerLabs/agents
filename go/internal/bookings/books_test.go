@@ -204,7 +204,7 @@ func TestReportMessagingIsADocumentSenderOnlyWhenTheClientCanSendAFile(t *testin
 
 func TestBookingsOf(t *testing.T) {
 	st := NewStore()
-	a, b := &Booking{ID: "b-1", State: Confirmed}, &Booking{ID: "b-2", State: NeedsOwner, Pending: []Pending{{Kind: "calendar"}, {Kind: "refund"}}}
+	a, b := &Booking{ID: "b-1", State: Confirmed}, &Booking{ID: "b-2", State: NeedsOwner, Pending: []payments.Pending{rawPending(map[string]string{"kind": "calendar"}), rawPending(OwnerRefund{Kind: "refund"})}}
 	st.Bookings = append(st.Bookings, a, b)
 	got := BookingsOf(st)
 	want := []bookingsreport.Booking{{ID: "b-1", State: "confirmed"}, {ID: "b-2", State: "needs_owner", Pending: 2}}
