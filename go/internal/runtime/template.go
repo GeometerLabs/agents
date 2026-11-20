@@ -9,6 +9,7 @@ package runtime
 // a template: a template imports this one and implements these interfaces.
 
 import (
+	"github.com/GeometerLabs/agents/go/internal/budget"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -112,10 +113,16 @@ type StepContext struct {
 	Owner func() (number, language string)
 	// Licence is the shop's licence now: "" (in order), "paused" (the wind-down) or "stopped" (the final stop) (modules/licence/rules.ts state).
 	Licence func() string
+	// PaidThrough is the lease's paid_through (seconds), nil when the shop is not in a lease (rules.ts licenceNow `paidThrough`).
+	PaidThrough func() *int64
 	// LastTry: the wait for a Guard is over, so this step runs with waiting off (tasks.ts lastTry).
 	LastTry bool
 	// Task is the step's task id ("" for a tick).
 	Task string
+	// Policy and Clock are the shop's AI policy (the allowance, the outside switch, the month's budget, the pause) and the month's clock, for a template's own reader of
+	// customers' words (CountUnderstood, budget.Buttons over Snap.AI).
+	Policy budget.Policy
+	Clock  budget.Clock
 	// rt is the runtime that made the step: a customer's talk (talkcustomer.go) asks it for the model, the budget and the clock. Unset in a step a test builds by hand.
 	rt *Runtime
 }

@@ -8,6 +8,11 @@
 package bookings
 
 import (
+	"encoding/json"
+	"context"
+
+	"github.com/GeometerLabs/agents/go/internal/understanding"
+	"github.com/GeometerLabs/agents/go/internal/payments"
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/runtime"
@@ -28,6 +33,27 @@ type Kit struct {
 	Now      func() int64
 	// Licence is the shop's licence now: "" in order, "paused", "stopped".
 	Licence func() string
+	// Router reads a customer's words past the rules (the decision model and the language model, runtime.RouterFor); nil: the rules alone.
+	Router *understanding.Router[Intent]
+	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.
+	given map[string]bool
+}
+
+func (k *Kit) givenUp() map[string]bool {
+	if k.given == nil {
+		k.given = map[string]bool{}
+	}
+	return k.given
+}
+
+// readAgent is an agent for a channel's read (the offer's free starts): the last saved state, the services unwatched, no record.
+func (k *Kit) readAgent(st *Store) *Agent {
+	a := &Agent{kit: k, store: st, settings: k.Settings, ctx: context.Background(), can: k.Ports.Capabilities}
+	a.cal = k.Ports.Calendar
+	if a.cal == nil {
+		a.cal = ownCal{st, k.now}
+	}
+	return a
 }
 
 func (k *Kit) now() int64 {
@@ -68,7 +94,7 @@ func settingsOf(sh *runtime.Settings) *Settings { return sh.Own.(*Settings) }
 
 // NewAgent is the agent over one step's state.
 func (k *Kit) NewAgent(c *runtime.StepContext) runtime.Agent {
-	return &Agent{c: c, store: c.State.(*Store), settings: settingsOf(c.Settings), ports: k.Ports}
+	return newAgent(k, c)
 }
 
 // CountCases is runtime.ts countByState.
@@ -85,7 +111,7 @@ func (k *Kit) Refunds(st runtime.KitState) runtime.RefundCounts {
 	c := runtime.NoRefunds()
 	for _, b := range st.(*Store).Bookings {
 		for _, p := range b.Pending {
-			switch p.Kind {
+			switch p.PendingKind() {
 			case "guard_hold":
 				c.WaitingForOwner++
 			case "refund_retry":
@@ -111,10 +137,10 @@ func (k *Kit) RefundContext(st runtime.KitState, sh *runtime.Settings, receipt s
 	if b == nil || b.StartMs == nil {
 		return nil
 	}
-	var hold *Pending
-	for i := range b.Pending {
-		if b.Pending[i].Kind == "guard_hold" && b.Pending[i].Receipt == receipt {
-			hold = &b.Pending[i]
+	var hold *payments.GuardHold
+	for _, p := range b.Pending {
+		if h, ok := p.(*payments.GuardHold); ok && h.Receipt == receipt {
+			hold = h
 			break
 		}
 	}
@@ -164,3 +190,6 @@ func (k *Kit) Limits() []runtime.LimitDecl {
 	return []runtime.LimitDecl{{ID: "refund_limit", Path: "cancellation.refundLimitInr", Unit: "inr", Tighter: "lower", Kind: "refund", File: s.Cancellation.RefundLimitInr,
 		Min: 0, Max: min(MostRefundRupees, max(1, s.Deposit.AmountInr))}}
 }
+
+// ChannelRaw is the saved state's `channel` member as read (runtime chatroutes.go ChannelStater): the chat's thread read needs no other member.
+func (k *Kit) ChannelRaw(st runtime.KitState) json.RawMessage { return st.(*Store).Channel }

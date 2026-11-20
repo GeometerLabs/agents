@@ -18,7 +18,7 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TEMPLATES, render } from "../../templates/commerce/bookings/src/language/templates.ts";
+import { TEMPLATES, TEMPLATE_NAMES, render } from "../../templates/commerce/bookings/src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../../templates/commerce/bookings/src/language/templates.ts";
 import { META_TEMPLATES, parametersFor } from "../../templates/commerce/bookings/src/language/meta-templates.ts";
 import { LABELS } from "../../templates/commerce/bookings/src/language/interactive.ts";
@@ -167,7 +167,8 @@ function metaWords(language: Language): { meta: unknown[]; metaSlots: Bag } {
 /** One language's pack. */
 function pack(language: Language): unknown {
   const { t, day } = templates(language);
-  return { lang: language, t, day, ...metaWords(language), labels: LABELS[language], limits: LIMITS };
+  // generic: the three template names a message that is none of the approved templates goes out under (templates.ts TEMPLATE_NAMES), the same in every language
+  return { lang: language, t, day, ...metaWords(language), labels: LABELS[language], limits: LIMITS, generic: TEMPLATE_NAMES };
 }
 
 /** How format.ts writes a date and a time of day, as data: the names, whether a comma follows the weekday, and each hour's time with `{mm}` for the minutes. */

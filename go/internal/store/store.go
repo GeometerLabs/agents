@@ -171,6 +171,15 @@ func moveOldState(x exec) error {
 	return err
 }
 
+// LastInboundAt is store.ts lastInboundAt: when this phone last wrote to the shop (the `window` table, for WhatsApp's 24-hour rule); ok false when it never has.
+func (s *Store) LastInboundAt(phone string) (int64, bool) {
+	var at int64
+	if err := s.db.QueryRow("SELECT last_inbound_at FROM window WHERE phone = ?", phone).Scan(&at); err != nil {
+		return 0, false
+	}
+	return at, true
+}
+
 // Close closes the file.
 func (s *Store) Close() error { return s.db.Close() }
 

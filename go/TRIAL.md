@@ -563,22 +563,39 @@ passes; before, `time.Date`, which could differ in a summer-time gap). Kept apar
 for a zone Intl refuses, where `zone` panics on a zone the settings check already refused: different inputs, different answers), and `slots.Fill` (the positional `{0}` filler of the
 books' and the report's words: not a format, and no other copy of it exists; the Meta `{{1}}` filler and the assistant's `{name}` filler are other syntaxes). The directory's page
 (`directory/page.go rupees`, toLocaleString with two decimals) keeps its own decimals and uses the one grouping, `language.GroupIN`.
-**What is left of wave 2 for Bookings (19 Nov, end of this stream's run; the next agent starts here).** Measured after the merges and the join: the Bookings contract on Go is
-**25 of 143** (the contract stream added 15 tests; the same 25 pass as before), the listings contract on Go **210 of 210**, `go test ./...` 26 packages ok. Done on this branch: slices 1 and 2's first part (runtime, store, events,
-the shared seam), the pure rules, the declared limits, a customer's intent from a model and from a tap, the rule parser and the reading for the router, the merges of main (Guard
-clients, books) and of go-bookings-words-19nov (the customer's words), and the formatting join. Not started, in the order they unblock contract tests:
-1. **Slice 6, the services wired (unblocks most of the 118 failing Bookings contract tests).** `internal/bookings/ports.go` gets one field per service typed with THEIR interfaces
-   (`calendar.Calendar`, `payments.Payments`, `messaging.Messaging`), `cmd/bookings` hands in the live clients or the stand-ins by runtime.json's mode (`payments.NewFake`,
-   `messaging.NewStandIn`, the calendar's fake or own list), and agent.ts (1,790 lines: onMessage, onPayment, onApproval, onChannel, onRecovery, onTick) is ported over them, using
-   `Reading` with `understanding.Router` for a customer's words (`Reading.Slots` from the calendar's free times) and the words branch's `Render`, `ButtonsFor`, `ServiceList`, `SlotList`
-   for every reply. The books need four adapters (`accounting.Record`, `accounting.Payments`, `report.Messaging` / `DocumentSender`, the Booking conversion for `bookingsreport`) and
-   Bookings `validateSettings`'s checked tree for the policy digest. The owner-marked UPI ledger, obligations and desk (`modules/payments/owner-marked/*`) are this runtime's state to port.
-2. **Slice 2, the chat** (`/internal/channel/chat`, `chat-id`, `chat-voice`; `modules/channels/chat.ts`, `chat-identity*.ts`, the channel state's `outbox`, `chat`, `seq` block, kept raw
-   today) and the chat limits and rates (`CHAT_LIMITS`, `createRate`). A send runs onMessage, so it needs slice 6.
-3. **Slice 3, the customer's talk** (`modules/understanding/talk*` for a customer's turn, its claims checks) and `scenarios-vectors.json` (14 conversations; they run the agent).
-4. **Slice 4's rest**: the owner's page items (UPI, Money: `render.OwnerMoneySection` is on main), approvals and their decisions, the owner's notices, the assistant's Bookings skill,
-   the licence's final stop.
-Findings for the contract stream: `toIntentShape` has no vectors (Go tests take model-llm.test.ts's cases); the limits page's test only tightens a limit `if` one is listed.
+**Slice 6, the services wired and agent.ts (19 Nov, `go-bk-agent-19nov`).** Done: `internal/bookings/ports.go` (one field per service with the shared packages' own interfaces;
+`cmd/bookings` builds the stand-ins in fakes mode once per process and the live Razorpay, Google Calendar and WhatsApp clients in live mode with each `agentTokenFile`; the
+owner's route by WhatsApp, push or both), the watch (`agent_watch.go`: guard-wait.ts `watchStep` and core.ts's decision: WaitingForGuard, EndTask, the last try's to-do line), and
+agent.ts ported section by section over them: saying things (the shared say with Bookings' facts, offers, generated words and gates, the chat's ping gate), free times and the
+calendar (look first, write, read back; the offer's free starts), payments and refunds (the shared refunds code over the booking's own typed lists), deposits, the flow (book,
+yes, no, the hold and its link), cancel and reschedule, the owner's commands and day list, STOP, a voice note (voice off), the licence's wind-down and final stop, the beat
+(backfill, the refunds' sweep, expiry, reminders, completion with the books' `applied`), recovery (all four), the booking page's book and cancel, a chat send through
+`runtime.ChatTurn`, and the customer's talk (block M) where the rules know no answer. Every money line goes through the books (`NewBooks`, `Accounting`).
+Measured (19 Nov, through the heat lock, `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/`): the Bookings
+contract on Go **101 of 143** (was 25; 42 fail, 0 skipped). `go build ./...`, `go vet` and `go test` of internal/bookings, runtime and store pass. The listings contract was NOT
+run again after this slice (the owner asked to pause before a new run); its last count on main is 202 of 202. The work stopped here at the owner's pause, after the books merge.
+
+**Where it stopped: the 42 Bookings contract tests that fail on Go, by what they need** (each is in the list below): a UPI shop's money (8: the buffer, the hold's expiry,
+completion and a reminder, cancelling on the page, the UPI quote's page link, the UPI marks, "I have paid", a shop with no WhatsApp); the owner's page actions and words by digest
+(5: approvals on the page, a late cancellation asked on the page, the owner's refusal, the owner's page words, the first passkey's session path); the shop's assistant for Bookings
+(10: cancel card, day list and money, close a day, move, message a customer, the limit card and its failure, the morning line, the owner's voice note, the WebM recording); the
+shop terms (2); voice notes (1); the monthly report (2) and the licence notices (1); the approval event's checks (2: approved resend, a malformed approval event); the decision
+model's pause and step-breaker (3); the button flow's payloads and the cancel buttons (2); two chairs (1); the owner told by template outside the window (1); the WhatsApp sign-in
+link (1); the documents of a booking's page (1); and three guard-outage tests (the payments, calendar and WhatsApp Guard down) to look at first, as they test the watch itself.
+
+**What is left of wave 2 for Bookings (the next agent starts here), in the order it unblocks contract tests:**
+1. **A UPI shop's money** (most fakes-mode contract tests use a UPI shop, because only fakes mode moves the test clock): agent.ts's owner-marked section (`requestOf`,
+   `sendMarkedRequest`, `reconcileMarks`, `lateMark`, `oweBack`, `onPaidClaim`, `onLateClaim`, `onPicture`, `onOwnerMark`, `markAskAgain`, `remindOwedRefunds`) over
+   `internal/payments/ownermarked` (on main: OpenRequest, MarkReceived, OweRefund, MarkRefund, View as payments.Payments over the ledger, `Store.UpiState`, `OwnerMarkButtons`).
+   Every such path answers `runtime.Unported` today (`a.pay == nil`), so nothing falls through silently.
+2. **The owner's page** (`owner_action` by digest: received, refunded, kept, approve, deny, retry, card_yes/no; `owner_message`, the talk box) and the WhatsApp booking's own page
+   link (batch 5: `pageLinkFor`, `keepPageLink`, needs pages.json's base handed to the Kit).
+3. **The monthly report** (the coordinator's note, money/messages): core.ts runs it AFTER the step with its own mid-step save (the claim saved BEFORE the send, the ending after).
+   The Go StepContext has no Save, so `report.Run` must NOT be called inside `Agent.Tick`: give the runtime a post-step hook that can save (or a mid-step Save on StepContext),
+   call `report.Run(ReportTick{...})` from it, and test that a restart after the claim never sends the month twice. Not started.
+4. The shop's assistant for Bookings (item 11e: the owner's own words, cards, the skill), the shop terms, the handover code, approvers other than the owner (B37), voice notes
+   heard through a speech service, the button-mode announcement, the owner's once-a-day notice when customers' talk stopped (`NoticeDay`), a page message's web push.
+Deferred.md lists each with the reason.
 
 ## Wave 2: the chat and the customer's talk (19 Nov 2026, `go-bk-chat-19nov`)
 
