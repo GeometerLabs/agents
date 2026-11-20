@@ -584,7 +584,7 @@ export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shop
 // domain; every other path goes to the door. The text below is fixed: it does not depend on which build is installed (a build whose hosting rules differ is refused
 // at install), so installing or rolling back a build never rewrites this file or restarts Caddy. With no build installed the `@home-live` test fails and the domain is
 // the door's alone, as before. It ports the streetlist repository's firebase.json: clean URLs (/shops from shops.html; the .html address and a trailing slash redirect
-// to the clean one), /examples -> /examples/glow-salon (302), the security headers on everything, a strict content policy and `no-cache` on pages, a year of
+// to the clean one), /examples -> /examples/glow-salon (302), the security headers on everything, a strict content policy and `no-cache` on pages (the home page's own policy also lets it read the Journal's feed and pictures), a year of
 // `immutable` on /assets, and the friendly 404 page. Deliberate difference: a MISSING file under /assets is `no-cache`, not a year of `immutable`, so a 404 caught
 // by a browser during a build switch is not remembered.
 
@@ -595,6 +595,15 @@ export const HOME_SECURITY_HEADERS: readonly (readonly [string, string])[] = [
 ];
 /** firebase.json's policy for every path except /assets/...: no script or style but its own files. */
 export const HOME_CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'";
+/**
+ * firebase.json's policy for the home page itself (`/`, and `/index.html`, which redirects to it), set after HOME_CSP so it replaces it there, as the later
+ * firebase.json rule does: the homepage's Journal cards read the newest pieces from the Journal's own feed and show its pictures (streetlist a676f22, 20 Nov 2026).
+ * The Journal is `journal.` before the pages domain (journal.streetlist.in for streetlist.in), so no domain is written in the generator.
+ */
+export const homeRootCsp = (pagesDomain: string): string => {
+  const journal = `https://journal.${pagesDomain}`;
+  return `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: ${journal}/img/; font-src 'self'; connect-src 'self' ${journal}/feed.json; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'`;
+};
 export const HOME_ASSET_CACHE = "public, max-age=31536000, immutable";
 /** The door's own transport rule, on the home's answers too (the door sets it on every answer it gives; Firebase set its own). */
 const HOME_HSTS = "max-age=31536000";
@@ -660,6 +669,8 @@ export function pagesSites(pages: { domain: string; extraDomains: string[] }): s
     `\t\t\t\t\t\t@home-page not path /assets/*`,
     `\t\t\t\t\t\theader @home-page Content-Security-Policy "${HOME_CSP}"`,
     `\t\t\t\t\t\theader @home-page Cache-Control "no-cache"`,
+    `\t\t\t\t\t\t@home-root path /`,
+    `\t\t\t\t\t\theader @home-root Content-Security-Policy "${homeRootCsp(pages.domain)}"`,
     // the web app manifest (W3): Caddy's file server does not know the .webmanifest type, and Firebase serves it as this
     `\t\t\t\t\t\t@home-manifest path /manifest.webmanifest`,
     `\t\t\t\t\t\theader @home-manifest Content-Type "application/manifest+json"`,

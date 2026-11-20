@@ -7,7 +7,7 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSyn
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { HOME_FILES, HOME_RULES_SHA, HOME_ROBOTS_DISALLOW, HOME_TOP, HomeRefused, buildPack, homePaths, homeStatus, installHome, makePack, readSource, rollbackHome, rulesShaOf, verifyPack } from "../lib/home.ts";
-import { HOME_ASSET_CACHE, HOME_CSP, HOME_SECURITY_HEADERS, caddyfile, mergedRobots } from "../generate/compose.ts";
+import { HOME_ASSET_CACHE, HOME_CSP, HOME_SECURITY_HEADERS, homeRootCsp, caddyfile, mergedRobots } from "../generate/compose.ts";
 import { homeCommand } from "../home-cli.ts";
 import { DOOR_ROBOTS_DISALLOW, SLUG } from "../services/door.ts";
 import { serverConfig } from "./helpers.ts";
@@ -56,6 +56,11 @@ test("the Caddy port is the streetlist repository's firebase.json: the rules has
   const pages = Object.fromEntries(rules.find((r) => r.regex)!.headers.map((h) => [h.key, h.value]));
   assert.equal(pages["Content-Security-Policy"], HOME_CSP);
   assert.equal(pages["Cache-Control"], "no-cache");
+  // the home page's own policy (a later rule, so it replaces the pages' one at /): the Journal's feed and pictures
+  const root = rules.find((r) => r.regex === "^/(?:index\\.html)?$");
+  assert.ok(root, "firebase.json has the home page's own rule");
+  assert.deepEqual(root!.headers.map((h) => [h.key, h.value]), [["Content-Security-Policy", homeRootCsp("streetlist.in")]]);
+  assert.ok(rules.indexOf(root!) > rules.indexOf(rules.find((r) => r.regex)!), "it comes after the pages' rule, so it wins at /");
   assert.equal(rules.find((r) => r.source === "/assets/**")!.headers[0].value, HOME_ASSET_CACHE);
   assert.deepEqual(hosting.redirects, [{ source: "/examples", destination: "/examples/glow-salon", type: 302 }]);
   assert.equal(hosting.cleanUrls, true);
