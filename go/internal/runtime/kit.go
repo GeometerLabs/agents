@@ -147,7 +147,7 @@ func (r *Runtime) licenceNow() string {
 func (r *Runtime) stepContext(snap *Snap, rec *Recorder, taskID string, lastTry bool) *StepContext {
 	return &StepContext{
 		State: snap.T, Snap: snap, Rec: rec, Settings: &r.o.Client.Settings, Now: r.o.Now, Log: r.o.Log,
-		Owner: r.owner, Licence: r.licenceNow, LastTry: lastTry, Task: taskID, Policy: r.policy, Clock: r.clock, PaidThrough: r.LicencePaidThrough, rt: r,
+		Owner: r.owner, Licence: r.licenceNow, LastTry: lastTry, Task: taskID, Policy: r.policy, Clock: r.clock, PaidThrough: r.LicencePaidThrough, Partner: r.LicencePartner, rt: r,
 	}
 }
 
@@ -172,6 +172,10 @@ func (r *Runtime) kitStep(ev map[string]any, taskID string, lastTry bool) (err e
 		}
 		if told, err = r.ownerBeat(rec); err != nil {
 			return err
+		}
+		// core.ts step: the licence notice and the monthly report ride on the beat after the agent's own work, and save for themselves (a claim before the send, the ending after)
+		if at, ok := agent.(AfterTicker); ok {
+			at.AfterTick(func() error { return r.saveMid(snap, rec) })
 		}
 	} else {
 		switch ev["kind"] {
@@ -200,6 +204,19 @@ func (r *Runtime) kitStep(ev map[string]any, taskID string, lastTry bool) (err e
 		return err
 	}
 	r.markTold(told)
+	return nil
+}
+
+// saveMid is core.ts's `save: () => save(store, record)` inside a beat: the state and the record lines so far are committed now, and the step's recorder goes on from them (its
+// fresh lines become saved ones), so the beat's own save at the end writes only what came after. A beat's save never closes a task (a tick has none).
+func (r *Runtime) saveMid(snap *Snap, rec *recorder) error {
+	if err := r.save(snap, rec, ""); err != nil {
+		return err
+	}
+	r.mu.RLock()
+	rec.saved, rec.base = r.entries, len(r.entries)
+	r.mu.RUnlock()
+	rec.fresh = nil
 	return nil
 }
 
