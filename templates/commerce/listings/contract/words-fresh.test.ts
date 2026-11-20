@@ -21,6 +21,9 @@ import * as bookingsReportVectors from "../../../../go/scripts/gen_bookings_repo
 test("words-fresh: the committed packed words equal a fresh render of the TypeScript words", () => {
   assert.deepEqual([...generate().keys()].sort(), ["en.json", "hi.json", "kn.json", "ml.json", "rules.json"]);
   assert.deepEqual(staleFiles(OUT), [], "a packed file is out of date: run  node go/scripts/gen_words.ts  and commit the result");
+  // the Bookings assistant's words are in the same packs (wave 2, step 5): a pack without them is from before that generator change
+  const en = JSON.parse(generate().get("en.json")!).m as Record<string, string>;
+  assert.equal(en["closed.n"], "Closed {date}. Bookings that day: {n}. I've asked them to pick another day. Reply undo to open it again.");
 });
 
 test("words-fresh: the check is not vacuous: a copy with one word changed, or one file missing, is reported stale", () => {

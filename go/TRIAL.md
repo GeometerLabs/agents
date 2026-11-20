@@ -680,3 +680,15 @@ contract runs once at the end):
 templates/commerce/bookings/contract/`: **123 of 143** (was 101; 20 fail, 0 skipped, no Go panic). The 20 are steps 5 (11) and 6 (9) above. `go build ./...`, `go vet ./...` and
 `go test ./...` pass (29 packages). The listings and directory contracts were not run (the lead runs them before merging); the queue fix in runtime.go changes a listings
 shop's failing step too (it is now retried with the delays instead of spinning to "too many interrupted tries").
+
+## Wave 2: the shop's assistant for Bookings and the rest (20 Nov 2026, `go-bk-assistant-20nov`, in progress)
+
+Started from agents main a5a80095 (Bookings contract on Go 123 of 143; on TypeScript 143 of 143). Steps 5 and 6 of the section above, most useful first; the count after each
+(narrow contract files only; the whole contract runs once at the end):
+
+- **(0) The words: done.** `go/scripts/gen_words.ts` now also renders the Bookings assistant's words with the real `write()`, `cardQuestion()`, `limitLine()` and
+  `limitCardLine()` (keys `day_list.*`, `closed.*`, `moved`, `move_failed.*`, `card.*`, `card.foot.*`, `label.*`, `done.*`, `limit.*`, the refusals, the two customer templates
+  `tmpl.day_closed` / `tmpl.day_open` with their Meta names and value order, the morning line's Bookings part, and the help and "didn't get that" lines for a Bookings shop's
+  kinds, `@bookings`), and `rules.json` carries the router's reading for those kinds and the limit-rule phrasing (limits-card.ts PHRASING, read from the source). Three
+  regular expressions that are not exported (intents.ts AMOUNT_RE, the two of readLimitRequest) are built by JavaScript from their source in `gen_patterns.ts`; the limit kinds'
+  own words are in `limitwords/words.json` (`gen_limit_words.ts`). `words-fresh.test.ts` checks the packs as before, plus one Bookings line. Count: **123 of 143** (no Go yet).

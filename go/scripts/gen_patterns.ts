@@ -40,6 +40,14 @@ function patterns(): Map<string, RegExp> {
   OFFER_TESTS.forEach(([re], i) => p.set(`rules.offer.${i}`, re));
   for (const [kind, re] of KIND_RES) p.set(`intents.kind.${kind}`, re);
   p.set("intents.ref", REF_RE).set("intents.guest", GUEST_WORDS);
+  // three regular expressions that are not exported (intents.ts AMOUNT_RE, and the two inline ones of limits-card.ts readLimitRequest): their literals, taken out of the source
+  // and built by JavaScript itself, so they are never retyped
+  const intents = readFileSync(join(here, "..", "..", "modules", "assistant", "intents.ts"), "utf8");
+  const card = readFileSync(join(here, "..", "..", "modules", "assistant", "limits-card.ts"), "utf8");
+  const literal = (src: string, from: string, to: string): RegExp => { const a = src.indexOf(from) + from.length; return new Function(`return ${src.slice(a, src.indexOf(to, a))}`)() as RegExp; };
+  p.set("intents.amount", literal(intents, "const AMOUNT_RE = ", ";\n"));
+  p.set("limits.count", literal(card, "const count = ", ".exec("));
+  p.set("limits.amount_words", literal(card, "t.replace(", ", \" \")"));
   p.set("talk.number_words", NUMBER_WORDS).set("talk.completion", COMPLETION).set("talk.percent", PERCENT).set("talk.link", TALK_LINK).set("talk.long_digits", LONG_DIGITS);
   p.set("check.date", DATE_RE).set("check.time", TIME_RE).set("check.trailing", TRAILING_PUNCTUATION).set("check.url", URL_RE).set("check.upi", UPI_RE).set("check.amount", AMOUNT_RE);
   p.set("check.quantity_word", QUANTITY_WORD_RE).set("check.quantity_stem", QUANTITY_STEM_RE);
