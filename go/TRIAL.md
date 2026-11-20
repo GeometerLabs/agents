@@ -701,3 +701,7 @@ Started from agents main a5a80095 (Bookings contract on Go 123 of 143; on TypeSc
   mood of mood.ts); the owner's tightened refund limit is in force for the agent's own checks (`StepContext.InForce`). Bookings' skill is `bookings/agent_assistant.go`
   (assistant.ts, its acts the agent's own paths). Count (open3, open2, owner on Go): **131 of 143** (the day's list, close a day, move, message, the two limit cards, the cancel
   card, the owner's talk box). The listings contract on Go after (a): **197 of 197**.
+- **(e) The morning line: done.** `runtime/morning.go` is now morning.ts once for every shop (`runMorning`: when, once even if the process dies, silent on a closed or quiet day, the
+  claim, the send and the ending; `morningWords`: today's parts, yesterday's money, what waits, the mood); the listings shop sends it as a push as before, a template's shop through
+  `StepContext.Morning` as text in the owner's open window, else the approved template (its values in Meta's order, generated). Bookings runs it in AfterTick after the monthly
+  report. Not done: the mood picture as a sticker and as the template's header (Deferred.md). Count: **132 of 143**.
