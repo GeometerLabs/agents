@@ -51,6 +51,8 @@ ROBOTS 200
 						@home-page not path /assets/*
 						header @home-page Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
 						header @home-page Cache-Control "no-cache"
+						@home-root path /
+						header @home-root Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: https://journal.streetlist.in/img/; font-src 'self'; connect-src 'self' https://journal.streetlist.in/feed.json; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
 						@home-manifest path /manifest.webmanifest
 						header @home-manifest Content-Type "application/manifest+json"
 						@home-found file {

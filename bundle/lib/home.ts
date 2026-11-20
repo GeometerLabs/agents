@@ -41,7 +41,8 @@ export const HOME_MOUNT = "/srv/home";
 export const HOME_SITE_ROOT = `${HOME_MOUNT}/current/site`;
 
 /** The sha256 of the streetlist repository's firebase.json rules (cleanUrls, trailingSlash, redirects, headers) that generate/compose.ts's homeHandlers ports. */
-export const HOME_RULES_SHA = "0b520e80971c20999d0fb25ad981f7f06e6152dcb04fb88250ab01cb2d437d14";
+// 20 Nov 2026: the streetlist repository's a676f22 added the home page's own content policy (the Journal's cards read journal.streetlist.in), ported as HOME_ROOT_CSP
+export const HOME_RULES_SHA = "79e4f6e0f191570a71df63d77f13421593119b7ea801c8c14c1e982ced4a072e";
 /** What the home's robots.txt disallows (its public/robots.txt). The door's own list is in services/door.ts; Caddy answers /robots.txt with both. */
 export const HOME_ROBOTS_DISALLOW: readonly string[] = ["/examples/"];
 
