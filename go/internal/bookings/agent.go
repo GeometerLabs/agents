@@ -53,11 +53,11 @@ type Agent struct {
 	ownerConfirms, ownerRefunds bool
 	marks                       *ownermarked.State
 	badLedger                   bool // the store's `upi` member could not be read: every step fails rather than lose the owner's marks
-	msg      messaging.Messaging
-	say      *messaging.Say
-	refunds  *payments.Refunds
-	can      payments.Capabilities
-	acct     accounting.Accounting // the step's books, made on the first money line
+	msg                         messaging.Messaging
+	say                         *messaging.Say
+	refunds                     *payments.Refunds
+	can                         payments.Capabilities
+	acct                        accounting.Accounting // the step's books, made on the first money line
 	// asst is the shop's assistant of this step (agent_assistant.go), made on first use; stepErr is an error one of its acts met deep in the agent's own paths (a Guard
 	// found down), handed back by the step after the assistant returns, so the step is thrown away whole as TypeScript's thrown error throws it away
 	asst    *runtime.Assistant

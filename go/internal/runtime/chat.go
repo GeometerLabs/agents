@@ -106,6 +106,8 @@ func ChatMessageOf(ev map[string]any) ChatMessage {
 type PageAudio struct {
 	Bytes []byte
 	Mime  string
+	// Ref is the reference the event carried (the owner's page recording: the voice service answers a step that runs again from memory by it)
+	Ref string
 }
 
 // ChatInbound is what a chat send turns into: the message a WhatsApp customer would have sent, and what only a chat has (messaging.go leaves `Audio` and `OnHeard` to the chat channel).

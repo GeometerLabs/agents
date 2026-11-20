@@ -86,7 +86,9 @@ func (c *conv) closeDay(d LocalDate) {
 	// close first, so the free times stop offering the date in this same step, then ask the customers booked that day to pick another one
 	c.a.ClosedDays = append(c.a.ClosedDays, d.Iso())
 	sort.Strings(c.a.ClosedDays)
-	booked, told := skill.CloseDay(d, func(caseID, phone string, startMs int64) bool { return c.tellCustomer("day_closed", caseID, phone, d, startMs) })
+	booked, told := skill.CloseDay(d, func(caseID, phone string, startMs int64) bool {
+		return c.tellCustomer("day_closed", caseID, phone, d, startMs)
+	})
 	if told == nil {
 		told = []string{}
 	}
@@ -153,7 +155,9 @@ func (c *conv) reopenDay(d LocalDate) {
 		if record != nil {
 			asked = record.Asked
 		}
-		told = skill.ReopenDay(d, asked, func(caseID, phone string, startMs int64) bool { return c.tellCustomer("day_open", caseID, phone, d, startMs) })
+		told = skill.ReopenDay(d, asked, func(caseID, phone string, startMs int64) bool {
+			return c.tellCustomer("day_open", caseID, phone, d, startMs)
+		})
 	}
 	if record != nil {
 		record.Done, record.HasDone = true, true

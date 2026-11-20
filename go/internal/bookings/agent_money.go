@@ -20,12 +20,13 @@ import (
 // rcase is a booking as the refunds code sees it (payments.RefundCase): its lists are the booking's own, changed in place.
 type rcase struct{ b *Booking }
 
-func (c rcase) CaseID() string                         { return c.b.ID }
-func (c rcase) Customer() string                       { return c.b.Customer }
-func (c rcase) Pending() *[]payments.Pending           { return &c.b.Pending }
-func (c rcase) Issues() *[]*payments.RefundIssue       { return &c.b.RefundIssues }
-func (c rcase) Stopped() *[]string                     { return &c.b.StoppedRefunds }
-func (c rcase) Untold() *[]*payments.UntoldRefund      { return &c.b.RefundsUntold }
+func (c rcase) CaseID() string                    { return c.b.ID }
+func (c rcase) Customer() string                  { return c.b.Customer }
+func (c rcase) Pending() *[]payments.Pending      { return &c.b.Pending }
+func (c rcase) Issues() *[]*payments.RefundIssue  { return &c.b.RefundIssues }
+func (c rcase) Stopped() *[]string                { return &c.b.StoppedRefunds }
+func (c rcase) Untold() *[]*payments.UntoldRefund { return &c.b.RefundsUntold }
+
 // bookingOfCase is the booking of a refund case; nil for no case (refunds.ts logs an approval nobody waits for with `null`, so the shared code hands in a nil case).
 func bookingOfCase(c payments.RefundCase) *Booking {
 	if r, ok := c.(rcase); ok {
@@ -33,7 +34,12 @@ func bookingOfCase(c payments.RefundCase) *Booking {
 	}
 	return nil
 }
-func refundPaise(p int64) *int64                       { if p < 0 { return nil }; return ptr(p / 100) }
+func refundPaise(p int64) *int64 {
+	if p < 0 {
+		return nil
+	}
+	return ptr(p / 100)
+}
 
 // refundDeps is agent.ts createRefunds' deps.
 func (a *Agent) refundDeps() payments.RefundDeps {
@@ -118,7 +124,9 @@ func (a *Agent) requestRefund(b *Booking, paymentID string, amountInr int64, dec
 	return a.refunds.RequestRefund(a.ctx, rcase{b}, paymentID, amountInr, decisionsAny(decisions...), expectHold, requestedBy)
 }
 
-func (a *Agent) afterRefund(b *Booking, result string, r payments.RefundAfter) { a.refunds.AfterRefund(rcase{b}, result, r) }
+func (a *Agent) afterRefund(b *Booking, result string, r payments.RefundAfter) {
+	a.refunds.AfterRefund(rcase{b}, result, r)
+}
 
 // ---- payments: look first, write, read back ---------------------------------------------------------------------------------------------------------------------------
 

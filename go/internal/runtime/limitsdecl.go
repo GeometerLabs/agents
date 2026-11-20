@@ -59,7 +59,9 @@ func (l *LimitDecl) looseness(v int64) float64 {
 	return -float64(v)
 }
 
-func (l *LimitDecl) strictlyTighter(inForce, proposed int64) bool { return l.looseness(proposed) < l.looseness(inForce) }
+func (l *LimitDecl) strictlyTighter(inForce, proposed int64) bool {
+	return l.looseness(proposed) < l.looseness(inForce)
+}
 
 // inForce is chat-limits.ts inForce: the file's value, moved by each active change from it, then by any pending tightening.
 func (l *LimitDecl) inForce(changes []limitChange) int64 {

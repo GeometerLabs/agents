@@ -8,14 +8,15 @@
 package bookings
 
 import (
-	"encoding/json"
 	"context"
+	"encoding/json"
 
-	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"github.com/GeometerLabs/agents/go/internal/payments"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	speech "github.com/GeometerLabs/agents/go/internal/voice" // named speech: the package has its own type voice (agent_say.go)
 )
 
 // Pathway and Version are what a Bookings folder's pathway.lock must name: the number in templates/commerce/bookings/package.json (the contract suite pins a folder to it).
@@ -43,11 +44,20 @@ type Kit struct {
 	Report      *MonthlyReport
 	reportErr   string
 	reportErrAt int64
+	// Voice is the shop's voice service (runtime.json `speech`, internal/voice); nil: voice is off, and a voice note gets the one line asking to type
+	Voice *speech.Service
 	// shared is the part of the settings every shop has (the assistant's character), for the owner page's assistant view
 	shared *runtime.Settings
 	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.
 	given map[string]bool
 }
+
+// OwnerVoiceOn: the owner's page may send a recording to the shop's assistant (TypeScript: the kit's ownerVoice, only with a voice service and the assistant).
+func (k *Kit) OwnerVoiceOn() bool {
+	return k.Voice != nil && k.Settings != nil && k.Settings.Assistant != nil
+}
+
+var _ runtime.OwnerVoiceKit = (*Kit)(nil)
 
 func (k *Kit) givenUp() map[string]bool {
 	if k.given == nil {

@@ -20,10 +20,10 @@ func caseOfListing(id string) string { return "listing:" + id }
 // listingsSkill is listing-card.ts's skill, over the step's assistant.
 type listingsSkill struct{ c *conv }
 
-func (listingsSkill) Name() string              { return "listings" }
-func (listingsSkill) Owns(ref string) bool      { return listingCase.MatchString(ref) }
-func (listingsSkill) Waiting() []WaitingItem    { return nil }
-func (listingsSkill) Problems() int             { return 0 }
+func (listingsSkill) Name() string           { return "listings" }
+func (listingsSkill) Owns(ref string) bool   { return listingCase.MatchString(ref) }
+func (listingsSkill) Waiting() []WaitingItem { return nil }
+func (listingsSkill) Problems() int          { return 0 }
 
 // listingFields is listing-card.ts `listingFields`: flat, everything the owner is shown and everything a tap publishes.
 func listingFields(l *listings.Listing) assistant.Raw {

@@ -334,7 +334,6 @@ func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
 	return a.proceedToHold(b, nil, nil)
 }
 
-
 // ---- the owner's private page (item 11d) --------------------------------------------------------------------------------------------------------------------------------
 
 // onOwnerAction is agent.ts onOwnerAction: the owner pressed a button on their private page. The page showed an action with a digest of exactly what it showed (ownerItems); if what
@@ -410,5 +409,9 @@ func (a *Agent) onOwnerPageMessage(ev map[string]any) error {
 		}
 		return a.stepErr
 	}
-	return runtime.Unported("a recording from the owner's talk box (item 11e with B29)")
+	ref, _ := ev["voice"].(string)
+	if err := as.OnPageVoice("owner-page:"+id, a.c.OwnerAudio(ref)); err != nil {
+		return err
+	}
+	return a.stepErr
 }

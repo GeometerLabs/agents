@@ -4,16 +4,16 @@ package bookings
 // agent.ts's sections of those names, and onMessage. OnMessage is the entry the chat calls too (W1: a chat guest's send runs as the SAME step as a WhatsApp customer's message),
 // so its signature is kept stable (go-bk-chat-19nov calls it).
 //
-// Not ported here yet, each answered with runtime.Unported or left as the TypeScript's "off" path (Deferred.md): a UPI shop's money (the owner-marked ledger), the shop's
-// assistant (item 11e: the owner's own words, cards, the customer talk of block M), voice notes heard through a speech service (voice is "off": the customer is asked to type),
+// Not ported here yet, each answered with runtime.Unported or left as the TypeScript's "off" path (Deferred.md):
 // the shop terms (B72), the handover code, approvers other than the owner (B37), and the WhatsApp booking's own page link (batch 5).
 
 import (
 	"encoding/json"
 	"regexp"
-	"time"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/language"
@@ -22,6 +22,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
+	speech "github.com/GeometerLabs/agents/go/internal/voice" // named speech: the package has its own type voice (agent_say.go)
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
@@ -82,8 +83,15 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 		return nil
 	}
 	a.store.SeenMessages = append(a.store.SeenMessages, msg.ID)
+	// B29: a voice note is turned into the words it says and then read exactly like a typed message (rules first, then the models, then the same limits and checks)
+	var voiceHeard *speech.Heard
 	if msg.VoiceNote {
-		return a.onVoiceNote(msg) // B29 listening is not ported: voice is off, and the sender is asked to type
+		heard := a.listen(msg)
+		if heard == nil || !heard.OK {
+			return a.onVoiceNote(msg, heard)
+		}
+		voiceHeard = heard
+		msg = messaging.InboundMessage{ID: msg.ID, From: msg.From, Text: heard.Text, Timestamp: msg.Timestamp, NoModel: msg.NoModel}
 	}
 	if msg.From == a.owner() {
 		return a.onOwnerMessage(msg)
@@ -100,7 +108,14 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 	}
 	// UPI: "I paid" while a deposit waits is read from a few plain words before any model; it is a claim, and the owner is asked to look. It marks nothing paid.
 	if a.ownerConfirms && msg.Reply == nil && !customer.OptedOut && paidClaim.MatchString(msg.Text) && !notPaid.MatchString(msg.Text) && a.store.Latest(phone, []string{AwaitingDeposit}) != nil {
-		a.log(nil, phone, "receive_message", "confirmed", map[string]any{"text": msg.Text, "id": msg.ID}, logMore{refs: map[string]string{"messageId": msg.ID, "step": "rules"}})
+		// B29: a voice note that says "I paid" is recorded as voice too, with what listening cost, so the cost meter does not miss it
+		inputs, refs := map[string]any{"text": msg.Text, "id": msg.ID}, map[string]string{"messageId": msg.ID, "step": "rules"}
+		if voiceHeard != nil {
+			inputs["voice"] = true
+			refs = mergeRefs(refs, speech.Marks(*voiceHeard))
+			refs["costMicroInr"] = strconv.FormatInt(voiceHeard.CostMicroInr, 10)
+		}
+		a.log(nil, phone, "receive_message", "confirmed", inputs, logMore{refs: refs})
 		a.onPaidClaim(phone, "words", "")
 		return nil
 	}
@@ -130,6 +145,8 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 	}
 	if in.Language != "" && contains(a.settings.Languages, in.Language) {
 		customer.Language = in.Language
+	} else if voiceHeard != nil && customer.Language == "" && contains(a.settings.Languages, voiceHeard.Language) {
+		customer.Language = voiceHeard.Language // the language they spoke, when the words do not say
 	}
 	var notes []string
 	if note != "" {
@@ -145,6 +162,18 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 	inputs := map[string]any{"text": msg.Text, "id": msg.ID}
 	if tapped != nil {
 		inputs["reply"] = msg.Reply.ID
+	}
+	// B29: what typed text keeps, plus that it came from a voice note, which provider and model listened, for how long and what that cost; the cost is added to the message's own
+	// so the cost meter counts it
+	if voiceHeard != nil {
+		inputs["voice"] = true
+		understood := refs["costMicroInr"]
+		refs = mergeRefs(refs, speech.Marks(*voiceHeard))
+		if understood != "" {
+			n, _ := strconv.ParseFloat(understood, 64)
+			refs["costMicroInr"] = strconv.FormatInt(int64(n)+voiceHeard.CostMicroInr, 10)
+		}
+		notes = append(notes, "the customer sent a voice note; this is its transcript")
 	}
 	a.log(nil, phone, "receive_message", "confirmed", inputs, logMore{notes: strings.Join(notes, "; "), refs: refs})
 
@@ -915,19 +944,48 @@ func (a *Agent) onStop(phone string) error {
 	return nil
 }
 
-// onVoiceNote is agent.ts onVoiceNote with voice off (B29 listening is not ported): the sender gets one plain line asking them to type.
-func (a *Agent) onVoiceNote(msg messaging.InboundMessage) error {
+// listen is agent.ts's shared listener (turn.ts createListener): the owner and the other approvers type their commands, and a customer who sent STOP is not listened to.
+func (a *Agent) listen(msg messaging.InboundMessage) *speech.Heard {
+	c := a.store.FindCustomer(msg.From)
+	return a.c.Listen(a.kit.Voice, msg, nil, msg.From == a.owner(), c != nil && c.OptedOut)
+}
+
+// onVoiceNote is agent.ts onVoiceNote: a voice note that was not used. With the shop's assistant and a voice service the owner's note is read as their typed words (or they are
+// told it could not be made out); otherwise the sender gets one plain line asking them to type, in the language this conversation already uses. The record says why, and what
+// listening cost (a priced call is counted as a rules-read message, so the cost meter sees the spend). STOP means STOP. tried is what listening came to (nil: not tried).
+func (a *Agent) onVoiceNote(msg messaging.InboundMessage, tried *speech.Heard) error {
 	phone := msg.From
+	if phone == a.owner() && a.settings.Assistant != nil {
+		if as := a.assistantOf(); as != nil {
+			if heard := as.HearOwner(msg); heard != nil {
+				if heard.Text == "" {
+					return nil
+				}
+				return a.onOwnerMessage(*heard)
+			}
+		}
+	}
 	if phone == a.owner() {
 		a.sayOwner([]string{"voice_note"}, sayExtra{}, "voice_note_reply")
 		return nil
 	}
 	c := a.store.Customer(phone)
-	a.log(nil, phone, "receive_message", "confirmed", map[string]any{"voiceNote": true, "id": msg.ID}, logMore{notes: "a voice note: it is not listened to and nothing of it is kept", refs: map[string]string{"messageId": msg.ID}})
+	refs := map[string]string{"messageId": msg.ID}
+	notes := "a voice note: it is not listened to and nothing of it is kept"
+	if tried != nil && !tried.OK {
+		refs = mergeRefs(refs, speech.FailedMarks(*tried))
+		notes = "a voice note that could not be used (" + speech.Why[tried.Reason] + "); the audio was held in memory for the call only and nothing of it is kept"
+	}
+	a.log(nil, phone, "receive_message", "confirmed", map[string]any{"voiceNote": true, "id": msg.ID}, logMore{notes: notes, refs: refs})
 	if c.OptedOut {
 		return nil
 	}
-	a.tellCustomer(nil, phone, []string{"voice_note"}, sayOpts{action: "voice_note_reply"})
+	// where voice is on the line says it could not be made out; where it is off, that voice notes cannot be listened to
+	line := "voice_note"
+	if a.kit.Voice != nil {
+		line = "voice_note_retry"
+	}
+	a.tellCustomer(nil, phone, []string{line}, sayOpts{action: "voice_note_reply"})
 	return nil
 }
 
