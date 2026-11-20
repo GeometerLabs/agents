@@ -84,6 +84,12 @@ type ChannelKit interface {
 	ChatWork(s KitState, conversation string) int
 }
 
+// AccountantFiler is a ChannelKit that also gives the accountant's files for a period from the record (core.ts ChannelKit `accountantFiles`, optional: a template without
+// books answers 404). An error is the TypeScript's throw: a period the books refuse, said as a 400.
+type AccountantFiler interface {
+	AccountantFiles(s KitState, entries []store.Entry, period string) (any, error)
+}
+
 // OfferQuery is what the booking page asks for (core.ts OfferQuery).
 type OfferQuery struct {
 	ServiceID string

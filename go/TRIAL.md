@@ -646,3 +646,10 @@ contract runs once at the end):
    `canSayPaid`, the refund on the page, and the owner's page items with their digests (deposit, late_deposit, refund_owed) and `owner_action` by digest. Not done: the QR
    picture (Deferred.md). `flow`, `money` and `owner` contract files on Go: 31 of 34 (the 3 left are steps 3, 5 and 6: the accountant's files after a passkey session, the
    owner's talk box, a page's documents). Count: **about 113 of 143** (104 + the 8 UPI tests + the owner told by template outside the window; the other files not run again).
+3. **The owner's page: done.** `owner_action` by digest for every item (received, refunded, kept on the UPI items; approve, deny, retry on the late refund and the calendar items)
+   goes through the owner's own reply path, as agent.ts onOwnerAction does; `owner_message` and a card's answer on a shop without the assistant are refused in the record
+   (with one: step 5). The page's documents (`Documents`: accounting.CaseDocuments over the record, by the page's own lookup) and the accountant's files
+   (`/internal/channel/accounting`, a new optional `runtime.AccountantFiler`, accounting.AccountantFiles with the Tally files) are wired. Found and fixed on the way: an
+   approval decision nobody waits for PANICKED the Go process (refunds.go logs it with a nil case; `bookingOfCase` asserted the type), which killed two limits tests.
+   `money`, `owner` and `limits-approvals` on Go: 34 of 35 (the one left is the owner's talk box, step 5). Count: **about 119 of 143** (the documents, the passkey session's
+   files, the approved resend and the malformed approval event join; the other files not run again).

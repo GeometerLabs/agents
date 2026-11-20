@@ -272,12 +272,23 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 			send(w, 403, errBody("The owner's session is not valid."))
 			return true, nil
 		}
-		if !periodRe.MatchString(r.URL.Query().Get("period")) {
+		af, has := ch.(AccountantFiler)
+		if ch == nil || !has {
+			return true, nothing
+		}
+		period := r.URL.Query().Get("period")
+		if !periodRe.MatchString(period) {
 			send(w, 400, errBody("period is a month (2026-11) or a financial year (26-27)."))
 			return true, nil
 		}
-		// the accountant's files are the books' (go/internal/accounting, another stream): not wired yet
-		return true, nothing
+		st, _, entries := rt.KitState()
+		files, err := af.AccountantFiles(st, entries, period)
+		if err != nil {
+			send(w, 400, errBody(err.Error()))
+			return true, nil
+		}
+		send(w, 200, map[string]any{"files": files})
+		return true, nil
 	}
 	return false, nil
 }
