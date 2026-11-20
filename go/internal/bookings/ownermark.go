@@ -12,6 +12,23 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/payments/upi"
 )
 
+// ledger is the store's owner-marked ledger, typed once and kept on the store, so a step's changes and the channel's reads see the same one and Members writes it back.
+// With create, a store that has none gets an empty one (agent.ts createAgent `store.upi ??= emptyMarkState()`, for a shop whose module cannot confirm or refund by itself);
+// without, nil when there is none. A `upi` member this version cannot read is never replaced: the step reads it as none (and saves the member as it was).
+func (s *Store) ledger(create bool) *ownermarked.State {
+	if s.upi == nil && s.Upi != nil {
+		if st, err := ownermarked.Parse(s.Upi); err == nil {
+			s.upi = st
+		} else {
+			return nil
+		}
+	}
+	if s.upi == nil && create {
+		s.upi = ownermarked.Empty()
+	}
+	return s.upi
+}
+
 // UpiState is the owner-marked ledger of this store: a fresh one when the shop has not sent a request yet (the member is left out until the first).
 func (s *Store) UpiState() (*ownermarked.State, error) { return ownermarked.Parse(s.Upi) }
 

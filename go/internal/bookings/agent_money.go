@@ -3,8 +3,8 @@ package bookings
 // Payments (look first, write, read back), refunds (the shared go/internal/payments refunds: send once, never send again what may have gone out), deposits, the licence's
 // wind-down and final stop, the clock's beat and the panel's recovery: agent.ts's sections "payments", "refunds", "deposits", "the licence", onPaymentEvent, onTick and onRecovery.
 //
-// A UPI shop's money (the owner-marked ledger, modules/payments/owner-marked) is the go-bk-books-19nov stream's `ownermarked` package: every path that would read or write it
-// answers runtime.Unported until that lands (Deferred.md), never a nil port falling through. TODO(go-bk-books-19nov): reconcileMarks, oweBack, the owner's marks.
+// A UPI shop's money (the owner-marked ledger, modules/payments/owner-marked) is agent_marks.go: here each branch asks what the module can do (a.ownerConfirms, a.ownerRefunds),
+// as agent.ts does, never whether a gateway port is there.
 
 import (
 	"encoding/json"
@@ -134,6 +134,10 @@ func (a *Agent) closeLink(b *Booking, why string) {
 		outcome, notes = "confirmed", why
 	}
 	a.log(b, b.Customer, "cancel_deposit_link", outcome, map[string]any{"linkId": b.LinkID}, logMore{notes: notes})
+	if a.ownerConfirms && closed {
+		a.log(b, b.Customer, ActionClosed, "confirmed", map[string]any{"requestId": b.LinkID}, logMore{refs: map[string]string{"requestId": b.LinkID},
+			notes: why + "; a mark by the owner that comes later is still recorded, and never books by itself"})
+	}
 }
 
 // linkClosed is `payments.cancelRequest(id).then(() => payments.fetchRequest(id)).then((x) => x?.status === "cancelled").catch(() => false)`.
@@ -159,10 +163,15 @@ func (a *Agent) checkOneDepositPerBooking(booking, paymentID string) Decision {
 	return block("one-deposit-per-booking", "This booking already has its deposit, so this second payment is not counted. It is refunded and the owner is told.")
 }
 
-// reconcilePayments is agent.ts reconcilePayments: the payments service's record of this booking's link against what the agent has counted.
+// reconcilePayments is agent.ts reconcilePayments: the payments service's record of this booking's link against what the agent has counted. On a UPI shop the owner's marks are
+// that record (reconcileMarks; its outcome is the owner's own reply's, onOwnerMark).
 func (a *Agent) reconcilePayments(b *Booking) error {
+	if a.ownerConfirms {
+		_, err := a.reconcileMarks(b)
+		return err
+	}
 	if a.pay == nil {
-		return runtime.Unported("the owner's marks on a UPI shop (reconcileMarks)")
+		return runtime.Unported("a payment on a shop with no payments service")
 	}
 	if b.LinkID == "" {
 		return nil
@@ -247,8 +256,23 @@ func (a *Agent) completeBooking(b *Booking) error {
 		}
 		a.log(b, b.Customer, "confirm_booking", "confirmed", want, m)
 		_ = b.MoveTo(Confirmed)
-		// TODO(go-bk-agent): batch 5's page link in the booked message (pageLinkFor, keepPageLink) needs the page's base address (pages.json) handed in
-		a.tellCustomer(b, b.Customer, []string{"booked"}, sayOpts{offer: cancelOrOwner})
+		// batch 5: a WhatsApp booking's own page link goes in the booked message too, when the shop has a page. Only while the customer's 24-hour window is open: outside it the
+		// message must go as ONE approved template, and "booked" with a link is two (no template carries it), so the customer would not hear "booked" at all
+		var page *pageLink
+		if open, err := a.msg.IsWindowOpen(a.ctx, b.Customer); err == nil && open {
+			page = a.pageLinkFor(b)
+		}
+		booked := "booked"
+		if a.ownerConfirms {
+			booked = "upi_booked"
+		}
+		templates, o := []string{booked}, sayOpts{offer: cancelOrOwner}
+		if page != nil {
+			templates, o.pageLink = append(templates, "booked_page_link"), page.url
+		}
+		if sent := a.tellCustomer(b, b.Customer, templates, o); sent && page != nil {
+			a.keepPageLink(b, page.hash)
+		}
 		return nil
 	}
 	outcome, notes := "unconfirmed", "the calendar does not show the booking"
@@ -320,7 +344,7 @@ func (a *Agent) refundUnbookable(b *Booking, why string) error {
 // onPaymentEvent is agent.ts onPaymentEvent: the event only says to look; the payments service's own record decides.
 func (a *Agent) onPaymentEvent(ev payments.PaymentEvent) error {
 	if a.pay == nil {
-		return runtime.Unported("a payment event on a UPI shop")
+		return runtime.Unported("a payment event on a shop with no payments service")
 	}
 	if contains(a.store.SeenEvents, ev.ID) {
 		a.log(nil, a.owner(), "receive_payment_event", "blocked", map[string]any{"id": ev.ID, "event": ev.Event}, logMore{notes: fmt.Sprintf("event %s was delivered again, so it is ignored", ev.ID)})
@@ -522,7 +546,19 @@ func (a *Agent) expireHold(b *Booking) error {
 	a.releaseSlot(b, "the hold ran out before a deposit was recorded")
 	a.closeLink(b, "the hold ran out")
 	_ = b.MoveTo(Expired)
-	a.tellCustomer(b, b.Customer, []string{"hold_expired"}, sayOpts{slotMs: slot})
+	expired := "hold_expired"
+	if a.ownerConfirms {
+		expired = "upi_hold_expired"
+	}
+	a.tellCustomer(b, b.Customer, []string{expired}, sayOpts{slotMs: slot})
+	if a.ownerConfirms {
+		// part of the deposit was marked, and the hold ran out: that part is the customer's, and the owner owes it back
+		if r := a.requestOf(b); r != nil && len(r.Marks) > 0 {
+			if part := markedPaise(r); part > 0 {
+				a.oweBack(b, r.Marks[len(r.Marks)-1].ID, part, "part of the deposit was marked received, and the hold ran out", oweOpts{customer: "upi_refund_owed"})
+			}
+		}
+	}
 	return nil
 }
 
@@ -586,8 +622,7 @@ func (a *Agent) backfillCalendar(now int64) error {
 	return nil
 }
 
-// onTick is agent.ts onTick. Not ported here yet (Deferred.md): the button-mode announcement, the owner's UPI refund reminders, yesterday's settlement rows for the books, the
-// assistant's cards.
+// onTick is agent.ts onTick. Not ported here yet (Deferred.md): the button-mode announcement, yesterday's settlement rows for the books, the assistant's cards.
 func (a *Agent) onTick() error {
 	now := a.now()
 	if err := a.backfillCalendar(now); err != nil {
@@ -598,12 +633,12 @@ func (a *Agent) onTick() error {
 			return err
 		}
 	}
+	if a.marks != nil {
+		a.remindOwedRefunds(now)
+	}
 	a.closeLinksAtStop()
 	for _, b := range append([]*Booking(nil), a.store.Bookings...) {
 		if b.State == AwaitingDeposit && b.HoldExpiresAt != nil && *b.HoldExpiresAt <= now {
-			if a.pay == nil {
-				continue // TODO(go-bk-books-19nov): a UPI hold's expiry reads the owner's marks
-			}
 			if err := a.expireHold(b); err != nil {
 				return err
 			}
@@ -665,9 +700,6 @@ func (a *Agent) onRecovery(ev map[string]any) error {
 			say("blocked", "this booking has no payment link to look at")
 			return nil
 		}
-		if a.pay == nil {
-			return runtime.Unported("recheck_payment on a UPI shop (the owner's marks)")
-		}
 		say("attempted", "looking again at the payments service's list for this booking's link")
 		if err := a.reconcilePayments(b); err != nil {
 			return err
@@ -682,8 +714,8 @@ func (a *Agent) onRecovery(ev map[string]any) error {
 		say("attempted", "asking the calendar again to confirm the booking the deposit paid for")
 		return a.completeBooking(b) // sends "booked" only if the calendar now shows it
 	case "ask_owner_again":
-		if a.settings.OwnerMarked() {
-			return runtime.Unported("ask_owner_again on a UPI shop (the owner's marks)")
+		if a.marks != nil && a.markAskAgain(b, say) {
+			return nil
 		}
 		var cal bool
 		var refund *OwnerRefund
@@ -724,7 +756,7 @@ func (a *Agent) onRecovery(ev map[string]any) error {
 			return nil
 		}
 		if a.pay == nil {
-			return runtime.Unported("recheck_refund on a UPI shop")
+			return runtime.Unported("recheck_refund on a shop with no payments service")
 		}
 		say("attempted", "looking again, read-only, for a refund that may have gone")
 		settled, looked, told, err := a.refunds.Recheck(a.ctx, rcase{b})

@@ -638,3 +638,11 @@ contract runs once at the end):
    `json.Unmarshal` if, so EVERY failed step looked like one that went through without being saved; the task ran again until "too many interrupted tries" and was never parked
    for its Guard (and an `Unported` step was tried four times, not failed at once). Fixed in `internal/runtime/runtime.go`. `recovery.contract.test.ts` on Go: 11 of 11
    (the three outage tests were failing). Count: **104 of 143** (101 + 3; the other files not run again).
+2. **A UPI shop's money: done.** `internal/bookings/agent_marks.go` is agent.ts's owner-marked section (requestOf, sendMarkedRequest, tellAlreadyWaiting,
+   reconcileMarks, lateMark, oweBack, onPaidClaim, noteClaim, onLateClaim, onPicture, onOwnerMark, markAskAgain, remindOwedRefunds) over `internal/payments/ownermarked`; the
+   agent asks the module's capabilities (`ownerConfirms`, `ownerRefunds`) as agent.ts does, a UPI shop's `a.pay` is the ledger's `ownermarked.View` (made in the agent, never
+   watched), and the ledger is typed once on the store and written back field for field. Also, because the UPI tests need them: the "booked" gate's owner-marked branch,
+   the WhatsApp booking's own page link (`Kit.PageBase` from pages.json, `pageLinkFor`, `keepPageLink`, the booked message's link inside the window), the page's UPI pay block,
+   `canSayPaid`, the refund on the page, and the owner's page items with their digests (deposit, late_deposit, refund_owed) and `owner_action` by digest. Not done: the QR
+   picture (Deferred.md). `flow`, `money` and `owner` contract files on Go: 31 of 34 (the 3 left are steps 3, 5 and 6: the accountant's files after a passkey session, the
+   owner's talk box, a page's documents). Count: **about 113 of 143** (104 + the 8 UPI tests + the owner told by template outside the window; the other files not run again).

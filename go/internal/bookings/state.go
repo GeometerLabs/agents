@@ -5,12 +5,13 @@ package bookings
 // (the id counter), and the optional ai, upi, ownCalendar, calendarState, channel and assistant (each left out until it is first set).
 //
 // LOSES NOTHING: a booking and a customer are typed for the fields this runtime reads and writes, and every other member is carried through as raw JSON in its place (Extra), so a
-// shop that goes back to the TypeScript runtime finds every field it wrote. The optional blocks this runtime does not model yet (upi, ownCalendar, calendarState, channel) are kept
-// whole as raw JSON. The ai and assistant members are the shared runtime's (Snap.AI, Snap.A); this state only says where they go.
+// shop that goes back to the TypeScript runtime finds every field it wrote. The optional blocks (upi, ownCalendar, calendarState, channel) are kept whole as raw JSON
+// until a step uses one; then it is typed (the owner-marked ledger, the own booking list, the channel) and written back field for field. The ai and assistant members are the shared runtime's (Snap.AI, Snap.A); this state only says where they go.
 
 import (
 	"github.com/GeometerLabs/agents/go/internal/calendar"
 	"github.com/GeometerLabs/agents/go/internal/payments"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -155,6 +156,8 @@ type Store struct {
 	own     *calendar.OwnState
 	channel *runtime.ChannelState
 	reqs    *chanRequests
+	// upi is the owner-marked ledger once a step or a read used it (ownermark.go ledger); Members writes it back as `upi`. nil: the raw member as read is kept.
+	upi *ownermarked.State
 }
 
 // NewStore is booking.ts createStore.
@@ -583,6 +586,11 @@ func (s *Store) Members() ([]runtime.Member, error) {
 	}
 	if s.own != nil {
 		s.OwnCalendar, _ = json.Marshal(s.own)
+	}
+	if s.upi != nil {
+		if raw, err := s.upi.JSON(); err == nil {
+			s.Upi = raw
+		}
 	}
 	if s.channel != nil {
 		if s.reqs != nil {
