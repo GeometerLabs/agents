@@ -3,7 +3,7 @@ package bookings
 // What the booking page, its API, the MCP endpoint and the owner's private page may READ: the Go twin of templates/commerce/bookings/src/channel.ts and the channel kit of
 // server/runtime.ts. Everything is an allowlist: a field is in a view because the page shows it. Never the owner's one-use code, never another customer, never a record line.
 //
-// Not ported yet (Deferred.md): the owner page's Money section and the documents (the books, go/internal/accounting), the assistant's app view, and a chat guest's label
+// Not ported yet (Deferred.md): the owner page's Money section, the assistant's app view, and a chat guest's label
 // ("Chat guest 3") on the owner's items.
 
 import (
@@ -12,8 +12,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/GeometerLabs/agents/go/internal/accounting"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
@@ -527,9 +530,40 @@ func (k *channelKit) Owner(kst runtime.KitState, _ *runtime.Snap, _ []store.Entr
 	return ordered2("shop", ordered2("name", s.Name, "timezone", s.Timezone, "ownerLanguage", s.Owner.Language), "services", publicServices(s, nil), "items", items, "upcoming", upcoming)
 }
 
-// Documents are the books' (go/internal/accounting, another stream): not wired yet, so the route answers 404.
-func (k *channelKit) Documents(runtime.KitState, []store.Entry, string, string) ([]any, bool) {
-	return nil, false
+// Documents is channel.ts documentsOf: the receipts and refund notes of the booking the page with this handle's hash opens (the page's own lookup, so another booking's number is
+// never among them), newest first, drawn in the page's language; what each is for is the service and the slot in that language.
+func (k *channelKit) Documents(kst runtime.KitState, entries []store.Entry, hash, lang string) ([]any, bool) {
+	st := kst.(*Store)
+	s := k.kit.Settings
+	var cases []string
+	if _, _, b := lookup(st, hash); b != nil {
+		cases = []string{b.ID}
+	}
+	whatFor := func(caseID, l string) string {
+		x := st.Booking(caseID)
+		var parts []string
+		if x != nil {
+			if sv := s.ServiceByID(x.ServiceID); sv != nil {
+				parts = append(parts, ServiceName(sv, l))
+			}
+			if x.StartMs != nil {
+				parts = append(parts, language.Formats(l).Slot(*x.StartMs, s.Loc))
+			}
+		}
+		return strings.Join(parts, ", ")
+	}
+	docs := accounting.CaseDocuments(accounting.BookingsJournal(entries), cases, accounting.DocumentShop{Name: s.Name, Address: s.Address, Timezone: s.Timezone}, lang, whatFor, nil)
+	out := make([]any, len(docs))
+	for i, d := range docs {
+		out[i] = d
+	}
+	return out, true
+}
+
+// AccountantFiles is channel.ts exportFilesOf: the accountant's files for a period, from the record, with the two best-effort Tally files. No company name is put in them (the
+// accountant's Tally company may be named differently from the shop).
+func (k *channelKit) AccountantFiles(_ runtime.KitState, entries []store.Entry, period string) (any, error) {
+	return accounting.AccountantFiles(accounting.ExportInput{Journal: accounting.BookingsJournal(entries), Entries: entries, Period: period, TimeZone: k.kit.Settings.Timezone, Tally: &accounting.TallyOptions{}})
 }
 
 // ChatWork is runtime.ts chatWork: a chat guest has made a booking when a booking beyond the first enquiry is theirs.

@@ -26,7 +26,13 @@ func (c rcase) Pending() *[]payments.Pending           { return &c.b.Pending }
 func (c rcase) Issues() *[]*payments.RefundIssue       { return &c.b.RefundIssues }
 func (c rcase) Stopped() *[]string                     { return &c.b.StoppedRefunds }
 func (c rcase) Untold() *[]*payments.UntoldRefund      { return &c.b.RefundsUntold }
-func bookingOfCase(c payments.RefundCase) *Booking     { return c.(rcase).b }
+// bookingOfCase is the booking of a refund case; nil for no case (refunds.ts logs an approval nobody waits for with `null`, so the shared code hands in a nil case).
+func bookingOfCase(c payments.RefundCase) *Booking {
+	if r, ok := c.(rcase); ok {
+		return r.b
+	}
+	return nil
+}
 func refundPaise(p int64) *int64                       { if p < 0 { return nil }; return ptr(p / 100) }
 
 // refundDeps is agent.ts createRefunds' deps.
