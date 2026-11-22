@@ -765,6 +765,7 @@ route) dropped `SendImage`, so no picture could have gone even with a maker.
 **Measured at the end of this stream (22 Nov, through the heat lock, once after the code; one fix round after the narrow files):** `go vet ./...` clean; `go test ./...` 30 packages
 ok. `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/`: **148 of 148** (143 + the five of
 talk.contract.test.ts). The same on TypeScript: **148 of 148**. `node --test --test-concurrency=1 templates/commerce/listings/contract/` on Go: **192 of 192** without go/bin/listings-shared,
-whose absence registers none of shared.contract.test.ts's 8 (shared-harness.ts haveGo); with it built, shared.contract.test.ts on its own: see the next line. 192 + 8 = 200 = ead21fd8's
+whose absence registers none of shared.contract.test.ts's 8 (shared-harness.ts haveGo); with it built, shared.contract.test.ts on its own: 8 of 8. 192 + 8 = 200 = ead21fd8's
 198 + words-fresh's two new checks. The TypeScript unit tests that import the Bookings stand-in (approvals-guard-binary, understanding, ai-mode, buttons, model-eval, e2e,
-report-whatsapp, standins): 110 of 110 after it approves the assistant's templates.
+report-whatsapp, standins): 110 of 110 after it approves the assistant's templates. After the whole run, the chat guest's case was added to talk.contract.test.ts and the file run again on both runtimes:
+6 of 6 on TypeScript and 6 of 6 on Go, so the Bookings contract is 149 on each (148 measured whole, plus this one run on its own file).
