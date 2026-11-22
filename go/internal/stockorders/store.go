@@ -116,7 +116,9 @@ type Store struct {
 }
 
 // NewStore is order.ts createStore.
-func NewStore() *Store { return &Store{byID: map[string]*Order{}, Handled: []string{}, Requests: [][2]string{}, OptedOut: []string{}} }
+func NewStore() *Store {
+	return &Store{byID: map[string]*Order{}, Handled: []string{}, Requests: [][2]string{}, OptedOut: []string{}}
+}
 
 func (s *Store) order(id string) *Order { return s.byID[id] }
 
@@ -304,7 +306,9 @@ func (s *Store) reservedPaise(month, except string) int64 {
 }
 
 // isOpen is order.ts isOpen: still to arrive.
-func isOpen(o *Order) bool { return holdsBudgetStates[o.State] && o.Receipt != "full" && o.Receipt != "wrong_item" }
+func isOpen(o *Order) bool {
+	return holdsBudgetStates[o.State] && o.Receipt != "full" && o.Receipt != "wrong_item"
+}
 
 // unansweredFor is order.ts unansweredFor: the orders with a supplier that has not answered yet.
 func (s *Store) unansweredFor(supplier string) []*Order {

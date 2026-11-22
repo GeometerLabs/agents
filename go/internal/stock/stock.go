@@ -112,8 +112,8 @@ func Owner(by string) Source {
 // ShopRecord is `shopRecord(from)`: only an agent's own reconcile step calls it, with facts read from its own orders (never from anyone's words).
 func ShopRecord() Source { return Source{by: "shop", shop: true} }
 
-func (s Source) ok() bool       { return s.by != "" }
-func (s Source) isOwner() bool  { return s.ok() && !s.shop }
+func (s Source) ok() bool      { return s.by != "" }
+func (s Source) isOwner() bool { return s.ok() && !s.shop }
 
 // ---- the state ----------------------------------------------------------------------------------------------------------------------------------------
 

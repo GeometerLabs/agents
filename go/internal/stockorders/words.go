@@ -62,11 +62,11 @@ type langWords struct {
 }
 
 type allWords struct {
-	Generic   struct{ Customer, Owner string } `json:"generic"`
-	ReportTemplates []string                    `json:"reportTemplates"`
-	MonthsEn  []string                          `json:"monthsEn"`
-	Languages map[string]*langWords             `json:"languages"`
-	Reading   struct {
+	Generic         struct{ Customer, Owner string } `json:"generic"`
+	ReportTemplates []string                         `json:"reportTemplates"`
+	MonthsEn        []string                         `json:"monthsEn"`
+	Languages       map[string]*langWords            `json:"languages"`
+	Reading         struct {
 		Words          map[string]string `json:"words"`
 		EnglishNumbers map[string]int64  `json:"englishNumbers"`
 	} `json:"reading"`

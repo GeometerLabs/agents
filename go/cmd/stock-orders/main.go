@@ -64,7 +64,8 @@ func run(folder string) error {
 	}
 	msgConf, hasMessaging := client.Config.Services["messaging"].(map[string]any)
 	if client.Config.Mode == "live" && !hasMessaging {
-		return runtime.ClientError{Msg: `The folder's runtime.json needs fixing:` + "\n" + `- services.messaging must be an object with "baseUrl" (a Guard's address) and "phoneNumberId": a Stock orders shop sends its orders to suppliers on WhatsApp.`}
+		// config.ts readRuntimeConfig with STOCK_SERVICES: WhatsApp may not be left out (readService's sentence for a missing service)
+		return runtime.ClientError{Msg: "runtime.json needs fixing:\n- In \"services\", add \"messaging\" with its \"baseUrl\" and \"phoneNumberId\"."}
 	}
 	token, err := runtime.ReadToken(os.Getenv("INTERNAL_TOKEN_FILE"), "internal token")
 	if err != nil {

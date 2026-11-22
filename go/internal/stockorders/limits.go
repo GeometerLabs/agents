@@ -17,8 +17,12 @@ import (
 
 type decision = messaging.Decision
 
-func allow(rule, reason string) decision { return decision{RuleID: rule, Verdict: "allow", Reason: reason} }
-func block(rule, reason string) decision { return decision{RuleID: rule, Verdict: "block", Reason: reason} }
+func allow(rule, reason string) decision {
+	return decision{RuleID: rule, Verdict: "allow", Reason: reason}
+}
+func block(rule, reason string) decision {
+	return decision{RuleID: rule, Verdict: "block", Reason: reason}
+}
 
 func checkApprovedSupplier(sp *Supplier, named string) decision {
 	if sp == nil {

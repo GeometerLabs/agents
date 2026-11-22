@@ -34,12 +34,12 @@ const (
 )
 
 // NewStock, IsStockID, KindOf, ListingStockID, StockRefs and StockViewOf are the shared package's.
-func NewStock() *Stock                                   { return stock.New() }
-func IsStockID(id string) bool                            { return stock.IsID(id) }
-func KindOf(id string) string                             { return stock.KindOf(id) }
-func ListingStockID(listingID string) string              { return stock.ListingID(listingID) }
-func StockRefs(id, change, by string) map[string]string   { return stock.Refs(id, change, by) }
-func StockViewOf(st *Stock, refs []ItemRef) StockView      { return stock.ViewOf(st, refs) }
+func NewStock() *Stock                                  { return stock.New() }
+func IsStockID(id string) bool                          { return stock.IsID(id) }
+func KindOf(id string) string                           { return stock.KindOf(id) }
+func ListingStockID(listingID string) string            { return stock.ListingID(listingID) }
+func StockRefs(id, change, by string) map[string]string { return stock.Refs(id, change, by) }
+func StockViewOf(st *Stock, refs []ItemRef) StockView   { return stock.ViewOf(st, refs) }
 
 // ---- the owner's ops ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -200,4 +200,3 @@ func ListingRefs(s *State, lang string) []ItemRef {
 	}
 	return out
 }
-

@@ -21,8 +21,8 @@ type skill struct{ a *Agent }
 
 var _ runtime.OwnerSkill = (*skill)(nil)
 
-func (*skill) Name() string           { return skillName }
-func (*skill) Owns(ref string) bool   { return poRef.MatchString(ref) }
+func (*skill) Name() string         { return skillName }
+func (*skill) Owns(ref string) bool { return poRef.MatchString(ref) }
 
 func rawStr(r json.RawMessage) string {
 	var s string

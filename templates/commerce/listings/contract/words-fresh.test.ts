@@ -160,3 +160,8 @@ test("words-fresh: the Stock orders words the Go runtime says and reads (go/inte
   const stockOrdersWords = await import("../../../../go/scripts/gen_stockorders_words.ts");
   assert.equal(stockOrdersWords.stale(), false, "the Stock orders words are out of date: run  node go/scripts/gen_stockorders_words.ts  and commit the result");
 });
+
+test("words-fresh: the Stock orders vectors (go/internal/stockorders/testdata) equal a fresh run of the TypeScript templates, outgoing check and reader", async () => {
+  const stockOrdersVectors = await import("../../../../go/scripts/gen_stockorders_vectors.ts");
+  assert.equal(stockOrdersVectors.stale(), false, "the Stock orders vectors are out of date: run  node go/scripts/gen_stockorders_vectors.ts  and commit the result");
+});

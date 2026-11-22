@@ -33,6 +33,7 @@ Nothing here is TypeScript only.
 | `sendonce.contract.test.ts` | R | guards | a refusal shown at once with Try now, three tries then not sent and the owner's "send", Cancel order; a lost reply: never sent again, They got it, Send it again (two, never three), the supplier's OK settles it; the process killed while the order is on the wire |
 | `time.contract.test.ts` | T | fakes | a card running out, the supplier asked again at 4 and 24 hours about the same order (send once), the owner told once, ask again from the page; a question running out; the monthly report once on the first morning |
 | `owner.contract.test.ts` | O | guards | the owner's page items and digests (a stale press does nothing, a press twice once), received from the page, the coming list, the talk box needs the assistant, the app view; the Stock page: candidates, deliveries added once by what was marked, a unit refused, a low mark starting one reorder |
+| `assistant.contract.test.ts` | A | guards | with an `assistant` block: "what needs me" keeps the order's card (one approval, one message), the assistant's card for the order pressed on the page, a rule about the budget making a limit card and the tighter budget in force |
 | `record.contract.test.ts` | D | guards | agent.db's format and the append-only record, the saved state member for member, the owner's words only as a keyed digest, a restore moving the counter on by 100000 |
 | `cross-restart.test.ts` | | guards | the TypeScript and Go runtimes in turn on one folder, both ways |
 

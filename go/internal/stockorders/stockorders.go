@@ -203,6 +203,8 @@ func (c *channelKit) Owner(kst runtime.KitState, sn *runtime.Snap, _ []store.Ent
 	return view
 }
 
-func (c *channelKit) Documents(runtime.KitState, []store.Entry, string, string) ([]any, bool) { return nil, false }
+func (c *channelKit) Documents(runtime.KitState, []store.Entry, string, string) ([]any, bool) {
+	return nil, false
+}
 
 func (c *channelKit) ChatWork(runtime.KitState, string) int { return 0 }

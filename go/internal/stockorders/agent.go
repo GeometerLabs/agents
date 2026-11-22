@@ -20,44 +20,44 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/stock"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
-	"github.com/GeometerLabs/agents/go/internal/language"
 )
 
 const (
-	hour         int64 = 3_600_000
-	askingForMs        = 6 * hour
-	handledKeep        = 500
-	maxLowAsks         = 3
-	orderKind          = "purchase_order"
-	checkKind          = "supplier_check"
-	skillName          = "stock-orders"
+	hour        int64 = 3_600_000
+	askingForMs       = 6 * hour
+	handledKeep       = 500
+	maxLowAsks        = 3
+	orderKind         = "purchase_order"
+	checkKind         = "supplier_check"
+	skillName         = "stock-orders"
 )
 
 var (
-	digitsRe  = regexp.MustCompile(`\D`)
-	tapRe     = regexp.MustCompile(`^(ack|nack):(po-\d+)$`)
-	pickRe    = regexp.MustCompile(`^pick:(\d+)$`)
-	buttonRe  = regexp.MustCompile(`^card-(yes|no):([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})$`)
-	typedRe   = regexp.MustCompile(`(?i)^[\s\x{00a0}\x{feff}]*(yes|no)[\s\x{00a0}\x{feff}]+([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})[\s\x{00a0}\x{feff}]*$`)
-	yesRe     = language.P("rules.yes")
-	noRe      = language.P("rules.no")
+	digitsRe = regexp.MustCompile(`\D`)
+	tapRe    = regexp.MustCompile(`^(ack|nack):(po-\d+)$`)
+	pickRe   = regexp.MustCompile(`^pick:(\d+)$`)
+	buttonRe = regexp.MustCompile(`^card-(yes|no):([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})$`)
+	typedRe  = regexp.MustCompile(`(?i)^[\s\x{00a0}\x{feff}]*(yes|no)[\s\x{00a0}\x{feff}]+([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})[\s\x{00a0}\x{feff}]*$`)
+	yesRe    = language.P("rules.yes")
+	noRe     = language.P("rules.no")
 )
 
 func digits(n string) string { return digitsRe.ReplaceAllString(n, "") }
 
 // Agent is one step's agent.
 type Agent struct {
-	kit *Kit
-	c   *runtime.StepContext
-	st  *Store
-	s   *Settings
-	say *messaging.Say
-	msg messaging.Messaging
-	ctx context.Context
+	kit  *Kit
+	c    *runtime.StepContext
+	st   *Store
+	s    *Settings
+	say  *messaging.Say
+	msg  messaging.Messaging
+	ctx  context.Context
 	asst *runtime.Assistant
 }
 

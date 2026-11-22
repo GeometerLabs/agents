@@ -184,7 +184,8 @@ function run(): unknown[] {
         case "requestId": result = { id: lowRequestId({ line: s.line, crossing: s.crossing }) }; break;
         case "tidy": tidyStock(st, s.nowMs); result = {}; break;
       }
-      return { step: s, result, state: JSON.parse(JSON.stringify(st)) };
+      // copies now: `pendingAlerts` hands back the queue's own objects, which later steps change (noteAsked)
+      return { step: s, result: JSON.parse(JSON.stringify(result)), state: JSON.parse(JSON.stringify(st)) };
     });
     return { name: sc.name, steps };
   });
