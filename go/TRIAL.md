@@ -254,7 +254,7 @@ source of a listings shop carries one); the "anthropic" model wire (the model Gu
 header and sticker (the push-only messaging sends words). `runtime.json`'s `decision` is checked for its provider, address and model; its other fields' ranges are TypeScript's to
 refuse (the deployer writes them).
 
-**TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
+*(Fixed or answered in "go-w2-tsfix-22nov" below.)* **TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
 sees ASCII letters, so a goal written in those scripts is filed as a fact unless an ASCII letter follows; `historyText` cuts at 300 UTF-16 units and can leave a lone surrogate
 (Go drops the half character); `COMPLETION` holds `बुक ചെയ്തു` (Devanagari and Malayalam mixed), carried as it is.
 
@@ -515,7 +515,7 @@ stream's `internal/accounting` needs an adapter of a few lines. `go/internal/zon
 **Differences from TypeScript, recorded:** money and times read from a reply are whole numbers only (a fractional amount reads as absent, where `num` passes it); `UntoldRefund.amountInr`
 is kept in paise and written as the exact decimal; the Go fake gateway has no fault plans; keep-alive is off in the Guard client (net/http would send a GET again on a cut connection).
 
-**TypeScript findings (reported, not fixed):** `refunds.ts` line 429 `amountInr: r.amount / 100` can be fractional (a refund of 12.5 rupees), while every other amount in the file is whole rupees;
+*(Fixed or answered in "go-w2-tsfix-22nov" below.)* **TypeScript findings (reported, not fixed):** `refunds.ts` line 429 `amountInr: r.amount / 100` can be fractional (a refund of 12.5 rupees), while every other amount in the file is whole rupees;
 the 24 hour hold and the limit are whole-rupee settings, so it cannot happen with these settings, but nothing enforces it. `recordMessageStatus` throws `RangeError` for a failed status with a
 timestamp past 8.64e15 ms, which a forged webhook could cause; `say.ts` falls back from buttons to text after any ApiError under 500, a Guard hold or refusal included; `interactiveProblem`
 counts code points while the document checks count UTF-16 units; STOP uses `toUpperCase`, so `"ﬆop"` opts a customer out; `own-calendar.ts` creates `store.ownCalendar` on a read; and the
@@ -548,7 +548,7 @@ key order where the TypeScript uses insertion order (`BooksFaults` privacy sente
 Finding: the monthly job runs after the step in `core.ts` with its own `save` (claim saved before the send, ending after); `StepContext` has no `Save` yet, so a Go step that runs it saves the claim only
 with the step (a crash between the send and the save could send a month twice): the runtime needs a mid-step save for it.
 
-TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
+*(Fixed or answered in "go-w2-tsfix-22nov" below.)* TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
 is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`
 last; `invariants.ts` privacy faults depend on refs insertion order; `fitText` folds whitespace before stripping zero-width characters (so a name can turn a signed summary into the older link); `settledWho` slices at
 UTF-16 and can leave half an emoji; `workOf` leaves a refund settled by a person's word "waiting for owner" in every later month unless an `owner_decision` follows; a rule id like `constructor` would throw in `STOP_SITES`.

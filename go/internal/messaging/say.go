@@ -445,4 +445,3 @@ func (s *Say) deliver(ctx context.Context, a *SayArgs, toNumber string, toCustom
 }
 
 func isWindowClosed(err error) bool { var w *guard.WindowClosedError; return errors.As(err, &w) }
-

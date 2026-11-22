@@ -123,5 +123,5 @@ func TestSettledPostThatThrowsAfterItsWrite(t *testing.T) {
 
 type rowsPayments []SettlementRow
 
-func (p rowsPayments) ReadsSettlements() bool                            { return true }
+func (p rowsPayments) ReadsSettlements() bool                             { return true }
 func (p rowsPayments) ReadSettlements(zone.Date) ([]SettlementRow, error) { return p, nil }

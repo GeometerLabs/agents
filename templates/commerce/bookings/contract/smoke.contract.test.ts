@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CUSTOMER, contract, makeShop } from "./harness.ts";
+import { fixture } from "./guards.ts";
 import type { Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -118,6 +119,21 @@ describe("a status report whose time no date can hold (a forged webhook)", () =>
     const line = s.record().filter((e) => e.action === "message_status" && e.refs.errorCode === "131047").at(-1);
     assert.ok(line, "the report is in the record");
     assert.deepEqual([line.outcome, line.refs.reportedAt, line.refs.errorCode], ["failed", undefined, "131047"]);
+  });
+});
+
+describe("buttons the shop's Guard holds (found in the Go port, 22 Nov: the same words then went as plain text)", () => {
+  contract("are not sent again as text: the customer gets nothing until the hold is answered, and the record says the send did not go", async () => {
+    const plain = await boot({ mode: "guards" });
+    await plain.inbound(CUSTOMER, "hello");
+    await plain.settle();
+    assert.ok(plain.sent(CUSTOMER).some((m) => m.kind === "interactive"), "without a hold the welcome goes with buttons");
+    const s = await boot({ mode: "guards" });
+    s.guards!.messaging.answer(fixture("guard-responses.json").held, { times: 1, match: (c) => c.method === "POST" && /\/messages$/u.test(c.path) });
+    await s.inbound(CUSTOMER, "hello");
+    await s.settle();
+    assert.deepEqual(s.sent(CUSTOMER), [], "neither the buttons (held) nor the same words as text reached the customer");
+    assert.equal(s.record().filter((e) => e.action === "send_message").at(-1)?.outcome, "failed");
   });
 });
 
