@@ -114,7 +114,8 @@ describe("a status report whose time no date can hold (a forged webhook)", () =>
     assert.deepEqual([forged.status, forged.body.saved], [200, 1]);
     await s.settle();
     assert.equal((await s.status()).tasks.failed, 0);
-    const line = s.record().find((e) => e.action === "message_status" && e.refs.messageId === "wamid.forged_1");
+    // the record keeps message ids keyed (a fingerprint), so the line is found by what it says: the only failed report with this code
+    const line = s.record().filter((e) => e.action === "message_status" && e.refs.errorCode === "131047").at(-1);
     assert.ok(line, "the report is in the record");
     assert.deepEqual([line.outcome, line.refs.reportedAt, line.refs.errorCode], ["failed", undefined, "131047"]);
   });
