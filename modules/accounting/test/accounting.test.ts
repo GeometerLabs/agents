@@ -12,6 +12,7 @@ import type { ActionRecord, Outcome } from "../../record/record.ts";
 import { balances, journal } from "../journal.ts";
 import type { LegacyMap } from "../journal.ts";
 import { createAccounting } from "../post.ts";
+import { figuresOf } from "../figures.ts";
 import type { MoneyEvent } from "../post.ts";
 import { RESTORE_DOC_GAP, formatNumber, fyOf, fyStartMs, nextNumber, parseNumber } from "../numbers.ts";
 
@@ -104,6 +105,23 @@ test("a refund owed and then cancelled (the owner's no, an approval that ran out
   const k = w.acc.journal();
   assert.equal(k.advancesOf("b-3"), 0);
   assert.equal(balances(k.lines)["revenue:kept"], -30_000);
+});
+
+test("a refund owed that the owner keeps (`kept` naming `owed`) posts with no amount in its line: the amount is the refund's open part, and a second keep is a repeat", () => {
+  // Found in the Go port (22 Nov): the reader demanded an amount post() never writes for this event, so the line was a problem and post() threw unless the
+  // template happened to add `amountPaise` to its own refs.
+  const w = world();
+  w.post({ kind: "received", case: "b-9", paymentId: "pay_9", amountPaise: 25_000, method: "gateway", evidence: "provider", for: "advance" }, "record_deposit");
+  w.post({ kind: "refund_owed", case: "b-9", owed: "upr-9", paymentId: "pay_9", amountPaise: 25_000 }, "upi_refund_owed", "held_for_owner");
+  const kept = w.post({ kind: "kept", case: "b-9", owed: "upr-9", why: "late_mark_kept" }, "upi_refund_kept");
+  assert.deepEqual(kept, { posted: true });
+  const line = w.record.entries().at(-1)!;
+  assert.equal(line.refs.amountPaise, undefined);
+  const j = w.acc.journal();
+  assert.deepEqual(j.problems, []);
+  assert.equal(j.openOwed("upr-9"), 0);
+  assert.equal(balances(j.lines)["revenue:kept"], -25_000);
+  assert.equal(w.post({ kind: "kept", case: "b-9", owed: "upr-9", why: "late_mark_kept" }, "upi_refund_kept").posted, false);
 });
 
 test("once: a payment posted twice, a refund owed twice, a refund made twice are counted once; the repeated line carries no money and no number", () => {
@@ -214,6 +232,24 @@ test("older lines (no refs.money) read through the legacy map give the same acco
   // and the same record read one entry at a time gives the same lines (the cached fold post.ts keeps)
   const k = createAccounting({ record: w.record, shop: { timezone: TZ }, legacy: LEGACY, clock: w.clock }).journal();
   assert.deepEqual(k.lines, j.lines);
+});
+
+test("figures: a refund line with no amount borrows an earlier line's amount only when that is whole paise as the journal writes it (\"1e3\" or \"12.5\" is not)", () => {
+  // Found in the Go port (22 Nov): figures.ts read the borrowed amount with a bare Number(), so "1e3" lent 1000 and "12.5" a fraction of a paisa.
+  const figures = (amount: string) => {
+    const w = world();
+    w.line("b-1", "refund", "confirmed", { paymentId: "pay_1", refundId: "rf_1", amountPaise: amount });
+    w.line("b-1", "refund", "confirmed", { paymentId: "pay_1", refundId: "rf_2" });
+    return figuresOf(w.acc.journal(), w.record.entries(), LEGACY, "2026-11-01T00:00:00.000Z", "2026-12-01T00:00:00.000Z", { refundAmountFromPayment: true });
+  };
+  const whole = figures("1000");
+  assert.equal(whole.refunds.paise, 2000); // the line's own 1000, and 1000 borrowed by the second
+  assert.equal(whole.missing.refundAmounts, 0);
+  for (const bad of ["1e3", "12.5", "0x10"]) {
+    const f = figures(bad);
+    assert.equal(f.refunds.paise, 0, bad);
+    assert.equal(f.missing.refundAmounts, 2, bad);
+  }
 });
 
 test("an unknown kind, a bad amount or an unknown account in a money line is a problem and gives no lines", () => {

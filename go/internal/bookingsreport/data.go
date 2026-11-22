@@ -611,10 +611,24 @@ func workOf(all, month []accounting.Entry, rows []UnconfirmedRow, bookings []Boo
 	cancelled := func(booking string) bool {
 		return lastSeq(booking, func(e accounting.Entry) bool { return e.Action == "cancel_booking" && e.Outcome == "confirmed" }) > 0
 	}
-	// a refund held for the owner is open until the owner has answered after it
+	// A refund held for the owner is open until the owner has answered after it, or until a later `refund` line of the same payment settled it (confirmed) or ended it
+	// for good (blocked, failed): data.ts holdEnded, since 22 Nov (only an owner_decision cleared it before, so a hold settled by a person's word stayed open every month).
 	for _, e := range all {
-		if e.Action == "refund" && e.Outcome == "held_for_owner" && e.Booking != nil && *e.Booking != "" &&
-			e.Seq > lastSeq(*e.Booking, func(x accounting.Entry) bool { return x.Action == "owner_decision" && x.Outcome == "confirmed" }) {
+		if e.Action != "refund" || e.Outcome != "held_for_owner" || e.Booking == nil || *e.Booking == "" {
+			continue
+		}
+		pay, hasPay := e.Refs["paymentId"]
+		ended := func(x accounting.Entry) bool {
+			if x.Action == "owner_decision" && x.Outcome == "confirmed" {
+				return true
+			}
+			if x.Action != "refund" || (x.Outcome != "confirmed" && x.Outcome != "blocked" && x.Outcome != "failed") {
+				return false
+			}
+			xp, xHas := x.Refs["paymentId"]
+			return !hasPay || (xHas && xp == pay)
+		}
+		if e.Seq > lastSeq(*e.Booking, ended) {
 			flag(*e.Booking, "refund-waiting-for-owner")
 		}
 	}

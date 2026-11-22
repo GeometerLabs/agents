@@ -9,6 +9,7 @@ import { LANGUAGES } from "../../language/languages.ts";
 import { createRecord } from "../../record/record.ts";
 import type { ActionRecord, Outcome } from "../../record/record.ts";
 import { bannedIn } from "../../report/claims.ts";
+import { journal } from "../journal.ts";
 import type { LegacyMap } from "../journal.ts";
 import { createAccounting } from "../post.ts";
 import type { MoneyEvent } from "../post.ts";
@@ -80,6 +81,14 @@ test("today and this month: received, given back, kept, in paise", () => {
   assert.equal(v.month.gatewayChargesPaise, 0);
   assert.equal(v.month.stillToCome, null);
   assert.deepEqual(v.byWord.map((b) => [b.case, b.paise]), [["b-6", 4_000]]);
+});
+
+test("a line whose time does not parse is in no day and no month (tally refused NaN by name since 22 Nov, as net() always did)", () => {
+  const w = build();
+  const entries = w.record.entries().map((e) => (e.booking === "b-8" ? { ...e, time: "not a time" } : e));
+  const v = ownerMoney({ journal: journal(entries, LEGACY), entries, refundsUntold: [], nowMs: NOW, timeZone: TZ });
+  assert.deepEqual(v.today.received, { paise: 0, count: 0 });
+  assert.deepEqual(v.month.received, { paise: 88_395 - 12_345, count: 6 });
 });
 
 test("a day is the shop's day: a payment at 00:30 India time is that day's, though it is the day before in UTC", () => {

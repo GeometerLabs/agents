@@ -414,8 +414,12 @@ function workOf(a: { all: readonly RecordEntry[]; month: readonly RecordEntry[];
   for (const r of rows) if (r.booking && !r.settledLater && !MESSAGE_ACTIONS.includes(r.action) && r.action !== MESSAGE_STATUS_ENTRY) flag(r.booking, "step-not-confirmed");
   const lastSeq = (booking: string, keep: (e: RecordEntry) => boolean) => all.reduce((n, e) => (e.booking === booking && keep(e) ? Math.max(n, e.seq) : n), 0);
   const cancelled = (booking: string) => lastSeq(booking, (e) => e.action === "cancel_booking" && e.outcome === "confirmed") > 0;
-  // a refund held for the owner is open until the owner has answered after it
-  for (const e of all) if (e.action === "refund" && e.outcome === "held_for_owner" && e.booking && e.seq > lastSeq(e.booking, (x) => x.action === "owner_decision" && x.outcome === "confirmed")) flag(e.booking, "refund-waiting-for-owner");
+  // A refund held for the owner is open until the owner has answered after it, or until the hold ended without an answer: a later `refund` line of the same payment
+  // that settled it (confirmed: the payments service's list, or a person's word, Guard's already_done) or ended it for good (blocked or failed: an expiry, a refusal,
+  // a failure). Before 22 Nov only an owner_decision cleared it, so a hold settled by a person's word stayed "waiting for owner" in every later month.
+  const holdEnded = (e: RecordEntry) => (x: RecordEntry) => (x.action === "owner_decision" && x.outcome === "confirmed")
+    || (x.action === "refund" && (x.outcome === "confirmed" || x.outcome === "blocked" || x.outcome === "failed") && (e.refs.paymentId === undefined || x.refs.paymentId === e.refs.paymentId));
+  for (const e of all) if (e.action === "refund" && e.outcome === "held_for_owner" && e.booking && e.seq > lastSeq(e.booking, holdEnded(e))) flag(e.booking, "refund-waiting-for-owner");
   // UPI: the customer says they paid and the owner has not marked it; a refund owed and not yet marked sent or kept
   for (const e of all) {
     if (e.action === "upi_paid_claim" && e.booking && e.seq > lastSeq(e.booking, (x) => (x.action === "owner_marked_paid" && x.outcome === "confirmed") || x.action === "upi_request_closed") && !cancelled(e.booking)) flag(e.booking, "payment-not-marked");
