@@ -758,3 +758,8 @@ Hindi lines end with "।". (d) money_in shows a paise amount as "₹1,500.5" (f
 assistant's own templates, so a closed-day template could not be sent there on either runtime; templates/commerce/bookings/standins/server.ts now approves
 `assistantCatalogue.templates` too. Go bugs found and fixed: a note saved from WhatsApp was written as from "app"; the Bookings message routes (the owner's route, the channel
 route) dropped `SendImage`, so no picture could have gone even with a maker.
+
+**Measured at the end of this stream (22 Nov, through the heat lock, once after the code; one fix round after the narrow files):** `go vet ./...` clean; `go test ./...` 30 packages
+ok. `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/`: **148 of 148** (143 + the five of
+talk.contract.test.ts). The same on TypeScript: **148 of 148**. `node --test --test-concurrency=1 templates/commerce/listings/contract/` on Go: **192 of 192** (words-fresh's two new
+checks included; the merge message of ead21fd8 says 198, which this run's count does not match: nothing failed or was skipped, and no listings test was removed here).
