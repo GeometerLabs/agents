@@ -759,3 +759,10 @@ can change a past month's figures where its record had such a line.
   id are `modules/stock` behaviour, which streams W4 and W5 are porting now: changing it here would collide (left to them). "I can tighten: ." with no declared limits needs a
   new sentence in four languages (a review of the Malayalam and Kannada), so it is not small. The restore entry's "moved on by 100,000" is one sentence for every template;
   for a listings shop it is only beside the point.
+
+**Measured once at the end (22/23 Nov, through the heat lock):** every generator's `--check` passes after regenerating the five whose output the fixes change (books,
+Bookings report, Guard clients, patterns, report). `go build ./...`, `go vet ./...`, `go test ./...` pass (30 packages). Bookings contract on TypeScript 144 of 144 (143 in the
+whole run, plus the new forged-time case after its lookup was fixed, rerun on its own file: 13 of 13) and on Go 144 of 144; listings contract 198 of 198; the unit tests of
+modules/accounting, messaging, assistant, language, the report tests in modules/test and Orders' report tests 296 of 296; Bookings' unit tests 947 of 949, with one skipped and
+one failing: `sample-report.test.ts`, whose committed sample report predates main's 21 Nov price list (`priceList` "2026-11-19" against "2026-11-21"); regenerating it needs
+`scripts/sample-report.ts` and public-web's `sample:pull`, outside this stream.
