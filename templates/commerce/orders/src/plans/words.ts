@@ -39,6 +39,9 @@ const RE = {
   mine: phraseRe([...PLAN_WORDS.mine]),
 };
 
+// exported (as PLAN_RES) only so go/scripts/gen_orders_reading.ts hands the Go runtime these exact sources
+export { RE as PLAN_RES };
+
 /** Does the message name a plan at all? The only thing that lets a customer with no plan reach the plan reading. */
 export const mentionsPlan = (text: string): boolean => RE.plan.test(canon(text));
 
