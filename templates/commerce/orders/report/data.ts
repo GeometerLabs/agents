@@ -89,7 +89,7 @@ export type NotTestedKey = NotTestedId | "own-settings" | "other-settings" | "no
 export type NotCountedId = "balance-at-pickup" | "kitchen-and-delivery" | "read-receipts" | "outside-agent" | "rule-breaks" | "outside-agent-upi";
 export const NOT_COUNTED: readonly NotCountedId[] = ["balance-at-pickup", "kitchen-and-delivery", "read-receipts", "outside-agent", "rule-breaks"];
 /** B71 part 2: a UPI shop's report names no gateway ("in Razorpay, your UPI app or WhatsApp" becomes its own line). A gateway shop's line and bytes are as they were. */
-const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "outside-agent": "outside-agent-upi" };
+export const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "outside-agent": "outside-agent-upi" };
 
 export interface Amount { count: number; paise: number }
 
