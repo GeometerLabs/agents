@@ -6,8 +6,8 @@ package assistant
 //
 //   - the key's own facts, generated from the TypeScript (gen_words.ts factsOf, the pack's `f`): the literals the words always carry ("cancel b-14", "cancel {ref}", "{who}"), filled
 //     with the same slot values as the words, and the fixed counts ("the last 24 hours");
-//   - the slot values that are numbers: {n} is a count (TypeScript's w.n) and {inr} an amount (w.inr), read back from the text this code put there; {date}, {time} and {slot} are
-//     noted as the literal text written. TypeScript notes the moment, which allows that date or time as each language writes it; the literal allows exactly the text the line
+//   - the slot values that are numbers: {n} is a count (TypeScript's w.n) and {inr} an amount (w.inr), read back from the text this code put there; {date}, {time} and {slot} (its date and its time
+//     apart) are noted as the literal text written. TypeScript notes the moment, which allows that date or time as each language writes it; the literal allows exactly the text the line
 //     carries, which is the same for these words (they state each moment once, in the owner's language). The difference: a line that wrote the same moment in another language
 //     would be held back here, where TypeScript lets it go.
 //
@@ -61,8 +61,17 @@ func (w *Writer) Say(key string, vals ...string) string {
 			if v, ok := RupeesOf(vals[i+1]); ok {
 				w.f.AmountsInr = append(w.f.AmountsInr, v)
 			}
-		case "date", "time", "slot":
+		case "date", "time":
 			w.f.Literals = append(w.f.Literals, vals[i+1])
+		case "slot":
+			// format.ts formatSlot is `${date}, ${time}` (a time has no comma): the date and the time are noted apart, as TypeScript's moment allows each on its own, so a
+			// line whose date was changed still finds its time allowed and the problem names the date alone
+			v := vals[i+1]
+			if at := strings.LastIndex(v, ", "); at > 0 {
+				w.f.Literals = append(w.f.Literals, v[:at], v[at+2:])
+			} else {
+				w.f.Literals = append(w.f.Literals, v)
+			}
 		}
 	}
 	return text

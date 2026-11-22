@@ -22,6 +22,7 @@ import { systemOneStandin } from "../../../../modules/standins/system-one.ts";
 import type { SystemOneStandin, SystemOneStandinOptions } from "../../../../modules/standins/system-one.ts";
 import { approveTemplates, whatsappStandin } from "../../../../modules/standins/whatsapp.ts";
 import { META_TEMPLATES } from "../src/language/meta-templates.ts";
+import { assistantCatalogue } from "../../../../modules/assistant/templates.ts";
 import { REPORT_TEMPLATES } from "../report/whatsapp.ts";
 
 export interface StandinsConfig {
@@ -47,8 +48,11 @@ export interface StandinsConfig {
 
 export interface RunningStandins { server: Server; port: number; url: string; fakes: Fakes; /** The System One stand-in, when one was asked for: its `requests` are what the agent asked. */ systemOne?: SystemOneStandin; close(): Promise<void> }
 
-/** The templates the provider has approved: the booking messages and the owner's monthly report. */
-const STANDIN_TEMPLATES = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES] };
+/**
+ * The templates the provider has approved: the booking messages, the owner's monthly report and (22 Nov 2026) the shop's assistant's own (modules/assistant/templates.ts: the
+ * morning line and a customer's closed or reopened day), which a shop with the assistant sends outside the 24-hour window and Meta approves the same way.
+ */
+const STANDIN_TEMPLATES = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES, ...assistantCatalogue.templates] };
 
 export async function startStandins(config: StandinsConfig, listen: { port: number; host?: string }): Promise<RunningStandins> {
   const clock = config.clock ?? systemClock;

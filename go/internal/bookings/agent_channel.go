@@ -98,7 +98,20 @@ type chanMsg struct {
 }
 
 func (a *Agent) channelMessaging(base messaging.Messaging) messaging.Messaging {
+	if _, img := base.(messaging.Images); img {
+		return chanImages{chanInteractive{&chanMsg{a, base}}}
+	}
 	return chanInteractive{&chanMsg{a, base}}
+}
+
+// chanImages keeps the base's pictures for a WhatsApp conversation (a UPI request's QR); a channel's page draws its own QR, so a picture to a channel conversation is refused.
+type chanImages struct{ chanInteractive }
+
+func (c chanImages) SendImage(ctx context.Context, to string, i messaging.ImageMessage) (messaging.OutboundMessage, error) {
+	if isChannelConversation(to) {
+		return messaging.OutboundMessage{}, &guard.ApiError{Status: 400, Message: "A booking page draws its own QR code; no picture is kept for it."}
+	}
+	return c.base.(messaging.Images).SendImage(ctx, to, i)
 }
 
 func (c *chanMsg) keep(to, kind, text string, choices []runtime.ChatChoice) messaging.OutboundMessage {

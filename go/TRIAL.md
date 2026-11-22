@@ -742,10 +742,19 @@ the end (counts below).
    (`talk_fallback.today`); a proposed note goes to WhatsApp with Remember / No (`proposeNote`, memory `Propose`/`AcceptProposal`/`DeclineProposal`, the `note-yes:p-3` tap), and a
    note written from WhatsApp is now by "whatsapp", not "app" (notes.ts `ownerAuthority(via())`; the Go code wrote "app" for every note before). Vectors:
    `bookings/testdata/talk-facts-vectors.json` (gen_talk_facts_vectors.ts: facts, public sources, prompt and schema, en and hi). Contract: `talk.contract.test.ts`.
-3. **Tests for what was checked by hand: done.** `talk.contract.test.ts`: a page-booked customer whose day is closed gets the day-closed template with TypeScript's
+3. **Tests for what was checked by hand: done.** `talk.contract.test.ts`: a WhatsApp customer whose window has closed (a 25-hour-old message) gets, when their day is closed, the day-closed template with TypeScript's
    templateMessageFor name and values; the morning line to an owner who never wrote goes as its template, once. The combined lines in hi, ml and kn are in the vectors of item 1.
 4. **The smaller gaps: done.** A chat guest is "Chat guest 3" to the owner (`runtime.GuestLabel`; owner items, upcoming, whoOf, shownPhone), and "tell chat guest 3 ..." makes the
    message card (`prepareGuestMessage`); "open my app" from the owner on WhatsApp sends the sign-in link before the agent sees it (`runtime/openmyapp.go`, OPEN_MY_APP generated);
    a limit tightened by a card's tap is in force for the rest of the same step (`AssistantHooks.InForce`); a UPI shop with a `report` block sends the QR picture before the words
    (`Kit.QRImage` = `ownermarked.FolderImages`). Contract cases for "open my app" and the QR picture are in `talk.contract.test.ts`. Not done, as the brief says: Sarvam and the
    morning line's mood picture (Deferred.md). Not covered by a test of its own: the same-step limit (no contract path taps a card and refunds in the one step).
+
+**Findings (22 Nov, stream A).** TypeScript, not changed: (a) the morning templates were made with an image header (templates.ts, item 11i), but morning.ts sends the template
+without one when the shop's pages.json has no mood pictures, which Meta refuses (132012); every Go shop has the same gap (no morning picture yet), so outside the owner's window the
+morning line fails on both runtimes until pictures are given or the template loses its header (talk.contract.test.ts says so and does not assert the send). (b) limits-card.ts:
+an "off when 0" limit made Active at 0 reads "Active: Orders above never need your approval before any payment is asked." (c) The Hindi Active line ends with "." where the other
+Hindi lines end with "।". (d) money_in shows a paise amount as "₹1,500.5" (formatInr of a fraction). Test infrastructure: the Bookings WhatsApp stand-in did not approve the
+assistant's own templates, so a closed-day template could not be sent there on either runtime; templates/commerce/bookings/standins/server.ts now approves
+`assistantCatalogue.templates` too. Go bugs found and fixed: a note saved from WhatsApp was written as from "app"; the Bookings message routes (the owner's route, the channel
+route) dropped `SendImage`, so no picture could have gone even with a maker.

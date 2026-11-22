@@ -421,9 +421,19 @@ func (a *Agent) ownerMessaging(base messaging.Messaging) messaging.Messaging {
 	o := &ownerMsg{a: a, base: base, sent: map[string]messaging.OutboundMessage{}}
 	_, inter := base.(messaging.Interactive)
 	if inter || (base == nil && a.kit.Ports.PushOwner != nil) {
+		if _, img := base.(messaging.Images); img {
+			return ownerImages{ownerInteractive{o}} // a UPI request's QR picture (agent.ts qrOf) needs the base's sendImage kept, as the TypeScript's route keeps it
+		}
 		return ownerInteractive{o}
 	}
 	return o
+}
+
+// ownerImages is the owner's route over a WhatsApp that sends pictures: a picture goes to a customer as it is (the owner is never sent one).
+type ownerImages struct{ ownerInteractive }
+
+func (o ownerImages) SendImage(ctx context.Context, to string, i messaging.ImageMessage) (messaging.OutboundMessage, error) {
+	return o.base.(messaging.Images).SendImage(ctx, to, i)
 }
 
 func noWhatsApp() error {
