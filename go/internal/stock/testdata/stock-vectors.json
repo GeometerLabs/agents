@@ -1,0 +1,5012 @@
+{
+ "scenarios": [
+  {
+   "name": "the owner's acts: start (and its refusals), correct (a retry, a stale count), sold, the low mark, stop",
+   "steps": [
+    {
+     "step": {
+      "do": "start",
+      "id": "bad id",
+      "input": {
+       "count": 1
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": false,
+      "why": "bad_id"
+     },
+     "state": {
+      "lines": [],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:rice",
+      "input": {
+       "count": 1.5
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": false,
+      "why": "bad_count"
+     },
+     "state": {
+      "lines": [],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:rice",
+      "input": {
+       "count": 2,
+       "low": -1
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": false,
+      "why": "bad_low"
+     },
+     "state": {
+      "lines": [],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:rice",
+      "input": {
+       "count": 2,
+       "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": false,
+      "why": "bad_text"
+     },
+     "state": {
+      "lines": [],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:rice",
+      "input": {
+       "count": 10,
+       "name": "  Rice   25 kg ",
+       "unit": "bag",
+       "low": 3,
+       "aliases": [
+        "listing:l-1"
+       ]
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 10,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "start",
+      "id": "listing:l-1",
+      "input": {
+       "count": 1
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": false,
+      "why": "exists"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 10,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:dal",
+      "input": {
+       "count": 2,
+       "low": 2
+      },
+      "nowMs": 86400000001
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 10,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "correct",
+      "id": "supply:rice",
+      "to": 8,
+      "reqId": "r1",
+      "shown": 10,
+      "nowMs": 86400000002
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 8,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "correct",
+      "id": "supply:rice",
+      "to": 99,
+      "reqId": "r1",
+      "nowMs": 86400000003
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 8,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "correct",
+      "id": "supply:rice",
+      "to": 7,
+      "reqId": "r2",
+      "shown": 10,
+      "nowMs": 86400000004
+     },
+     "result": {
+      "ok": false,
+      "why": "stale"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 8,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sold",
+      "id": "listing:l-1",
+      "qty": 5,
+      "reqId": "r3",
+      "nowMs": 86400000005
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 3,
+        "low": 3,
+        "lowFlag": true,
+        "crossings": 1,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         },
+         "req:r3": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -5,
+          "after": 3,
+          "atMs": 86400000005,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       },
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sold",
+      "id": "listing:l-1",
+      "qty": 5,
+      "reqId": "r3",
+      "nowMs": 86400000006
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 3,
+        "low": 3,
+        "lowFlag": true,
+        "crossings": 1,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         },
+         "req:r3": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -5,
+          "after": 3,
+          "atMs": 86400000005,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       },
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sold",
+      "id": "supply:rice",
+      "qty": 0,
+      "reqId": "r4",
+      "nowMs": 86400000007
+     },
+     "result": {
+      "ok": false,
+      "why": "bad_count"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 3,
+        "low": 3,
+        "lowFlag": true,
+        "crossings": 1,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         },
+         "req:r3": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -5,
+          "after": 3,
+          "atMs": 86400000005,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       },
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "pending"
+     },
+     "result": {
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       },
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 3,
+        "low": 3,
+        "lowFlag": true,
+        "crossings": 1,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         },
+         "req:r3": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -5,
+          "after": 3,
+          "atMs": 86400000005,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:dal",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       },
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "low",
+      "id": "supply:dal",
+      "low": null,
+      "nowMs": 86400000008
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 3,
+        "low": 3,
+        "lowFlag": true,
+        "crossings": 1,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         },
+         "req:r3": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -5,
+          "after": 3,
+          "atMs": 86400000005,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "low",
+      "id": "supply:rice",
+      "low": 1.5,
+      "nowMs": 86400000009
+     },
+     "result": {
+      "ok": false,
+      "why": "bad_low"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 3,
+        "low": 3,
+        "lowFlag": true,
+        "crossings": 1,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         },
+         "req:r3": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -5,
+          "after": 3,
+          "atMs": 86400000005,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "low",
+      "id": "supply:nothing",
+      "low": 1,
+      "nowMs": 86400000009
+     },
+     "result": {
+      "ok": false,
+      "why": "no_such_line"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:rice",
+        "name": "Rice 25 kg",
+        "unit": "bag",
+        "count": 3,
+        "low": 3,
+        "lowFlag": true,
+        "crossings": 1,
+        "aliases": [
+         "listing:l-1"
+        ],
+        "applied": {
+         "req:r1": {
+          "qty": 8,
+          "took": 0,
+          "atMs": 86400000002
+         },
+         "req:r3": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "corrected",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -5,
+          "after": 3,
+          "atMs": 86400000005,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:rice",
+        "crossing": 1,
+        "count": 3,
+        "atMs": 86400000005
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "stop",
+      "id": "listing:l-1"
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "stop",
+      "id": "supply:rice"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_such_line"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "count",
+      "id": "supply:rice"
+     },
+     "result": {
+      "count": null
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:dal",
+        "count": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000001
+       }
+      ],
+      "alerts": []
+     }
+    }
+   ]
+  },
+  {
+   "name": "a sale is a target: the same again takes nothing, a larger one the difference, a shortfall is noted, a cancel gives back only what was taken",
+   "steps": [
+    {
+     "step": {
+      "do": "start",
+      "id": "menu:thali",
+      "input": {
+       "count": 5,
+       "low": 1
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 5,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:uncounted",
+      "key": "sale:o-1:menu:uncounted",
+      "qty": 3,
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true,
+      "counted": false
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 5,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-1:menu:thali",
+      "qty": 2,
+      "nowMs": 86400000001
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 3,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-1:menu:thali",
+      "qty": 2,
+      "nowMs": 86400000002
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 3,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-1:menu:thali",
+      "qty": 3,
+      "nowMs": 86400000003
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 2,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-2:menu:thali",
+      "qty": 4,
+      "nowMs": 86400000004
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 0,
+        "low": 1,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000003
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 4,
+          "took": 2,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "pending",
+      "kind": "menu"
+     },
+     "result": {
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 0,
+        "low": 1,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000003
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 4,
+          "took": 2,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-2:menu:thali",
+      "qty": 0,
+      "nowMs": 86400000005
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 2,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000003
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000005,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-2:menu:thali",
+      "qty": 0,
+      "nowMs": 86400000006
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 2,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000003
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000005,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-1:menu:thali",
+      "qty": 1,
+      "nowMs": 86400000007
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 4,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000007
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000005,
+          "by": "shop"
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 4,
+          "atMs": 86400000007,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sale",
+      "id": "menu:thali",
+      "key": "sale:o-3:menu:thali",
+      "qty": 2.5,
+      "nowMs": 86400000008
+     },
+     "result": {
+      "ok": false,
+      "why": "bad_count"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 4,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000007
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000005,
+          "by": "shop"
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 4,
+          "atMs": 86400000007,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "left",
+      "id": "menu:thali",
+      "held": 1
+     },
+     "result": {
+      "left": 3
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 4,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000007
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000005,
+          "by": "shop"
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 4,
+          "atMs": 86400000007,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "left",
+      "id": "menu:thali",
+      "held": 99
+     },
+     "result": {
+      "left": 0
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 4,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000007
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000005,
+          "by": "shop"
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 4,
+          "atMs": 86400000007,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "left",
+      "id": "menu:none",
+      "held": 0
+     },
+     "result": {
+      "left": null
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:thali",
+        "count": 4,
+        "low": 1,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-1:menu:thali": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000007
+         },
+         "sale:o-2:menu:thali": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000005
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 3,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 2,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 0,
+          "atMs": 86400000004,
+          "by": "shop",
+          "short": 2
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 2,
+          "atMs": 86400000005,
+          "by": "shop"
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 4,
+          "atMs": 86400000007,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:thali",
+        "crossing": 1,
+        "count": 0,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "a delivery is the total received so far: a part, then the rest, the same mark again, a unit that is not the count's, a line taking its first delivery's unit",
+   "steps": [
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:hair-colour",
+      "input": {
+       "count": 5,
+       "unit": "box",
+       "low": 4
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 5,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:oil",
+      "input": {
+       "count": 1
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 5,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:hair-colour",
+      "key": "delivery:po-1",
+      "cumulative": 4,
+      "unit": "box",
+      "nowMs": 86400000001
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 9,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 4,
+          "took": 4,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:hair-colour",
+      "key": "delivery:po-1",
+      "cumulative": 4,
+      "unit": "box",
+      "nowMs": 86400000002
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 9,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 4,
+          "took": 4,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:hair-colour",
+      "key": "delivery:po-1",
+      "cumulative": 10,
+      "unit": "box",
+      "nowMs": 86400000003
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 15,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 6,
+          "after": 15,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:hair-colour",
+      "key": "delivery:po-1",
+      "cumulative": 6,
+      "unit": "box",
+      "nowMs": 86400000004
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 15,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 6,
+          "after": 15,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:hair-colour",
+      "key": "delivery:po-2",
+      "cumulative": 3,
+      "unit": "piece",
+      "nowMs": 86400000005
+     },
+     "result": {
+      "ok": false,
+      "why": "unit"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 15,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 6,
+          "after": 15,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 1,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:oil",
+      "key": "delivery:po-3",
+      "cumulative": 2,
+      "unit": "bottle",
+      "nowMs": 86400000006
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 15,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 6,
+          "after": 15,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-3": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000006
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 3,
+          "atMs": 86400000006,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000,
+        "unit": "bottle"
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:oil",
+      "key": "delivery:po-4",
+      "cumulative": 2,
+      "unit": "can",
+      "nowMs": 86400000007
+     },
+     "result": {
+      "ok": false,
+      "why": "unit"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 15,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 6,
+          "after": 15,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-3": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000006
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 3,
+          "atMs": 86400000006,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000,
+        "unit": "bottle"
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:none",
+      "key": "delivery:po-5",
+      "cumulative": 2,
+      "nowMs": 86400000008
+     },
+     "result": {
+      "ok": true,
+      "counted": false
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:hair-colour",
+        "unit": "box",
+        "count": 15,
+        "low": 4,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 9,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 6,
+          "after": 15,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       },
+       {
+        "id": "supply:oil",
+        "count": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-3": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000006
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 1,
+          "after": 1,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 3,
+          "atMs": 86400000006,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000,
+        "unit": "bottle"
+       }
+      ],
+      "alerts": []
+     }
+    }
+   ]
+  },
+  {
+   "name": "reconcileDeliveries: goods before counting began move nothing, a later mark adds the difference, a refused unit is reported once per quantity",
+   "steps": [
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:shampoo",
+      "input": {
+       "count": 12,
+       "unit": "bottle",
+       "low": 3
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:shampoo",
+        "unit": "bottle",
+        "count": 12,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 12,
+          "after": 12,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileDeliveries",
+      "facts": [
+       {
+        "key": "delivery:po-1",
+        "id": "supply:shampoo",
+        "cumulative": 6,
+        "unit": "bottle",
+        "atMs": 86399999995
+       },
+       {
+        "key": "delivery:po-2",
+        "id": "supply:shampoo",
+        "cumulative": 2,
+        "unit": "bottle",
+        "atMs": 86400000000
+       }
+      ],
+      "nowMs": 86400000001
+     },
+     "result": {
+      "refused": []
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:shampoo",
+        "unit": "bottle",
+        "count": 14,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 6,
+          "took": 6,
+          "atMs": 86400000001
+         },
+         "delivery:po-2": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 12,
+          "after": 12,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 14,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileDeliveries",
+      "facts": [
+       {
+        "key": "delivery:po-1",
+        "id": "supply:shampoo",
+        "cumulative": 10,
+        "unit": "bottle",
+        "atMs": 86400000002
+       },
+       {
+        "key": "delivery:po-2",
+        "id": "supply:shampoo",
+        "cumulative": 2,
+        "unit": "bottle",
+        "atMs": 86400000000
+       }
+      ],
+      "nowMs": 86400000003
+     },
+     "result": {
+      "refused": []
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:shampoo",
+        "unit": "bottle",
+        "count": 18,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         },
+         "delivery:po-2": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 12,
+          "after": 12,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 14,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 18,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileDeliveries",
+      "facts": [
+       {
+        "key": "delivery:po-3",
+        "id": "supply:shampoo",
+        "cumulative": 4,
+        "unit": "box",
+        "atMs": 86400000004
+       }
+      ],
+      "nowMs": 86400000004
+     },
+     "result": {
+      "refused": [
+       "delivery:po-3"
+      ]
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:shampoo",
+        "unit": "bottle",
+        "count": 18,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         },
+         "delivery:po-2": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         },
+         "refused:delivery:po-3": {
+          "qty": 4,
+          "took": 0,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 12,
+          "after": 12,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 14,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 18,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileDeliveries",
+      "facts": [
+       {
+        "key": "delivery:po-3",
+        "id": "supply:shampoo",
+        "cumulative": 4,
+        "unit": "box",
+        "atMs": 86400000004
+       }
+      ],
+      "nowMs": 86400000005
+     },
+     "result": {
+      "refused": []
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:shampoo",
+        "unit": "bottle",
+        "count": 18,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         },
+         "delivery:po-2": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         },
+         "refused:delivery:po-3": {
+          "qty": 4,
+          "took": 0,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 12,
+          "after": 12,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 14,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 18,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileDeliveries",
+      "facts": [
+       {
+        "key": "delivery:po-3",
+        "id": "supply:shampoo",
+        "cumulative": 5,
+        "unit": "box",
+        "atMs": 86400000006
+       },
+       {
+        "key": "delivery:po-9",
+        "id": "supply:other",
+        "cumulative": 5
+       }
+      ],
+      "nowMs": 86400000006
+     },
+     "result": {
+      "refused": [
+       "delivery:po-3"
+      ]
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:shampoo",
+        "unit": "bottle",
+        "count": 18,
+        "low": 3,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 10,
+          "took": 10,
+          "atMs": 86400000003
+         },
+         "delivery:po-2": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         },
+         "refused:delivery:po-3": {
+          "qty": 5,
+          "took": 0,
+          "atMs": 86400000006
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 12,
+          "after": 12,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 2,
+          "after": 14,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "received",
+          "delta": 4,
+          "after": 18,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    }
+   ]
+  },
+  {
+   "name": "reconcileSales and the holds not yet booked: standing orders are booked, cancelled given back, history never moves the count",
+   "steps": [
+    {
+     "step": {
+      "do": "start",
+      "id": "menu:rice",
+      "input": {
+       "count": 10,
+       "low": 2
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 10,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "unbooked",
+      "id": "menu:rice",
+      "facts": [
+       {
+        "key": "sale:o-1:menu:rice",
+        "id": "menu:rice",
+        "qty": 3,
+        "standing": false,
+        "cancelled": false,
+        "holding": true
+       },
+       {
+        "key": "sale:o-2:menu:rice",
+        "id": "menu:rice",
+        "qty": 2,
+        "standing": true,
+        "cancelled": false,
+        "holding": false
+       },
+       {
+        "key": "sale:o-0:menu:rice",
+        "id": "menu:rice",
+        "qty": 5,
+        "standing": true,
+        "cancelled": false,
+        "holding": false,
+        "endedMs": 86399999999
+       }
+      ]
+     },
+     "result": {
+      "held": 5
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 10,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "unbooked",
+      "id": "menu:rice",
+      "exceptKey": "sale:o-1:menu:rice",
+      "facts": [
+       {
+        "key": "sale:o-1:menu:rice",
+        "id": "menu:rice",
+        "qty": 3,
+        "standing": false,
+        "cancelled": false,
+        "holding": true
+       }
+      ]
+     },
+     "result": {
+      "held": 0
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 10,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileSales",
+      "facts": [
+       {
+        "key": "sale:o-1:menu:rice",
+        "id": "menu:rice",
+        "qty": 3,
+        "standing": false,
+        "cancelled": false,
+        "holding": true
+       },
+       {
+        "key": "sale:o-2:menu:rice",
+        "id": "menu:rice",
+        "qty": 2,
+        "standing": true,
+        "cancelled": false,
+        "holding": false
+       },
+       {
+        "key": "sale:o-0:menu:rice",
+        "id": "menu:rice",
+        "qty": 5,
+        "standing": true,
+        "cancelled": false,
+        "holding": false,
+        "endedMs": 86400000000
+       },
+       {
+        "key": "sale:o-4:menu:other",
+        "id": "menu:other",
+        "qty": 1,
+        "standing": true,
+        "cancelled": false,
+        "holding": false
+       }
+      ],
+      "nowMs": 86400000001
+     },
+     "result": {
+      "changed": 1
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 8,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "sale:o-2:menu:rice": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileSales",
+      "facts": [
+       {
+        "key": "sale:o-2:menu:rice",
+        "id": "menu:rice",
+        "qty": 2,
+        "standing": true,
+        "cancelled": false,
+        "holding": false
+       }
+      ],
+      "nowMs": 86400000002
+     },
+     "result": {
+      "changed": 0
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 8,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "sale:o-2:menu:rice": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "unbooked",
+      "id": "menu:rice",
+      "facts": [
+       {
+        "key": "sale:o-2:menu:rice",
+        "id": "menu:rice",
+        "qty": 4,
+        "standing": true,
+        "cancelled": false,
+        "holding": false
+       }
+      ]
+     },
+     "result": {
+      "held": 2
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 8,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {
+         "sale:o-2:menu:rice": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000001,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileSales",
+      "facts": [
+       {
+        "key": "sale:o-3:menu:rice",
+        "id": "menu:rice",
+        "qty": 7,
+        "standing": true,
+        "cancelled": false,
+        "holding": false
+       }
+      ],
+      "nowMs": 86400000003
+     },
+     "result": {
+      "changed": 1
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "sale:o-2:menu:rice": {
+          "qty": 2,
+          "took": 2,
+          "atMs": 86400000001
+         },
+         "sale:o-3:menu:rice": {
+          "qty": 7,
+          "took": 7,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -7,
+          "after": 1,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:rice",
+        "crossing": 1,
+        "count": 1,
+        "atMs": 86400000003
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "reconcileSales",
+      "facts": [
+       {
+        "key": "sale:o-2:menu:rice",
+        "id": "menu:rice",
+        "qty": 2,
+        "standing": false,
+        "cancelled": true,
+        "holding": false,
+        "endedMs": 86399999991
+       }
+      ],
+      "nowMs": 86400000004
+     },
+     "result": {
+      "changed": 1
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 3,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-2:menu:rice": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000004
+         },
+         "sale:o-3:menu:rice": {
+          "qty": 7,
+          "took": 7,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -7,
+          "after": 1,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 3,
+          "atMs": 86400000004,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:rice",
+        "crossing": 1,
+        "count": 1,
+        "atMs": 86400000003
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "pending"
+     },
+     "result": {
+      "alerts": [
+       {
+        "line": "menu:rice",
+        "crossing": 1,
+        "count": 1,
+        "atMs": 86400000003
+       }
+      ]
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "menu:rice",
+        "count": 3,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "sale:o-2:menu:rice": {
+          "qty": 0,
+          "took": 0,
+          "atMs": 86400000004
+         },
+         "sale:o-3:menu:rice": {
+          "qty": 7,
+          "took": 7,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 10,
+          "after": 10,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -2,
+          "after": 8,
+          "atMs": 86400000001,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -7,
+          "after": 1,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "returned",
+          "delta": 2,
+          "after": 3,
+          "atMs": 86400000004,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "menu:rice",
+        "crossing": 1,
+        "count": 1,
+        "atMs": 86400000003
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "the low mark once per crossing: an alert per crossing, asked counted, acked once, cleared above the mark, the request id; tidy forgets old keys and alerts",
+   "steps": [
+    {
+     "step": {
+      "do": "start",
+      "id": "supply:towel",
+      "input": {
+       "count": 5,
+       "low": 2
+      },
+      "nowMs": 86400000000
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 5,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 0,
+        "applied": {},
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "sold",
+      "id": "supply:towel",
+      "qty": 3,
+      "reqId": "a",
+      "nowMs": 86400000001
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "sold",
+      "id": "supply:towel",
+      "qty": 1,
+      "reqId": "b",
+      "nowMs": 86400000002
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "pending",
+      "kind": "supply"
+     },
+     "result": {
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001,
+        "asked": 2
+       }
+      ]
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "pending",
+      "kind": "listing"
+     },
+     "result": {
+      "alerts": []
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "asked",
+      "line": "supply:towel",
+      "crossing": 1
+     },
+     "result": {
+      "asked": 1
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001,
+        "asked": 1
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "asked",
+      "line": "supply:towel",
+      "crossing": 1
+     },
+     "result": {
+      "asked": 2
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001,
+        "asked": 2
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "asked",
+      "line": "supply:towel",
+      "crossing": 9
+     },
+     "result": {
+      "asked": 0
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001,
+        "asked": 2
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "requestId",
+      "line": "supply:towel",
+      "crossing": 1
+     },
+     "result": {
+      "id": "low:supply:towel#1"
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 1,
+        "count": 2,
+        "atMs": 86400000001,
+        "asked": 2
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "ack",
+      "line": "supply:towel",
+      "crossing": 1
+     },
+     "result": {
+      "acked": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "ack",
+      "line": "supply:towel",
+      "crossing": 1
+     },
+     "result": {
+      "acked": false
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 1,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "received",
+      "id": "supply:towel",
+      "key": "delivery:po-1",
+      "cumulative": 5,
+      "nowMs": 86400000003
+     },
+     "result": {
+      "ok": true,
+      "counted": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 6,
+        "low": 2,
+        "lowFlag": false,
+        "crossings": 1,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         },
+         "delivery:po-1": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000003
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 5,
+          "after": 6,
+          "atMs": 86400000003,
+          "by": "shop"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "sold",
+      "id": "supply:towel",
+      "qty": 4,
+      "reqId": "c",
+      "nowMs": 86400000004
+     },
+     "result": {
+      "ok": true
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 2,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         },
+         "delivery:po-1": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000003
+         },
+         "req:c": {
+          "qty": 4,
+          "took": 4,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 5,
+          "after": 6,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -4,
+          "after": 2,
+          "atMs": 86400000004,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 2,
+        "count": 2,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "pending"
+     },
+     "result": {
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 2,
+        "count": 2,
+        "atMs": 86400000004
+       }
+      ]
+     },
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 2,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         },
+         "delivery:po-1": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000003
+         },
+         "req:c": {
+          "qty": 4,
+          "took": 4,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 5,
+          "after": 6,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -4,
+          "after": 2,
+          "atMs": 86400000004,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": [
+       {
+        "line": "supply:towel",
+        "crossing": 2,
+        "count": 2,
+        "atMs": 86400000004
+       }
+      ]
+     }
+    },
+    {
+     "step": {
+      "do": "tidy",
+      "nowMs": 88992000004
+     },
+     "result": {},
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 2,
+        "applied": {
+         "req:a": {
+          "qty": 3,
+          "took": 3,
+          "atMs": 86400000001
+         },
+         "req:b": {
+          "qty": 1,
+          "took": 1,
+          "atMs": 86400000002
+         },
+         "delivery:po-1": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000003
+         },
+         "req:c": {
+          "qty": 4,
+          "took": 4,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 5,
+          "after": 6,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -4,
+          "after": 2,
+          "atMs": 86400000004,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    },
+    {
+     "step": {
+      "do": "tidy",
+      "nowMs": 96768000003
+     },
+     "result": {},
+     "state": {
+      "lines": [
+       {
+        "id": "supply:towel",
+        "count": 2,
+        "low": 2,
+        "lowFlag": true,
+        "crossings": 2,
+        "applied": {
+         "delivery:po-1": {
+          "qty": 5,
+          "took": 5,
+          "atMs": 86400000003
+         },
+         "req:c": {
+          "qty": 4,
+          "took": 4,
+          "atMs": 86400000004
+         }
+        },
+        "moves": [
+         {
+          "kind": "started",
+          "delta": 5,
+          "after": 5,
+          "atMs": 86400000000,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -3,
+          "after": 2,
+          "atMs": 86400000001,
+          "by": "owner"
+         },
+         {
+          "kind": "sold",
+          "delta": -1,
+          "after": 1,
+          "atMs": 86400000002,
+          "by": "owner"
+         },
+         {
+          "kind": "received",
+          "delta": 5,
+          "after": 6,
+          "atMs": 86400000003,
+          "by": "shop"
+         },
+         {
+          "kind": "sold",
+          "delta": -4,
+          "after": 2,
+          "atMs": 86400000004,
+          "by": "owner"
+         }
+        ],
+        "startedMs": 86400000000
+       }
+      ],
+      "alerts": []
+     }
+    }
+   ]
+  }
+ ]
+}
