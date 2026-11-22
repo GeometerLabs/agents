@@ -7,8 +7,8 @@ package bookings
 // mark nothing. A refund is never sent by the agent: the owner owes it, is reminded, and the customer hears "sent" only after the owner marks it so.
 //
 // Where Go differs: the amounts the words show (markedInr, leftInr, refundInr) are whole rupees (paise / 100, cut toward zero), where the TypeScript passes paise / 100 as a
-// JavaScript number; they differ only for a mark the owner typed with paise ("received K7M2QX 150.50"), whose words then show ₹150 here. The QR picture (agent.ts qrOf) is not
-// made yet (Deferred.md): the words carry the link, the UPI ID and the amount, which is the TypeScript's own answer when it has no picture maker.
+// JavaScript number; they differ only for a mark the owner typed with paise ("received K7M2QX 150.50"), whose words then show ₹150 here. The QR picture (agent.ts qrOf) goes
+// before the words when the shop has a picture maker (Kit.QRImage: a UPI shop with a `report` block); without one the words carry the link, the UPI ID and the amount.
 
 import (
 	"crypto/rand"
@@ -126,7 +126,9 @@ func (a *Agent) sendMarkedRequest(b *Booking, prefix []string, shown []Decision)
 		templates = append(templates, "upi_page_link")
 		o.pageLink = page.url
 	}
-	// a booking page draws its own QR; the picture for WhatsApp is not made yet (Deferred.md)
+	if b.Channel == "" {
+		o.image = a.qrOf(r) // a booking page draws its own QR
+	}
 	if sent := a.tellCustomer(b, b.Customer, templates, o); sent && page != nil {
 		a.keepPageLink(b, page.hash)
 	}
@@ -150,9 +152,23 @@ func (a *Agent) tellAlreadyWaiting(w *Booking) {
 		templates = append(templates, "upi_page_link")
 		o.pageLink = page.url
 	}
+	if w.Channel == "" {
+		o.image = a.qrOf(r)
+	}
 	if sent := a.tellCustomer(w, w.Customer, templates, o); sent && page != nil {
 		a.keepPageLink(w, page.hash)
 	}
+}
+
+// qrOf is agent.ts qrOf: the QR picture of the request's link, made once and kept on the request (best effort: without it the words carry the link, the UPI ID and the amount).
+func (a *Agent) qrOf(r *ownermarked.MarkedRequest) *messaging.SayImage {
+	if r.ImageLink == "" && a.kit.QRImage != nil {
+		r.ImageLink = a.kit.QRImage(r.Link)
+	}
+	if r.ImageLink == "" {
+		return nil
+	}
+	return &messaging.SayImage{Link: r.ImageLink, Caption: []string{"upi_qr_caption"}}
 }
 
 // reconcileMarks is agent.ts reconcileMarks: the owner's marks on this booking's request not counted yet. The deposit counts once the marks add up to all of it; less, and the

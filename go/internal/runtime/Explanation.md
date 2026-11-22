@@ -58,3 +58,18 @@ listings. On WhatsApp the assistant speaks through the shared `messaging.Say` wi
 closed or reopened day as the approved template); on the page while the owner acts from there (`onPage`). The words are packed (`gen_words.ts`) and filled with the shop's
 saved values. The morning line (`morning.go`) is the same job for every shop; the listings shop sends it as a push, a template's shop as text in the owner's window, else the
 template. Voice (`voice.go`, internal/voice) is the listener every template shares and the owner's page recordings held in memory.
+
+## The outgoing check over the assistant's own lines (22 Nov 2026, `go-w2-gaps-22nov`)
+
+Every line the assistant says goes through `language.CheckText` with the facts its writer noted, as conversation.ts runs check.ts over the Writer's facts: on the page (`tellText`:
+a line that fails is not shown, and the record has `send_message` blocked with "the answer failed the outgoing check and was not shown: ..."), on WhatsApp through the shared say
+(`assistantVoice.Matches`: allowed "every value in the message is on the record", or blocked with the problems alone), a customer's closed-day template (`dayTemplate`), a message
+card's words (`owner_words`), the talk's reply (its checks' facts, words-memory.ts talkReply) and the morning line (morning.ts: blocked with "The morning line did not match its
+record, so it was not sent: ..."). The facts come from `assistant.Writer` (internal/assistant/writer.go): each packed key's own facts, generated from the TypeScript
+(gen_words.ts `factsOf`: the literals the words always carry, such as the help's examples and "cancel {ref}", and fixed counts such as "the last 24 hours", proved there with the
+real checkText), the `{n}` and `{inr}` slots read back as a count and an amount, and what a caller puts together itself (a limit's value, the names in a list, the customers not
+reached) noted with `Lit`, `INR` and `N`. A date or a time in a slot is noted as the literal text written (TypeScript notes the moment, which also allows it in another language;
+these lines never state it in another one). Proved on `testdata/assistant-lines.json` (gen_assistant_vectors.ts): 23 lines in each of the four languages, the words equal to the
+TypeScript's and the problems of four tampered forms of each equal word for word (`assistantlines_test.go`), and every packed key in every language passes with its own facts
+(`assistant/writer_test.go`). As in TypeScript, a held-back line sends nothing in its place (say.ts's `heldBack` is a no-op for the assistant); the fixed line ("I could not answer
+that just now", `talk_fallback`) is the talk's answer to a reply that fails the talk's own five checks.

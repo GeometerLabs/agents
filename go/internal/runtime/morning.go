@@ -240,6 +240,7 @@ func (c *StepContext) Morning(m MorningContext) error {
 // morningPlan is what today's line says: the words, the record's refs, and the approved template with its values in Meta's order.
 type morningPlan struct {
 	text     string
+	facts    language.Facts // what its writer noted, for the outgoing check (templates.ts morningFacts.check)
 	refs     map[string]string
 	template string
 	params   []string
@@ -315,7 +316,12 @@ func (r *Runtime) runMorning(m morningRun) error {
 		return nil
 	}
 	plan.refs["morning"] = key
-	// 1. claim the day, saved before anything goes out (the words are the shop's own saved values in the packed template, so morning.ts's outgoing check has nothing to catch)
+	// the words against their own values (morning.ts: checkText over morningFacts.check); a line that fails is recorded as blocked, and today has no other try
+	if problems := language.CheckText(plan.text, plan.facts); len(problems) > 0 {
+		r.morningDone = key
+		return m.commit("blocked", inputs, plan.refs, "The morning line did not match its record, so it was not sent: "+strings.Join(problems, " "))
+	}
+	// 1. claim the day, saved before anything goes out
 	if err := m.commit("attempted", inputs, plan.refs, ""); err != nil {
 		return err
 	}
@@ -354,6 +360,7 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 		return morningPlan{}, true
 	}
 	pack := assistant.Words(lang)
+	w := pack.Writer() // templates.ts morningFacts: every value through the Writer
 	var parts []string
 	something := false
 	if ds, ok := skill.(DaySkill); ok {
@@ -364,10 +371,10 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 				first = min(first, x.StartMs)
 			}
 			ft := time.UnixMilli(first).In(r.loc)
-			parts = append(parts, pack.Say("morning.bookings", "n", strconv.Itoa(len(rows)), "time", pack.TimeOfDay(ft.Hour(), ft.Minute())))
+			parts = append(parts, w.Say("morning.bookings", "n", strconv.Itoa(len(rows)), "time", pack.TimeOfDay(ft.Hour(), ft.Minute())))
 			something = true
 		} else {
-			parts = append(parts, pack.Say("morning.no_bookings"))
+			parts = append(parts, w.Say("morning.no_bookings"))
 		}
 	}
 	low := 0
@@ -379,7 +386,7 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 		}
 	}
 	if low > 0 {
-		parts = append(parts, pack.Say("morning.low", "n", strconv.Itoa(low)))
+		parts = append(parts, w.Say("morning.low", "n", strconv.Itoa(low)))
 		something = true
 	}
 	waiting := 0
@@ -413,20 +420,20 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 		vals["today"] = strings.Join(parts, ", ")
 	}
 	if money > 0 {
-		vals["money"] = assistant.INR(money)
+		vals["money"] = w.INR(money)
 	}
 	if waiting > 0 {
-		vals["waiting"] = strconv.Itoa(waiting)
+		vals["waiting"] = w.N(int64(waiting))
 	}
 	p := set.Assistant.Personality
-	text := pack.Say("morning."+p, "shop", vals["shop"], "date", vals["date"], "today", vals["today"], "money", vals["money"], "waiting", vals["waiting"])
+	text := w.Say("morning."+p, "shop", vals["shop"], "date", vals["date"], "today", vals["today"], "money", vals["money"], "waiting", vals["waiting"])
 	var params []string
 	for _, k := range strings.Split(pack.Say("morning."+p+".order"), ",") {
 		params = append(params, vals[k])
 	}
 	mood, face := shopMood(snap, skill, now, r.loc)
 	name := pack.Say("morning." + p + ".name")
-	return morningPlan{text: text, template: name, params: params, refs: map[string]string{"to": "owner", "templates": name, "mood": mood, "face": face}}, false
+	return morningPlan{text: text, facts: w.Facts(), template: name, params: params, refs: map[string]string{"to": "owner", "templates": name, "mood": mood, "face": face}}, false
 }
 
 type morningEntry struct{ outcome, time string }

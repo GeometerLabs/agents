@@ -18,6 +18,8 @@ import * as booksVectors from "../../../../go/scripts/gen_books_vectors.ts";
 import * as bookingsReportWords from "../../../../go/scripts/gen_bookings_report_words.ts";
 import * as bookingsReportVectors from "../../../../go/scripts/gen_bookings_report_vectors.ts";
 import * as voiceVectors from "../../../../go/scripts/gen_voice_vectors.ts";
+import * as assistantVectors from "../../../../go/scripts/gen_assistant_vectors.ts";
+import * as talkFactsVectors from "../../../../go/scripts/gen_talk_facts_vectors.ts";
 
 test("words-fresh: the committed packed words equal a fresh render of the TypeScript words", () => {
   assert.deepEqual([...generate().keys()].sort(), ["en.json", "hi.json", "kn.json", "ml.json", "rules.json"]);
@@ -150,6 +152,13 @@ test("words-fresh: the voice vectors the Go voice module is proved on (go/intern
   assert.equal(voiceVectors.stale(), false, "the voice vectors are out of date: run  node go/scripts/gen_voice_vectors.ts  and commit the result");
 });
 
+test("words-fresh: the assistant's lines and their outgoing check (go/internal/runtime/testdata/assistant-lines.json) equal a fresh render of the TypeScript words and check", () => {
+  assert.equal(assistantVectors.stale(), false, "the assistant line vectors are out of date: run  node go/scripts/gen_assistant_vectors.ts  and commit the result");
+});
+
+test("words-fresh: what the owner's talk on a Bookings shop is given (go/internal/bookings/testdata/talk-facts-vectors.json) equals a fresh render of the TypeScript skill and prompt", () => {
+  assert.equal(talkFactsVectors.stale(), false, "the talk facts vectors are out of date: run  node go/scripts/gen_talk_facts_vectors.ts  and commit the result");
+});
 
 // wave 3 (Fees): the Fees and Classes words the Go Fees runtime says (go/internal/fees/words/*.json.gz), made by go/scripts/gen_fees_words.ts from templates/education/fees
 test("the Go Fees words were made from the TypeScript words as they are now", async () => {

@@ -25,6 +25,11 @@ func (listingsSkill) Owns(ref string) bool   { return listingCase.MatchString(re
 func (listingsSkill) Waiting() []WaitingItem { return nil }
 func (listingsSkill) Problems() int          { return 0 }
 
+// PublicContext is listing-card.ts publicContext: each public listing as a setting the talk may rest on (talk.go listingSources).
+func (k listingsSkill) PublicContext(string, int64) []assistant.TalkSource {
+	return k.c.listingSources()
+}
+
 // listingFields is listing-card.ts `listingFields`: flat, everything the owner is shown and everything a tap publishes.
 func listingFields(l *listings.Listing) assistant.Raw {
 	ids := make([]string, len(l.Photos))

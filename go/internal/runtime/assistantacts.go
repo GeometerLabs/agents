@@ -97,15 +97,21 @@ func (c *conv) closeDay(d LocalDate) {
 	c.a.Undo = append(c.a.Undo, assistant.Undo{ID: undo, Kind: "close_day", Skill: name, Date: d.Iso(), Asked: told, AtMs: c.now, UntilMs: c.now + assistant.UndoForMs})
 	c.logLine("close_day", "confirmed", map[string]any{"date": d.Iso()}, map[string]string{"skill": name, "date": d.Iso(), "booked": strconv.Itoa(len(booked)), "asked": strconv.Itoa(len(told)), "undo": undo},
 		"the owner closed this date: it is no longer offered, and the customers booked that day were asked to pick another day (those not reached are named to the owner); nothing was cancelled or refunded")
-	// the owner hears how many were booked, and by name the ones the message could not reach (STOP, or no approved template outside their window), to call them
+	c.closedLine(date, booked, told)
+}
+
+// closedLine is words.ts `closed`: the owner hears how many were booked, and by name the ones the message could not reach (STOP, or no approved template outside their window),
+// to call them.
+func (c *conv) closedLine(date string, booked []Booked, told []string) {
 	var missed []string
+	w := c.pack.Writer()
 	for _, b := range booked {
 		reached := false
 		for _, t := range told {
 			reached = reached || t == b.Case
 		}
 		if !reached {
-			missed = append(missed, b.Case+" ("+b.Who+")") // words.ts: `${case} (${who})`, joined with ", " in every language
+			missed = append(missed, w.Lit(b.Case)+" ("+w.Lit(b.Who)+")") // words.ts: `${w.lit(case)} (${w.lit(who)})`, joined with ", " in every language
 		}
 	}
 	switch {
@@ -114,7 +120,7 @@ func (c *conv) closeDay(d LocalDate) {
 	case len(missed) == 0:
 		c.say("closed.n", "date", date, "n", strconv.Itoa(len(booked)))
 	default:
-		c.say("closed.n.missed", "date", date, "n", strconv.Itoa(len(booked)), "missed", strings.Join(missed, ", "))
+		c.sayWith(w, "", "closed.n.missed", "date", date, "n", strconv.Itoa(len(booked)), "missed", strings.Join(missed, ", "))
 	}
 }
 
@@ -292,19 +298,19 @@ func (l *LimitDecl) view() LimitView {
 }
 
 // valueText is limits-card.ts valueText: rupees for an amount, the number for a count, "never" for an off value.
-func (c *conv) valueText(v LimitView, value int64) string {
+func (c *conv) valueText(w *assistant.Writer, v LimitView, value int64) string {
 	if v.ZeroIsOff && value == 0 {
-		return c.pack.Say("limit.never")
+		return w.Say("limit.never")
 	}
 	if v.Unit == "inr" {
-		return assistant.INR(value * 100)
+		return w.INR(value * 100)
 	}
-	return strconv.FormatInt(value, 10)
+	return w.N(value)
 }
 
 // ruleText is limits-card.ts ruleText: the rule with its value put in.
-func (c *conv) ruleText(v LimitView, value int64) string {
-	return strings.Replace(v.Rule[c.lang], "{v}", c.valueText(v, value), 1)
+func (c *conv) ruleText(w *assistant.Writer, v LimitView, value int64) string {
+	return strings.Replace(v.Rule[c.lang], "{v}", c.valueText(w, v, value), 1)
 }
 
 func (c *conv) declaredLimit(id string) *LimitDecl {
@@ -317,9 +323,26 @@ func (c *conv) declaredLimit(id string) *LimitDecl {
 	return nil
 }
 
+// sayWhichLimit is limits-card.ts limitLine "which": the declared limits by name, each through w.lit (WHICH_LINE).
+func (c *conv) sayWhichLimit(decl []LimitDecl) {
+	var names []string
+	w := c.pack.Writer()
+	for i := range decl {
+		names = append(names, w.Lit(decl[i].view().Name[c.lang]))
+	}
+	c.sayWith(w, "", "limit.which.some", "names", strings.Join(names, ", "))
+}
+
+// sayNotTighter is limits-card.ts limitLine "not_tighter": the limit's name, its value now and the one asked for.
+func (c *conv) sayNotTighter(v LimitView, from, to int64) {
+	w := c.pack.Writer()
+	c.sayWith(w, "", "limit.not_tighter", "name", v.Name[c.lang], "now", c.valueText(w, v, from), "to", c.valueText(w, v, to))
+}
+
 // sayLimit is words.ts limitLine for pending, active and failed (value is the proposed, or for "failed" the one in force now).
 func (c *conv) sayLimit(what string, v LimitView, value, _ int64) {
-	c.say("limit."+what, "rule", c.ruleText(v, value))
+	w := c.pack.Writer()
+	c.sayWith(w, "", "limit."+what, "rule", c.ruleText(w, v, value))
 }
 
 // limitsSkill is limits-card.ts createLimits's skill; nil when the template declares none (a listings-only shop: limits stay the Operator's).
@@ -381,6 +404,9 @@ func (k *limitsSkill) Execute(act assistant.Action) Executed {
 	}
 	c.logLine("limit_change", "unconfirmed", map[string]any{"limit": l.ID}, map[string]string{"limit": l.ID, "path": l.Path, "change": id, "from": strconv.FormatInt(from, 10), "to": strconv.FormatInt(to, 10), "direction": "tighten", "by": "owner_chat", "state": "pending"},
 		"the owner tapped yes; the runtime obeys the tighter value now and the deployer is asked to put it in the settings Guard's spec is made from")
+	if c.hooks != nil && c.hooks.InForce != nil {
+		c.hooks.InForce() // the rest of this step obeys it too
+	}
 	return Executed{true, "done"}
 }
 
@@ -459,11 +485,7 @@ func (c *conv) onLimit(text, forced string) {
 		l = hits[0]
 	}
 	if l == nil {
-		var names []string
-		for i := range decl {
-			names = append(names, decl[i].view().Name[c.lang])
-		}
-		c.say("limit.which.some", "names", strings.Join(names, ", "))
+		c.sayWhichLimit(decl)
 		return
 	}
 	v := l.view()
@@ -493,7 +515,7 @@ func (c *conv) onLimit(text, forced string) {
 	ok, why, from := l.judge(changesOf(c.snap.assistant["limitChanges"]), to, "tighten")
 	if !ok {
 		if why == "not_tighter" {
-			c.say("limit.not_tighter", "name", v.Name[c.lang], "now", c.valueText(v, from), "to", c.valueText(v, to))
+			c.sayNotTighter(v, from, to)
 		} else {
 			needValue()
 		}

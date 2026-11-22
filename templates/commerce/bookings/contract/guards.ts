@@ -83,7 +83,6 @@ const interesting = (h: IncomingHttpHeaders): GuardCall["headers"] => ({
   ...(typeof h["content-type"] === "string" ? { "content-type": h["content-type"] } : {}),
 });
 
-/** One recording proxy in front of a service (exported for the Fees contract, which has the same two Guards less the calendar). */
 export async function recorder(service: Service, target: string, calls: GuardCall[]): Promise<Recorder> {
   const plans: Plan[] = [];
   let isDown: "busy" | "kill_switch" | false = false;

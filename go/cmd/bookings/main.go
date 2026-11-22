@@ -11,6 +11,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -138,6 +139,10 @@ func run(folder string) error {
 		return err
 	} else if setup != nil {
 		kit.Report = ports.Books.NewMonthlyReport(*setup)
+		// start.ts: a UPI shop's QR pictures go into the report's pages folder, served at its address (ownerMarkedOf(payment) && report)
+		if kit.Settings.OwnerMarked() {
+			kit.QRImage = ownermarked.FolderImages(setup.PagesDir, setup.PagesBaseURL, log)
+		}
 	}
 	kit.Ports = ports
 	// B72: the shop terms, read from the client folder again whenever the file changes; no file: the feature is off
