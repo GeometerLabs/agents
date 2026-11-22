@@ -23,7 +23,7 @@ Differences from JavaScript, each commented where it happens: counts are `int64`
 `Authority` branch of `Source` is not here (the owner's acts are `listings`').
 
 Generated data: `words.json` by `go/scripts/gen_stock_words.ts` (function words rendered with probe values and turned into `{slot}`s, round-tripped), and
-`testdata/stock-vectors.json.gz` by `go/scripts/gen_stock_vectors.ts`, which RUNS the TypeScript on 40 scenarios (every case of both stock test files, the Orders ones over real
+`testdata/stock-vectors.json.gz` by `go/scripts/gen_stock_vectors.ts`, which RUNS the TypeScript on 37 scenarios (313 steps) (every case of both stock test files, the Orders ones over real
 orders and the real `orderFacts`, plus standing, completed, cancelled, held, expired, two lines of one item, 700 orders, counting started after a pickup, the 30-day horizon, low-mark
 crossings, deliveries in part and in full, units, aliases, caps, and the prune past 5000 keys, kept as a digest). `stock_test.go` replays every step and compares the answer and the
 whole state member for member, and the order of the `applied` keys. Both scripts have `--check`.
