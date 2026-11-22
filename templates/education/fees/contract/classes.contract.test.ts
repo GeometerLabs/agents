@@ -20,7 +20,7 @@ const teacher = (c: Centre): string[] => sends(c).filter((l) => l.refs.to === "o
 /** The teacher's link for class 10 is set, and Monday's class 10 window opens at 16:31. */
 async function mondayClass(): Promise<Centre> {
   const c = await boot();
-  await sleep(1200);
+  await c.started();
   await c.inbound(OWNER_NUMBER, "link class 10 https://meet.example/abc-defg-hij");
   assert.equal(lines(c, "class_link_set", "confirmed").length, 1, "the teacher's link is kept");
   c.goto(at(2, 16, 31));

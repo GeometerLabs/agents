@@ -38,7 +38,9 @@ describe("a payment link and a payment", () => {
   contract("a parent asks to pay: ONE link for exactly what is owed, with the fee's reference and the agent's credential; asked again, the same link", async () => {
     const c = await razorpayCentre();
     await c.inbound(ROHAN, "please send the link");
-    const made = c.guards!.of("payments", "POST", /^\/v1\/payment_links$/u);
+    // Rohan's own link only: after 06:00 in India the first beat's reminders already made each earlier month's link (harness GUARDS_MONTH)
+    const rohans = () => c.guards!.of("payments", "POST", /^\/v1\/payment_links$/u).filter((x) => x.body.reference_id === "f-2.1");
+    const made = rohans();
     assert.equal(made.length, 1);
     assert.equal(made[0].body.amount, 180000);
     assert.equal(made[0].body.reference_id, "f-2.1");
@@ -46,7 +48,8 @@ describe("a payment link and a payment", () => {
     assert.match(last(c, ROHAN), /^Pay ₹1,800 for Rohan Mehta's class 10 fee for Sep 2026 here: /u);
     assert.ok(last(c, ROHAN).includes(linkOf(c, "f-2.1")!.short_url ?? linkOf(c, "f-2.1")!.id) || /https?:\/\//u.test(last(c, ROHAN)), "the link is in the message");
     await c.inbound(ROHAN, "send the link again");
-    assert.equal(c.guards!.of("payments", "POST", /^\/v1\/payment_links$/u).length, 1, "no second link");
+    assert.equal(rohans().length, 1, "no second link");
+    assert.ok(!c.guards!.of("payments", "POST", /^\/v1\/payment_links$/u).some((x) => x.body.reference_id === "f-2.2"), "and no second reference for the same amount");
   });
 
   contract("the parent pays: the webhook makes the agent LOOK, the payments service's own list settles the fee, and the receipt goes once; the same webhook again is a no-op", async () => {
@@ -92,7 +95,7 @@ describe("a payment link and a payment", () => {
     await c.waitFor(async () => (await c.status()).waitingForGuard === "payments", "the step waiting for the payments Guard");
     assert.equal((await c.status()).tasks.failed, 0);
     c.guards!.payments.up();
-    await c.waitFor(() => c.guards!.of("payments", "POST", /^\/v1\/payment_links$/u).some((x) => x.status === 200), "the link made once the Guard is back", 40_000);
+    await c.waitFor(() => c.guards!.of("payments", "POST", /^\/v1\/payment_links$/u).some((x) => x.body.reference_id === "f-2.1" && x.status === 200), "the link made once the Guard is back", 40_000);
     await c.settle();
     assert.match(last(c, ROHAN), /^Pay ₹1,800/u);
   });

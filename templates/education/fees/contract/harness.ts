@@ -161,6 +161,8 @@ export interface Centre {
   tasks(): { id: string; kind: string; state: string; attempts: number; last_error: string | null }[];
   /** Poll the record (and anything else) until `pred` holds; fails with the record's actions and the process's output after `ms`. */
   waitFor<T>(pred: () => T | undefined | false | Promise<T | undefined | false>, what: string, ms?: number): Promise<T>;
+  /** Wait until the first beat has saved the day the agent first ran (`startedAtMs` in the saved state), so a move of the test clock comes after it. */
+  started(): Promise<void>;
   /** The newest private link a parent was sent on WhatsApp (guards mode): the raw link and its hash. */
   linkOf(parent: string): { link: string; hash: string } | undefined;
 }
@@ -307,7 +309,7 @@ export async function makeCentre(o: CentreOptions = {}): Promise<Centre> {
         .map((r) => { const e = JSON.parse(r.entry) as { notes?: string; refs?: Record<string, string>; decisions?: { ruleId: string; verdict: string }[] }; return { seq: r.seq, action: r.action, outcome: r.outcome, booking: r.booking, conversation: r.conversation, notes: String(e.notes ?? ""), refs: e.refs ?? {}, decisions: (e.decisions ?? []).map((d) => ({ ruleId: d.ruleId, verdict: d.verdict })), entry: r.entry }; }));
     },
     tasks() { return readDb((db) => db.prepare("SELECT id, kind, state, attempts, last_error FROM tasks ORDER BY seq").all() as never); },
-    async waitFor(pred, what, ms = 12_000) {
+    async waitFor(pred, what, ms = 20_000) {
       const until = Date.now() + ms;
       for (;;) {
         const got = await pred();
@@ -315,6 +317,12 @@ export async function makeCentre(o: CentreOptions = {}): Promise<Centre> {
         if (Date.now() > until) throw new Error(`waited ${ms} ms for ${what}; the record has: ${centre.record().map((l) => `${l.action}/${l.outcome}${l.refs.templates ? `(${l.refs.templates})` : ""}`).join(", ")}\n${printed.text}`);
         await sleep(100);
       }
+    },
+    async started() {
+      await centre.waitFor(() => existsSync(join(dataDir, "agent.db")) && readDb((db) => {
+        const row = db.prepare("SELECT shape FROM state_shape WHERE id = 1").get() as { shape: string } | undefined;
+        return row !== undefined && "startedAtMs" in (JSON.parse(row.shape) as Record<string, unknown>);
+      }), "the first beat to save the day the agent first ran");
     },
     linkOf(parent) {
       const texts = centre.sent(parent).map((m) => m.text).reverse();

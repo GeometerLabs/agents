@@ -137,7 +137,7 @@ describe("the monthly report", () => {
     const withReport = await makeCentre({ runtime: { report: { preparedBy: "Divya, local Operator", innovator: false, pageBaseUrl: "https://reports.example/r", pagesDir: dir, source: "test-mode" } } });
     centres.push(withReport);
     await withReport.start();
-    await sleep(1500);
+    await withReport.started();
     withReport.goto(at(2, 10) + 1000);
     await withReport.waitFor(() => lines(withReport, "open_fee").length === 5, "November's fees");
     // the report's folder is the one with the report in it; a UPI centre's QR pictures are folders of their own beside it (upi-qr.png, under random names)

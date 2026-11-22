@@ -723,3 +723,34 @@ templates/commerce/bookings/contract/`: **143 of 143** (0 fail, 0 skipped). `nod
 words-fresh test included). `go build ./...`, `go vet ./...` and `go test ./...` pass (`internal/voice` is new). TypeScript was not changed (only go/scripts generators and one
 assertion in words-fresh.test.ts); no TypeScript bug was found. Not done (Deferred.md of bookings and runtime): the outgoing check over the assistant's own lines (recorded as
 allowed), a message to a chat guest and a guest's label, the morning line's picture, Sarvam, a chat guest's hold-to-talk, "open my app" on WhatsApp for a template's shop.
+
+## Wave 3: Fees and Classes (22 Nov 2026, `go-w3-fees-22nov`, in progress)
+
+Started from agents main ead21fd8. The method is Bookings': the black-box contract first, on TypeScript, then the Go runtime held to it.
+
+1. **The contract suite: done** (commit 09f47bd0). `templates/education/fees/contract/` (README, harness, two fake Guards over Fees' stand-ins reusing the Bookings contract's
+   recording proxy): 67 tests in 11 files (smoke, the month on the test clock, UPI marks, Razorpay links and refunds held by Guard, a parent's private page, the owner's side,
+   Classes and the reading material, the public chat, the store and privacy, the two-runtime restart). On TypeScript (`node --test --test-concurrency=1
+   templates/education/fees/contract/`): **65 pass, 2 skipped** (cross-restart needs the Go binary). One runtime file changed: `server/main.ts` takes the test clock as
+   Bookings' main does. A guards centre runs on the real clock, so its fees are earlier unpaid months (`backDues`), which the first beat opens whatever the day.
+2. **The words: done** (commit 84e666b4). `go/scripts/gen_fees_words.ts` writes `internal/fees/words/*.json.gz` (103 messages per language, where to pay, a family's line, the
+   next classes, the WhatsApp templates and their slots, the labels) and `internal/fees/reading.json` (the rule parser's and Classes' word lists); `words-fresh` checks them.
+3. **The Go runtime** (commits 98709f7f and after): `internal/fees` and `cmd/fees` (see internal/fees/Explanation.md for the file map). Shared code was opened, not rewritten:
+   `bookings/reader_shared.go` (the settings readers), `bookings/agent_shared.go` (one step's watch and the owner's route), `runtime/chanmessaging.go` (the chat outbox over any
+   store), `runtime/kitparent.go` with a hook in `kitserver.go` (the parent and material reads as optional ChannelKit interfaces: Bookings and the listings shop still answer
+   404), `accounting/fees.go` (the Fees books map). Not ported (internal/fees/Deferred.md): the monthly report, the shop's assistant and its talk, the model steps of reading,
+   voice, the shop terms and the handover code, a parent's own chat.
+4. **The contract on Go** (`FEES_IMPL=go FEES_GO_BIN=go/bin/fees node --test --test-concurrency=1 templates/education/fees/contract/`, through the heat lock): **63 of 67**,
+   0 skipped, on the first run that compiled (the cross-restart test both ways included). The 4 that fail are the parts not ported, by design: the shop's assistant (2: "who
+   owes fees" and the cancel card), the monthly report (1) and the shop's talk to a parent (1). Classes (5 tests and the reading material) pass on Go.
+
+**TypeScript findings (nothing changed).** (a) A parent who has never written is answered in the centre's FIRST language, not the student's (agent.ts `languageOf(phone)` with no fee:
+the customer's language is unset until they write in one, and a student's `language` is only the fee's), so Rohan's English-speaking parent asking to pay after his only fee is
+paid reads "अभी आपकी ओर से कुछ बाकी नहीं है।" (pinned in `razorpay.contract.test.ts`); a reply about no fee could use the language of the parent's students. (b) The
+contract's guards centres depend on the hour (the back dues' reminder goes at 06:00 in India or at once if later), so a test that counts every Guard call must name the fee's own
+reference: the "ONE link" test was made so after the first TypeScript run, which happened before 06:00.
+
+**Contract changes after the first commit (hour and load independence).** The guards "ONE link" test counts only the fee's own reference; the fakes tests wait for the first beat to save
+the day the agent first ran (`started()`, read from agent.db) instead of a fixed 1.5 s; `waitFor` waits up to 20 s (a TypeScript run under the shared lock once took more than 12 s
+to open a month). Checked on TypeScript: razorpay, month, owner, classes 29 of 29 and record 5 of 5 (run alone); Bookings' smoke on Go 12 of 12 after the kitserver.go hook;
+words-fresh 14 of 14; `go test` of runtime, bookings and accounting pass.

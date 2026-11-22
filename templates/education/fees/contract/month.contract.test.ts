@@ -21,7 +21,7 @@ const reminderIds = (c: Centre, phone: string): string[] => toParent(c, phone).f
 /** Start on Mon 2 Nov at 09:00, let the first beat note the day, then go to 10:00 and wait for the five fees and four reminders. */
 async function november(o: CentreOptions = {}): Promise<Centre> {
   const c = await boot(o);
-  await sleep(1500);
+  await c.started();
   c.goto(at(2, 10, 0) + 1000);
   await c.waitFor(() => lines(c, "open_fee").length === 5 && [SHARMA, MEERA, KIRAN, ROHAN].every((p) => reminderIds(c, p).length === 1), "five fees opened and four parents reminded");
   return c;
@@ -97,7 +97,7 @@ describe("the month's fees open on the first reminder day and the reminders go o
 describe("the beat across restarts", () => {
   contract("the day the agent first ran is saved: a process down over the 10:00 moment still reminds at 13:00", async () => {
     const c = await boot();
-    await sleep(2000); // the first beat at 09:00 notes the day
+    await c.started(); // the first beat at 09:00 notes the day
     await c.stop();
     c.goto(at(2, 13, 0));
     await c.start();

@@ -46,7 +46,7 @@ describe("the store's file", () => {
 
   contract("the saved state is the TypeScript runtime's, member for member: the fees, the parents' link hashes, the counters and the day the agent first ran", async () => {
     const c = await boot();
-    await sleep(1500);
+    await c.started();
     c.goto(at(2, 10) + 1000);
     await c.waitFor(() => lines(c, "open_fee").length === 5 && lines(c, "parent_link").length === 4, "the month opened");
     await c.stop();
@@ -62,7 +62,7 @@ describe("the store's file", () => {
 describe("what leaves the centre", () => {
   contract("a parent's number is in the record only as the conversation, their words never; /status has no name or number", async () => {
     const c = await boot();
-    await sleep(1500);
+    await c.started();
     c.goto(at(2, 10) + 1000);
     await c.waitFor(() => lines(c, "open_fee").length === 5, "the month opened");
     await c.inbound(ROHAN, "my son Rohan was unwell, the secret word is pineapple");
@@ -88,7 +88,7 @@ describe("what leaves the centre", () => {
     const said = { sentences: [{ text: "Fees are due on day 5 of the month.", sources: ["s:due"] }], ask_owner: false };
     const talk = await startFakeModel(() => said); closers.push(talk);
     const c = await boot({ settings: { assistant: {} }, runtime: { talk: { wire: "openai", baseUrl: `http://127.0.0.1:${talk.port}/v1`, model: "fake-model", timeoutMs: 5000 } } });
-    await sleep(1500);
+    await c.started();
     c.goto(at(2, 10) + 1000);
     await c.waitFor(() => lines(c, "open_fee").length === 5, "the month opened");
     await c.inbound(ROHAN, "is the weather good for the picnic on saturday");
