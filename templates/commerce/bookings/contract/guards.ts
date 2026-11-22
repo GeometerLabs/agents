@@ -83,7 +83,7 @@ const interesting = (h: IncomingHttpHeaders): GuardCall["headers"] => ({
   ...(typeof h["content-type"] === "string" ? { "content-type": h["content-type"] } : {}),
 });
 
-async function recorder(service: Service, target: string, calls: GuardCall[]): Promise<Recorder> {
+export async function recorder(service: Service, target: string, calls: GuardCall[]): Promise<Recorder> {
   const plans: Plan[] = [];
   let isDown: "busy" | "kill_switch" | false = false;
   const server: Server = createServer(async (req, res) => {
