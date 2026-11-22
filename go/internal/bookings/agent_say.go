@@ -29,7 +29,9 @@ type offer struct {
 }
 
 func servicesOffer(body ...string) *offer { return &offer{kind: "services", body: body} }
-func yesNo(body ...string) *offer         { return &offer{kind: "buttons", buttons: []string{"yes", "no"}, body: body} }
+func yesNo(body ...string) *offer {
+	return &offer{kind: "buttons", buttons: []string{"yes", "no"}, body: body}
+}
 
 var cancelOrOwner = &offer{kind: "buttons", buttons: []string{"cancel", "owner"}}
 
@@ -125,10 +127,14 @@ func bookingOf(v any) *Booking {
 	return b
 }
 
-// shownPhone is agent.ts shownPhone: a channel booking's number is the one its customer typed, never its "web:..." conversation. (A chat guest's label is the chat stream's.)
+// shownPhone is agent.ts shownPhone: a channel booking's number is the one its customer typed, never its "web:..." conversation; a chat guest is "Chat guest 3" to the owner,
+// never "chat:..." (chat-guest.ts guestLabel).
 func (a *Agent) shownPhone(phone string, b *Booking) string {
 	if b != nil && b.Channel != "" && b.Contact != nil {
 		return b.Contact.Phone
+	}
+	if isChatConversation(phone) {
+		return runtime.GuestLabel(a.store.chanState(), phone, a.settings.Owner.Language)
 	}
 	return phone
 }
@@ -428,7 +434,6 @@ func (o *ownerMsg) isOwner(to string) bool { return sameNumber(to, o.a.owner()) 
 
 // sameNumber is push.ts sameNumber: the digits of two numbers are the same.
 func sameNumber(x, y string) bool { return digitsOf(x) == digitsOf(y) }
-
 
 func (o *ownerMsg) route() string {
 	if o.a.kit.Ports.OwnerRoute == nil {

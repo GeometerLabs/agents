@@ -32,6 +32,8 @@ var packed embed.FS
 type Pack struct {
 	M   map[string]string `json:"m"`
 	Cat map[string]string `json:"cat"`
+	// F is each said key's own facts for the outgoing check (gen_words.ts factsOf): the literals its words always carry, its fixed counts and amounts (writer.go uses them)
+	F map[string]KeyFacts `json:"f"`
 	// lang is the pack's language: dates and times are written by language.Formats, the one table the Go runtimes share (formats.json)
 	lang string
 	// Stamp is owner-phones.ts dayAndTime as data: the months' short names, and per hour the whole moment with {d}, {mon} and {mm} slots (gen_words.ts stampOf)
@@ -192,6 +194,10 @@ type RuleWords struct {
 	LimitPhrasing []string `json:"limitPhrasing"`
 	// TalkSchema is the owner's talk's answer schema (talk-prompt.ts ownerPrompt with no limits).
 	TalkSchema map[string]any `json:"talkSchema"`
+	// OpenMyApp are owner-signin.ts OPEN_MY_APP: the owner's fixed phrases that ask for a sign-in link on WhatsApp (compared after runtime's phraseOf)
+	OpenMyApp []string `json:"openMyApp"`
+	// TalkSchemaLimits is the same with declared limits: its limit enum is ["{id}"] (TalkSchemaFor puts the ids in)
+	TalkSchemaLimits map[string]any `json:"talkSchemaLimits"`
 }
 
 type routerWords struct {
@@ -215,4 +221,31 @@ func Rules() *RuleWords {
 		}
 	})
 	return rulesWords
+}
+
+// TalkSchemaFor is talk-prompt.ts ownerPrompt's schema: with no declared limit the one whose "limit" is always null, otherwise the generated one with the declared ids as the
+// limit's enum, in their order (a fresh copy each call: the shared one is never changed).
+func TalkSchemaFor(ids []string) map[string]any {
+	r := Rules()
+	if len(ids) == 0 {
+		return r.TalkSchema
+	}
+	b, _ := json.Marshal(r.TalkSchemaLimits)
+	var out map[string]any
+	_ = json.Unmarshal(b, &out)
+	enum := make([]any, len(ids))
+	for i, id := range ids {
+		enum[i] = id
+	}
+	// properties.limit.anyOf[0].enum, as the generator wrote it
+	if p, ok := out["properties"].(map[string]any); ok {
+		if l, ok := p["limit"].(map[string]any); ok {
+			if a, ok := l["anyOf"].([]any); ok && len(a) > 0 {
+				if s, ok := a[0].(map[string]any); ok {
+					s["enum"] = enum
+				}
+			}
+		}
+	}
+	return out
 }

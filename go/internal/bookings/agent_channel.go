@@ -362,7 +362,7 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 		return a.stepErr
 	}
 	var item *ownerItem
-	for _, it := range ownerItems(a.store, a.now()) {
+	for _, it := range ownerItems(a.store, a.now(), a.settings.Owner.Language) {
 		if it.Case == cs && it.Digest == digest && contains(it.Actions, action) {
 			item = &it
 			break
