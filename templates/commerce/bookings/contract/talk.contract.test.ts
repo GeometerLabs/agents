@@ -5,6 +5,7 @@
 //     button, and a model that fails gives the fixed line with today's count and what waits.
 //   - "Open my app." from the owner's own WhatsApp number sends the sign-in link back in the window it opened, before the agent or the assistant reads it; from a customer it
 //     is a customer's message like any other.
+//   - A chat guest is "Chat guest 1" to the owner: "tell chat guest 1 ..." makes the message card naming them, and the tap puts the owner's words in the guest's thread.
 //   - A UPI shop with a report block sends the customer the QR picture of the payment request before the words, hosted in the report's pages folder (start.ts folderQrImages).
 //   - A WhatsApp customer whose window has closed (their message is 25 hours old) whose day the owner closes gets the approved "day closed" template, its values in Meta's order, exactly as
 //     the TypeScript's templateMessageFor makes them; the morning line to an owner whose window is closed goes as its approved template.
@@ -95,8 +96,9 @@ describe("the assistant's templates outside the 24-hour window", () => {
   });
 
   // What is not asserted here: that the provider takes it. The morning templates were made with an image header (templates.ts, item 11i), and a shop with no mood pictures in
-  // pages.json (this harness; every Go shop, whose morning line has no picture yet: internal/runtime/Deferred.md) sends it without one, which Meta refuses (132012) on BOTH
-  // runtimes: the record then ends the try "failed" and it is tried again in an hour. Found 22 Nov 2026 (go/TRIAL.md, stream A).
+  // pages.json (this harness; every Go shop, whose morning line has no picture yet: internal/runtime/Deferred.md) sends it without one, which Meta refuses: observed on BOTH runtimes
+  // here, the stand-in answers 400 (#132012, "Variable parameter values formatted incorrectly") and the record ends the try "failed", to be tried again in an hour. Found 22 Nov 2026
+  // (go/TRIAL.md, stream A).
   contract("the morning line to an owner who has not written goes as its approved template, by its name with the shop's name first, and not twice", async () => {
     const india = new Date(Date.now() + 330 * MIN);
     const at = `${String(india.getUTCHours()).padStart(2, "0")}:${String(Math.max(0, india.getUTCMinutes() - 1)).padStart(2, "0")}`;
@@ -155,5 +157,25 @@ describe("a UPI shop's QR picture", () => {
     await s.inbound(CUSTOMER, `haircut on ${typed(start)} at 11am`);
     const again = s.guards!.of("messaging", "POST").filter((c) => c.body.to === CUSTOMER && c.body.type === "image").map((c) => c.body.image.link);
     assert.ok(again.every((l: string) => l === link), "the request's one picture, made once");
+  });
+});
+
+describe("the owner answering a chat guest", () => {
+  contract("\"tell chat guest 1 ...\" makes a message card that names \"Chat guest 1\", never the conversation, and the tap puts the words in that guest's thread", async () => {
+    const s = await boot({ mode: "guards", settings: { assistant: {} } });
+    const g = s.guest();
+    assert.equal((await s.chat(g.hash, "hello", { id: "hello-1" })).status, 200);
+    await owner(s, "tell chat guest 1 we open at ten tomorrow");
+    const card = s.sent(OWNER_NUMBER).filter((m) => m.interactive?.buttons?.some((b: { id: string }) => b.id.startsWith("card-"))).at(-1);
+    assert.ok(card, `a card: ${s.sent(OWNER_NUMBER).map((m) => m.text).join(" / ")}`);
+    assert.match(card!.text, /Chat guest 1/u);
+    assert.ok(!/chat:/u.test(card!.text), "never the conversation's name");
+    assert.match(card!.text, /we open at ten tomorrow/u);
+    const yes = card!.interactive.buttons[0].id as string;
+    await s.tap(yes, { from: OWNER_NUMBER });
+    const lines = (await s.call(`/internal/channel/chat?handle=${g.hash}`)).body.lines.filter((l: { who: string }) => l.who === "shop").map((l: { text: string }) => l.text);
+    assert.equal(lines.at(-1), write("owner_words", { shop: "Glow Salon", words: "we open at ten tomorrow" }, "en", TZ).text);
+    await owner(s, "refund chat guest 1");
+    assert.equal(lastOwner(s).text, write("refusal", { why: "not_here", ref: "g-1" }, "en", TZ).text, "anything else asked of a guest is not here");
   });
 });

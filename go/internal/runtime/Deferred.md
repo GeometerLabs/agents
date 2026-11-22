@@ -16,3 +16,5 @@
 
 | Part | TypeScript | Why not yet | What it does instead |
 |------|-----------|-------------|----------------------|
+| The outgoing check's facts of a packed line, key by key | words.ts Writer (each call notes its own value) | the Go side fills packed words, so a key's fixed facts are generated from every value the TypeScript noted in that language (gen_words.ts factsOf, kept where their text is in the key's words) and a slot is typed by its name | a fixed number equal to one noted elsewhere in the same language would pass in Go and be held back in TypeScript; none does today (the generator proves each key passes with exactly its facts) |
+

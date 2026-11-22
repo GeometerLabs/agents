@@ -747,12 +747,15 @@ the end (counts below).
 4. **The smaller gaps: done.** A chat guest is "Chat guest 3" to the owner (`runtime.GuestLabel`; owner items, upcoming, whoOf, shownPhone), and "tell chat guest 3 ..." makes the
    message card (`prepareGuestMessage`); "open my app" from the owner on WhatsApp sends the sign-in link before the agent sees it (`runtime/openmyapp.go`, OPEN_MY_APP generated);
    a limit tightened by a card's tap is in force for the rest of the same step (`AssistantHooks.InForce`); a UPI shop with a `report` block sends the QR picture before the words
-   (`Kit.QRImage` = `ownermarked.FolderImages`). Contract cases for "open my app" and the QR picture are in `talk.contract.test.ts`. Not done, as the brief says: Sarvam and the
-   morning line's mood picture (Deferred.md). Not covered by a test of its own: the same-step limit (no contract path taps a card and refunds in the one step).
+   (`Kit.QRImage` = `ownermarked.FolderImages`). Contract cases for "open my app", the chat guest's message card (label, words in the guest's thread, "not here" for anything else) and
+   the QR picture are in `talk.contract.test.ts`. Not done, as the brief says: Sarvam and the morning line's mood picture (Deferred.md; see the morning finding below). Not covered
+   by a test of their own: the same-step limit (no contract path taps a card and refunds in the one step) and the guest's label on the owner page's items (a chat guest's
+   booking must be confirmed first, which no contract path does).
 
 **Findings (22 Nov, stream A).** TypeScript, not changed: (a) the morning templates were made with an image header (templates.ts, item 11i), but morning.ts sends the template
-without one when the shop's pages.json has no mood pictures, which Meta refuses (132012); every Go shop has the same gap (no morning picture yet), so outside the owner's window the
-morning line fails on both runtimes until pictures are given or the template loses its header (talk.contract.test.ts says so and does not assert the send). (b) limits-card.ts:
+without one when the shop's pages.json has no mood pictures, which Meta refuses; observed on both runtimes in talk.contract.test.ts (the stand-in answers 400, #132012 "Variable parameter
+values formatted incorrectly", and the line ends "failed", tried again in an hour). Every Go shop has the gap (no morning picture yet), so outside the owner's window a Go shop's
+morning line cannot reach the owner until pictures are given or the template loses its header (the test does not assert the send). (b) limits-card.ts:
 an "off when 0" limit made Active at 0 reads "Active: Orders above never need your approval before any payment is asked." (c) The Hindi Active line ends with "." where the other
 Hindi lines end with "।". (d) money_in shows a paise amount as "₹1,500.5" (formatInr of a fraction). Test infrastructure: the Bookings WhatsApp stand-in did not approve the
 assistant's own templates, so a closed-day template could not be sent there on either runtime; templates/commerce/bookings/standins/server.ts now approves
@@ -761,5 +764,7 @@ route) dropped `SendImage`, so no picture could have gone even with a maker.
 
 **Measured at the end of this stream (22 Nov, through the heat lock, once after the code; one fix round after the narrow files):** `go vet ./...` clean; `go test ./...` 30 packages
 ok. `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/`: **148 of 148** (143 + the five of
-talk.contract.test.ts). The same on TypeScript: **148 of 148**. `node --test --test-concurrency=1 templates/commerce/listings/contract/` on Go: **192 of 192** (words-fresh's two new
-checks included; the merge message of ead21fd8 says 198, which this run's count does not match: nothing failed or was skipped, and no listings test was removed here).
+talk.contract.test.ts). The same on TypeScript: **148 of 148**. `node --test --test-concurrency=1 templates/commerce/listings/contract/` on Go: **192 of 192** without go/bin/listings-shared,
+whose absence registers none of shared.contract.test.ts's 8 (shared-harness.ts haveGo); with it built, shared.contract.test.ts on its own: see the next line. 192 + 8 = 200 = ead21fd8's
+198 + words-fresh's two new checks. The TypeScript unit tests that import the Bookings stand-in (approvals-guard-binary, understanding, ai-mode, buttons, model-eval, e2e,
+report-whatsapp, standins): 110 of 110 after it approves the assistant's templates.

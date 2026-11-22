@@ -11,6 +11,11 @@ package assistant
 //     carries, which is the same for these words (they state each moment once, in the owner's language). The difference: a line that wrote the same moment in another language
 //     would be held back here, where TypeScript lets it go.
 //
+// Where Go may allow what TypeScript holds back (internal/runtime/Deferred.md): a key's own facts are the values TypeScript's Writer noted while gen_words.ts rendered ANY key of
+// the language, kept for a key when their text is in its words (a fixed count such as 24 is kept for every key whose words show "24" outside a literal); and a slot is typed by
+// its name ({n} a count, {inr} an amount), not by the Writer call that filled it in TypeScript. The generator proves every key's words pass with exactly these facts; a stray
+// fixed number that happens to equal one noted elsewhere in the language would pass here and not there.
+//
 // A slot whose value is put together by the caller (a list of names, a limit's rule with its value, a price with its words) is noted by the caller with Lit, INR and N, as
 // TypeScript's callers do. A value nobody notes is checked like any other words: a digit in it holds the line back, which is TypeScript's answer too.
 

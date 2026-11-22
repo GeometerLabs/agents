@@ -26,7 +26,7 @@ still has every part, and a shop can be moved back to it.
 
 | Part | TypeScript | Why not yet | What it does instead |
 |------|-----------|-------------|----------------------|
-| The morning line's mood picture (a sticker before the words, the template's image header) | morning.ts, character.ts pictureUrl | the deployer's pages.json pictures are not read for it yet | the line goes as words alone (text in the window, the template outside it) |
+| The morning line's mood picture (a sticker before the words, the template's image header) | morning.ts, character.ts pictureUrl | the deployer's pages.json pictures are not read for it yet (the brief of 22 Nov left it out) | in the window the line goes as words alone; OUTSIDE it the template goes without its image header, which the provider refuses (#132012, seen in talk.contract.test.ts on both runtimes; TypeScript does the same for a shop with no pictures): a Go shop's morning line cannot reach an owner whose window is closed |
 | Sarvam as the speech provider | modules/voice/sarvam.ts | only Geometer's own speech service is ported | a `speech` block naming "sarvam" is refused with a sentence; leave the provider out for Geometer's own |
 | A chat guest's hold-to-talk (W1) | runtime.ts chatAudio | the Bookings kit does not hold chat recordings yet | the chat's voice route says voice is off |
 
