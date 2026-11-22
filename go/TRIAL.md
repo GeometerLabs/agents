@@ -723,3 +723,34 @@ templates/commerce/bookings/contract/`: **143 of 143** (0 fail, 0 skipped). `nod
 words-fresh test included). `go build ./...`, `go vet ./...` and `go test ./...` pass (`internal/voice` is new). TypeScript was not changed (only go/scripts generators and one
 assertion in words-fresh.test.ts); no TypeScript bug was found. Not done (Deferred.md of bookings and runtime): the outgoing check over the assistant's own lines (recorded as
 allowed), a message to a chat guest and a guest's label, the morning line's picture, Sarvam, a chat guest's hold-to-talk, "open my app" on WhatsApp for a template's shop.
+
+## Wave 2: Stock orders on Go (22 Nov 2026, `go-w5-stock-22nov`, stream W5)
+
+**The contract first.** `templates/commerce/stock-orders/contract/` (README there): 59 tests in 8 files, black-box over HTTP and agent.db, in front of a recording WhatsApp
+Guard over the shared stand-in (guards mode, the real clock) or on the runtime's own stand-in with the test clock (fakes mode). Green on TypeScript: **57 pass, 2 skipped**
+(the cross-restart pair, which needs the Go binary). `server/main.ts` took the same test-clock seam Bookings' has (nothing changes without the two variables).
+
+**The shared stock count** is its own package, `internal/stock` (modules/stock/stock.ts whole), moved out of `internal/listings` (which keeps aliases, so the runtime's call sites
+did not change) and proved on vectors made by running the TypeScript (`scripts/gen_stock_vectors.ts`, in words-fresh). Orders (W4) uses `Sale`, `ReconcileSales`,
+`UnbookedHolds` and `LeftFor` from it.
+
+**The template**: `internal/stockorders` and `cmd/stock-orders` (Explanation.md there). Shared changes, all additions (`internal/runtime/kitstock.go`): a Kit's agent that is
+an `AfterSaver` is called after the step's save on every step and beat (core.ts `agent.sendOnce.run`), unless the licence is in its final stop; a Kit that is a `StockKit` gets
+the owner's Stock page (its items after the shop's listings) and its `owner_stock` events run in the step (Bookings is not one: 404 and dropped, as before);
+`Snap.EnsureAssistant`, `Snap.EnsureStock`, `StepContext.LooksLikeLimitRule`.
+
+**On Go: 58 of 59** (`STOCK_ORDERS_IMPL=go STOCK_ORDERS_GO_BIN=go/bin/stock-orders node --test --test-concurrency=1 templates/commerce/stock-orders/contract/`, through the
+heat lock), the cross-restart pair included (a shop moved TypeScript to Go and Go to TypeScript keeps its orders field for field, its open card, its record and its counter).
+The one that fails is the monthly report: `report/` is not ported (Deferred.md of internal/stockorders), so a Go shop with a `report` block makes none.
+
+Not done, with the reason in `internal/stockorders/Deferred.md`: the monthly report and the go-live certificate; the `assistant` block's own sentences; settings vectors (the
+sentences are copied from settings.ts); the assistant's talk reads, open list and routing words, and the morning line over Stock orders; the owner's push; waiting for a Guard
+that is down inside a step. TypeScript was not changed in behaviour: `server/main.ts` gained the test-clock seam, `src/reading.ts` exports its two word lists for the generator.
+
+TypeScript findings (nothing was changed):
+- A message to the owner OUTSIDE their 24-hour window that has no WhatsApp template of its own (the supplier asked for no more messages, a card ran out, a delivery marked, ...)
+  goes as the generic `stock_owner_notice` with no parameters; a provider that knows only the real templates refuses it, so the owner is not told. Only the card, the supplier's
+  OK, no and silence have templates (meta-templates.ts).
+- `lowStockTick` says "X is low (n left). Order from Y?" only because `pendingAlerts` returns the queue's own alert objects, so `noteAsked` has already counted the question
+  when `a.asked === 1` is read. A copy there would silently drop the line; Go reads the count `noteAsked` returns.
+- A Stock orders monthly report writes the report, its page and the owner's lines, and no monthly certificate (the go-live certificate is separate): different from Bookings.
