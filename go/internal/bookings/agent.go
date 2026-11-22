@@ -92,11 +92,7 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 	}
 	// runtime-limits.ts apply: a limit the owner tightened (Pending) or changed (Active) is in force for this step, so the agent's own checks use it; a copy, so the file's value
 	// (the base the changes are judged from, Kit.Limits) is never touched
-	if v, ok := c.InForce("refund_limit"); ok && v != a.settings.Cancellation.RefundLimitInr {
-		cp := *a.settings
-		cp.Cancellation.RefundLimitInr = v
-		a.settings = &cp
-	}
+	a.applyInForce()
 	a.msg = a.channelMessaging(watchedMessaging(a.watch, a.ownerMessaging(k.Ports.WhatsApp)))
 	a.say = messaging.NewSay(a.sayDeps())
 	a.refunds = payments.NewRefunds(a.refundDeps())
@@ -260,4 +256,18 @@ func (a *Agent) onChatMessage(ev map[string]any) error {
 		Run: func(in runtime.ChatInbound) error { return a.OnMessage(in.InboundMessage) },
 	}, runtime.ChatMessageOf(ev))
 	return err
+}
+
+// applyInForce is runtime-limits.ts apply: a limit the owner tightened (Pending) or changed (Active) is in force for the agent's own checks; a copy, so the file's value (the base
+// the changes are judged from, Kit.Limits) is never touched. Run when the step starts, and again when the owner's tap on a limit card changes it inside the step
+// (limits-card.ts execute: applyInForce into the live settings, so the rest of the same step obeys it).
+func (a *Agent) applyInForce() {
+	if a.c == nil {
+		return
+	}
+	if v, ok := a.c.InForce("refund_limit"); ok && v != a.settings.Cancellation.RefundLimitInr {
+		cp := *a.settings
+		cp.Cancellation.RefundLimitInr = v
+		a.settings = &cp
+	}
 }

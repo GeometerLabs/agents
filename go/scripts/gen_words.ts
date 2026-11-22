@@ -18,18 +18,20 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { write, cardQuestion, CARD_LABELS } from "../../modules/assistant/words.ts";
+import { write, cardQuestion, CARD_LABELS, Writer } from "../../modules/assistant/words.ts";
+import { checkText } from "../../modules/language/check.ts";
 import { limitCardLine, limitLine, NOT_TIGHTER_REFUSAL } from "../../modules/assistant/limits-card.ts";
 import type { LimitView } from "../../modules/assistant/limits-card.ts";
 import type { MessageData, MessageId } from "../../modules/assistant/words.ts";
 import { LISTING_WORDS } from "../../modules/listings/words.ts";
 import { DAY_FEATURES } from "../../modules/assistant/words-budget.ts";
+import { NOTE_LABELS } from "../../modules/assistant/words-memory.ts";
 import { formatDate, formatTime } from "../../modules/language/format.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
 import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT, dayAndTime } from "../../modules/channels/owner-phones.ts";
-import { OWNER_CHANGE_ALERT, REMOVAL_ALERT, SIGNIN_MESSAGE } from "../../modules/channels/owner-signin.ts";
+import { OPEN_MY_APP, OWNER_CHANGE_ALERT, REMOVAL_ALERT, SIGNIN_MESSAGE } from "../../modules/channels/owner-signin.ts";
 import { KIND_MEANING, OWNER_KINDS, RULES_ONLY, WANT_INSTRUCTIONS, ownerReading } from "../../modules/assistant/intents.ts";
 import type { OwnerKind } from "../../modules/assistant/intents.ts";
 import { ownerPrompt } from "../../modules/assistant/talk-prompt.ts";
@@ -59,6 +61,56 @@ function slots(text: string): string {
 
 function say<K extends MessageId>(language: Language, id: K, data: MessageData[K]): string {
   return slots(write(id, data, language, TZ).text);
+}
+
+// ---- the outgoing check's facts (22 Nov 2026) ----
+// conversation.ts runs the outgoing check (language/check.ts checkText) over every line the assistant says, with the facts its Writer noted while the line was written: each
+// amount, count, date, time and literal (a name, a reference, an example such as "cancel b-14"). The Go runtime fills the packed words itself, so it needs the facts that are NOT
+// one of the shop's values: the literals the words always carry (the examples, "cancel {ref}") and the fixed counts ("the last 24 hours"). Every value the Writer notes while this
+// file renders is logged here (the Writer's own methods, wrapped once); `factsOf` keeps, for each key, the logged literals (sentinels turned into {slots}), counts and amounts whose
+// text is in that key's words, and proves with the real checkText that the key's words pass with those facts and nothing else. A date, time or slot is always one of the shop's
+// values here (the sentinel date and moments); one left in a key's words would be a fixed moment the Go side cannot know, so it stops the generator.
+type Noted = { kind: "lit" | "n" | "inr" | "date" | "slot" | "time"; text: string; v: unknown };
+let noted: Noted[] = [];
+for (const k of ["lit", "n", "inr", "date", "slot", "time"] as const) {
+  const proto = Writer.prototype as unknown as Record<string, (v: unknown) => string>;
+  const f = proto[k];
+  proto[k] = function (this: Writer, v: unknown): string { const t = f.call(this, v); noted.push({ kind: k, text: t, v }); return t; };
+}
+/** The facts a packed key always carries: literal templates (filled on the Go side with the key's own slot values), fixed counts and fixed amounts. */
+type KeyFacts = { l?: string[]; c?: number[]; a?: number[] };
+/** Keys that are not lines the assistant says (prompts, names, Meta's value order, the alerts and the sign-in link, which do not go through the assistant's say). */
+const NOT_SAID = /^(talk\.system|alert\.|signin\.)|\.(name|order)$/u;
+/** The values this file itself makes up to render a shape (a shop called "x", thirteen rows of "b-1"): never facts of a key. */
+const FIXTURES = new Set(["x", "y", "b-1", "SHOP"]);
+function factsOf(l: Language, m: Bag): Record<string, KeyFacts> {
+  const lits = [...new Set(noted.filter((x) => x.kind === "lit" && x.text !== "" && !FIXTURES.has(x.text)).map((x) => slots(x.text)))];
+  const counts = [...new Set(noted.filter((x) => x.kind === "n").map((x) => x.v as number))];
+  const amounts = [...new Map(noted.filter((x) => x.kind === "inr").map((x) => [x.text, (x.v as number) / 100] as const)).entries()];
+  const moments = noted.filter((x) => x.kind === "date" || x.kind === "slot" || x.kind === "time").map((x) => x.text);
+  const out: Record<string, KeyFacts> = {};
+  const failed: string[] = [];
+  for (const key of Object.keys(m).sort()) {
+    if (NOT_SAID.test(key)) continue;
+    const t = m[key];
+    const f: KeyFacts = {};
+    const kl = lits.filter((x) => t.includes(x)).sort();
+    // a count or an amount is the key's own only where a literal does not already cover its digits ("forget n-3" is a literal, not the count 3)
+    let rest = t;
+    for (const x of [...kl].sort((a, b) => b.length - a.length)) rest = rest.replaceAll(x, " ");
+    const digits = new Set(rest.match(/\d+/gu) ?? []);
+    const kc = counts.filter((x) => digits.has(String(x))).sort((a, b) => a - b);
+    const ka = amounts.filter(([text]) => rest.includes(text)).map(([, v]) => v).sort((a, b) => a - b);
+    if (kl.length) f.l = kl;
+    if (kc.length) f.c = kc;
+    if (ka.length) f.a = ka;
+    for (const mt of moments) if (t.includes(mt)) throw new Error(`${l} ${key}: a fixed moment (${mt}) is in the words; the Go side cannot note it`);
+    const r = checkText(t, { language: l, timeZone: TZ, amountsInr: ka, counts: kc, momentsMs: [], links: [], literals: kl });
+    if (!r.ok) failed.push(`${l} ${key}: ${r.problems.join(" ")}`);
+    if (Object.keys(f).length) out[key] = f;
+  }
+  if (failed.length) throw new Error(`the outgoing check refuses these words with their own facts:\n${failed.join("\n")}`);
+  return out;
 }
 
 /**
@@ -105,8 +157,9 @@ function alerts(l: Language, m: Bag): void {
 }
 
 /** One language's messages. */
-function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; hours: Bag } } {
+function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; hours: Bag }; f: Record<string, KeyFacts> } {
   const m: Bag = {};
+  noted = [];
   const D = { year: 2026, month: 11, day: 18 }; // a date to be found again in the text and turned into {date}
   const dateText = formatDate(D, l);
   const withDate = (text: string): string => { if (!text.includes(dateText)) throw new Error(`the date is not in: ${text}`); return text.replaceAll(dateText, "{date}"); };
@@ -127,6 +180,15 @@ function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; h
   if (!some.includes("₹1,23,456")) throw new Error(`the amount is not in: ${some}`);
   m["money_in.some"] = some.replace("₹1,23,456", "{inr}");
   m["talk_fallback"] = say(l, "talk_fallback", { waiting: N });
+  // with a skill that has a day (Bookings): "Today: T." before what waits; the day's count is another number, found again and turned into {today}
+  const TODAY = 7654320;
+  const withToday = say(l, "talk_fallback", { waiting: N, today: TODAY });
+  if (!withToday.includes(String(TODAY))) throw new Error(`the day's count is not in: ${withToday}`);
+  m["talk_fallback.today"] = withToday.replace(String(TODAY), "{today}");
+  // a note the talk proposes, in each audience, with its Remember / No buttons (notes.ts proposeNote, NOTE_LABELS), and the line after No
+  for (const audience of ["owner", "everyone"] as const) m[`note_proposal.${audience}`] = say(l, "note_proposal", { text: S("text"), audience });
+  m.note_declined = say(l, "note_declined", {});
+  m["label.note.yes"] = NOTE_LABELS[l].yes; m["label.note.no"] = NOTE_LABELS[l].no;
   // the shop's memory (words-memory.ts): a saved note in each audience, with and without the undo hint; the list as its head, one line per audience and its foot
   for (const audience of ["owner", "everyone"] as const) for (const undoable of [true, false]) m[`note_saved.${audience}.${undoable ? "undo" : "plain"}`] = say(l, "note_saved", { id: S("id"), text: S("text"), audience, undoable });
   for (const id of ["note_forgotten", "note_undone", "note_unknown"] as const) m[id] = say(l, id, { id: S("id") });
@@ -177,6 +239,11 @@ function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; h
     const { system } = ownerPrompt({ shop, language: l, sources: [{ id: "SRC", kind: "note", text: "SRC" }], limits: [] });
     if (!system.endsWith("\n[SRC] SRC")) throw new Error("the sources are not the prompt's last lines");
     m[`talk.system.${p}.${named ? "named" : "plain"}`] = slots(system.slice(0, -"[SRC] SRC".length)) + "{sources}";
+    // the same with the limits the owner may tighten from the chat (a template's shop that declares some): their "id (name)" list, joined with "; ", is the {limits} slot
+    const withLimits = ownerPrompt({ shop, language: l, sources: [{ id: "SRC", kind: "note", text: "SRC" }], limits: [{ id: S("lid"), about: S("labout") }] }).system;
+    const lim = slots(withLimits.slice(0, -"[SRC] SRC".length));
+    if (!lim.includes("{lid} ({labout})")) throw new Error("the limits are not one list in the prompt");
+    m[`talk.system.${p}.${named ? "named" : "plain"}.limits`] = lim.replace("{lid} ({labout})", "{limits}") + "{sources}";
   }
   // the morning line (morning.ts, templates.ts): each personality's template filled with slots; "nothing" and the running-low part as morningFacts writes them; the template's name
   for (const p of PERSONALITIES) {
@@ -192,7 +259,7 @@ function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; h
   m["morning.low"] = slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ low: N }], moneyPaise: 0, waiting: 0 }).values as Bag).today);
   bookingsWords(l, m, D, dateText);
   alerts(l, m);
-  return { m, cat, stamp: stampOf(l) };
+  return { m, cat, stamp: stampOf(l), f: factsOf(l, m) };
 }
 
 /**
@@ -337,6 +404,10 @@ function rules(): unknown {
     // the same reading for a Bookings shop's kinds (BOOKINGS_KINDS)
     routerBookings: routerOf(BOOKINGS_KINDS),
     talkSchema: ownerPrompt({ shop: { name: "x" }, language: "en", sources: [], limits: [] }).schema,
+    // the schema with declared limits: the limit's enum holds "{id}", which the Go side replaces with the declared ids in their order
+    // the owner's "open my app" on WhatsApp (owner-signin.ts OPEN_MY_APP, compared after phraseOf)
+    openMyApp: OPEN_MY_APP,
+    talkSchemaLimits: ownerPrompt({ shop: { name: "x" }, language: "en", sources: [], limits: [{ id: "{id}", about: "x" }] }).schema,
     leaveFile: listAfter(leave, "const FILE = new RegExp([", "\n].join"),
     leaveOperator: listAfter(leave, "const OPERATOR = new RegExp([", "\n].join"),
     remember: new Function(`return ${memory.slice(memory.indexOf("const REMEMBER = [") + "const REMEMBER = ".length, memory.indexOf("].join", memory.indexOf("const REMEMBER")) + 1)}`)() as string[],

@@ -10,6 +10,7 @@ package bookings
 import (
 	"context"
 	"encoding/json"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
@@ -48,6 +49,9 @@ type Kit struct {
 	reportErrAt int64
 	// Terms is the shop terms now (B72: client/terms.json, read again when it changes, terms.NewReader); nil, or a nil answer: the feature is off
 	Terms func() *terms.File
+	// QRImage makes a UPI request's QR picture and hosts it (start.ts: folderQrImages into the report's pages folder, for a UPI shop with a `report` block); nil: the words
+	// carry the link, the UPI ID and the amount, as TypeScript's do with no picture maker
+	QRImage ownermarked.ImageMaker
 	// Voice is the shop's voice service (runtime.json `speech`, internal/voice); nil: voice is off, and a voice note gets the one line asking to type
 	Voice *speech.Service
 	// shared is the part of the settings every shop has (the assistant's character), for the owner page's assistant view

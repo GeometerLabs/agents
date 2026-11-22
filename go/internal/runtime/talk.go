@@ -17,7 +17,6 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/budget"
-	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
@@ -258,18 +257,60 @@ func (c *conv) talkToOwner(text, key string) bool {
 			sources = append(sources, assistant.TalkSource{ID: n.ID, Kind: "note", Text: n.Kind + who + ": " + n.Text})
 		}
 	}
-	sources = append(sources, c.listingSources()...)
+	// then each skill's own numbers (skill.ts facts: Bookings' counts of the day, the week, the weekdays, the top services, the cancelled), then what customers may be told
+	// (publicContext with no customer: the shop's settings, the free times, the listings), in the skills' order (talk-owner.ts)
+	for _, k := range c.skills {
+		if f, ok := k.(TalkFactsSkill); ok {
+			sources = append(sources, f.Facts(c.now)...)
+		}
+	}
+	for _, k := range c.skills {
+		if p, ok := k.(PublicSkill); ok {
+			sources = append(sources, p.PublicContext("", c.now)...)
+		}
+	}
 	set := c.r.o.Client.Settings
 	named := "plain"
 	if set.Assistant.Name != "" {
 		named = "named"
 	}
-	system := c.pack.Say("talk.system."+set.Assistant.Personality+"."+named, "shop", set.Name, "name", set.Assistant.Name, "sources", assistant.SourceLines(sources))
+	// the declared limits the owner may tighten from the chat (conversation.ts talkLimits: each limit's id and its name in the owner's language), in the prompt and the schema
+	key0 := "talk.system." + set.Assistant.Personality + "." + named
+	var ids, listed []string
+	if c.limitsSkill() != nil {
+		for _, l := range c.r.declared() {
+			v := l.view()
+			about := v.Name[c.lang]
+			if about == "" {
+				about = v.Name["en"]
+			}
+			ids = append(ids, l.ID)
+			listed = append(listed, l.ID+" ("+about+")")
+		}
+	}
+	vals := []string{"shop", set.Name, "name", set.Assistant.Name, "sources", assistant.SourceLines(sources)}
+	if len(ids) > 0 {
+		key0 += ".limits"
+		vals = append(vals, "limits", strings.Join(listed, "; "))
+	}
+	system := c.pack.Say(key0, vals...)
 	user := assistant.HistoryText(c.a.Chat) + understanding.Redact(text)
-	got, meter, month := c.askMetered("owner_talk", key, understanding.Call{System: system, User: user, Schema: assistant.Rules().TalkSchema, Name: "talk"})
+	got, meter, month := c.askMetered("owner_talk", key, understanding.Call{System: system, User: user, Schema: assistant.TalkSchemaFor(ids), Name: "talk"})
 	literals := []string{set.Name}
 	fallback := func() bool {
-		c.say("talk_fallback", "n", strconv.Itoa(len(c.a.OpenCards(c.now))))
+		// what waits: every skill's items and the open cards; with a skill that has a day, today's count first (conversation.ts talkToOwner)
+		waiting := len(c.a.OpenCards(c.now))
+		for _, k := range c.skills {
+			waiting += len(k.Waiting())
+		}
+		for _, k := range c.skills {
+			if ds, ok := k.(DaySkill); ok {
+				w := c.pack.Writer()
+				c.sayWith(w, "", "talk_fallback.today", "today", w.N(int64(len(ds.Day(c.today())))), "n", strconv.Itoa(waiting))
+				return true
+			}
+		}
+		c.say("talk_fallback", "n", strconv.Itoa(waiting))
 		return true
 	}
 	if got.Reason != "" || got.Answer == nil {
@@ -300,13 +341,14 @@ func (c *conv) talkToOwner(text, key string) bool {
 		c.onLimit(text, answer.Limit)
 		return true
 	}
-	// talk_reply: the words as they are, through the outgoing check the page's every line has (conversation.ts `tell`)
-	if problems := language.CheckText(checked.Text, checked.Facts); len(problems) > 0 {
-		c.logLine("send_message", "blocked", map[string]any{"templates": []string{"assistant_talk_reply"}}, map[string]string{"to": "owner", "channel": "owner_page"}, "the answer failed the outgoing check and was not shown: "+strings.Join(problems, " "))
-	} else {
-		c.tellText("talk_reply", checked.Text, "", nil)
-	}
+	// talk_reply: the words as they are, with the facts the talk's checks used, through the outgoing check every line has (conversation.ts `tell`, words-memory.ts talkReply)
+	w := c.pack.Writer()
+	w.Note(checked.Facts)
+	c.tellText("talk_reply", checked.Text, w.Facts(), "", nil)
 	c.chatLine("assistant", checked.Text)
-	// a note the talk proposes is shown with Remember / No buttons, which the owner's page does not have: none is made here (notes.ts `proposeNote`)
+	// a note the talk proposes is shown with Remember / No buttons on WhatsApp (notes.ts `proposeNote`); the owner's page has no such buttons, so none is made there
+	if answer.NoteKind != "" {
+		c.proposeNote(answer.NoteKind, answer.NoteText, answer.NoteAudience)
+	}
 	return true
 }

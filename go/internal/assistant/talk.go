@@ -43,11 +43,12 @@ type TalkSentence struct {
 
 // TalkAnswer is the model's answer, read.
 type TalkAnswer struct {
-	Sentences []TalkSentence
-	NoteKind  string // a note the model proposes (the owner's page makes no proposal: carried only)
-	NoteText  string
-	Limit     string // a declared limit the owner means, by id (never a value)
-	AskOwner  bool   // a customer's turn: the owner should be asked (the template offers its way to the owner and never says the owner will do anything)
+	Sentences    []TalkSentence
+	NoteKind     string // a note the model proposes: shown with Remember / No on WhatsApp (the owner's page makes no proposal)
+	NoteText     string
+	NoteAudience string // "owner", "everyone", or "" when the model gave neither (the note kind's own audience then)
+	Limit        string // a declared limit the owner means, by id (never a value)
+	AskOwner     bool   // a customer's turn: the owner should be asked (the template offers its way to the owner and never says the owner will do anything)
 }
 
 var collapse = regexp.MustCompile(`[` + language.JSSpace + `]+`)
@@ -97,6 +98,9 @@ func ReadTalkAnswer(raw any) *TalkAnswer {
 		t, tok := n["text"].(string)
 		if kok && tok {
 			out.NoteKind, out.NoteText = k, t
+			if a, _ := n["audience"].(string); a == "owner" || a == "everyone" {
+				out.NoteAudience = a
+			}
 		}
 	}
 	if l, ok := o["limit"].(string); ok && l != "" {
