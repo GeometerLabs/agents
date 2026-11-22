@@ -159,7 +159,7 @@ const menuList = (f: MessageFacts) => f.menu.map((i) => `${i.name} ${formatInr(i
 export const payTo = (f: MessageFacts): string => (f.upiId ? `${need(f, "link")} (UPI ID ${f.upiId}, ${need(f, "payee")})` : need(f, "link"));
 const places = (f: MessageFacts) => need(f, "areas").join(", ");
 /** The rest of an order after the advance: nothing, or what is paid on collection or delivery. */
-const rest = (f: MessageFacts): string => {
+export const rest = (f: MessageFacts): string => {
   const left = need(f, "balanceInr");
   const pickup = need(f, "mode") === "pickup";
   if (f.language === "en") return left === 0 ? "Paid in full." : `${inr(f, "balanceInr")} is to pay on ${pickup ? "pickup" : "delivery"}.`;
