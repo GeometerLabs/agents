@@ -250,7 +250,7 @@ func TestDerivedReadsMatchTypeScript(t *testing.T) {
 					t.Errorf("%s: latest of %s %q %q, want %v %v", c.Name, *l[0], idOf(live), idOf(done), str(l[1]), str(l[2]))
 				}
 			}
-			if got := jsonOf(st.OrderFacts(now)); !sameJSON(got, nullToEmpty(r.Facts)) {
+			if got := jsonOf(st.OrderFacts(now)); !sameJSON(nullToEmpty(got), nullToEmpty(r.Facts)) {
 				t.Errorf("%s @%d: orderFacts\n got %s\nwant %s", c.Name, now, got, r.Facts)
 			}
 			for _, w := range r.ChatWork {
@@ -276,9 +276,20 @@ func str(p *string) string {
 	return *p
 }
 
+// compactJSON is a vector's JSON as one line, its members in the order the generator wrote them: the vector file is indented, the runtime's output is not, and only the
+// bytes past the white space are the TypeScript's answer.
+func compactJSON(raw json.RawMessage) string {
+	var b bytes.Buffer
+	if err := json.Compact(&b, raw); err != nil {
+		return string(raw)
+	}
+	return b.String()
+}
+
+// nullToEmpty reads a JSON null as an empty list: a page with no receipts is [] in the TypeScript, and a nil list in Go is written null.
 func nullToEmpty(raw json.RawMessage) json.RawMessage {
-	if bytes.Equal(bytes.TrimSpace(raw), []byte("[]")) {
-		return json.RawMessage("null")
+	if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		return json.RawMessage("[]")
 	}
 	return raw
 }
@@ -290,10 +301,10 @@ func TestChannelReadsMatchTypeScript(t *testing.T) {
 		for _, r := range c.Reads {
 			st, _ := parseCase(t, c)
 			now := r.NowMs
-			if got := s.OrderOffer(st, nil, now, false); string(got) != string(r.Offer) {
+			if got := s.OrderOffer(st, nil, now, false); string(got) != compactJSON(r.Offer) {
 				t.Errorf("%s @%d: offer\n got %s\nwant %s", c.Name, now, got, r.Offer)
 			}
-			if got := s.OrderShopInfo(true); string(got) != string(r.OfferPaused) {
+			if got := s.OrderShopInfo(true); string(got) != compactJSON(r.OfferPaused) {
 				t.Errorf("%s: paused shop\n got %s\nwant %s", c.Name, got, r.OfferPaused)
 			}
 			for _, v := range r.Views {
@@ -308,7 +319,7 @@ func TestChannelReadsMatchTypeScript(t *testing.T) {
 					continue
 				}
 				views++
-				if string(got) != string(want) {
+				if string(got) != compactJSON(want) {
 					t.Errorf("%s @%d: view %s\n got %s\nwant %s", c.Name, now, hash[:8], got, want)
 				}
 			}
@@ -324,7 +335,7 @@ func TestChannelReadsMatchTypeScript(t *testing.T) {
 				}
 			}
 			owners++
-			if got := s.OwnerView(st, now, c.Entries, nil); string(got) != string(r.Owner) {
+			if got := s.OwnerView(st, now, c.Entries, nil); string(got) != compactJSON(r.Owner) {
 				if sameJSON(got, r.Owner) {
 					t.Errorf("%s @%d: owner view in another member order\n got %s\nwant %s", c.Name, now, got, r.Owner)
 				} else {
@@ -337,7 +348,7 @@ func TestChannelReadsMatchTypeScript(t *testing.T) {
 				var want []json.RawMessage
 				_ = json.Unmarshal(d[1], &want)
 				for i, l := range runtime.LANGUAGES {
-					if got := jsonOf(s.DocumentsOf(st, c.Entries, hash, l)); !sameJSON(got, nullToEmpty(want[i])) {
+					if got := jsonOf(s.DocumentsOf(st, c.Entries, hash, l)); !sameJSON(nullToEmpty(got), nullToEmpty(want[i])) {
 						t.Errorf("%s: documents of %s in %s\n got %s\nwant %s", c.Name, hash[:8], l, got, want[i])
 					}
 				}

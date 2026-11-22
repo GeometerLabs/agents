@@ -517,7 +517,7 @@ func (s *Settings) OwnerView(st *Store, nowMs int64, entries []store.Entry, app 
 	untold := []accounting.UntoldInput{}
 	for _, o := range st.Orders {
 		for _, u := range o.RefundsUntold {
-			untold = append(untold, accounting.UntoldInput{Case: o.ID, AmountInr: float64(u.AmountInr)})
+			untold = append(untold, accounting.UntoldInput{Case: o.ID, AmountInr: float64(u.AmountPaise) / 100}) // the TypeScript keeps amountInr; payments.UntoldRefund keeps paise (written back as amountInr)
 		}
 	}
 	money := accounting.OwnerMoney(accounting.MoneyViewInput{Journal: OrdersJournal(entries), Entries: entries, RefundsUntold: untold, NowMs: nowMs, TimeZone: s.Timezone})
