@@ -65,7 +65,7 @@ func TestTidyForgetsOldKeysAndAlerts(t *testing.T) {
 
 func TestPruneDropsOnlyOldKeysPastTheCapOldestFirst(t *testing.T) {
 	l := Line{Applied: appliedMap{m: map[string]Applied{}}}
-	now := int64(1000 * Day)
+	now := int64(1000 * day)
 	for i := 0; i < MaxApplied+3; i++ {
 		l.Applied.set("k"+string(rune('a'+i%26))+string(rune('a'+i/26%26))+string(rune('a'+i/676)), Applied{AtMs: now - SafeKeepMs - int64(i)*1000})
 	}

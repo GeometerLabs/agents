@@ -819,7 +819,9 @@ func (a *Agent) onSupplierMessage(m messaging.InboundMessage, sp *Supplier) {
 	}
 	a.log(nil, m.From, "receive_message", "confirmed", map[string]any{"text": m.Text, "reply": nilIfEmpty(replyID)}, logMore{refs: map[string]string{"from": "supplier", "supplier": sp.ID, "messageId": m.ID}})
 	if understanding.IsStop(language.Canon(m.Text)) {
-		a.st.OptedOut = append(a.st.OptedOut, digits(m.From))
+		if !a.st.optedOut(digits(m.From)) { // a Set in TypeScript: a second STOP adds nothing
+			a.st.OptedOut = append(a.st.OptedOut, digits(m.From))
+		}
 		a.log(nil, m.From, "opt_out", "confirmed", map[string]any{}, logMore{refs: map[string]string{"supplier": sp.ID}})
 		a.tellOwner(nil, one("owner_supplier_stopped"), &sayExtra{facts: facts{"supplierName": sp.Name}})
 		return
