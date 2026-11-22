@@ -1,0 +1,115 @@
+{
+ "styles": [
+  {
+   "id": "clay",
+   "name": "Clay",
+   "palette": [
+    "c4795c",
+    "d99277",
+    "e0bd6a",
+    "cf9f52",
+    "a8b37e",
+    "8ba06b",
+    "83b0a4",
+    "86a5c3"
+   ]
+  },
+  {
+   "id": "critters",
+   "name": "Critters",
+   "palette": [
+    "7dd3fc",
+    "a5b4fc",
+    "c4b5fd",
+    "f0abfc",
+    "fda4af",
+    "fca5a5",
+    "fdba74",
+    "fcd34d"
+   ]
+  },
+  {
+   "id": "sprouts",
+   "name": "Sprouts",
+   "palette": [
+    "7dd3fc",
+    "a5b4fc",
+    "c4b5fd",
+    "f0abfc",
+    "fda4af",
+    "fca5a5",
+    "fdba74",
+    "fcd34d"
+   ]
+  },
+  {
+   "id": "moods",
+   "name": "Moods",
+   "palette": [
+    "7dd3fc",
+    "a5b4fc",
+    "c4b5fd",
+    "f0abfc",
+    "fda4af",
+    "fca5a5",
+    "fdba74",
+    "fcd34d"
+   ]
+  },
+  {
+   "id": "pixelbot",
+   "name": "Pixel Bot",
+   "palette": [
+    "7dd3fc",
+    "5eead4",
+    "86efac",
+    "bef264",
+    "fde68a",
+    "fdba74",
+    "f9a8d4",
+    "c4b5fd"
+   ]
+  }
+ ],
+ "personalities": [
+  "warm",
+  "cheerful",
+  "brief"
+ ],
+ "paints": [
+  "pink",
+  "blue",
+  "green",
+  "marigold",
+  "brick"
+ ],
+ "maxPeople": 6,
+ "ownerApprover": "owner",
+ "refundPaisePerDay": 500000,
+ "lowestLinkInr": 1,
+ "capabilities": {
+  "upi": {
+   "confirmsAutomatically": false,
+   "refundsAutomatically": false,
+   "takesPartPayments": false,
+   "cancels": false,
+   "readsBack": false,
+   "readsSettlements": false
+  },
+  "razorpay": {
+   "confirmsAutomatically": true,
+   "refundsAutomatically": true,
+   "takesPartPayments": true,
+   "cancels": true,
+   "readsBack": true,
+   "readsSettlements": true
+  }
+ },
+ "defaultModule": "upi",
+ "chatGuest": {
+  "en": "Chat guest",
+  "hi": "चैट अतिथि",
+  "ml": "ചാറ്റ് അതിഥി",
+  "kn": "ಚಾಟ್ ಅತಿಥಿ"
+ }
+}
