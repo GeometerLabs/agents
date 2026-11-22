@@ -723,3 +723,39 @@ templates/commerce/bookings/contract/`: **143 of 143** (0 fail, 0 skipped). `nod
 words-fresh test included). `go build ./...`, `go vet ./...` and `go test ./...` pass (`internal/voice` is new). TypeScript was not changed (only go/scripts generators and one
 assertion in words-fresh.test.ts); no TypeScript bug was found. Not done (Deferred.md of bookings and runtime): the outgoing check over the assistant's own lines (recorded as
 allowed), a message to a chat guest and a guest's label, the morning line's picture, Sarvam, a chat guest's hold-to-talk, "open my app" on WhatsApp for a template's shop.
+
+## go-w2-tsfix-22nov (22 Nov 2026): wave 2's TypeScript findings fixed on both sides
+
+Each real bug found by the Go port in the TypeScript is fixed in the TypeScript AND its Go twin, the same way, with a test on each side (a TypeScript unit test, and the
+Go vectors made by running the TypeScript, or a Go unit test; a contract case where HTTP can see it). Fixes that change how old records are read (the books, the report's jobs)
+can change a past month's figures where its record had such a line.
+
+**Fixed (money and opt-out first):**
+- `journal.ts readNew`: a `kept` event naming an `owed` refund carries no amount, and the reader demanded one (post threw unless the template added `amountPaise`). (journal.go)
+- `bookings/report/data.ts workOf`: a refund held for the owner is also ended by a later `refund` line of the same payment that is confirmed (a person's word, the provider's
+  list), blocked or failed; before, only an `owner_decision` ended it, so a settled hold was "waiting for owner" in every later month. (bookingsreport/data.go)
+- `figures.ts`: the borrowed refund amount is whole paise as the journal writes it (a bare `Number()` took "1e3", "12.5"). (figures.go)
+- `owner-money.ts tally()`: a NaN time is in no range (Go already left it out).
+- `settlements.ts`: a settled `post()` that throws after its write is not listed as a problem as well; a read line with no `day` does not hide the last day read. (settlements.go)
+- `messaging.ts` (the fake's STOP): ASCII letters only, so "ﬆop" is not STOP, as the agent's own reading (`isStop`) never took it. (messaging/fake.go)
+- `STOP_SITES` (Bookings, and Orders' copy of the same line): a rule id such as `constructor` is an unknown rule (`Object.hasOwn`); it threw and no report was made.
+- `statuses.ts recordMessageStatus`: a time no Date holds (a forged webhook, past 8.64e15 ms) is left out of the line instead of throwing; the runtime's Go copy (which wrote
+  a wrong year) uses `messaging.ISOString`. Contract: `smoke.contract.test.ts` "a status report whose time no date can hold", on both runtimes.
+- `say.ts`: buttons answered by the shop's Guard (held, refused, conflict, unauthenticated) are not sent again as text; only the provider's own 4xx falls back. (messaging/say.go)
+- `own-calendar.ts`: a read, update or delete never makes `store.ownCalendar`; only an insert does. (bookings/agent_offer.go `ownRead`)
+- `summary.ts fitText`: the characters that go are removed before the spaces are folded (a zero-width space between spaces left two, and the paper got the older link). (report/summary.go)
+- `text.ts settledWho` and `talk-prompt.ts historyText`: cut with the new `sliceUnits` (modules/language/format.ts), never through a surrogate pair (Go's UTF16Slice already).
+- `notes.ts GOAL_WORDS`: the word ends at `(?![\p{L}\p{M}\p{N}_])`, not `\b`, so a goal written in Devanagari, Malayalam or Kannada is a goal (Go reads the generated pattern).
+- `invariants.ts`: the privacy faults visit refs in key order (Go always did).
+
+**Not changed, one line each:**
+- `refunds.ts amountInr: r.amount / 100`: the amount is the payments service's own figure for that refund; rounding would tell the customer a wrong amount, and JSON keeps a
+  fraction exact (Go writes the same decimal). Not reachable with whole-rupee settings.
+- `interactiveProblem` counting code points: deliberate (the comment: a label is counted as the reader sees it); Meta does not document its counting; it differs only for
+  characters outside the Basic Multilingual Plane.
+- "The UPI go-live certificate is read as the example": not found. A certificate made on the UPI example's settings is `own` for that shop and Glow Salon's is `example`
+  (new case in report-go-live.test.ts); hand check, CLI and runtime digest the same validated settings.
+- Listings and directory: the `file_taken` session token is fixed on main (http.ts records the short id). The Stock page's 60-unit pre-check and `start` with a missing stock
+  id are `modules/stock` behaviour, which streams W4 and W5 are porting now: changing it here would collide (left to them). "I can tighten: ." with no declared limits needs a
+  new sentence in four languages (a review of the Malayalam and Kannada), so it is not small. The restore entry's "moved on by 100,000" is one sentence for every template;
+  for a listings shop it is only beside the point.

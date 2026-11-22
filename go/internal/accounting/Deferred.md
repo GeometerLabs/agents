@@ -13,16 +13,11 @@
 
 ## Known differences from the TypeScript (small, on purpose)
 
-* **`BooksFaults` visits an entry's refs in alphabetical key order.** The TypeScript visits them in the order they were written, which a Go `map[string]string` (internal/store's `Entry.Refs`) does not
-  keep. The two agree whenever an entry has at most one ref carrying a phone number or a private name, which is every crash-test case; with two, the pair may be listed the other way round. To
-  close it the store would have to keep the refs' order (a slice of pairs).
 * **Amounts that are not whole paise.** An event amount is an int64, so the TypeScript's `A <kind> of 1.5 paise cannot be posted` for a fractional amount cannot be built (the message for a zero,
-  a negative and a too-large whole number is the same). Three places read a bare `Number()` of a ref where the TypeScript would carry a fraction into a figure: the borrowed refund amount in
-  `FiguresOf` (`refundAmountFromPayment`: a fractional or huge text is read as "no amount to borrow"), the held and not-through-the-assistant rows of `OwnerMoney` (a text that is not whole reads as 0:
-  the settlement job always writes `String(int)`), and `MarkObligations` (the amounts are float64 inside the fold; `OwnerMoney` truncates the result). JavaScript numbers beyond 2^53 are out of scope.
+  a negative and a too-large whole number is the same). Two places read a bare `Number()` of a ref where the TypeScript would carry a fraction into a figure: the held and not-through-the-assistant rows of
+  `OwnerMoney` (a text that is not whole reads as 0: the settlement job always writes `String(int)`), and `MarkObligations` (the amounts are float64 inside the fold; `OwnerMoney` truncates the result). JavaScript numbers beyond 2^53 are out of scope.
 * **Times the record cannot have.** `Date.parse` is `ParseISO`, which reads what `toISOString` writes, the same with an offset or without milliseconds, and a bare date. A time that is not one of
   those is NaN in JavaScript; here a line with one is left out of a period (as NaN comparisons do) except in `tally.go` and the document page, which return the TypeScript's `Invalid time value`.
-  The owner's `tally()` in JavaScript counts a line whose time is NaN (both comparisons false); Go leaves it out. The record never writes such a time.
 * **A `kept` event that names a refund with an empty text** (`owed: ""`) is a key in both languages; every other empty text means "none" where the TypeScript's check is a truthiness test.
 * **An unknown language** is a panic in `accounting.Owner`, `Doc` and `BlockWords` (the TypeScript's lookup gives `undefined` and the next property read throws). The four are the only languages.
 * **The settlement job is synchronous** (the TypeScript is async): the adapter blocks.
@@ -31,3 +26,14 @@
 
 The settlement fee reading (which way Razorpay's recon row holds its tax), the Tally import and every file's first use by an accountant are as unproven as the TypeScript's (modules/Deferred.md); the
 vectors prove the Go equals the TypeScript, not that either equals the world.
+
+## TypeScript findings fixed on both sides (22 Nov 2026, branch go-w2-tsfix-22nov)
+
+* A `kept` event naming an `owed` refund carries no amount (post writes none), and the reader demanded one, so the line was a problem and post() threw unless the template
+  added `amountPaise` itself. The reader no longer asks for it (journal.ts `readNew`, journal.go).
+* The borrowed refund amount (`refundAmountFromPayment`) is a whole number of paise written as the journal writes one; "1e3", "0x10" or "12.5" lends nothing (figures.ts, figures.go).
+* The owner's `tally()` refuses a line whose time does not parse (JavaScript counted it; Go never did).
+* A settlement read line with no `day` is skipped when the job works out the last day read (`sort()` put it last, so the days since were taken as never read).
+* A settled post() that throws after its write is not listed as a problem as well (its line is the journal's problem already); one that throws before is.
+* The privacy check visits an entry's refs in key order on both sides (invariants.ts sorted them; Go always did), so the faults do not depend on the written order.
+Each reads old records again: a past month's figures can change where its record had one of these lines.
