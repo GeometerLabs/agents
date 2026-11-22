@@ -150,3 +150,13 @@ test("words-fresh: the voice vectors the Go voice module is proved on (go/intern
   assert.equal(voiceVectors.stale(), false, "the voice vectors are out of date: run  node go/scripts/gen_voice_vectors.ts  and commit the result");
 });
 
+
+test("words-fresh: the stock vectors the Go stock count is proved on (go/internal/stock/testdata) equal a fresh run of modules/stock/stock.ts", async () => {
+  const stockVectors = await import("../../../../go/scripts/gen_stock_vectors.ts");
+  assert.equal(stockVectors.stale(), false, "the stock vectors are out of date: run  node go/scripts/gen_stock_vectors.ts  and commit the result");
+});
+
+test("words-fresh: the Stock orders words the Go runtime says and reads (go/internal/stockorders/words.json) equal a fresh render of the TypeScript templates", async () => {
+  const stockOrdersWords = await import("../../../../go/scripts/gen_stockorders_words.ts");
+  assert.equal(stockOrdersWords.stale(), false, "the Stock orders words are out of date: run  node go/scripts/gen_stockorders_words.ts  and commit the result");
+});

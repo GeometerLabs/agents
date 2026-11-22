@@ -20,6 +20,7 @@ go build -o bin/listings ./cmd/listings                 # 23.3 MB; with -ldflags
 go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags "-s -w" 16.8 MB
 go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, "Waves 1b and 1c finished")
 go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (wave 2, in progress: TRIAL.md "Wave 2: the Bookings runtime")
+go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (wave 2, go-w5-stock-22nov: TRIAL.md)
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -80,6 +81,10 @@ internal/slots/          fills `{0}` slots in words the TypeScript rendered (scr
 internal/accounting/     the shop's books (modules/accounting): the journal fold over the record, posting, gap-free document numbers per financial year, periods, documents and their page, the accountant's files (journal and documents CSV, settlements CSV, README, Tally XML), the owner's money view, invariants, figures, the books summary, the settlements read; accounting/render holds the HTML (owner's Money section, the report's money block, the document page)
 internal/report/         the generic monthly report (modules/report): canonical JSON, digest, sealed envelope, the signed summary link (grapheme cuts as Intl.Segmenter), the page and seal block, text helpers, the go-live reading, the once-a-month sender
 internal/bookingsreport/ Bookings' monthly report (templates/commerce/bookings/report): the data counted from the record, the report page, owner text, monthly certificate, WhatsApp text and template, the monthly job
+internal/stock/          the shop's one stock count (modules/stock/stock.ts): the state under assistant.stock, the owner's acts, the shop's own record of a sale or a delivery (Orders,
+                         Stock orders), the reconciles and their history rules, the low alerts once per crossing; listings keeps aliases of it (22 Nov)
+internal/stockorders/    the Stock orders template (wave 2, go-w5-stock-22nov): settings, the store field for field, the rule reader, the words (generated), the limits, the agent with
+                         its approval cards and send once for the purchase order and the reminder, the owner's page, the assistant skill; cmd/stock-orders runs one shop
 cmd/directory/           main of the directory of local shops (CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change, `health <url>`; the contract's test clock on 127.0.0.1 only)
 internal/directory/      the directory (modules/discovery): signed feeds read, checked and indexed (SQLite + FTS5, the TypeScript's own file), the fair order, search, the pages, the MCP endpoint, the signed
                          Agent Card, the buyer's assistant; the words are GENERATED from modules/discovery/words.ts (scripts/gen_directory.ts), the page's style, script, tools, card and prompt are Go source (words/); read Explanation.md and Deferred.md
@@ -100,6 +105,8 @@ internal/voice/          voice notes (modules/voice, B29): the runtime.json `spe
 scripts/gen_chat_words.ts  writes internal/runtime/chatwords/words.json (the chat's own words: the rate line, the quick taps, "Voice message") from the TypeScript
 scripts/gen_customer_talk.ts  writes internal/assistant/customerwords/words.json: a customer's talk prompt for every personality, character name and language, and its answer schema; gen_customer_talk_vectors.ts the checks, answers and prompts the Go ones are proved on
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
+scripts/gen_stock_vectors.ts     writes internal/stock/testdata/stock-vectors.json: modules/stock/stock.ts run over six scenarios, every step's answer and state (--check)
+scripts/gen_stockorders_words.ts writes internal/stockorders/words.json: Stock orders' messages, templates, labels, state and stock words and the reader's patterns (--check)
 scripts/gen_bookings_reading.ts  writes internal/bookings/reading.json: the Bookings rule parser's patterns, the decision model's questions, the model's prompt and schema as templates
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
                            in a corpus); `--check` only compares; the test words-fresh fails when it was not run after a change to a pattern it names
