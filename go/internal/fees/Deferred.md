@@ -6,15 +6,18 @@ centre without the feature, and says so in the record. The contract tests that w
 
 | Not ported | What a centre sees on Go | Contract tests waiting |
 | --- | --- | --- |
-| Classes' work (classes/run.ts): the class link before each class, the consent question, the attendance question and marks (WhatsApp and the owner's page), the missed-class note, doubts, "next class", material links on WhatsApp | none of it happens; a parent's class words are read as fee words; the owner's page has an empty Classes section | `classes.contract.test.ts` (all but the reading material) |
+| Classes' state beyond what it models (classes_run.go ClassesState): a member a later version adds to `classes` is not carried through raw | lost if a later TypeScript writes one | none |
 | The monthly report (report/, monthly-job.ts) | no report is made or sent | `owner.contract.test.ts` "the monthly report" |
-| The licence's owner notice (server/licence.ts over modules/licence/notice.ts) | the wind-down and final stop work (paused, no links, links closed), but the owner is not sent the one notice | `owner.contract.test.ts` "one service notice" |
 | The shop's assistant over the Fees skill (src/assistant.ts, modules/assistant): "who owes fees", what waits as cards, cancel and refund cards, the morning line, the app view, the talk box | the owner's free words get "I did not understand"; the talk box and a card's answer are refused in the record, as for a centre without the assistant | `owner.contract.test.ts` "the shop's assistant" (2) |
 | The shop's talk to a parent (block M: talkToCustomer with "your child") | an unreadable message gets the "did not understand" menu | `record.contract.test.ts` "the shop's talk" |
 | The model steps of reading (the decision model and the language model through the shared router, reading.ts) | every message is read by the rules (reading.go) | none (no contract test gives Fees a model for reading) |
 | Voice notes heard by the speech service (B29), and the owner's voice to the assistant | a voice note gets the one line asking to type, as with voice off | none |
 | The shop terms on WhatsApp (B72), the handover code ("move K7M2QX") | the owner's "terms" or "move" words get "I did not understand" | none |
 | A parent's own chat on their private page (W2) | a parent's thread gets the public chat line | none |
+| Other approvers (B37): their relay replies are not told apart from a parent's, and a refund the owner asks for is sent without `Geo-Requested-By` | with an `approvers` block, an approver's "approve K7M2QX" is read as words, and Guard may ask the owner to approve their own refund | none |
+| The daily settlement read for a Razorpay centre (accounting/settlements.ts readSettlementsOnce) | yesterday's settlement rows are not posted to the books | none |
+| The button-mode notices (reader.ts announceButtonMode: the AI allowance used up, the outside switch, a model fault) | the owner is not told; Fees reads by the rules on Go anyway | none |
+| The retention of confirmation pages and of the chat (runtime.ts compactStore: a settled fee's page kept 90 days after its press, the chat threads with the conversations) | confirmation pages and chat threads are kept | none |
 | A chat guest's label in the owner's message (chat-guest.ts guestLabel) | the owner reads the chat's conversation id; not ported for any template yet | none |
 | The parents' web push of the centre's messages (push.ts alsoPushTo), a customer's push of a page's message | not sent | none |
 | The settings' refusal sentences proved on vectors | written from settings.ts by hand, one contract test pins one sentence | none |

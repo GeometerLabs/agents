@@ -1,59 +1,18 @@
 package fees
 
-// Classes (a `classes` block in the settings: Fees grown with batches' class links, reading material, attendance and doubts): the parts the Go runtime has so far. The state is
-// classes/state.ts ClassesState, kept field for field (the store's `classes` member is carried raw until a step types it, so a centre that moves between the runtimes loses
-// nothing). The reading material (server/materials.ts, the parent's private page) is served here; the class link, the consent question, the attendance, the missed-class note
-// and the doubts (classes/run.ts) are NOT ported yet: the beat does no Classes work on Go, a parent's class words and the teacher's commands are left to the fee reading as a
-// centre without Classes reads them, and the owner's page shows no Classes section's waiting work (Deferred.md says so, with the contract tests that wait on it).
+// Classes' reading material (server/materials.ts, the parent's private page "/m/<batch>"): the teacher's own files on the centre's own server, handed out only to a private link
+// whose parent has a student in the batch who may open it now (classes/view.ts materialView, judged from the SAVED fees). The rest of Classes is classes_run.go.
 
 import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/GeometerLabs/agents/go/internal/messaging"
-	"github.com/GeometerLabs/agents/go/internal/zone"
 )
-
-// ClassesState is classes/state.ts ClassesState; Extra is any member a later version adds.
-type ClassesState struct {
-	BatchLinks     map[string]string  `json:"batchLinks"`
-	SessionLinks   map[string]string  `json:"sessionLinks"`
-	Sessions       map[string]rawJSON `json:"sessions"`
-	Consent        map[string]rawJSON `json:"consent"`
-	Doubts         []rawJSON          `json:"doubts"`
-	NextDoubt      int64              `json:"nextDoubt"`
-	AwaitingDoubt  map[string]rawJSON `json:"awaitingDoubt"`
-	DoubtsToldAtMs map[string]int64   `json:"doubtsToldAtMs"`
-}
-
-// classFacts are a class message's own facts (run.ts ClassFacts).
-type classFacts struct{}
-
-func (c *classFacts) apply(*MessageFacts) {}
-
-// classesTick is classes/run.ts onTick: not ported (see the file's comment).
-func (a *Agent) classesTick() error { return nil }
-
-// classesContact is run.ts onContact: not ported; the fee reading goes on as for a centre without Classes.
-func (a *Agent) classesContact(messaging.InboundMessage) (bool, error) { return false, nil }
-
-// classesTeacher is run.ts onTeacher: not ported.
-func (a *Agent) classesTeacher(messaging.InboundMessage) (bool, error) { return false, nil }
-
-// classesPageAction is run.ts onPageAction: not ported, so nothing the page shows is waiting.
-func (a *Agent) classesPageAction(string, string, string) (bool, error) { return false, nil }
-
-// ownerClassesView is classes/view.ts ownerClassesView with no class work ported: nothing waits.
-func ownerClassesView(*Settings, *Store, int64) any {
-	return map[string]any{"pending": []any{}, "doubts": []any{}}
-}
 
 // ---- the reading material (server/materials.ts) ----
 
@@ -168,46 +127,20 @@ func (k *Kit) material(st *Store, linkHash, batch, file string) any {
 	return nil
 }
 
-// mayOpen is rules.ts checkClassAccess for the material page: in the batch, consent (an adult needs none), and no ordinary fee past its grace days (a back due only when the centre
-// set oldDuesStopLink). The consent answers are classes state, which is read raw here.
+// mayOpen is view.ts materialView's rule for one student: checkClassAccess over the SAVED fees (a page open cannot call the payments service).
 func (k *Kit) mayOpen(st *Store, x Student) bool {
 	s := k.Settings
-	if !x.Adult && !consentYes(st, x.Parent) {
-		return false
+	consent := "waiting"
+	if x.Adult {
+		consent = "adult"
+	} else if cs := st.classesRead(); cs != nil && cs.Consent[x.Parent] != nil && cs.Consent[x.Parent].Answer != "" {
+		consent = cs.Consent[x.Parent].Answer
 	}
-	now := k.now()
+	var fees []feeSnap
 	for _, d := range st.Dues {
-		if d.Customer != x.Parent || d.StudentName != x.Name {
-			continue
-		}
-		if d.BackDue && !s.Classes.OldDuesStopLink {
-			continue
-		}
-		if d.State == Open && balancePaise(d) > 0 && now >= graceEnd(s, d) {
-			return false
+		if d.Customer == x.Parent && d.StudentName == x.Name {
+			fees = append(fees, feeSnap{d.State, d.DueDate, balancePaise(d), d.BackDue})
 		}
 	}
-	return true
-}
-
-// consentYes: the contact answered yes to the consent question (classes state `consent[phone].answer`).
-func consentYes(st *Store, phone string) bool {
-	var c struct {
-		Consent map[string]struct {
-			Answer string `json:"answer"`
-		} `json:"consent"`
-	}
-	if st.Classes == nil || jsonUnmarshal(st.Classes, &c) != nil {
-		return false
-	}
-	return c.Consent[phone].Answer == "yes"
-}
-
-type rawJSON = json.RawMessage
-
-var jsonUnmarshal = json.Unmarshal
-
-// graceEnd is rules.ts isPastGrace's boundary: the start of the day after due date + grace days (as addLateFee counts).
-func graceEnd(s *Settings, d *Due) int64 {
-	return zone.ZonedToMs(zone.AddDays(zdate(d.DueDate), int(s.Due.GraceDays)+1), 0, 0, s.Timezone)
+	return checkClassAccess(true, consent, true, fees, s.Due.GraceDays, s.Classes.OldDuesStopLink, k.now(), s.Timezone).Verdict == "allow"
 }
