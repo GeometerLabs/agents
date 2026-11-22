@@ -388,7 +388,12 @@ func (it ownerItem) json() json.RawMessage {
 	return ordered2(kv...)
 }
 
-func ownerCustomer(b *Booking, phone string) json.RawMessage {
+// ownerCustomer is channel.ts customerOf: a chat guest is "Chat guest 3" to the owner (chat-guest.ts guestLabel), with no phone, never its "chat:..." conversation; anyone else is
+// the number (or the channel's typed number and name).
+func ownerCustomer(st *Store, lang string, b *Booking, phone string) json.RawMessage {
+	if isChatConversation(phone) {
+		return ordered2("phone", "", "name", runtime.GuestLabel(st.chanState(), phone, lang))
+	}
 	if b != nil && b.Contact != nil {
 		if b.Contact.Name != "" {
 			return ordered2("phone", b.Contact.Phone, "name", b.Contact.Name)
@@ -399,6 +404,9 @@ func ownerCustomer(b *Booking, phone string) json.RawMessage {
 }
 
 func ownerChannel(b *Booking) string {
+	if b != nil && isChatConversation(b.Customer) {
+		return "chat" // channel.ts channelOf
+	}
 	if b != nil && b.Channel != "" {
 		return b.Channel
 	}
@@ -418,7 +426,7 @@ func claimOf(b *Booking, it *ownerItem) {
 
 // ownerItems is channel.ts ownerItems' items: a deposit to mark received (UPI), a hold that ended where money may have come anyway, a refund the owner owes, a late
 // cancellation's refund the agent asked about, and a paid booking the calendar would not confirm. Only what the agent would act on now.
-func ownerItems(st *Store, now int64) []ownerItem {
+func ownerItems(st *Store, now int64, lang string) []ownerItem {
 	var items []ownerItem
 	at := func(b *Booking, it *ownerItem) {
 		if b == nil {
@@ -438,7 +446,7 @@ func ownerItems(st *Store, now int64) []ownerItem {
 			}
 			left := ownermarked.LeftOn(r)
 			it := ownerItem{Kind: "deposit", Case: b.ID, Digest: digestOf("deposit", b.ID, r.ID, left, len(r.Marks), len(r.UsedCodes)), Actions: []string{"received"}, AmountPaise: left,
-				Customer: ownerCustomer(b, b.Customer), Channel: ownerChannel(b), Code: *r.Code}
+				Customer: ownerCustomer(st, lang, b, b.Customer), Channel: ownerChannel(b), Code: *r.Code}
 			at(b, &it)
 			claimOf(b, &it)
 			items = append(items, it)
@@ -450,7 +458,7 @@ func ownerItems(st *Store, now int64) []ownerItem {
 			continue
 		}
 		it := ownerItem{Kind: "late_deposit", Case: b.ID, Digest: digestOf("late_deposit", b.ID, r.ID, r.AmountPaise, len(r.UsedCodes)), Actions: []string{"received"}, AmountPaise: r.AmountPaise,
-			Customer: ownerCustomer(b, b.Customer), Channel: ownerChannel(b), Code: *r.Code}
+			Customer: ownerCustomer(st, lang, b, b.Customer), Channel: ownerChannel(b), Code: *r.Code}
 		at(b, &it)
 		claimOf(b, &it)
 		items = append(items, it)
@@ -466,7 +474,7 @@ func ownerItems(st *Store, now int64) []ownerItem {
 				actions = []string{"refunded", "kept"}
 			}
 			it := ownerItem{Kind: "refund_owed", Case: r.CaseID, Digest: digestOf("refund_owed", r.CaseID, r.ID, r.AmountPaise, r.KeepAllowed, len(r.UsedCodes)), Actions: actions, AmountPaise: r.AmountPaise,
-				Customer: ownerCustomer(b, r.Customer), Channel: ownerChannel(b), Why: r.Why, Code: *r.Code}
+				Customer: ownerCustomer(st, lang, b, r.Customer), Channel: ownerChannel(b), Why: r.Why, Code: *r.Code}
 			at(b, &it)
 			items = append(items, it)
 		}
@@ -489,7 +497,7 @@ func ownerItems(st *Store, now int64) []ownerItem {
 		default:
 			continue
 		}
-		it.Customer, it.Channel = ownerCustomer(b, b.Customer), ownerChannel(b)
+		it.Customer, it.Channel = ownerCustomer(st, lang, b, b.Customer), ownerChannel(b)
 		at(b, &it)
 		items = append(items, it)
 	}
@@ -502,7 +510,7 @@ func (k *channelKit) Owner(kst runtime.KitState, sn *runtime.Snap, _ []store.Ent
 	s := k.kit.Settings
 	now := k.kit.now()
 	items := []any{}
-	for _, it := range ownerItems(st, now) {
+	for _, it := range ownerItems(st, now, s.Owner.Language) {
 		items = append(items, it.json())
 	}
 	// the coming bookings of the next seven days (to midnight eight days on, in the shop's zone)
@@ -524,7 +532,7 @@ func (k *channelKit) Owner(kst runtime.KitState, sn *runtime.Snap, _ []store.Ent
 		if b.ServiceID != "" {
 			kv = append(kv, "serviceId", b.ServiceID)
 		}
-		kv = append(kv, "customer", ownerCustomer(b, b.Customer), "channel", ownerChannel(b), "state", b.State)
+		kv = append(kv, "customer", ownerCustomer(st, s.Owner.Language, b, b.Customer), "channel", ownerChannel(b), "state", b.State)
 		upcoming = append(upcoming, ordered2(kv...))
 	}
 	kv := []any{"shop", ordered2("name", s.Name, "timezone", s.Timezone, "ownerLanguage", s.Owner.Language), "services", publicServices(s, nil), "items", items, "upcoming", upcoming}
