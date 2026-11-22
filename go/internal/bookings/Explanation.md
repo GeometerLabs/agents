@@ -135,3 +135,15 @@ recording to it, and runs its beat. The owner's tightened refund limit is in for
 
 Voice (internal/voice): a customer's note is heard and read like typed text, with the voice marks on its record line; the owner's goes to the assistant (`HearOwner`). The terms
 (internal/terms) read the owner's "terms" and "I agree". `agent_mode.go` is reader.ts's button-mode and step-pause lines. The morning line runs in AfterTick after the report.
+
+## Wave 2's gaps closed (22 Nov 2026, `go-w2-gaps-22nov`)
+
+* **The owner's talk on a Bookings shop** (talk-owner.ts): the Bookings skill gives the talk its own numbers (`agent_talkfacts.go`, assistant.ts talkReads `facts`: bookings today
+  and the first one's time, the last and next seven days, the weekdays and the top services over 28 days, the cancelled and what waits, counts only) and what customers may be
+  told (`PublicContext`, the customer talk's publicContext with no customer). Proved on the TypeScript's own output (`testdata/talk-facts-vectors.json`, gen_talk_facts_vectors.ts).
+* **A chat guest** is "Chat guest 3" to the owner (chat-guest.ts guestLabel, `runtime.GuestLabel`): on the owner's page items and upcoming list (no phone, channel "chat"), in
+  the assistant's `whoOf` and in the shop's messages to the owner (`shownPhone`). "tell chat guest 3 ..." (read as `message g-3`) makes the message card (`prepareGuestMessage`:
+  STOP and an amount refused, as wire.ts does); anything else asked of a guest is "not here".
+* **A limit the owner tightens by a card's tap** is in force for the rest of the same step (`applyInForce`, called again through `AssistantHooks.InForce`).
+* **A UPI shop's QR picture** goes before the request's words (agent.ts qrOf): `Kit.QRImage` is `ownermarked.FolderImages` into the report's pages folder for a UPI shop with
+  a `report` block (start.ts), made once per request (`imageLink` on the ledger's request) and never for a booking page's own conversation, which draws its own QR.

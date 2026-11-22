@@ -15,7 +15,6 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/access"
 	"github.com/GeometerLabs/agents/go/internal/budget"
-	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
@@ -186,11 +185,7 @@ func (r *Runtime) kitStep(ev map[string]any, taskID string, lastTry bool) (err e
 		case "owner_access":
 			r.ownerAccess(rec, ev)
 		case "owner_signin":
-			var wa messaging.Messaging
-			if sk, ok := r.o.Kit.(SigninKit); ok {
-				wa = sk.SigninMessaging()
-			}
-			r.sendLink(rec, wa, "page")
+			r.sendLink(rec, r.signinWhatsApp(), "page")
 		case "limit_settled", "owner_limit":
 			r.limitEvent(snap, rec, ev)
 		case "owner_stock":
@@ -203,6 +198,11 @@ func (r *Runtime) kitStep(ev map[string]any, taskID string, lastTry bool) (err e
 				return err
 			}
 		default:
+			// the owner's "open my app" is the sign-in's, never the agent's (core.ts: signin.takes before the agent)
+			if ev["kind"] == "message" && r.isOpenMyApp(ev) {
+				r.sendLink(rec, r.signinWhatsApp(), "whatsapp")
+				break
+			}
 			if err := agent.Handle(ev); err != nil {
 				var end *EndTask
 				if errors.As(err, &end) && taskID != "" {
