@@ -393,7 +393,7 @@ async function fakes(): Promise<unknown[]> {
   ]));
   out.push(await fakeScenario("STOP, in any case, with spaces, and by its ligature", [
     { op: "receive", from: PHONE, text: "stop" }, { op: "isOptedOut", number: PHONE }, send("sendText", PHONE, "after"), { op: "receive", from: OWNER, text: " Stop\n" }, { op: "isOptedOut", number: OWNER },
-    { op: "receive", from: "+911", text: "ﬆop" }, { op: "isOptedOut", number: "+911" }, { op: "receive", from: "+912", text: "ſtop" }, { op: "isOptedOut", number: "+912" }, { op: "receive", from: "+913", text: "STOP please" }, { op: "isOptedOut", number: "+913" },
+    { op: "receive", from: "+911", text: "ﬆop" }, { op: "isOptedOut", number: "+911" }, { op: "receive", from: "+912", text: "ſtop" }, { op: "isOptedOut", number: "+912" }, { op: "receive", from: "+913", text: "STOP please" }, { op: "isOptedOut", number: "+913" }, { op: "receive", from: "+914", text: "\u00a0sToP\n" }, { op: "isOptedOut", number: "+914" }, { op: "receive", from: "+915", text: "ＳＴＯＰ" }, { op: "isOptedOut", number: "+915" },
     { op: "receive", from: "+914", text: " STOP " }, { op: "isOptedOut", number: "+914" }, { op: "receive", from: "+915", text: "stoP​" }, { op: "isOptedOut", number: "+915" },
     send("sendTemplate", PHONE, tpl), { op: "approve", name: "booking_confirmed", language: "en" }, send("sendTemplate", PHONE, tpl), { op: "outbox" },
   ]));

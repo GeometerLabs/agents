@@ -129,6 +129,22 @@ test("delivered and read are recorded as confirmed with their own words; the sam
   assert.deepEqual(listed(record.entries(), T0), [], "nothing to do when a message arrived");
 });
 
+test("a report whose time no Date can hold (a forged webhook, past 8.64e15 ms) is recorded with the time left out, never thrown; the last time a Date holds is kept", () => {
+  // Found in the Go port (22 Nov): toISOString() threw a RangeError, so the status step threw. The Go twins are held by status-vectors.json and a contract case.
+  const record = createRecord(fakeClock(T0), []);
+  const past = recordMessageStatus(record, { ids: ["wamid.forged"], status: "failed", timestamp: 8.64e15 + 1, error: { code: 131047 } })!;
+  assert.deepEqual([past.outcome, past.refs.reportedAt, past.refs.errorCode], ["failed", undefined, "131047"]);
+  const edge = recordMessageStatus(record, { ids: ["wamid.edge"], status: "delivered", timestamp: 8.64e15 })!;
+  assert.equal(edge.refs.reportedAt, "+275760-09-13T00:00:00.000Z");
+});
+
+test("the fake WhatsApp's STOP is the word in ASCII letters, any case, alone: a ligature, a long s or full-width letters are not STOP (as the agent's own reading)", () => {
+  const m = createFakeMessaging(fakeClock(T0));
+  const said: [string, boolean][] = [["STOP", true], [" sToP\n", true], ["\u00a0stop", true], ["ﬆop", false], ["ſtop", false], ["ＳＴＯＰ", false], ["STOP please", false]];
+  said.forEach(([text], i) => m.receive(`+9198000000${10 + i}`, text));
+  assert.deepEqual(said.map(([text], i) => [text, m.isOptedOut(`+9198000000${10 + i}`)]), said);
+});
+
 test("a failure on a message no line of the record sent is still kept: to the owner or an approver it is listed (the relay asks them itself), to someone else with no case it is not", () => {
   const record = createRecord(fakeClock(T0), [], { key: KEY });
   const owner = recordMessageStatus(record, failed(["gs-owner"], OWNER), ctx)!;

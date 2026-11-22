@@ -141,6 +141,9 @@ func isoString(ms int64) (string, bool) {
 	return t.Format("2006-01-02T15:04:05.000Z"), true
 }
 
+// ISOString is isoString for other packages (the runtime's status line): `new Date(ms).toISOString()`, and false where JavaScript throws (past ±8.64e15 ms).
+func ISOString(ms int64) (string, bool) { return isoString(ms) }
+
 func pad(n, width int) string {
 	s := strconv.Itoa(n)
 	for len(s) < width {

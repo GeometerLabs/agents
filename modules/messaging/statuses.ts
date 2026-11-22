@@ -83,7 +83,9 @@ export function recordMessageStatus(record: ActionRecord, status: MessageStatus,
     refs: {
       messageId, status: status.status, to,
       ...(sent ? { sent: String(sent.seq) } : {}),
-      ...(status.timestamp > 0 ? { reportedAt: new Date(status.timestamp).toISOString() } : {}),
+      // a time outside the Date range (past ±8.64e15 ms; only a forged or broken report has one) is left out: toISOString() threw a RangeError there, so the
+      // status step threw and the report was retried as a failed task (fixed 22 Nov; the Go twins leave it out too)
+      ...(status.timestamp > 0 && status.timestamp <= 8.64e15 ? { reportedAt: new Date(status.timestamp).toISOString() } : {}),
       ...(code !== undefined ? { errorCode: String(code) } : {}),
     },
   });

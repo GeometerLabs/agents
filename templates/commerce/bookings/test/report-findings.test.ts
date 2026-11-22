@@ -1,4 +1,5 @@
-// The monthly report's jobs: when a refund held for the owner stops being "waiting for owner" (report/data.ts workOf). Found in the Go port (22 Nov 2026): only an
+// TypeScript findings of the Go port fixed in the monthly report (report/data.ts), 22 Nov 2026.
+// The report's jobs: when a refund held for the owner stops being "waiting for owner" (workOf). Only an
 // owner_decision cleared a hold, so a hold settled by a person's word (Guard's already_done) or by the payments service's own list, or ended by a refusal, stayed
 // "unresolved: refund-waiting-for-owner" in that month and every month after. The Go twin is held by the report vectors (go/scripts/gen_bookings_report_vectors.ts, b-6 and b-7).
 import { test } from "node:test";
@@ -6,7 +7,7 @@ import assert from "node:assert/strict";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
-import type { Action, Outcome } from "../../../../modules/record/record.ts";
+import type { Action, Outcome, RuleDecision } from "../../../../modules/record/record.ts";
 import { buildMonthlyReport } from "../report/data.ts";
 import { glowSalon } from "../src/harness.ts";
 
@@ -32,4 +33,15 @@ test("a refund held for the owner is waiting only until the owner answers, or a 
   clock.set(at(12, 5));
   for (const b of ["b-1", "b-2"]) line(b, "send_message", "confirmed", { to: "customer" });
   assert.deepEqual(why(report(at(12, 1, 0), at(12, 31, 0))), { "b-1": null, "b-2": "refund-waiting-for-owner" });
+});
+
+test("a block by a rule id that is an Object.prototype member (constructor, toString) is an unknown rule, never counted, and the report is made", () => {
+  // STOP_SITES[d.ruleId] found the inherited member and `.includes` of it threw, so the report was not made. The Go twin: the report vectors' "constructor" line.
+  const clock = fakeClock(at(11, 2));
+  const record = createRecord(clock);
+  const decisions = ["constructor", "toString", "__proto__"].map((ruleId) => ({ ruleId, verdict: "block", reason: `${ruleId} said no` })) as unknown as RuleDecision[];
+  record.append({ conversation: "+919811111111", booking: "b-1", action: "send_message", inputs: {}, outcome: "blocked", language: "en", refs: { to: "customer" }, decisions });
+  const r = buildMonthlyReport({ settings: glowSalon(), entries: record.entries(), bookings: [], from: at(11, 1, 0), to: at(12, 1, 0), source: "stand-in", madeAt: at(12, 1, 0) });
+  assert.ok(r.work.jobs >= 1);
+  assert.equal(JSON.stringify(r).includes("constructor"), false);
 });

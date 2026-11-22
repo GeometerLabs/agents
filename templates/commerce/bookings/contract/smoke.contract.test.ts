@@ -107,6 +107,19 @@ describe("what WhatsApp says later about a message the shop sent", () => {
   });
 });
 
+describe("a status report whose time no date can hold (a forged webhook)", () => {
+  contract("is saved, its task does not fail, and its record line leaves the time out (found in the Go port, 22 Nov: the TypeScript's toISOString threw)", async () => {
+    const s = await boot();
+    const forged = await s.events([{ kind: "message_status", status: { ids: ["wamid.forged_1"], status: "failed", timestamp: 9e15, error: { code: 131047 } } }]);
+    assert.deepEqual([forged.status, forged.body.saved], [200, 1]);
+    await s.settle();
+    assert.equal((await s.status()).tasks.failed, 0);
+    const line = s.record().find((e) => e.action === "message_status" && e.refs.messageId === "wamid.forged_1");
+    assert.ok(line, "the report is in the record");
+    assert.deepEqual([line.outcome, line.refs.reportedAt, line.refs.errorCode], ["failed", undefined, "131047"]);
+  });
+});
+
 describe("the shop keeps its data and refuses a folder it cannot run", () => {
   contract("a message is saved before the 200 is sent, a repeat of its id is a no-op, and the data survives a stop and a start", async () => {
     const s = await boot();

@@ -324,7 +324,8 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   let stoppedTotal = 0;
   for (const e of month) {
     // a rule the report does not list is not one of the shop's limits (the licence's `subscription_suspended`, B13): it is never counted as a limit that held
-    const blocked = e.decisions.filter((d) => d.verdict === "block" && (STOP_SITES[d.ruleId] ?? []).includes(e.action));
+    // own members only: a rule id such as "constructor" found Object.prototype's member, and `.includes` of it threw, so no report was made (fixed 22 Nov)
+    const blocked = e.decisions.filter((d) => d.verdict === "block" && (Object.hasOwn(STOP_SITES, d.ruleId) ? STOP_SITES[d.ruleId] : []).includes(e.action));
     if (blocked.length === 0) continue;
     stoppedTotal++;
     for (const ruleId of new Set(blocked.map((d) => d.ruleId))) byRule[ruleId]++;
