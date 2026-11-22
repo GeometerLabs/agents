@@ -5,6 +5,7 @@
 //
 // The customer's schema has no `note` and no `limit` field: a customer's words can never lead to a proposed note or a limit change.
 import type { Language } from "../language/languages.ts";
+import { sliceUnits } from "../language/format.ts";
 import type { Personality } from "./personality.ts";
 import type { TalkSource } from "./talk-types.ts";
 
@@ -70,5 +71,5 @@ function sentencesSchema(): Record<string, unknown> {
 /** The owner's last lines of talk, as the user message's preface: the words only, six lines at most. */
 export function historyText(lines: readonly { from: "owner" | "assistant"; text: string }[]): string {
   const last = lines.slice(-OWNER_HISTORY_LINES);
-  return last.length === 0 ? "" : `Earlier in this talk:\n${last.map((l) => `${l.from === "owner" ? "Owner" : "Assistant"}: ${l.text.replace(/\s+/gu, " ").slice(0, 300)}`).join("\n")}\n\nNow the owner says:\n`;
+  return last.length === 0 ? "" : `Earlier in this talk:\n${last.map((l) => `${l.from === "owner" ? "Owner" : "Assistant"}: ${sliceUnits(l.text.replace(/\s+/gu, " "), 300)}`).join("\n")}\n\nNow the owner says:\n`;
 }

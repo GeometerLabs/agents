@@ -15,7 +15,7 @@
 import type { Language } from "../language/languages.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
-import { ApiError, GuardSuspendedError, WindowClosedError, mayHaveHappened } from "../core/faults.ts";
+import { ApiError, GuardError, GuardSuspendedError, WindowClosedError, mayHaveHappened } from "../core/faults.ts";
 import { guardLicenceDecision } from "../licence/rules.ts";
 import { checkOptOut, strictest } from "../limits/limits.ts";
 import type { Decision } from "../limits/limits.ts";
@@ -172,9 +172,11 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
           sent = await messaging.sendInteractive!(toNumber, interactive);
           asButtons = true;
         } catch (e) {
-          // Refused outright (a 4xx): nothing went out, so the same words go out as plain text. A lost reply or a 5xx may have gone out and is not sent again.
-          // Guard's licence refusal is not tried again in another form: it would be refused the same way.
-          if (mayHaveHappened(e) || e instanceof WindowClosedError || e instanceof GuardSuspendedError || !(e instanceof ApiError) || e.status >= 500) throw e;
+          // Refused outright by the provider (a 4xx: it would not take this interactive shape): nothing went out, so the same words go out as plain text. A lost reply
+          // or a 5xx may have gone out and is not sent again. Any answer of the shop's Guard is not tried again in another form (fixed 22 Nov; before, every Guard answer
+          // under 500 fell back): a hold (202) may still send the buttons once approved, so the text would go too; a refusal (403) is Guard's no to this message, which
+          // the same words as text would get round; a conflict (409) is done already; unauthenticated (401) would fail the same way; the licence stop likewise.
+          if (mayHaveHappened(e) || e instanceof WindowClosedError || e instanceof GuardError || !(e instanceof ApiError) || e.status >= 500) throw e;
           sent = await messaging.sendText(toNumber, text);
         }
       } else {

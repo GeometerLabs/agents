@@ -63,6 +63,9 @@ test("a customer's number or a student's name in a record entry's refs is a faul
   assert.deepEqual(booksFaults(w.record.entries(), LEGACY, { privateText: ["Asha Rao"] }), []);
   w.raw("note", { to: "9800000001", who: "Asha Rao" }, "confirmed");
   assert.deepEqual(booksFaults(w.record.entries(), LEGACY, { privateText: ["Asha Rao"] }), ["entry 3: refs.to carries a customer's phone number", "entry 3: refs.who carries a private name"]);
+  // the same refs written in the other order list the same faults in the same order (key order, since 22 Nov: the Go runtime's refs have no written order)
+  w.raw("note", { who: "Asha Rao", to: "9800000001" }, "confirmed");
+  assert.deepEqual(booksFaults(w.record.entries(), LEGACY, { privateText: ["Asha Rao"] }).slice(2), ["entry 4: refs.to carries a customer's phone number", "entry 4: refs.who carries a private name"]);
 });
 
 test("the report's rows leave out a payment made twice and, on a gateway shop, the owner's marks; booksOnly names exactly that money", () => {

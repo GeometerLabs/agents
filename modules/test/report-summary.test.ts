@@ -104,6 +104,9 @@ test("the parser refuses every other spelling: stray base64 bits, padding, a lon
 test("texts are one line, without control or direction-changing characters, and cut at a whole character with an ellipsis", () => {
   assert.equal(fitText("Glow\n  Salon\t", 64), "Glow Salon");
   assert.equal(fitText("A\u202eB", 64), "AB", "a right-to-left override is taken out");
+  // the invisible characters go before the spaces are folded (22 Nov): a zero-width space between two spaces used to leave two, and encodeSummary then refused the text
+  assert.equal(fitText("a \u200b b", 64), "a b");
+  assert.equal(fitText("Glow \ufeff\u202e Salon", 64), "Glow Salon");
   const long = "ശ്രീ മഞ്ജുനാഥ ബ്രൈറ്റ് ട്യൂഷൻ സെന്റർ ആൻഡ് കമ്പ്യൂട്ടർ പരിശീലന കേന്ദ്രം";
   const cut = fitText(long, MAX_SHOP_BYTES);
   assert.ok(cut.endsWith("\u2026") && carriedLength(cut) <= MAX_SHOP_BYTES, cut);

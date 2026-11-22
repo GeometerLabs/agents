@@ -173,7 +173,9 @@ const graphemes = (s: string): string[] => (typeof Intl !== "undefined" && "Segm
  * most `maxBytes` (carriedLength). A longer text is cut at a whole character (a letter with its marks, never half of one) and ends with "…", so the reader sees it was cut.
  */
 export function fitText(text: string, maxBytes: number): string {
-  const plain = text.replace(/\s+/gu, " ").replace(new RegExp(UNSAFE.source, "gu"), "").replace(new RegExp(LONE_SURROGATE.source, "gu"), "").trim();
+  // The characters that go (unsafe ones that are not whitespace, and lone surrogates) go FIRST, then every run of whitespace is one space (an unsafe one, a line break
+  // or a tab, is a space). Before 22 Nov the runs were folded first, so "a \u200b b" became "a  b", encodeSummary refused it and the paper silently got the older link.
+  const plain = text.replace(new RegExp(LONE_SURROGATE.source, "gu"), "").replace(new RegExp(UNSAFE.source, "gu"), (c) => (/\s/u.test(c) ? " " : "")).replace(/\s+/gu, " ").trim();
   if (carriedLength(plain) <= maxBytes) return plain;
   let out = "";
   for (const g of graphemes(plain)) {
