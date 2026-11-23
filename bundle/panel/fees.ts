@@ -15,6 +15,8 @@ import type { Words } from "./words.ts";
 import { KEEP, keepHidden, studentsWithoutSafeMatch } from "./keep.ts";
 import { dayNumber } from "../../templates/education/fees/src/classes/settings.ts";
 import { classesWords } from "./words-classes.ts";
+import { creditWords } from "./words-credit.ts";
+import { CREDIT_DEFAULT_EVERY_DAYS, CREDIT_DEFAULT_MAX_INR, CREDIT_PEOPLE_MAX } from "../../templates/education/fees/src/credit/settings.ts";
 
 /** A phone form with room for this many batches and students. A centre with more is set up by a builder, who can write the file. */
 export const MAX_BATCHES = 6;
@@ -44,6 +46,11 @@ export interface FeesForm {
    * belong to. The rest of what the form does not show is put back from the saved settings by keep.ts when the centre is saved.
    */
   keepIds?: string[];
+  /**
+   * The credit book (24 Nov 2026, the variant "creditBook"; words-credit.ts): present, the form is the credit book's: who owes what today (one person a line: "name, number, amount")
+   * and how often a reminder may go and the most one account may show; the batches, students, due day, late fee and waiver are not asked. Absent: a Fees centre, as before.
+   */
+  credit?: { people: string; every: string; most: string };
 }
 
 const text = (v: string | undefined, max = 120) => (v ?? "").trim().slice(0, max);
@@ -110,6 +117,8 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
       partAllowed: s.partPayments.allowed, partMin: String(s.partPayments.minInr), waiver: String(s.waiver.limitInr), refund: String(s.refund.limitInr),
       timetable, oldDuesStopLink: (s.classes as { oldDuesStopLink?: boolean } | undefined)?.oldDuesStopLink === true,
       keepIds: s.batches.slice(0, MAX_BATCHES).map((b) => b.id),
+      // the credit book: its people as the box shows them (the number written as saved), and its two numbers
+      ...(s.creditBook ? { credit: { people: s.creditBook.people.map((p) => `${p.name}, ${p.phone}, ${p.amountInr}`).join("\n"), every: String(s.creditBook.remindEveryDays), most: String(s.creditBook.maxPerPersonInr) } } : {}),
     },
   };
 }
@@ -133,8 +142,96 @@ const feesOf = (draft: Draft): FeesForm => draft.fees as FeesForm;
 
 // ---- step 1: the centre, its batches and its students -------------------------------------------------------------------------------
 
+/** One person's line of the credit book's box: "Ramesh, 98450 12345, 2400" (the name may hold no comma; the number may hold spaces). */
+export function creditLine(line: string): { name: string; phone: string; amount: string } | undefined {
+  const parts = line.split(",").map((p) => p.trim());
+  return parts.length === 3 && parts.every((p) => p !== "") ? { name: parts[0], phone: parts[1], amount: parts[2].replace(/[₹\s]/gu, "") } : undefined;
+}
+const creditLines = (v: string): string[] => v.split(/\r?\n/u).map((l) => l.trim()).filter((l) => l !== "");
+
+/** The credit book's step 1: the shop and who owes what today, refused in the person's language (validateSettings still has the last word). */
+function applyCreditBusiness(draft: Draft, body: Body, w: Words): StepResult {
+  const p = creditWords(w).problems;
+  const problems: string[] = [];
+  const name = text(body.name, 80);
+  const address = text(body.address, 120);
+  const people = (body.people ?? "").slice(0, 40_000);
+  if (name === "") problems.push(w.setup.problems.nameEmpty);
+  draft.form = { ...draft.form, name };
+  const fees = feesOf(draft);
+  draft.fees = { ...fees, address, credit: { ...fees.credit!, people } };
+  const rows = creditLines(people);
+  if (rows.length > CREDIT_PEOPLE_MAX) return { problems: [...problems, p.tooMany(CREDIT_PEOPLE_MAX)] };
+  const seen = new Set<string>();
+  rows.forEach((line, i) => {
+    const x = creditLine(line);
+    if (!x) { problems.push(p.lineBad(i + 1)); return; }
+    const phone = normalizePhone(x.phone);
+    if (!phone) problems.push(p.number(i + 1));
+    const most = WHOLE.test(fees.credit!.most) ? Number(fees.credit!.most) : CREDIT_DEFAULT_MAX_INR;
+    if (!WHOLE.test(x.amount) || Number(x.amount) < 1 || Number(x.amount) > most) problems.push(p.amount(i + 1));
+    const keys = [`n:${x.name.toLowerCase()}`, ...(phone ? [`p:${phone}`] : [])];
+    if (keys.some((k) => seen.has(k))) problems.push(p.twice(i + 1));
+    keys.forEach((k) => seen.add(k));
+  });
+  return { problems };
+}
+
+/** The credit book's step 2: how often a reminder may go, at what hour and how many a month, the most one account may show, part payments and the refund limit. */
+function applyCreditRules(draft: Draft, body: Body, w: Words): StepResult {
+  const p = creditWords(w).problems;
+  const problems: string[] = [];
+  const fees = feesOf(draft);
+  const whole = (v: string, min: number, max: number) => WHOLE.test(v) && Number(v) >= min && Number(v) <= max;
+  const next: FeesForm = {
+    ...fees, reminderHour: text(body.reminderHour, 3), reminderMost: text(body.reminderMost, 3), partAllowed: body.partAllowed === "on", partMin: text(body.partMin, 9), refund: text(body.refund, 9),
+    credit: { ...fees.credit!, every: text(body.every, 3), most: text(body.most, 9) },
+  };
+  if (!whole(next.credit!.every, 1, 60)) problems.push(p.everyBad);
+  if (!whole(next.reminderHour, 6, 21)) problems.push(p.hourBad);
+  if (!whole(next.reminderMost, 1, 12)) problems.push(p.mostBad);
+  if (!whole(next.credit!.most, 1, 1_000_000)) problems.push(p.maxBad);
+  if (next.partAllowed && !whole(next.partMin, 1, 1_000_000)) problems.push(p.partBad);
+  if (!whole(next.refund, 0, 1_000_000)) problems.push(p.refundBad);
+  draft.fees = next;
+  return { problems };
+}
+
+/** The credit book's settings from its form: a `creditBook` block, and none of a Fees centre's batches, students, due day, late fee or waiver. */
+function buildCreditSettings(draft: Draft, example: Settings, saved?: unknown): Built {
+  const fees = feesOf(draft);
+  const credit = fees.credit!;
+  const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
+  const whole = (v: string) => (WHOLE.test(v) ? Number(v) : Number.NaN);
+  const people = creditLines(credit.people).map((line) => {
+    const x = creditLine(line);
+    return { name: x?.name ?? line, phone: normalizePhone(x?.phone ?? "") ?? x?.phone ?? "", amountInr: whole(x?.amount ?? "") };
+  });
+  const upi = !providerById(paymentModuleOf(draft))?.gateway;
+  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? PREVIEW_PAYMENT : paymentBlock(draft);
+  const raw = {
+    name: draft.form.name, ...(fees.address !== "" ? { address: fees.address } : {}), timezone: (saved as { timezone?: string } | undefined)?.timezone ?? example.timezone, languages,
+    creditBook: { maxPerPersonInr: whole(credit.most), remindEveryDays: whole(credit.every), people },
+    reminders: { hour: whole(fees.reminderHour), maxPerMonth: whole(fees.reminderMost) },
+    partPayments: { allowed: fees.partAllowed, minInr: fees.partAllowed ? whole(fees.partMin) : 100 },
+    refund: { limitInr: whole(fees.refund) },
+    payment,
+    owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
+    ...approversFromDraft(draft),
+  };
+  const written = saved === undefined ? raw : keepHidden(raw, saved, KEEP.fees);
+  const checked = validateSettings(written);
+  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw: written } as Built) : { ok: false, errors: checked.errors };
+}
+
+/** A new credit book's form: empty, with the template's defaults (the preset "creditBook" makes a draft one). */
+export function newCreditForm(): NonNullable<FeesForm["credit"]> {
+  return { people: "", every: String(CREDIT_DEFAULT_EVERY_DAYS), most: String(CREDIT_DEFAULT_MAX_INR) };
+}
+
 // Fees step 1: the centre, its batches, fees and students into the draft, with problems in the person's language.
 export function applyFeesBusiness(draft: Draft, body: Body, w: Words): StepResult {
+  if (feesOf(draft).credit) return applyCreditBusiness(draft, body, w);
   const s = w.setup.problems;
   const f = w.setup.fees.problems;
   const problems: string[] = [];
@@ -198,6 +295,7 @@ function classProblems(timetable: string, known: Set<string>, w: Words): string[
 
 // Fees step 2: the rules of the month (due dates, reminders, limits) into the draft; validateSettings of the Fees pathway still has the last word.
 export function applyFeesRules(draft: Draft, body: Body, w: Words): StepResult {
+  if (feesOf(draft).credit) return applyCreditRules(draft, body, w);
   const f = w.setup.fees.problems;
   const problems: string[] = [];
   const fees = feesOf(draft);
@@ -232,6 +330,7 @@ export function applyFeesRules(draft: Draft, body: Body, w: Words): StepResult {
  * back from it by keepHidden before the check (keep.ts). Left out (a new centre, a preview): built from the form alone.
  */
 export function buildFeesSettings(draft: Draft, example: Settings, saved?: unknown): Built {
+  if (feesOf(draft).credit) return buildCreditSettings(draft, example, saved);
   const fees = feesOf(draft);
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
   const filled = fees.batches.map((b, row) => ({ b, row })).filter(({ b }) => b.name !== "" && b.fee !== "");

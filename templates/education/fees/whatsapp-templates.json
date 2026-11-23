@@ -3624,6 +3624,1454 @@
     ]
   },
   {
+    "name": "credit_consent_ask",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "नमस्ते {{1}}, यह {{2}} है। हमारे खाते में आपके नाम {{3}} बाकी दिख रहे हैं। क्या हम आपको WhatsApp पर भुगतान की याद भेज सकते हैं? हाँ के लिए YES लिखें, या STOP लिखें तो हम आपको संदेश नहीं भेजेंगे।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_consent_ask",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Hello {{1}}, this is {{2}}. Our book shows {{3}} to pay on your account. May we send you payment reminders on WhatsApp? Reply YES, or reply STOP and we will not message you.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_consent_ask",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നമസ്കാരം {{1}}, ഇത് {{2}} ആണ്. ഞങ്ങളുടെ കണക്കിൽ നിങ്ങളുടെ അക്കൗണ്ടിൽ {{3}} അടയ്ക്കാനുണ്ട്. WhatsApp-ൽ പണമടയ്ക്കാനുള്ള ഓർമ്മപ്പെടുത്തലുകൾ അയയ്ക്കട്ടെ? YES എന്ന് മറുപടി നൽകുക, അല്ലെങ്കിൽ STOP എന്ന് മറുപടി നൽകിയാൽ ഞങ്ങൾ സന്ദേശം അയയ്ക്കില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_consent_ask",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಮಸ್ಕಾರ {{1}}, ಇದು {{2}}. ನಮ್ಮ ಲೆಕ್ಕದಲ್ಲಿ ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ {{3}} ಪಾವತಿಸಲು ಬಾಕಿ ಇದೆ. WhatsApp-ನಲ್ಲಿ ಪಾವತಿಯ ನೆನಪುಗಳನ್ನು ಕಳುಹಿಸಬಹುದೇ? YES ಎಂದು ಉತ್ತರಿಸಿ, ಅಥವಾ STOP ಎಂದು ಉತ್ತರಿಸಿದರೆ ನಾವು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_reminder",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "नमस्ते {{1}}, {{2}} की ओर से याद: आपके खाते में {{3}} अभी बाकी है। यहाँ भुगतान करें: {{4}} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_reminder",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Hello {{1}}, a reminder from {{2}}: {{3}} is still to pay on your account. Pay here: {{4}} Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_reminder",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നമസ്കാരം {{1}}, {{2}}-ൽ നിന്നുള്ള ഓർമ്മപ്പെടുത്തൽ: നിങ്ങളുടെ അക്കൗണ്ടിൽ {{3}} ഇനിയും അടയ്ക്കാനുണ്ട്. ഇവിടെ അടയ്ക്കാം: {{4}} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_reminder",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಮಸ್ಕಾರ {{1}}, {{2}} ಕಡೆಯಿಂದ ನೆನಪು: ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ {{3}} ಇನ್ನೂ ಪಾವತಿಸಲು ಬಾಕಿ ಇದೆ. ಇಲ್ಲಿ ಪಾವತಿಸಿ: {{4}} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_received",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "धन्यवाद! {{1}} ने आपके खाते में {{2}} का भुगतान दर्ज कर लिया है। अब कुछ बाकी नहीं है। आपकी रसीद संख्या {{3}} है।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "₹1,200",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_received",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Thank you! {{1}} has recorded {{2}} paid on your account. Nothing more is owed. Your receipt number is {{3}}.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "₹1,200",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_received",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നന്ദി! നിങ്ങളുടെ അക്കൗണ്ടിൽ {{1}} അടച്ചതായി {{2}} രേഖപ്പെടുത്തി. ഇനി ഒന്നും അടയ്ക്കാനില്ല. നിങ്ങളുടെ രസീത് നമ്പർ {{3}} ആണ്.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_received",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಧನ್ಯವಾದ! ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ {{1}} ಪಾವತಿಯಾಗಿದೆ ಎಂದು {{2}} ದಾಖಲಿಸಿದೆ. ಇನ್ನೇನೂ ಬಾಕಿ ಇಲ್ಲ. ನಿಮ್ಮ ರಸೀದಿ ಸಂಖ್ಯೆ {{3}}.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_part_received",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "धन्यवाद! {{1}} ने आपके खाते में {{2}} का भुगतान दर्ज कर लिया है। {{3}} अभी बाकी है: {{4}} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "₹1,200",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_part_received",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Thank you! {{1}} has recorded {{2}} paid on your account. {{3}} is still to pay: {{4}} Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "₹1,200",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_part_received",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നന്ദി! നിങ്ങളുടെ അക്കൗണ്ടിൽ {{1}} അടച്ചതായി {{2}} രേഖപ്പെടുത്തി. {{3}} ഇനിയും അടയ്ക്കാനുണ്ട്: {{4}} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "credit_part_received",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಧನ್ಯವಾದ! ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ {{1}} ಪಾವತಿಯಾಗಿದೆ ಎಂದು {{2}} ದಾಖಲಿಸಿದೆ. {{3}} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: {{4}} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_said_yes",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) ने WhatsApp पर याद के लिए हाँ कहा। अगर कुछ बाकी रहा तो पहली याद कुछ दिनों में जाएगी।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_said_yes",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) said yes to WhatsApp reminders. The first goes in a few days if something is still owed.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_said_yes",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: {{1}} ({{2}}) WhatsApp ഓർമ്മപ്പെടുത്തലുകൾക്ക് സമ്മതിച്ചു. എന്തെങ്കിലും ബാക്കിയുണ്ടെങ്കിൽ ആദ്യത്തേത് കുറച്ച് ദിവസത്തിനുള്ളിൽ പോകും.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_said_yes",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: {{1}} ({{2}}) WhatsApp ನೆನಪುಗಳಿಗೆ ಒಪ್ಪಿದ್ದಾರೆ. ಏನಾದರೂ ಬಾಕಿ ಇದ್ದರೆ ಮೊದಲನೆಯದು ಕೆಲವು ದಿನಗಳಲ್ಲಿ ಹೋಗುತ್ತದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wrote_first",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) ने याद के लिए हाँ कहने से पहले दुकान को लिखा, इसलिए उन्हें कुछ नहीं भेजा गया। कृपया उन्हें संदेश भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wrote_first",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) wrote to the shop before saying yes to reminders, so nothing was sent to them. Please message them.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wrote_first",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: ഓർമ്മപ്പെടുത്തലുകൾക്ക് സമ്മതിക്കുന്നതിന് മുമ്പ് {{1}} ({{2}}) കടയിലേക്ക് എഴുതി, അതിനാൽ അവർക്ക് ഒന്നും അയച്ചില്ല. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wrote_first",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: ನೆನಪುಗಳಿಗೆ ಒಪ್ಪುವ ಮೊದಲೇ {{1}} ({{2}}) ಅಂಗಡಿಗೆ ಬರೆದರು, ಆದ್ದರಿಂದ ಅವರಿಗೆ ಏನೂ ಕಳುಹಿಸಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_claimed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) कहते हैं कि उन्होंने भुगतान कर दिया, पर भुगतान रिकॉर्ड में {{3}} दिख रहा है। कृपया जाँचें और उन्हें संदेश भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_claimed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) says they paid, but the payment record shows {{3}}. Please check and message them.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_claimed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: {{1}} ({{2}}) അടച്ചു എന്ന് പറയുന്നു, പക്ഷേ പേയ്മെന്റ് രേഖയിൽ {{3}} ആണ് കാണുന്നത്. ദയവായി പരിശോധിച്ച് അവർക്ക് സന്ദേശം അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_claimed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: {{1}} ({{2}}) ಪಾವತಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಾರೆ, ಆದರೆ ಪಾವತಿ ದಾಖಲೆಯಲ್ಲಿ {{3}} ಕಾಣುತ್ತಿದೆ. ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_claimed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) कहते हैं कि उन्होंने भुगतान कर दिया है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। भुगतान दिखे तो Received दबाएँ या \"received {{3}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_claimed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) says they have paid. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply \"received {{3}}\".",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_claimed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: {{1}} ({{2}}) അടച്ചു എന്ന് പറയുന്നു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ. അത് അവിടെ ഉണ്ടെങ്കിൽ Received അമർത്തുക അല്ലെങ്കിൽ \"received {{3}}\" എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_claimed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: {{1}} ({{2}}) ಪಾವತಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಾರೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಅಲ್ಲಿ ಕಂಡರೆ Received ಒತ್ತಿ ಅಥವಾ \"received {{3}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_check",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "जाँचने के लिए UPI भुगतान: {{1}} ({{2}}) से {{3}} माँगे गए हैं ({{4}})। आपके UPI ऐप में दिखे तो Received दबाएँ या \"received {{5}}\" लिखें। अलग रकम आई हो तो \"received {{6}}\" और रकम लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "f-3",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_check",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "UPI payment to check: {{1}} ({{2}}) has been asked for {{3}} ({{4}}). When it shows in your UPI app, tap Received or reply \"received {{5}}\". If a different amount came, reply \"received {{6}}\" and the amount.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "f-3",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_check",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പരിശോധിക്കാനുള്ള UPI പേയ്മെന്റ്: {{1}} ({{2}})-നോട് {{3}} ചോദിച്ചിട്ടുണ്ട് ({{4}}). നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ Received അമർത്തുക അല്ലെങ്കിൽ \"received {{5}}\" എന്ന് മറുപടി നൽകുക. മറ്റൊരു തുകയാണ് വന്നതെങ്കിൽ \"received {{6}}\" എന്നും തുകയും എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "f-3",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_upi_check",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: {{1}} ({{2}}) ಅವರಿಂದ {{3}} ಕೇಳಲಾಗಿದೆ ({{4}}). ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ Received ಒತ್ತಿ ಅಥವಾ \"received {{5}}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ \"received {{6}}\" ಮತ್ತು ಮೊತ್ತ ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "f-3",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_asks",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी चाहिए: {{1}} ({{2}}) अपने खाते में भरे {{3}} में से {{4}} वापस माँग रहे हैं। \"approve {{5}}\" या \"deny {{6}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_asks",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Approval needed: {{1}} ({{2}}) asks for {{3}} back of the {{4}} paid on their account. Reply \"approve {{5}}\" or \"deny {{6}}\".",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_asks",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതി വേണം: {{1}} ({{2}}) അവരുടെ അക്കൗണ്ടിൽ അടച്ച {{3}}-ൽ നിന്ന് {{4}} തിരികെ ചോദിക്കുന്നു. \"approve {{5}}\" അല്ലെങ്കിൽ \"deny {{6}}\" എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_asks",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಅನುಮೋದನೆ ಬೇಕು: {{1}} ({{2}}) ತಮ್ಮ ಖಾತೆಯಲ್ಲಿ ಪಾವತಿಸಿದ {{3}} ರಲ್ಲಿ {{4}} ಹಿಂತಿರುಗಿ ಕೇಳುತ್ತಿದ್ದಾರೆ. \"approve {{5}}\" ಅಥವಾ \"deny {{6}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_stopped_msgs",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) ने STOP भेजा। उन्हें अब कोई संदेश नहीं जाएगा।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_stopped_msgs",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) sent STOP. No more messages will go to them.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_stopped_msgs",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: {{1}} ({{2}}) STOP അയച്ചു. അവർക്ക് ഇനി സന്ദേശങ്ങൾ പോകില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_stopped_msgs",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: {{1}} ({{2}}) STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಅವರಿಗೆ ಇನ್ನು ಸಂದೇಶಗಳು ಹೋಗುವುದಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wants_you",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) आपसे बात करना चाहते हैं। कृपया उन्हें संदेश भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wants_you",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) would like to talk to you. Please message them.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wants_you",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: {{1}} ({{2}}) നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_wants_you",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: {{1}} ({{2}}) ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_overpaid",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) ने बाकी से ज़्यादा भर दिया। ज़्यादा {{3}} लौटाए जा रहे हैं।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_overpaid",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) paid more than was owed. The extra {{3}} is being refunded.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_overpaid",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: {{1}} ({{2}}) തരാനുള്ളതിൽ കൂടുതൽ അടച്ചു. അധികമുള്ള {{3}} തിരികെ നൽകുന്നു.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_overpaid",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: {{1}} ({{2}}) ಕೊಡಬೇಕಾದುದಕ್ಕಿಂತ ಹೆಚ್ಚು ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚಿನ {{3}} ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_discount_asked",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "खाता: {{1}} ({{2}}) ने बाकी रकम ({{3}}) पर छूट माँगी है। कृपया उन्हें संदेश भेजें। कुछ बदला नहीं गया।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_discount_asked",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Credit book: {{1}} ({{2}}) asked for a discount on what they owe ({{3}}). Please message them. Nothing was changed.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_discount_asked",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "കണക്ക്: {{1}} ({{2}}) തരാനുള്ള തുകയിൽ ({{3}}) കിഴിവ് ചോദിച്ചു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ. ഒന്നും മാറ്റിയിട്ടില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_discount_asked",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಲೆಕ್ಕ: {{1}} ({{2}}) ಕೊಡಬೇಕಾದ ಮೊತ್ತದ ({{3}}) ಮೇಲೆ ರಿಯಾಯಿತಿ ಕೇಳಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ. ಏನನ್ನೂ ಬದಲಿಸಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_owed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "भेजना है: {{1}} UPI से {{2}} ({{3}}) को। एजेंट कभी पैसे नहीं भेजता। भेज दें तो Refund sent दबाएँ या \"refunded {{4}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_owed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Refund to send: {{1}} by UPI to {{2}} ({{3}}). The agent never sends money. When you have sent it, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_owed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അയയ്ക്കാനുള്ള റീഫണ്ട്: {{1}} UPI വഴി {{2}} ({{3}})-ന്. ഏജന്റ് ഒരിക്കലും പണം അയയ്ക്കില്ല. അയച്ചു കഴിഞ്ഞാൽ Refund sent അമർത്തുക അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_owed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: {{1}} UPI ಮೂಲಕ {{2}} ({{3}}) ಅವರಿಗೆ. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ Refund sent ಒತ್ತಿ ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_due",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "याद: {{1}} ({{2}}) को {{3}} अभी लौटाने बाकी हैं। UPI से भेज दें तो Refund sent दबाएँ या \"refunded {{4}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_due",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Reminder: {{1}} is still owed back to {{2}} ({{3}}). When you have sent it by UPI, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Aarav Sharma",
+              "+919811111111",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_due",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർമ്മപ്പെടുത്തൽ: {{1}} ({{2}})-ന് {{3}} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ചു കഴിഞ്ഞാൽ Refund sent അമർത്തുക അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_refund_due",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನೆನಪು: {{1}} ({{2}}) ಅವರಿಗೆ {{3}} ಇನ್ನೂ ಹಿಂತಿರುಗಿಸಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ Refund sent ಒತ್ತಿ ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_link_failed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "{{1}} के खाते ({{2}}) का भुगतान लिंक नहीं बन सका, इसलिए नहीं भेजा गया। अगली याद पर या उनके फिर पूछने पर दोबारा कोशिश होगी। ऐसा बार-बार हो तो अपना भुगतान खाता देखें या एजेंट सेट करने वाले व्यक्ति को बताएँ।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_link_failed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Could not make the payment link for {{1}}'s account ({{2}}), so it was not sent. It is tried again at the next reminder, or when they ask again. If this keeps happening, check your payment account or tell the person who set up your agent.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_link_failed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "{{1}}-ന്റെ അക്കൗണ്ടിന് ({{2}}) പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ അയച്ചില്ല. അടുത്ത ഓർമ്മപ്പെടുത്തലിലോ അവർ വീണ്ടും ചോദിക്കുമ്പോഴോ വീണ്ടും ശ്രമിക്കും. ഇത് ആവർത്തിച്ചാൽ നിങ്ങളുടെ പേയ്മെന്റ് അക്കൗണ്ട് നോക്കൂ, അല്ലെങ്കിൽ ഏജന്റ് സജ്ജമാക്കിയ ആളെ അറിയിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_credit_link_failed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "{{1}} ಅವರ ಖಾತೆಗೆ ({{2}}) ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಕಳುಹಿಸಿಲ್ಲ. ಮುಂದಿನ ನೆನಪಿನಲ್ಲಿ ಅಥವಾ ಅವರು ಮತ್ತೆ ಕೇಳಿದಾಗ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ. ಇದು ಮತ್ತೆ ಮತ್ತೆ ಆದರೆ ನಿಮ್ಮ ಪಾವತಿ ಖಾತೆ ನೋಡಿ ಅಥವಾ ಏಜೆಂಟ್ ಹೊಂದಿಸಿದವರಿಗೆ ತಿಳಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "fee_monthly_report",
     "language": "hi",
     "category": "UTILITY",

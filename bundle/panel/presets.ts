@@ -18,7 +18,7 @@ import { DEFAULT_CAPS } from "../../modules/payments/guard-limits.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
 import { isPaint } from "../../modules/channels/chat-paint.ts";
 import { dayNumber } from "../../templates/education/fees/src/classes/settings.ts";
-import { MAX_BATCHES } from "./fees.ts";
+import { MAX_BATCHES, newCreditForm } from "./fees.ts";
 import { MAX_ITEMS, MAX_SLOTS } from "./orders.ts";
 import { MAX_LINES } from "./stock.ts";
 import type { Draft } from "./setup.ts";
@@ -40,7 +40,8 @@ export type Names = Record<Language, string>;
 /** The variants a base template can have. Only the ones the phone form can set up are allowed in a preset; the others are known, so the refusal can say why. */
 export const VARIANTS: Record<string, { settable: readonly string[]; later: readonly string[] }> = {
   bookings: { settable: [], later: ["rental"] },
-  fees: { settable: ["classes"], later: [] },
+  // "creditBook" (24 Nov 2026, decision 63): the shop's khata, an adult variant of Fees (templates/education/fees/src/credit/)
+  fees: { settable: ["classes", "creditBook"], later: [] },
   orders: { settable: [], later: ["plans"] },
   "stock-orders": { settable: [], later: [] },
   listings: { settable: [], later: [] },
@@ -51,6 +52,9 @@ export interface FeesPrefill { batches: { names: Names; feeInr: number }[]; dueD
 export interface OrdersPrefill { menu: { names: Names; priceInr: number; dailyStock: number }[]; pickup: { from: string; to: string; names?: Names }[]; cutoffDays: number; cutoffTime: string; advance: { mode: "full" } | { mode: "part"; percent: number }; maxItemsPerOrder: number }
 export interface StockPrefill { /** The name of the supplier the catalogue lines name until the Operator writes their own: never a real person or number. */ supplier: Names; items: { names: Names; unit: Names; priceInr: number; reorderQty?: number }[]; maxPerOrderInr: number; monthlyBudgetInr: number }
 
+/** The credit book (the Fees variant "creditBook"): its two numbers. No person is ever prefilled: who owes what is the owner's, typed in the form. */
+export interface CreditPrefill { creditBook: { maxPerPersonInr: number; remindEveryDays: number }; reminderHour: number; reminderMost: number }
+
 /** A listings-only shop has no example values: the form starts empty (the Operator writes the town and the shop's words), so its prefill is `{}`. */
 export type ListingsPrefill = Record<string, never>;
 
@@ -59,7 +63,7 @@ export interface Preset {
   names: Names;
   template: string;
   variant?: string;
-  prefill: BookingsPrefill | FeesPrefill | OrdersPrefill | StockPrefill | ListingsPrefill;
+  prefill: BookingsPrefill | FeesPrefill | CreditPrefill | OrdersPrefill | StockPrefill | ListingsPrefill;
   /** The suggested personality of the shop's assistant (the one mood an Operator chooses; the faces' moods follow the shop's real state) and the signboard paint. Both stay a choice at the Character step. */
   character?: { personality?: string; paint?: string };
 }
@@ -104,6 +108,19 @@ function readBookings(v: Obj, errors: string[]): BookingsPrefill {
   if (!Array.isArray(v.days) || v.days.length === 0 || !v.days.every((d) => isWhole(d, 0, 6)) || new Set(v.days).size !== v.days.length) errors.push("days must be a list of the days the shop is open, 0 (Sunday) to 6 (Saturday), each once.");
   if (v.capacity !== undefined && !isWhole(v.capacity, 1, 50)) errors.push("capacity must be from 1 to 50.");
   return { services, depositInr: v.depositInr as number, windowHours: v.windowHours as number, opens: v.opens as string, closes: v.closes as string, days: v.days as number[], ...(v.capacity !== undefined ? { capacity: v.capacity as number } : {}) };
+}
+
+/** The credit book's prefill: the most one account may show and how often a reminder may go, the reminder hour and the month's cap (no person, no batch). */
+function readCredit(v: Obj, errors: string[]): CreditPrefill {
+  onlyKeys(v, ["creditBook", "reminderHour", "reminderMost"], "The prefill", errors);
+  const c = isObj(v.creditBook) ? v.creditBook : {};
+  if (!isObj(v.creditBook)) errors.push("A credit book's prefill needs \"creditBook\": {\"maxPerPersonInr\", \"remindEveryDays\"}.");
+  onlyKeys(c, ["maxPerPersonInr", "remindEveryDays"], "The credit book", errors);
+  if (!isWhole(c.maxPerPersonInr, 1, 1_000_000)) errors.push("maxPerPersonInr must be whole rupees from 1 to 1000000.");
+  if (!isWhole(c.remindEveryDays, 1, 60)) errors.push("remindEveryDays must be from 1 to 60.");
+  if (!isWhole(v.reminderHour, 6, 21)) errors.push("reminderHour must be from 6 to 21.");
+  if (!isWhole(v.reminderMost, 1, 12)) errors.push("reminderMost must be from 1 to 12.");
+  return { creditBook: { maxPerPersonInr: c.maxPerPersonInr as number, remindEveryDays: c.remindEveryDays as number }, reminderHour: v.reminderHour as number, reminderMost: v.reminderMost as number };
 }
 
 function readFees(v: Obj, variant: string | undefined, errors: string[]): FeesPrefill {
@@ -199,6 +216,7 @@ export function readPreset(input: unknown, known: readonly string[]): PresetRead
   let prefill: Preset["prefill"] | undefined;
   if (!isObj(input.prefill)) errors.push("\"prefill\" must be an object.");
   else if (template === "bookings") prefill = readBookings(input.prefill, errors);
+  else if (template === "fees" && chosenVariant === "creditBook") prefill = readCredit(input.prefill, errors);
   else if (template === "fees") prefill = readFees(input.prefill, chosenVariant, errors);
   else if (template === "orders") prefill = readOrders(input.prefill, errors);
   else if (template === "stock-orders") prefill = readStock(input.prefill, errors);
@@ -274,6 +292,11 @@ export function applyPreset(draft: Draft, preset: Preset, language: Language): v
     d.form.opens = b.opens; d.form.closes = b.closes;
     d.form.days = DAY_SHORT.map((_, i) => b.days.includes(i));
     d.form.capacity = String(b.capacity ?? 1);
+  } else if (preset.template === "fees" && preset.variant === "creditBook") {
+    // the credit book: the form is the credit book's (fees.ts FeesForm.credit), with no person in it; the batches' rows stay empty and unused
+    const k = p as CreditPrefill;
+    d.fees.credit = { ...newCreditForm(), every: String(k.creditBook.remindEveryDays), most: String(k.creditBook.maxPerPersonInr) };
+    d.fees.reminderHour = String(k.reminderHour); d.fees.reminderMost = String(k.reminderMost);
   } else if (preset.template === "fees") {
     const f = p as FeesPrefill;
     d.fees.batches = [...f.batches.map((x) => ({ name: x.names[language], fee: String(x.feeInr) })), ...blank(MAX_BATCHES - f.batches.length, () => ({ name: "", fee: "" }))];

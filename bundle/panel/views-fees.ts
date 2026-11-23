@@ -15,6 +15,7 @@ import type { Ctx, TemplateActivity, TemplateMessages, TemplateSummary } from ".
 import { formatRupees } from "./cost.ts";
 import type { Draft } from "./setup.ts";
 import { classesWords } from "./words-classes.ts";
+import { creditWords } from "./words-credit.ts";
 
 /** The helpers views.ts shares with the Fees pages. */
 export interface Helpers {
@@ -26,6 +27,7 @@ const feesOf = (d: Draft): FeesForm => (d as unknown as { fees: FeesForm }).fees
 
 /** Step 1: the centre, its batches and fees, and its students. */
 export function feesBusinessBody(c: Ctx, d: Draft, action: string, back: Raw | string, next: Raw, h: Helpers): Raw {
+  if (feesOf(d).credit) return creditBusinessBody(c, d, action, back, next, h);
   const b = c.w.setup.fees.business;
   const k = classesWords(c.w);
   const f = feesOf(d);
@@ -43,6 +45,7 @@ export function feesBusinessBody(c: Ctx, d: Draft, action: string, back: Raw | s
 
 /** Step 2: the rules of the month, and what they mean in plain words. */
 export function feesRulesBody(c: Ctx, d: Draft, action: string, back: Raw | string, next: Raw, lines: string[], h: Helpers): Raw {
+  if (feesOf(d).credit) return creditRulesBody(c, d, action, back, next, lines, h);
   const r = c.w.setup.fees.rules;
   const f = feesOf(d);
   return html`<form method="post" action="${action}">${h.csrf}
@@ -59,13 +62,42 @@ export function feesRulesBody(c: Ctx, d: Draft, action: string, back: Raw | stri
   ${back}${next}</form>`;
 }
 
+/** The credit book's step 1 (the variant "creditBook"): the shop and who owes what today, one person a line. Nothing is sent to anyone by this form. */
+function creditBusinessBody(c: Ctx, d: Draft, action: string, back: Raw | string, next: Raw, h: Helpers): Raw {
+  const b = creditWords(c.w).business;
+  const f = feesOf(d);
+  return html`<form method="post" action="${action}">${h.csrf}
+  ${h.text(b.name, "name", d.form.name, { max: 80 })}
+  ${h.text(b.address, "address", f.address, { max: 120 })}
+  <label class="field"><span>${b.people}</span><textarea name="people" rows="8" autocomplete="off" spellcheck="false">${f.credit!.people}</textarea><p class="help">${b.peopleHelp}</p></label>
+  <p class="note">${b.numbersNote}</p>
+  ${back}${next}</form>`;
+}
+
+/** The credit book's step 2: how often reminders may go, the most one account may show, part payments and the refund limit, and what they mean in plain words. */
+function creditRulesBody(c: Ctx, d: Draft, action: string, back: Raw | string, next: Raw, lines: string[], h: Helpers): Raw {
+  const r = creditWords(c.w).rules;
+  const f = feesOf(d);
+  return html`<form method="post" action="${action}">${h.csrf}
+  ${h.text(r.every, "every", f.credit!.every, { mode: "numeric", max: 3, help: r.everyHelp })}
+  <div class="row">${h.text(r.hour, "reminderHour", f.reminderHour, { mode: "numeric", max: 3 })}${h.text(r.most, "reminderMost", f.reminderMost, { mode: "numeric", max: 3 })}</div>
+  ${h.text(r.maxPerPerson, "most", f.credit!.most, { mode: "numeric", max: 9, help: r.maxPerPersonHelp })}
+  <div class="field"><div class="days"><label><input type="checkbox" name="partAllowed" ${f.partAllowed ? raw("checked") : ""}> ${r.partAllowed}</label></div></div>
+  ${h.text(r.partMin, "partMin", f.partMin, { mode: "numeric", max: 9 })}
+  ${h.text(r.refund, "refund", f.refund, { mode: "numeric", max: 9, help: r.refundHelp })}
+  <p class="note">${r.firstNote}</p>
+  ${lines.length > 0 ? html`<h2>${c.w.setup.depositStep.whatThisMeans}</h2><ul class="plain">${lines.map((t) => html`<li><span class="mark">✓</span><span>${t}</span></li>`)}</ul>` : ""}
+  ${back}${next}</form>`;
+}
+
 /** The centre on the shop page: each batch with its fee and its students, the languages and the owner. The rules are the certificate's own lines (fees.ts, feesLimitLines). */
 export function summaryFees(c: Ctx, s: Settings): TemplateSummary {
   const w = c.w.feesShop;
   const language = s.languages.includes(c.lang) ? c.lang : s.languages[0];
   return {
     heading: c.w.shop.summaryFees, rulesHeading: c.w.shop.summaryRules,
-    lines: s.batches.map((b) => `${batchName(b, language)} · ${formatInr(b.monthlyFeeInr)} · ${w.studentsIn(s.students.filter((x) => x.batchId === b.id).length)}`),
+    // a credit book: its one line (how many people at setup, what they owed); the owner's later entries are the shop's record, not settings
+    lines: s.creditBook ? [creditWords(c.w).summary(s.creditBook.people.length, formatInr(s.creditBook.people.reduce((n, p) => n + p.amountInr, 0)))] : s.batches.map((b) => `${batchName(b, language)} · ${formatInr(b.monthlyFeeInr)} · ${w.studentsIn(s.students.filter((x) => x.batchId === b.id).length)}`),
     languages: s.languages.map((l) => languageOptions().find((o) => o.code === l)?.label.split(" · ")[0] ?? l).join(", "),
     owner: s.owner.whatsapp,
   };
@@ -92,7 +124,7 @@ export function activityFees(c: Ctx, r: FeesReport): TemplateActivity {
  */
 export function messageCeiling(c: Ctx, s: Settings, included: number | null): TemplateMessages {
   const w = c.w.feesShop.messages;
-  const students = s.students.length;
+  const students = s.creditBook ? s.creditBook.people.length : s.students.length; // a credit book: each person in the book at setup
   const mostReminders = s.reminders.maxPerMonth;
   return { heading: w.heading, lines: [w.ceiling(students, mostReminders, students * (mostReminders + 1)), ...(included !== null ? [w.included(included)] : [])], note: w.note };
 }
