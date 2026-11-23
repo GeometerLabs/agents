@@ -59,7 +59,7 @@ A customer's words are read cheapest first by the shared router (`understanding.
   calendar once it is wired). The questions and labels are reading.ts's, in the order its objects have them; the rules' values win over the model's.
 * **The language model** gets the shop's prompt and answer schema (model-prompt.ts, rendered by the generator for a sentinel shop and filled here with the shop's services). Its
   answer is untrusted: `Shape` (toIntentShape) keeps only an Intent's own fields (a null period dropped, "18:00 pm" read as 18:00, `ask` never passed), and `CoerceIntent` checks
-  every type by hand. The router asks a reading for its own `Shape` (`understanding.Shaper`); the owner's reading has none and keeps the generic one.
+  every type by hand (a date's and a time's shapes with internal/language's IsDatePhrase and IsTimePhrase, shared with Orders since 23 Nov 2026). The router asks a reading for its own `Shape` (`understanding.Shaper`); the owner's reading has none and keeps the generic one.
 
 The matcher (`language/regex.go`) learned three shapes these patterns have and RE2 does not: a one-character look-ahead at the end of a word in the word list an alternative
 ends with (marked as an `edge` group and cut back), a look-ahead in the middle or one longer than a character ("ends" mode: the part before it is matched, and its shorter ends

@@ -4,6 +4,7 @@
 import { LANGUAGES } from "../../../../../modules/language/languages.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import type { DatePhrase, TimePhrase } from "../../../../../modules/language/dates.ts";
+import { isDatePhrase, isTimePhrase } from "../../../../../modules/language/dates.ts";
 import { isObj } from "../../../../../modules/understanding/model.ts";
 import type { IntentParser as Parser, ParseOptionsBase, ParseResult as Result } from "../../../../../modules/understanding/model.ts";
 import type { Service } from "../settings.ts";
@@ -64,23 +65,9 @@ export function coerceIntent(raw: unknown, context: ParseContext): Intent | null
     if (typeof raw.offerInr !== "number" || !Number.isInteger(raw.offerInr) || raw.offerInr < 0) return null;
     intent.offerInr = raw.offerInr;
   }
-  if (raw.date !== undefined) {
-    const d = raw.date;
-    const ok = isObj(d) && (
-      (d.kind === "relative" && (d.offsetDays === 0 || d.offsetDays === 1 || d.offsetDays === 2))
-      || (d.kind === "weekday" && Number.isInteger(d.weekday) && (d.weekday as number) >= 0 && (d.weekday as number) <= 6 && ["next", "this", "plain"].includes(d.which as string))
-      || (d.kind === "calendar" && Number.isInteger(d.day) && (d.day as number) >= 1 && (d.day as number) <= 31 && Number.isInteger(d.month) && (d.month as number) >= 1 && (d.month as number) <= 12));
-    if (!ok) return null;
-    intent.date = d as unknown as DatePhrase;
-  }
-  if (raw.time !== undefined) {
-    const t = raw.time;
-    const ok = isObj(t) && Number.isInteger(t.hour) && (t.hour as number) >= 0 && (t.hour as number) <= 23
-      && Number.isInteger(t.minute) && (t.minute as number) >= 0 && (t.minute as number) <= 59
-      && (t.period === undefined || ((t.period === "am" || t.period === "pm") && (t.hour as number) >= 1 && (t.hour as number) <= 12)); // "18:00 pm" would be hour 30
-    if (!ok) return null;
-    intent.time = t as unknown as TimePhrase;
-  }
+  // a date and a time of the shapes dates.ts makes, or the answer is refused (the checks are shared with Orders since 23 Nov 2026)
+  if (raw.date !== undefined) { if (!isDatePhrase(raw.date)) return null; intent.date = raw.date; }
+  if (raw.time !== undefined) { if (!isTimePhrase(raw.time)) return null; intent.time = raw.time; }
   if (raw.overrideAttempt !== undefined) intent.overrideAttempt = raw.overrideAttempt === true;
   if (raw.ask !== undefined) intent.ask = raw.ask === true;
   return intent;

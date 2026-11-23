@@ -77,8 +77,7 @@ is any finite whole double (1e21 is said "1e+21"); a time zone "" or "Local" is 
 | Go file | agent.ts | What |
 | --- | --- | --- |
 | `agent.go` | `createAgent`, `handle`, `giveUp`, `onChatMessage` | the step's agent: the watched services, the ledger, say and refunds made once; the limits in force laid over the settings (the big-order line, the refund limit, the day's count); the events by kind; `wait_over` |
-| `agent_watch.go` | `modules/runtime/guard-wait.ts` | every Guard call watched (Bookings' copy, less the calendar) |
-| `agent_say.go` | "saying things", push.ts, outbox.ts | the offers, the facts (`Settings.FactsFor` with agent.ts's extras), the generated words, the gates (confirmed only when recorded, the final stop, the chat's ping cap), the owner's route, a page's outbox, the QR picture's send |
+| `agent_say.go` | "saying things", push.ts, outbox.ts | the offers, the facts (`Settings.FactsFor` with agent.ts's extras), the generated words, the gates (confirmed only when recorded, the final stop, the chat's ping cap), the QR picture's send; the owner's route is `bookings.OwnerMessaging`, a page's outbox `runtime.ChannelMessaging` and the watch over every Guard call `bookings.Watch` (`agent.go` newAgent and finish), shared with Bookings and Fees since 23 Nov 2026 |
 | `agent_flow.go` | the order, the hold and the advance, STOP, a voice note, `onMessage` | the reader over `internal/orders/reading` (rules, then the router), `fill`, the slot a time means, `availability` (cut-off, the day's stock, the shelf count, the day's cap, a slot's own limit), `proceed`, the big-order line, `proceedToHold` (the chat guests' cap, the hold, the link, the UPI request, its QR and the owner's note), the address, yes and no |
 | `agent_money.go` | refunds, "the advance", `onPaymentEvent`, the licence, `reconcileStock`, `onTick`, `onRecovery`, the plans' payment paths | the money lines through `OrdersAccounting`, the reminder (reminders.ts), the settlement read once a day, `askPlanPayment`, `refundPlanCredit`, `planApplied` |
 | `agent_marks.go` | the owner-marked money | marks, late marks, refunds owed, claims, the owner's replies, asking again, reminders |
@@ -126,3 +125,21 @@ words.go): `AssistantHooks.Orders` and `OwnerReading.Orders` (the kinds and the 
 `OpenSkill` interface ("open orders", the morning line's count), a skill's own wording of a card or a refusal (`skillKey`: the key's `@<skill>` form when the pack has it) and
 `PublicFace` (character.ts publicFace). A Bookings or listings-only shop says exactly what it said before: `skillKey` and the reworked `idOf` run for every shop and find no
 `@<skill>` key for them, and the other branches are taken only by an Orders shop.
+
+## 23 Nov 2026 (stream OG): the gaps before the deletion
+
+**Contract cases for the money paths only unit tests held.** `contract/plans.contract.test.ts` now runs a plan's renewal (the credit carried, asked once), its reminder
+and lapse (the carried credit owed back), a cancel mid-month (the unused days owed back), a cancel while the renewal waits, and a pause with a resume credited at the
+renewal. `contract/gaps.contract.test.ts` holds the rest of the money, limit, approval and licence behaviour. Go passed every new case as it was: the W4 port of
+flow.ts and the agent's money paths were right.
+
+**Findings fixed on both sides.** In the TypeScript and in Go the same way:
+- `plans.go watch`: a period whose payment order was cancelled outside the plan is given up at the next beat;
+- `order.go PlanMealsInSlot`: the dead `except` parameter is gone;
+- `reading/intent.go CoerceIntent`: dates and times are checked with `language.IsDatePhrase` and `IsTimePhrase`, which are shared with Bookings;
+- the TypeScript now names a missing item or plan type the way Go already did;
+- the TypeScript's `policyOf` takes a tree with no payment block.
+
+**One copy fewer.** `agent_watch.go`, `agent_say.go`'s owner route (ownerMsg) and page outbox (chanMsg) are deleted. Orders uses `bookings.Watch` (with its new `Do`, for
+the settlement read), `bookings.OwnerMessaging` and `runtime.ChannelMessaging`, wrapped in the same order as before: the outbox over the watched owner route.
+

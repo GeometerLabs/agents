@@ -691,53 +691,70 @@ func (pf *plansFlow) OnTick() error {
 	return nil
 }
 
-// watch is flow.ts watch: a period waiting for its payment: the one reminder when it is due, and given up when its time is out.
+// watch is flow.ts watch: a period waiting for its payment: the one reminder when it is due, and given up when its time is out. Since 23 Nov 2026 (both runtimes) a period
+// whose payment order already ended outside the plan (the owner cancelled it from the chat) is given up the same way at once, saying nothing more to the customer (that cancel
+// told them) but still giving a renewal's carried credit back; it used to stay awaiting_payment for ever.
 func (pf *plansFlow) watch(p *Plan, per *PlanPeriod, now int64) error {
 	a := pf.a
 	o := pf.orderOf(per)
-	if o == nil || o.State != AwaitingAdvance {
+	if o == nil {
 		return nil
 	}
-	var out bool
-	if per.Index == 0 {
-		out = per.HoldUntilMs == nil || *per.HoldUntilMs <= now
-	} else {
-		out = per.PayByMs != nil && *per.PayByMs <= now
-	}
-	// takeDue runs only when the period is not out and the plan stands (the TypeScript's && short-circuits)
-	if per.Reminders != nil && !out && p.State == planActive && takeDue(*per.Reminders, now) {
-		a.tellCustomer(o, p.Customer, []string{"plan_renewal"}, sayOpts{facts: pf.facts(p, per).date(pf.momentOf(per.From)).cutoff(per.PayByMs).apply})
-	}
-	if !out {
+	ended := o.State == Cancelled || o.State == Expired
+	if o.State != AwaitingAdvance && !ended {
 		return nil
 	}
-	if _, err := a.reconcilePayments(o); err != nil {
-		return err
-	}
-	if per.State != periodAwaiting || o.State != AwaitingAdvance {
-		return nil
+	if !ended {
+		var out bool
+		if per.Index == 0 {
+			out = per.HoldUntilMs == nil || *per.HoldUntilMs <= now
+		} else {
+			out = per.PayByMs != nil && *per.PayByMs <= now
+		}
+		// takeDue runs only when the period is not out and the plan stands (the TypeScript's && short-circuits)
+		if per.Reminders != nil && !out && p.State == planActive && takeDue(*per.Reminders, now) {
+			a.tellCustomer(o, p.Customer, []string{"plan_renewal"}, sayOpts{facts: pf.facts(p, per).date(pf.momentOf(per.From)).cutoff(per.PayByMs).apply})
+		}
+		if !out {
+			return nil
+		}
+		if _, err := a.reconcilePayments(o); err != nil {
+			return err
+		}
+		if per.State != periodAwaiting || o.State != AwaitingAdvance {
+			return nil
+		}
 	}
 	per.State, per.Reminders = periodLapsed, nil
 	p.returnBalance(per.Taken)
-	why := "the renewal was not paid before its first meal closed"
-	if per.Index == 0 {
-		why = "the hold on the plan's first payment ran out"
-	}
-	if err := a.cancelWaiting(o, why); err != nil {
-		return err
+	if !ended {
+		why := "the renewal was not paid before its first meal closed"
+		if per.Index == 0 {
+			why = "the hold on the plan's first payment ran out"
+		}
+		if err := a.cancelWaiting(o, why); err != nil {
+			return err
+		}
 	}
 	if per.Index == 0 {
 		p.State = planCancelled
-		a.tellCustomer(o, p.Customer, []string{"plan_hold_expired"}, sayOpts{facts: pf.facts(p, nil).apply})
+		if !ended {
+			a.tellCustomer(o, p.Customer, []string{"plan_hold_expired"}, sayOpts{facts: pf.facts(p, nil).apply})
+		}
 	} else {
 		p.State = planLapsed
-		a.tellCustomer(o, p.Customer, []string{"plan_lapsed"}, sayOpts{facts: pf.facts(p, nil).apply})
+		if !ended {
+			a.tellCustomer(o, p.Customer, []string{"plan_lapsed"}, sayOpts{facts: pf.facts(p, nil).apply})
+		}
 		if err := pf.refundBalance(p, "because the renewal lapsed"); err != nil {
 			return err
 		}
 	}
-	pf.logPlan(p, "plan_lapse", "confirmed", map[string]any{"period": per.Index}, logMore{refs: map[string]string{"period": i64(per.Index)},
-		notes: "the payment did not come in time: no meal is owed and nothing is charged for this period"})
+	notes := "the payment did not come in time: no meal is owed and nothing is charged for this period"
+	if ended {
+		notes = "the period's payment was cancelled before it came: no meal is owed and nothing is charged for this period"
+	}
+	pf.logPlan(p, "plan_lapse", "confirmed", map[string]any{"period": per.Index}, logMore{refs: map[string]string{"period": i64(per.Index)}, notes: notes})
 	return nil
 }
 

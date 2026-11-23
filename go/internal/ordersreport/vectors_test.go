@@ -131,6 +131,7 @@ type fileVec struct {
 
 type notTestedVec struct {
 	Settings              map[string]any `json:"settings"`
+	Digest                string         `json:"digest"` // the policy digest, made only for the tree with no payment block (empty for the other)
 	ConfirmsAutomatically bool           `json:"confirmsAutomatically"`
 	NotTested             []string       `json:"notTested"`
 }
@@ -494,6 +495,10 @@ func TestPolicyDigestsAndNotTestedMatchTypeScript(t *testing.T) {
 		if ConfirmsAutomatically(sh) != np.ConfirmsAutomatically || !reflect.DeepEqual(NotTestedOf(sh), np.NotTested) {
 			t.Errorf("%s: %v %v, want %v %v", name, ConfirmsAutomatically(sh), NotTestedOf(sh), np.ConfirmsAutomatically, np.NotTested)
 		}
+	}
+	// 23 Nov 2026: the TypeScript's policyOf no longer throws on a tree with no payment block; both write the module as null, so the digests agree
+	if p.NoPayment.Digest == "" || PolicyDigest(p.NoPayment.Settings) != p.NoPayment.Digest {
+		t.Errorf("no payment block: policy digest %s, want %q", PolicyDigest(p.NoPayment.Settings), p.NoPayment.Digest)
 	}
 }
 
