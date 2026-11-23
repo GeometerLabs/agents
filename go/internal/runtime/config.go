@@ -419,6 +419,11 @@ func (c *Client) readRuntime(in map[string]any) error {
 	if v, present := in["standins"]; present {
 		cfg.StandInsHTTP = true
 		errs = append(errs, standInsProblems(v, cfg.Mode, cfg.Services)...)
+		// the hand check's shop may beat faster than once a second (down to 0.1 s): each situation moves the test clock and waits for a beat, so a whole check takes a
+		// minute, not several. A real shop keeps the one-second floor above.
+		if t, ok := in["tickSeconds"].(float64); ok && t >= 0.1 && t < 1 {
+			cfg.TickSeconds = t
+		}
 	}
 	if len(errs) > 0 {
 		return bad("runtime.json needs fixing:\n- %s", strings.Join(errs, "\n- "))

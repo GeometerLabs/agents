@@ -15,6 +15,7 @@ import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
 import { languageList } from "./says.ts";
 import { readUpiLink } from "../../../../modules/payments/providers/upi/link.ts";
 import { textQrPng } from "../../../../modules/qr/png.ts";
+import { samePicture } from "../../../../modules/crash-test/go-world.ts";
 import { MARK_ACTIONS, markObligations } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { REFUND_REMINDERS_MAX } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
@@ -62,7 +63,7 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
       const out = w.messaging.sentTo(CUSTOMER);
       const link = request ? readUpiLink(request.link) : null;
       expect(`(${language}) The link asks for exactly ${formatInr(D)}, to the shop's UPI ID, with the booking number and no code`, link?.pa === upi.id && link?.am === `${D}.00` && link?.tn === "b-1" && link.cu === "INR" && !request!.link.includes(request!.code ?? "-"), request?.link ?? "no request");
-      expect(`(${language}) The customer got the QR picture first, and it is the picture of that very link`, out[0]?.kind === "image" && !!request && qr.get(out[0].image!.link)?.equals(textQrPng(request.link)) === true, `${JSON.stringify(out.map((m) => m.kind))} ${out[0]?.image?.link ?? ""} ${qr.get(out[0]?.image?.link ?? "")?.length ?? "no file"} bytes vs ${request ? textQrPng(request.link).length : 0}`);
+      expect(`(${language}) The customer got the QR picture first, and it is the picture of that very link`, out[0]?.kind === "image" && !!request && samePicture(qr.get(out[0].image!.link), textQrPng(request.link)), `${JSON.stringify(out.map((m) => m.kind))} ${out[0]?.image?.link ?? ""} ${qr.get(out[0]?.image?.link ?? "")?.length ?? "no file"} bytes vs ${request ? textQrPng(request.link).length : 0}`);
       // 14 Nov 2026: the words carry the UPI ID and the amount, and never the upi:// link itself: WhatsApp does not open it, so it only read as a long broken string (the QR above is that link)
       expect(`(${language}) The words carry the UPI ID and the amount, and no upi:// link (WhatsApp does not open one; the QR picture is that link)`, !!request && out[1]?.text.includes(upi.id) && out[1].text.includes(formatInr(D)) && !out[1].text.includes("upi://") && !w.textsTo(CUSTOMER).some((t) => t.includes("upi://")), out[1]?.text ?? "");
       expect(`(${language}) The owner was told what to look for, with a code no customer message carries`, !!request?.code && w.textsTo(w.owner).some((t) => t.includes(request.code!)) && !w.textsTo(CUSTOMER).some((t) => t.includes(request.code!)));

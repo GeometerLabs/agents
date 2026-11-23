@@ -47,7 +47,15 @@ export interface GoWorld extends GoWorldBase<Settings, Store> {
 /** settings.json for parsed settings: as they read, except that a student names their batch as `batch` in the file (src/settings.ts readStudents). */
 export function settingsFile(settings: Settings): Record<string, unknown> {
   const raw = settingsJson(settings);
+  // a credit book (decision 63) has no batches and no students: the file leaves them out (src/settings.ts refuses them beside "creditBook"), and the rest it reads as defaults
+  if (settings.creditBook) { for (const k of ["batches", "students", "due", "lateFeeInr", "waiver"]) delete raw[k]; return raw; }
   raw.students = settings.students.map(({ batchId, ...s }) => ({ ...s, batch: batchId }));
+  // Classes: a class in the file is a weekday's name and a "17:00" time; read, it is the day's number (0 is Sunday) and the hour and minute (src/classes/settings.ts)
+  if (settings.classes) {
+    const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const two = (n: number): string => String(n).padStart(2, "0");
+    raw.classes = { ...(raw.classes as object), timetable: Object.fromEntries(Object.entries(settings.classes.timetable).map(([batch, list]) => [batch, list.map((c) => ({ day: days[c.day], time: `${two(c.hour)}:${two(c.minute)}`, minutes: c.minutes }))])) };
+  }
   return raw;
 }
 

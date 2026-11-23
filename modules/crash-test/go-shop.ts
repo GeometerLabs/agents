@@ -127,6 +127,9 @@ export interface GoShop {
   close(): Promise<void>;
 }
 
+/** The shop's beat: a fifth of a second (a hand-check shop may beat faster than a real one's one second, go/internal/runtime/config.go), so a wait for a beat is short. */
+const BEAT_SECONDS = 0.2;
+
 /** How long a step may take before the check calls the shop stuck (the queue not empty, a beat not come). A failing situation, never a hang of the panel. */
 const SETTLE_MS = 15_000;
 
@@ -156,7 +159,7 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   }
   const pagesDir = join(root, "pages");
   const report = o.report ? { report: { preparedBy: "the hand check", pageBaseUrl: "https://reports.example.com/r", pagesDir } } : {};
-  writeFileSync(join(client, "runtime.json"), JSON.stringify({ mode: "fakes", standins: "http", host: "127.0.0.1", port, dataDir, tickSeconds: 1, services, ...report, ...(o.runtime ?? {}) }));
+  writeFileSync(join(client, "runtime.json"), JSON.stringify({ mode: "fakes", standins: "http", host: "127.0.0.1", port, dataDir, tickSeconds: BEAT_SECONDS, services, ...report, ...(o.runtime ?? {}) }));
   writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));
   const page = `https://pages.example/${o.slug}`;
   writeFileSync(join(client, "pages.json"), JSON.stringify({ schema: 1, base: page, ownerBase: "https://pages.example/owner", slug: o.slug, url: page }));

@@ -16,6 +16,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { inflateSync } from "node:zlib";
 import { assistantSettingsJson } from "../assistant/settings.ts";
 import type { Clock } from "../core/clock.ts";
 import { createFakeMessaging } from "../messaging/messaging.ts";
@@ -135,6 +136,32 @@ export function settingsJson(settings: unknown): Record<string, unknown> {
  */
 export function live<T extends object>(read: () => T | undefined): T {
   return new Proxy({} as T, { get: (_t, key) => { const v = read(); if (v === undefined) throw new Error("the value read from the shop's saved state is not there"); return (v as Record<PropertyKey, unknown>)[key]; } });
+}
+
+/**
+ * Two PNG files show the same picture: the same header (IHDR) and the same scanlines once decompressed. The Go program's QR picture is the TypeScript's picture but not its
+ * bytes (go/internal/qr/image.go: Go's zlib writes other bytes for the same scanlines), so a situation compares pictures, not files.
+ */
+export function samePicture(a: Uint8Array | undefined, b: Uint8Array | undefined): boolean {
+  if (!a || !b) return false;
+  const read = (png: Uint8Array): { header: string; pixels: string } | undefined => {
+    const buf = Buffer.from(png);
+    if (buf.length < 8 || buf.readUInt32BE(0) !== 0x89504e47) return undefined;
+    let header = "";
+    const idat: Buffer[] = [];
+    for (let at = 8; at + 8 <= buf.length;) {
+      const length = buf.readUInt32BE(at);
+      const type = buf.toString("latin1", at + 4, at + 8);
+      const data = buf.subarray(at + 8, at + 8 + length);
+      if (type === "IHDR") header = data.toString("hex");
+      if (type === "IDAT") idat.push(data);
+      at += 12 + length;
+    }
+    try { return { header, pixels: inflateSync(Buffer.concat(idat)).toString("hex") }; } catch { return undefined; }
+  };
+  const x = read(a);
+  const y = read(b);
+  return !!x && !!y && x.header !== "" && x.header === y.header && x.pixels === y.pixels;
 }
 
 const PHONE_NUMBER_ID = "100000000000001";

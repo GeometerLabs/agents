@@ -16,6 +16,7 @@ import { readUpiLink } from "../../../../modules/payments/providers/upi/link.ts"
 import { REFUND_REMINDERS_MAX } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { MARK_ACTIONS, markObligations } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { textQrPng } from "../../../../modules/qr/png.ts";
+import { samePicture } from "../../../../modules/crash-test/go-world.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import { createGoWorld } from "./go-world.ts";
 import type { GoWorld as World } from "./go-world.ts";
@@ -69,7 +70,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
       parentWroteToday(w);
       await w.say(SAYS[lang].pay, { from: shop.parent });
       const picture = w.messaging.sentTo(shop.parent).find((m) => m.kind === "image");
-      expect("Asked for the link, the parent gets the QR picture of that very request", !!picture && !!request && qr.get(picture.image!.link)?.equals(textQrPng(request.link)) === true);
+      expect("Asked for the link, the parent gets the QR picture of that very request", !!picture && !!request && samePicture(qr.get(picture.image!.link), textQrPng(request.link)));
       expect("Nothing is marked paid before the owner's mark", due(w).state === "open" && entries(w, MARK_ACTIONS.marked).length === 0);
       await w.ownerMarksReceived(name, { tap: taps });
       expect(`After the owner ${taps ? "taps Received" : "replies \"received <code>\""} the fee is paid, and the parent got one receipt`, due(w).state === "paid" && sent(w, "fee_received") === 1);

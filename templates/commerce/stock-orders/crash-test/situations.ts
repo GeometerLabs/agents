@@ -368,6 +368,7 @@ const BUILDERS: Build[] = [
       expect("The budget stays reserved", reserved(w) === Math.round(p.totalInr * 100), `${reserved(w)}`);
       for (const l of LANGUAGES) w.messaging.approve("stock_order_to_supplier", l);
       await w.ownerSays(`send ${ref}`);
+      await w.tick(); // the program sends on its next step after the owner's word
       expect("Sent again once, and now marked sent", w.order(ref)?.state === "sent" && w.orderMessagesTo(to).length === 1, `${w.order(ref)?.state}, ${w.orderMessagesTo(to).length}`);
       await w.ownerSays(`send ${ref}`);
       expect("A further send is refused", w.orderMessagesTo(to).length === 1, `${w.orderMessagesTo(to).length}`);

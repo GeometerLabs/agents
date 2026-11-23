@@ -30,6 +30,7 @@ import { EN_WEEKDAYS, MARKERS, SAYS, atWords, dayWords, languageList, nextWeekda
 import type { Says } from "./says.ts";
 import { checker, runOnProgram } from "../../../../modules/crash-test/situations.ts";
 import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
+import { discountSituations } from "./discounts.ts";
 import { planShop } from "./shop.ts";
 import { RAZORPAY_ONLY, buildUpiSituations } from "./upi.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
@@ -1156,6 +1157,8 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   const all = !capabilitiesOf(settings.payment).confirmsAutomatically
     ? [...build(planned.shop).map((b): Built => ("skip" in b ? b : skip(b.id, b.title, RAZORPAY_ONLY))), ...buildUpiSituations(planned.shop, (language, slot) => sayings(planned.shop, language, slot).book)]
     : build(planned.shop);
+  // E1 (decision 64): a shop that turns discounts on gets the discount authority's own situations, on Razorpay and on UPI alike (crash-test/discounts.ts)
+  all.push(...discountSituations(planned.shop, planned.shop.pick()));
   for (const built of all) {
     if ("skip" in built) skipped.push({ id: built.id, title: built.title, reason: built.skip });
     else situations.push(built);

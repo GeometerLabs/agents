@@ -105,7 +105,7 @@ export function planSituations(settings: Settings, customer: string): Situation[
         const w = await world();
         const plan = await subscribe(w);
         await goto(w, cutoffMsFor(rules, lastDay(plan)) + 3_600_000);
-        const next = plan.periods[1];
+        const next = live(() => plan.periods[1]); // read afresh after each step
         expect("A reminder is queued for the renewal", (next?.reminders?.length ?? 0) === 1);
         await w.say("cancel my plan", { from: customer });
         const sent = w.textsTo(customer).length;
