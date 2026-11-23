@@ -69,12 +69,13 @@ describe("the two limits the owner may tighten keep their bounds", () => {
   contract("the order cap cannot go below the dearest catalogue line, the budget cannot go below the cap, and neither can be loosened", async () => {
     const s = await made.boot({ settings: { assistant: {} } });
     const cards = (): any[] => (s.saved()?.assistant?.cards ?? []).filter((c: any) => c.action?.kind === "limit");
-    await s.ownerSays("order cap at most ₹300");            // the dearest line is ₹460
+    await s.ownerSays("cap per order at most ₹300");            // the dearest line is ₹460
     await s.ownerSays("monthly budget at most ₹10000");     // the cap is ₹12,000
     await s.ownerSays("monthly budget at most ₹25000");     // the budget is ₹20,000 now: this loosens it
+    assert.doesNotMatch(s.lastToOwner()?.text ?? "", /catalogue/u, "the words were read as a limit, not as an order");
     assert.equal(cards().length, 0, `no limit card for a value out of bounds: ${JSON.stringify([s.lastToOwner()?.text, cards()])}`);
-    await s.ownerSays("order cap at most ₹9000");           // within bounds: a card
-    assert.equal(cards().filter((c: any) => c.state === "open").length, 1, JSON.stringify([s.lastToOwner()?.text, cards()]));
+    await s.ownerSays("cap per order at most ₹9000");           // within bounds: a card
+    assert.equal(cards().filter((c: any) => c.state === "open").length, 1, JSON.stringify([s.sent(OWNER).map((m) => m.text), cards()]));
     await s.ownerSays(`yes ${s.code()}`);
     assert.equal(s.saved().assistant.limitChanges.length, 1);
     await s.ownerSays("order 25 boxes of hair colour from ravi");   // ₹11,250: above the new cap of ₹9,000

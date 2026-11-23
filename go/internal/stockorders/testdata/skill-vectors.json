@@ -545,147 +545,132 @@
    "publicContext": [
     {
      "phone": "+919876500001",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-2",
-        "kind": "record",
-        "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-2"
-        ]
-       },
-       {
-        "id": "r:po-3",
-        "kind": "record",
-        "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
-        "literals": [
-         "po-3"
-        ]
-       },
-       {
-        "id": "r:po-6",
-        "kind": "record",
-        "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-6"
-        ]
-       },
-       {
-        "id": "r:po-14",
-        "kind": "record",
-        "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-14"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-2",
+       "kind": "record",
+       "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-2"
+       ]
+      },
+      {
+       "id": "r:po-3",
+       "kind": "record",
+       "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
+       "literals": [
+        "po-3"
+       ]
+      },
+      {
+       "id": "r:po-6",
+       "kind": "record",
+       "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-6"
+       ]
+      },
+      {
+       "id": "r:po-14",
+       "kind": "record",
+       "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-14"
+       ]
+      }
+     ]
     },
     {
      "phone": "+91 98765 00002",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-4",
-        "kind": "record",
-        "text": "Order po-4 to this supplier: 3 box hair colour.",
-        "literals": [
-         "po-4"
-        ]
-       },
-       {
-        "id": "r:po-7",
-        "kind": "record",
-        "text": "Order po-7 to this supplier: 7 box hair colour.",
-        "literals": [
-         "po-7"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-4",
+       "kind": "record",
+       "text": "Order po-4 to this supplier: 3 box hair colour.",
+       "literals": [
+        "po-4"
+       ]
+      },
+      {
+       "id": "r:po-7",
+       "kind": "record",
+       "text": "Order po-7 to this supplier: 7 box hair colour.",
+       "literals": [
+        "po-7"
+       ]
+      }
+     ]
     },
     {
      "phone": "+919876500003",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-5",
-        "kind": "record",
-        "text": "Order po-5 to this supplier: 6 box hair colour.",
-        "literals": [
-         "po-5"
-        ]
-       },
-       {
-        "id": "r:po-12",
-        "kind": "record",
-        "text": "Order po-12 to this supplier: 12 box hair colour.",
-        "literals": [
-         "po-12"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-5",
+       "kind": "record",
+       "text": "Order po-5 to this supplier: 6 box hair colour.",
+       "literals": [
+        "po-5"
+       ]
+      },
+      {
+       "id": "r:po-12",
+       "kind": "record",
+       "text": "Order po-12 to this supplier: 12 box hair colour.",
+       "literals": [
+        "po-12"
+       ]
+      }
+     ]
     },
     {
      "phone": "+919811199999",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      }
+     ]
     },
     {
      "phone": "",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      }
+     ]
     }
    ],
    "open": [
@@ -2295,147 +2280,132 @@
    "publicContext": [
     {
      "phone": "+919876500001",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-2",
-        "kind": "record",
-        "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-2"
-        ]
-       },
-       {
-        "id": "r:po-3",
-        "kind": "record",
-        "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
-        "literals": [
-         "po-3"
-        ]
-       },
-       {
-        "id": "r:po-6",
-        "kind": "record",
-        "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-6"
-        ]
-       },
-       {
-        "id": "r:po-14",
-        "kind": "record",
-        "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-14"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-2",
+       "kind": "record",
+       "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-2"
+       ]
+      },
+      {
+       "id": "r:po-3",
+       "kind": "record",
+       "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
+       "literals": [
+        "po-3"
+       ]
+      },
+      {
+       "id": "r:po-6",
+       "kind": "record",
+       "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-6"
+       ]
+      },
+      {
+       "id": "r:po-14",
+       "kind": "record",
+       "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-14"
+       ]
+      }
+     ]
     },
     {
      "phone": "+91 98765 00002",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-4",
-        "kind": "record",
-        "text": "Order po-4 to this supplier: 3 box hair colour.",
-        "literals": [
-         "po-4"
-        ]
-       },
-       {
-        "id": "r:po-7",
-        "kind": "record",
-        "text": "Order po-7 to this supplier: 7 box hair colour.",
-        "literals": [
-         "po-7"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-4",
+       "kind": "record",
+       "text": "Order po-4 to this supplier: 3 box hair colour.",
+       "literals": [
+        "po-4"
+       ]
+      },
+      {
+       "id": "r:po-7",
+       "kind": "record",
+       "text": "Order po-7 to this supplier: 7 box hair colour.",
+       "literals": [
+        "po-7"
+       ]
+      }
+     ]
     },
     {
      "phone": "+919876500003",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-5",
-        "kind": "record",
-        "text": "Order po-5 to this supplier: 6 box hair colour.",
-        "literals": [
-         "po-5"
-        ]
-       },
-       {
-        "id": "r:po-12",
-        "kind": "record",
-        "text": "Order po-12 to this supplier: 12 box hair colour.",
-        "literals": [
-         "po-12"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-5",
+       "kind": "record",
+       "text": "Order po-5 to this supplier: 6 box hair colour.",
+       "literals": [
+        "po-5"
+       ]
+      },
+      {
+       "id": "r:po-12",
+       "kind": "record",
+       "text": "Order po-12 to this supplier: 12 box hair colour.",
+       "literals": [
+        "po-12"
+       ]
+      }
+     ]
     },
     {
      "phone": "+919811199999",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      }
+     ]
     },
     {
      "phone": "",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      }
+     ]
     }
    ],
    "open": [
@@ -4045,147 +4015,132 @@
    "publicContext": [
     {
      "phone": "+919876500001",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-2",
-        "kind": "record",
-        "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-2"
-        ]
-       },
-       {
-        "id": "r:po-3",
-        "kind": "record",
-        "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
-        "literals": [
-         "po-3"
-        ]
-       },
-       {
-        "id": "r:po-6",
-        "kind": "record",
-        "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-6"
-        ]
-       },
-       {
-        "id": "r:po-14",
-        "kind": "record",
-        "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
-        "literals": [
-         "po-14"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-2",
+       "kind": "record",
+       "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-2"
+       ]
+      },
+      {
+       "id": "r:po-3",
+       "kind": "record",
+       "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
+       "literals": [
+        "po-3"
+       ]
+      },
+      {
+       "id": "r:po-6",
+       "kind": "record",
+       "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-6"
+       ]
+      },
+      {
+       "id": "r:po-14",
+       "kind": "record",
+       "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
+       "literals": [
+        "po-14"
+       ]
+      }
+     ]
     },
     {
      "phone": "+91 98765 00002",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-4",
-        "kind": "record",
-        "text": "Order po-4 to this supplier: 3 box hair colour.",
-        "literals": [
-         "po-4"
-        ]
-       },
-       {
-        "id": "r:po-7",
-        "kind": "record",
-        "text": "Order po-7 to this supplier: 7 box hair colour.",
-        "literals": [
-         "po-7"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-4",
+       "kind": "record",
+       "text": "Order po-4 to this supplier: 3 box hair colour.",
+       "literals": [
+        "po-4"
+       ]
+      },
+      {
+       "id": "r:po-7",
+       "kind": "record",
+       "text": "Order po-7 to this supplier: 7 box hair colour.",
+       "literals": [
+        "po-7"
+       ]
+      }
+     ]
     },
     {
      "phone": "+919876500003",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       },
-       {
-        "id": "r:po-5",
-        "kind": "record",
-        "text": "Order po-5 to this supplier: 6 box hair colour.",
-        "literals": [
-         "po-5"
-        ]
-       },
-       {
-        "id": "r:po-12",
-        "kind": "record",
-        "text": "Order po-12 to this supplier: 12 box hair colour.",
-        "literals": [
-         "po-12"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      },
+      {
+       "id": "r:po-5",
+       "kind": "record",
+       "text": "Order po-5 to this supplier: 6 box hair colour.",
+       "literals": [
+        "po-5"
+       ]
+      },
+      {
+       "id": "r:po-12",
+       "kind": "record",
+       "text": "Order po-12 to this supplier: 12 box hair colour.",
+       "literals": [
+        "po-12"
+       ]
+      }
+     ]
     },
     {
      "phone": "+919811199999",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      }
+     ]
     },
     {
      "phone": "",
-     "sources": {
-      "sources": [
-       {
-        "id": "s:shop",
-        "kind": "setting",
-        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
-        "literals": [
-         "Glow Unisex Salon"
-        ]
-       }
-      ],
-      "links": []
-     }
+     "sources": [
+      {
+       "id": "s:shop",
+       "kind": "setting",
+       "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+       "literals": [
+        "Glow Unisex Salon"
+       ]
+      }
+     ]
     }
    ],
    "open": [
