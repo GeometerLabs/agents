@@ -64,6 +64,7 @@ export const ORDER_PAGE: W<OrderPageWords> = {
       phone_busy: "This phone number already has two unpaid orders. Pay or cancel one first.",
       phone_day: "This phone number has started enough orders for today.",
       shop_busy: "The shop has many unpaid orders just now. Please try again later.",
+      whatsapp_only: "This shop keeps items for pickup through WhatsApp. Please message the shop there.",
       unknown: "This order could not be held.",
     },
     cancel: "Cancel order", cancelRule: (h) => `Cancel at least ${h} hours before your time to get the advance back. Later than that, the shop decides.`,
@@ -106,6 +107,7 @@ export const ORDER_PAGE: W<OrderPageWords> = {
       phone_busy: "इस फ़ोन नंबर पर पहले से दो बिना पेमेंट के ऑर्डर हैं। पहले एक का पेमेंट कीजिए या उसे रद्द कीजिए।",
       phone_day: "इस फ़ोन नंबर से आज के लिए काफ़ी ऑर्डर शुरू हो चुके हैं।",
       shop_busy: "दुकान पर अभी बहुत-से बिना पेमेंट के ऑर्डर हैं। कृपया बाद में कोशिश कीजिए।",
+      whatsapp_only: "यह दुकान पिकअप के लिए सामान WhatsApp पर रखती है। कृपया वहीं दुकान को संदेश भेजें।",
       unknown: "यह ऑर्डर रोका नहीं जा सका।",
     },
     cancel: "ऑर्डर रद्द कीजिए", cancelRule: (h) => `अग्रिम राशि वापस पाने के लिए अपने समय से कम से कम ${h} घंटे पहले रद्द कीजिए। उसके बाद दुकान तय करती है।`,
@@ -148,6 +150,7 @@ export const ORDER_PAGE: W<OrderPageWords> = {
       phone_busy: "ഈ ഫോൺ നമ്പറിൽ ഇതിനകം പണമടയ്ക്കാത്ത രണ്ട് ഓർഡറുകൾ ഉണ്ട്. ആദ്യം ഒന്ന് അടയ്ക്കുകയോ റദ്ദാക്കുകയോ ചെയ്യൂ.",
       phone_day: "ഈ ഫോൺ നമ്പറിൽ നിന്ന് ഇന്നത്തേക്ക് ആവശ്യത്തിന് ഓർഡറുകൾ തുടങ്ങിക്കഴിഞ്ഞു.",
       shop_busy: "കടയിൽ ഇപ്പോൾ പണമടയ്ക്കാത്ത ധാരാളം ഓർഡറുകൾ ഉണ്ട്. പിന്നീട് ശ്രമിക്കൂ.",
+      whatsapp_only: "ഈ കട പിക്കപ്പിനുള്ള സാധനങ്ങൾ WhatsApp വഴിയാണ് മാറ്റിവയ്ക്കുന്നത്. ദയവായി അവിടെ കടയ്ക്ക് സന്ദേശം അയയ്ക്കൂ.",
       unknown: "ഈ ഓർഡർ പിടിച്ചുവയ്ക്കാനായില്ല.",
     },
     cancel: "ഓർഡർ റദ്ദാക്കൂ", cancelRule: (h) => `അഡ്വാൻസ് തിരികെ കിട്ടാൻ നിങ്ങളുടെ സമയത്തിന് കുറഞ്ഞത് ${h} മണിക്കൂർ മുമ്പ് റദ്ദാക്കൂ. അതിനുശേഷം കട തീരുമാനിക്കും.`,
@@ -190,6 +193,7 @@ export const ORDER_PAGE: W<OrderPageWords> = {
       phone_busy: "ಈ ಫೋನ್ ನಂಬರ್‌ನಲ್ಲಿ ಈಗಾಗಲೇ ಪಾವತಿಸದ ಎರಡು ಆರ್ಡರ್‌ಗಳಿವೆ. ಮೊದಲು ಒಂದನ್ನು ಪಾವತಿಸಿ ಅಥವಾ ರದ್ದು ಮಾಡಿ.",
       phone_day: "ಈ ಫೋನ್ ನಂಬರ್‌ನಿಂದ ಇಂದಿಗೆ ಸಾಕಷ್ಟು ಆರ್ಡರ್‌ಗಳು ಶುರುವಾಗಿವೆ.",
       shop_busy: "ಅಂಗಡಿಯಲ್ಲಿ ಈಗ ಪಾವತಿಸದ ಅನೇಕ ಆರ್ಡರ್‌ಗಳಿವೆ. ನಂತರ ಪ್ರಯತ್ನಿಸಿ.",
+      whatsapp_only: "ಈ ಅಂಗಡಿ ಪಿಕಪ್‌ಗಾಗಿ ವಸ್ತುಗಳನ್ನು WhatsApp ಮೂಲಕ ಕಾಯ್ದಿರಿಸುತ್ತದೆ. ದಯವಿಟ್ಟು ಅಲ್ಲೇ ಅಂಗಡಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
       unknown: "ಈ ಆರ್ಡರ್ ಹಿಡಿದಿಡಲು ಆಗಲಿಲ್ಲ.",
     },
     cancel: "ಆರ್ಡರ್ ರದ್ದು ಮಾಡಿ", cancelRule: (h) => `ಮುಂಗಡ ಮರಳಿ ಪಡೆಯಲು ನಿಮ್ಮ ಸಮಯಕ್ಕಿಂತ ಕನಿಷ್ಠ ${h} ಗಂಟೆ ಮೊದಲು ರದ್ದು ಮಾಡಿ. ಅದರ ನಂತರ ಅಂಗಡಿ ನಿರ್ಧರಿಸುತ್ತದೆ.`,
@@ -356,6 +360,13 @@ export interface OwnerMoreWords {
    * than the agent may give alone. The two answers are the owner's "approve" and "deny" with the card's code, exactly as on WhatsApp.
    */
   discount: (who: string, item: string, qty: number, offered: string, list: string, total: string) => string; agreePrice: string; keepPrice: string;
+  /**
+   * "Keep one for me", the pickup hold (24 Nov 2026; go/internal/orders agent_hold.go): a hold that waits for the shop's yes, a photo or model number that waits for the owner to
+   * press the listed item it shows (each item's button carries its name and price), and an item kept for a customer that staff mark collected. Nothing is paid ahead.
+   */
+  holdAsk: (who: string, what: string, amount: string) => string; keepForThem: string; cantKeep: string;
+  holdPick: (who: string) => string; notHave: string;
+  held: (who: string, what: string) => string; collected: string;
 }
 
 export const OWNER_MORE: W<OwnerMoreWords> = {
@@ -366,6 +377,9 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     accept: "Accept the order", refuse: "Refuse the order",
     discount: (who, item, qty, offered, list, total) => `${who} asks for ${qty > 1 ? `${qty} × ${item} at ${offered} each` : `${item} at ${offered}`} instead of your price of ${list}: ${total} in all. That is more off than the agent may give alone, so nothing is agreed until you answer.`,
     agreePrice: "Agree to this price", keepPrice: "Keep my price",
+    holdAsk: (who, what, amount) => `${who} asks you to keep ${what}, ${amount} to pay at your counter when they collect it. Nothing is kept until you answer.`, keepForThem: "Keep it for them", cantKeep: "Can't keep it",
+    holdPick: (who) => `${who} sent a photo or a model number. See it in your chat with them, then press the listed item it shows (its price is the one they will hear).`, notHave: "We don't have it",
+    held: (who, what) => `Kept for ${who}: ${what}. Press when they collect it.`, collected: "Collected",
     lateOrder: (who, what, amount) => `${who} cancelled an order late (${what}). Their advance is ${amount}.`,
     giveBack: "Give the advance back", keepAdvance: "Keep the advance", keptOrder: "Kept for an order I took by hand",
     waiver: (who, what, amount) => `${who}'s parent asked to take ${amount} off ${what}.`, waiveIt: "Take it off", dontWaive: "Do not take it off",
@@ -382,6 +396,9 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     accept: "ऑर्डर मंज़ूर कीजिए", refuse: "ऑर्डर मना कीजिए",
     discount: (who, item, qty, offered, list, total) => `${who} ${qty > 1 ? `${qty} × ${item}, ${offered} प्रति नग` : `${item}, ${offered}`} में माँग रहे हैं, आपका दाम ${list} है: कुल ${total}। यह एजेंट जितनी छूट खुद दे सकता है उससे ज़्यादा है, इसलिए आपके जवाब तक कुछ तय नहीं होगा।`,
     agreePrice: "यह दाम मंज़ूर करें", keepPrice: "अपना दाम रखें",
+    holdAsk: (who, what, amount) => `${who} चाहते हैं कि आप ${what} उनके लिए रखें, ${amount} ले जाते समय आपके काउंटर पर देने हैं। आपके जवाब तक कुछ नहीं रखा गया।`, keepForThem: "उनके लिए रखें", cantKeep: "नहीं रख सकते",
+    holdPick: (who) => `${who} ने फ़ोटो या मॉडल नंबर भेजा है। उनकी चैट में देखिए, फिर सूची की वह चीज़ दबाइए जो उसमें है (उसकी कीमत ही उन्हें बताई जाएगी)।`, notHave: "हमारे पास नहीं है",
+    held: (who, what) => `${who} के लिए रखा है: ${what}। जब वे ले जाएँ तो दबाइए।`, collected: "ले गए",
     lateOrder: (who, what, amount) => `${who} ने एक ऑर्डर देर से रद्द किया (${what})। उनकी अग्रिम राशि ${amount} है।`,
     giveBack: "अग्रिम राशि लौटाइए", keepAdvance: "अग्रिम राशि रखिए", keptOrder: "हाथ से लिए ऑर्डर के लिए रखा",
     waiver: (who, what, amount) => `${who} के माता-पिता ने ${what} में से ${amount} कम करने को कहा है।`, waiveIt: "कम कीजिए", dontWaive: "कम मत कीजिए",
@@ -398,6 +415,9 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     accept: "ഓർഡർ അംഗീകരിക്കൂ", refuse: "ഓർഡർ നിരസിക്കൂ",
     discount: (who, item, qty, offered, list, total) => `${who} ${qty > 1 ? `${qty} × ${item}, ഒന്നിന് ${offered}` : `${item}, ${offered}`} എന്ന വിലയ്ക്ക് ചോദിക്കുന്നു, നിങ്ങളുടെ വില ${list}: ആകെ ${total}. ഏജന്റിന് സ്വയം നൽകാവുന്നതിലും കൂടുതൽ ഇളവാണിത്, അതിനാൽ നിങ്ങൾ മറുപടി നൽകുന്നതുവരെ ഒന്നും ഉറപ്പിക്കില്ല.`,
     agreePrice: "ഈ വില സമ്മതിക്കൂ", keepPrice: "എന്റെ വില നിലനിർത്തൂ",
+    holdAsk: (who, what, amount) => `${who} ${what} അവർക്കായി മാറ്റിവയ്ക്കാൻ ചോദിക്കുന്നു, വാങ്ങുമ്പോൾ നിങ്ങളുടെ കൗണ്ടറിൽ ${amount} അടയ്ക്കും. നിങ്ങൾ മറുപടി നൽകുന്നതുവരെ ഒന്നും മാറ്റിവയ്ക്കില്ല.`, keepForThem: "അവർക്കായി മാറ്റിവയ്ക്കൂ", cantKeep: "മാറ്റിവയ്ക്കാൻ കഴിയില്ല",
+    holdPick: (who) => `${who} ഒരു ഫോട്ടോയോ മോഡൽ നമ്പറോ അയച്ചു. അവരുമായുള്ള ചാറ്റിൽ നോക്കിയിട്ട് അതിൽ കാണുന്ന പട്ടികയിലെ സാധനം അമർത്തൂ (അതിന്റെ വിലയാണ് അവരെ അറിയിക്കുക).`, notHave: "ഞങ്ങളുടെ കയ്യിലില്ല",
+    held: (who, what) => `${who}-ന് മാറ്റിവച്ചത്: ${what}. അവർ വാങ്ങുമ്പോൾ അമർത്തൂ.`, collected: "വാങ്ങി",
     lateOrder: (who, what, amount) => `${who} ഒരു ഓർഡർ വൈകി റദ്ദാക്കി (${what}). അവരുടെ അഡ്വാൻസ് ${amount}.`,
     giveBack: "അഡ്വാൻസ് തിരികെ നൽകൂ", keepAdvance: "അഡ്വാൻസ് വച്ചോളൂ", keptOrder: "കൈകൊണ്ട് എടുത്ത ഓർഡറിനായി വച്ചു",
     waiver: (who, what, amount) => `${who}-ന്റെ രക്ഷിതാവ് ${what}-ൽ നിന്ന് ${amount} കുറയ്ക്കാൻ ചോദിച്ചു.`, waiveIt: "കുറയ്ക്കൂ", dontWaive: "കുറയ്ക്കരുത്",
@@ -414,6 +434,9 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     accept: "ಆರ್ಡರ್ ಒಪ್ಪಿ", refuse: "ಆರ್ಡರ್ ನಿರಾಕರಿಸಿ",
     discount: (who, item, qty, offered, list, total) => `${who} ${qty > 1 ? `${qty} × ${item}, ಒಂದಕ್ಕೆ ${offered}` : `${item}, ${offered}`} ಬೆಲೆಗೆ ಕೇಳುತ್ತಿದ್ದಾರೆ, ನಿಮ್ಮ ಬೆಲೆ ${list}: ಒಟ್ಟು ${total}. ಇದು ಏಜೆಂಟ್ ತಾನೇ ನೀಡಬಹುದಾದ ರಿಯಾಯಿತಿಗಿಂತ ಹೆಚ್ಚು, ಆದ್ದರಿಂದ ನೀವು ಉತ್ತರಿಸುವವರೆಗೆ ಏನೂ ಒಪ್ಪಿಲ್ಲ.`,
     agreePrice: "ಈ ಬೆಲೆಗೆ ಒಪ್ಪಿ", keepPrice: "ನನ್ನ ಬೆಲೆ ಇರಲಿ",
+    holdAsk: (who, what, amount) => `${who} ಅವರು ${what} ಅವರಿಗಾಗಿ ಕಾಯ್ದಿರಿಸಲು ಕೇಳುತ್ತಿದ್ದಾರೆ, ತೆಗೆದುಕೊಳ್ಳುವಾಗ ನಿಮ್ಮ ಕೌಂಟರ್‌ನಲ್ಲಿ ${amount} ಪಾವತಿಸುತ್ತಾರೆ. ನೀವು ಉತ್ತರಿಸುವವರೆಗೆ ಏನನ್ನೂ ಕಾಯ್ದಿರಿಸಿಲ್ಲ.`, keepForThem: "ಅವರಿಗಾಗಿ ಕಾಯ್ದಿರಿಸಿ", cantKeep: "ಕಾಯ್ದಿರಿಸಲು ಆಗದು",
+    holdPick: (who) => `${who} ಅವರು ಫೋಟೋ ಅಥವಾ ಮಾಡೆಲ್ ನಂಬರ್ ಕಳುಹಿಸಿದ್ದಾರೆ. ಅವರ ಚಾಟ್‌ನಲ್ಲಿ ನೋಡಿ, ನಂತರ ಅದರಲ್ಲಿರುವ ಪಟ್ಟಿಯ ವಸ್ತುವನ್ನು ಒತ್ತಿ (ಅದರ ಬೆಲೆಯನ್ನೇ ಅವರಿಗೆ ತಿಳಿಸಲಾಗುತ್ತದೆ).`, notHave: "ನಮ್ಮಲ್ಲಿ ಇಲ್ಲ",
+    held: (who, what) => `${who} ಅವರಿಗಾಗಿ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ: ${what}. ಅವರು ತೆಗೆದುಕೊಂಡಾಗ ಒತ್ತಿ.`, collected: "ತೆಗೆದುಕೊಂಡರು",
     lateOrder: (who, what, amount) => `${who} ಒಂದು ಆರ್ಡರ್ ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ (${what}). ಅವರ ಮುಂಗಡ ${amount}.`,
     giveBack: "ಮುಂಗಡ ಹಿಂತಿರುಗಿಸಿ", keepAdvance: "ಮುಂಗಡ ಇಟ್ಟುಕೊಳ್ಳಿ", keptOrder: "ಕೈಯಾರೆ ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಂಡೆ",
     waiver: (who, what, amount) => `${who} ಅವರ ಪೋಷಕರು ${what} ನಿಂದ ${amount} ಕಡಿಮೆ ಮಾಡಲು ಕೇಳಿದ್ದಾರೆ.`, waiveIt: "ಕಡಿಮೆ ಮಾಡಿ", dontWaive: "ಕಡಿಮೆ ಮಾಡಬೇಡಿ",

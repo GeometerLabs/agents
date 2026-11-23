@@ -47,6 +47,8 @@ export function menuPage(o: { shop: PageShop; offer: OrderOffer; language: Langu
   const self = `${o.shop.publicUrl}/`;
   const q = (extra: Record<string, string>) => `${self}?${new URLSearchParams({ lang: o.language, ...extra })}`;
   if (s.paused) return layout({ shop: s, language: o.language, title: w.title(s.name), selfPath: self, face, foot, body: html`${stateBlock("paused", o.language, w.paused)}${footer(o.shop, o.language)}` });
+  // the pickup hold (advance "none", 24 Nov 2026): the shop keeps items for pickup through WhatsApp only, so its page takes no order and says where to ask
+  if (s.advance.mode === "none") return layout({ shop: s, language: o.language, title: w.title(s.name), selfPath: self, face, foot, body: html`${stateBlock("paused", o.language, w.refused.whatsapp_only)}${footer(o.shop, o.language)}` });
   const advance = s.advance.mode === "full" ? w.advanceFull : w.advancePart(s.advance.percent);
   // a day can be ordered for while it has a slot whose cut-off has not passed and its count is not reached
   const open = o.offer.days.filter((d) => !d.full && d.slots.some((x) => x.open));

@@ -180,6 +180,9 @@ func (a *Agent) onCancel(phone string) error {
 		a.tellCustomer(o, phone, []string{t}, sayOpts{})
 		return nil
 	case AwaitingAdvance:
+		if a.settings.NoAdvance() {
+			return a.letGoHold(o) // the pickup hold: nothing was paid, so nothing to look for (agent_hold.go)
+		}
 		if err := a.cancelWaiting(o, "cancelled by the customer before paying"); err != nil {
 			return err
 		}
@@ -280,6 +283,15 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 			return a.onDiscountAnswer(strings.ToLower(m[1]), m[2], strings.ToUpper(m[3]))
 		}
 	}
+	// the pickup hold's two fixed replies (agent_hold.go): "pick o-3 <item>" for a photo or a model number, and "collected o-3"; a shop with an advance reads them as before
+	if a.settings.NoAdvance() {
+		if m := holdPickCmd.FindStringSubmatch(msg.Text); m != nil {
+			return a.onHoldPick(strings.ToLower(m[1]), m[2])
+		}
+		if m := collectedCmd.FindStringSubmatch(msg.Text); m != nil {
+			return a.onCollected(strings.ToLower(m[1]))
+		}
+	}
 	// item 11e: the shop's assistant reads what no fixed phrase is (this command is one); a shop without an "assistant" block: exactly as before
 	if !ownerCommand.MatchString(msg.Text) {
 		if as := a.assistantOf(); as != nil {
@@ -320,6 +332,8 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 	}
 	pending := o.Pending[0]
 	switch k := pending.PendingKind(); k {
+	case "hold_ask", "hold_pick":
+		return a.onHoldAnswer(o, pending, command) // the pickup hold (agent_hold.go)
 	case "guard_hold", "refund_retry":
 		notes := "this refund is being sent again by itself"
 		if k == "guard_hold" {

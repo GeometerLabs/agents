@@ -160,7 +160,8 @@ func (a *Agent) onMessage(msg messaging.InboundMessage, audio *runtime.PageAudio
 	customer := a.store.Customer(phone)
 	buttons := a.c.Snap != nil && budgetButtons(&a.c.Snap.AI, a.c, a.now())
 	// UPI: "I paid" while an advance waits is read from a few plain words before any model; it is a claim, and the owner is asked to look. It marks nothing paid.
-	if a.ownerConfirms && msg.Reply == nil && !customer.OptedOut && reading.IsPaidClaim(msg.Text) && a.store.LatestOrder(phone, []string{AwaitingAdvance}) != nil {
+	// (a pickup-hold shop takes no advance, so "I paid" there is not a claim about one: it is read like any other message)
+	if a.ownerConfirms && !a.settings.NoAdvance() && msg.Reply == nil && !customer.OptedOut && reading.IsPaidClaim(msg.Text) && a.store.LatestOrder(phone, []string{AwaitingAdvance}) != nil {
 		in, refs := map[string]any{"text": msg.Text, "id": msg.ID}, map[string]string{"messageId": msg.ID, "step": "rules"}
 		if heard != nil {
 			in["voice"] = true
@@ -270,6 +271,15 @@ func (a *Agent) onMessage(msg messaging.InboundMessage, audio *runtime.PageAudio
 	case "keep":
 		return a.onKeep(phone)
 	case "paid":
+		if a.settings.NoAdvance() {
+			// the pickup hold: nothing is paid ahead, so "I have paid" is answered with where the hold stands (agent_hold.go)
+			if w := a.store.LatestOrder(phone, []string{AwaitingAdvance, AwaitingOwner}); w != nil {
+				a.tellAlreadyWaiting(w)
+				return nil
+			}
+			a.tellCustomer(nil, phone, []string{"didnt_understand"}, sayOpts{offer: itemsOffer("didnt_understand")})
+			return nil
+		}
 		if a.ownerConfirms {
 			return a.onPaidClaim(phone, "button", "")
 		}
@@ -289,6 +299,10 @@ func (a *Agent) onMessage(msg messaging.InboundMessage, audio *runtime.PageAudio
 	// block M: the shop's talk may answer, from what customers may be told (false: the talk is off, a check failed, or nothing was said; the menu goes as before)
 	if msg.Reply == nil && !msg.NoModel && a.talkToCustomer(phone, msg.Text, in.OverrideAttempt != nil && *in.OverrideAttempt) {
 		return a.stepErr
+	}
+	// the pickup hold: words the reader cannot place (a model number, an item not listed by that name) go to the owner, who picks the listed item (agent_hold.go)
+	if a.settings.NoAdvance() && msg.Reply == nil {
+		return a.startHoldEnquiry(phone, "words")
 	}
 	a.tellCustomer(nil, phone, []string{"didnt_understand"}, sayOpts{offer: itemsOffer("didnt_understand")})
 	return nil
@@ -499,7 +513,7 @@ func (a *Agent) offerPrice(o *Order, in *reading.Intent, ctx *flowCtx) (stop boo
 func (a *Agent) probeOpen(date LocalDate, slotID string, now int64) bool {
 	d := date
 	probe := &Order{Date: &d, SlotID: slotID}
-	return a.settings.FixSlot(probe) && *probe.CutoffMs > now
+	return a.settings.FixSlot(probe) && *probe.CutoffMs > now && (!a.settings.NoAdvance() || *probe.SlotEndMs > now) // a pickup hold: a slot already over is not offered
 }
 
 // slotIsFull is agent.ts slotIsFull: a slot with a limit of its own whose places are all taken for that day.
@@ -536,7 +550,11 @@ func (a *Agent) availability(o *Order) availability {
 	a.settings.FixSlot(o)
 	cut := allow("before-cutoff", "The cut-off for that day and slot has not passed.") // `now >= undefined` is false: no cut-off fixed is not past
 	if o.CutoffMs != nil {
-		cut = checkBeforeCutoff(now, *o.CutoffMs)
+		closes := *o.CutoffMs
+		if a.settings.NoAdvance() && o.SlotEndMs != nil && *o.SlotEndMs < closes {
+			closes = *o.SlotEndMs // a pickup hold: nothing is kept for a pickup time that has already ended, whatever the cut-off says (agent_hold.go)
+		}
+		cut = checkBeforeCutoff(now, closes)
 	}
 	ds = append(ds, cut)
 	if blocked(cut) {
@@ -552,6 +570,9 @@ func (a *Agent) availability(o *Order) availability {
 			continue
 		}
 		taken := a.store.TakenOf(*o.Date, l.ItemID, now, o.ID)
+		if a.settings.NoAdvance() {
+			taken = a.store.HeldAnyDay(l.ItemID, now, o.ID) // a pickup hold keeps a unit off the shelf whatever day it is for (agent_hold.go)
+		}
 		d := checkStock(ItemName(item, "en"), l.Qty, taken, item.DailyStock)
 		ds = append(ds, d)
 		if blocked(d) {
@@ -614,6 +635,10 @@ func (a *Agent) proceed(o *Order, ctx *flowCtx) error {
 		a.tellCustomer(o, phone, cat(ctx.prefix, templates...), opts)
 	}
 	if len(o.Lines) == 0 {
+		if holdPickOn(o) != nil {
+			say1([]string{"hold_still_asking"}, sayOpts{}) // the pickup hold: the owner has not yet said which listed item the photo shows
+			return nil
+		}
 		say1([]string{"menu"}, sayOpts{offer: itemsOffer(cat(ctx.prefix, "pick_items")...)})
 		return nil
 	}
@@ -699,7 +724,7 @@ func (a *Agent) proceed(o *Order, ctx *flowCtx) error {
 		if av.blocked == "after_cutoff" || av.blocked == "slot_full" {
 			o.SlotID = ""
 		}
-		say1([]string{av.blocked}, av.more)
+		say1([]string{a.holdWord(av.blocked)}, av.more)
 		return nil
 	}
 	total := s.TotalOf(o.Lines)
@@ -709,6 +734,9 @@ func (a *Agent) proceed(o *Order, ctx *flowCtx) error {
 	}
 	advance := s.AdvanceFor(total)
 	o.TotalInr, o.AdvanceInr = &total, &advance
+	if s.NoAdvance() {
+		return a.askToHold(o, ctx, total) // the pickup hold: the shop's yes for every hold, so the big-order line has nothing to add (agent_hold.go)
+	}
 	if over := s.Owner.ApproveOverInr; over > 0 && total > over && (deal == nil || deal.State != discounts.Approved) { // the owner's yes to the card was to this exact total
 		_ = o.MoveTo(AwaitingOwner)
 		o.Pending = append(o.Pending, NewBigOrder(BigOrder{TotalInr: total, AskedAtMs: now}))
@@ -775,8 +803,11 @@ func (a *Agent) proceedToHold(o *Order, ctx *flowCtx) error {
 			o.SlotID = ""
 		}
 		o.Pending = []payments.Pending{}
-		a.tellCustomer(o, phone, cat(ctx.prefix, av.blocked), merged(sayOpts{shown: catD(ctx.shown, av.decisions...)}, av.more))
+		a.tellCustomer(o, phone, cat(ctx.prefix, a.holdWord(av.blocked)), merged(sayOpts{shown: catD(ctx.shown, av.decisions...)}, av.more))
 		return nil
+	}
+	if a.settings.NoAdvance() {
+		return a.holdForPickup(o, ctx, av) // no link and no money: the unit is kept until the end of the agreed pickup time (agent_hold.go)
 	}
 	if a.pay == nil {
 		return runtime.Unported("an advance link on a shop with no payments service")
@@ -850,6 +881,15 @@ func (a *Agent) proceedToHold(o *Order, ctx *flowCtx) error {
 
 // tellAlreadyWaiting is agent.ts tellAlreadyWaiting: a repeat of the same request gets the same link (and a UPI shop's QR picture again), not a second hold.
 func (a *Agent) tellAlreadyWaiting(w *Order) {
+	if a.settings.NoAdvance() {
+		// the pickup hold: the same request again keeps the hold exactly as it is (its item, its time), or says the shop is still asked
+		if w.State == AwaitingOwner {
+			a.tellCustomer(w, w.Customer, []string{"hold_still_asking"}, sayOpts{})
+			return
+		}
+		a.tellCustomer(w, w.Customer, []string{"hold_held"}, sayOpts{offer: cancelOrOwner})
+		return
+	}
 	opts := sayOpts{offer: a.waitingOffer()}
 	if a.ownerConfirms && w.Channel == "" {
 		if r := a.requestOf(w); r != nil {

@@ -68,7 +68,7 @@ export type BookingView =
  * payment a parent says they made), `waiver` and `refund_request`. `what` is what it is about, already in the owner's language, for a kind no service names.
  */
 export interface OwnerItemView {
-  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request" | "po_approval" | "po_silent" | "po_receive" | "po_unsure" | "po_refused" | "discount"; case: string; digest: string; actions: string[]; amountPaise: number;
+  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request" | "po_approval" | "po_silent" | "po_receive" | "po_unsure" | "po_refused" | "discount" | "hold_ask" | "hold_pick" | "hold"; case: string; digest: string; actions: string[]; amountPaise: number;
   customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp" | "chat"; serviceId?: string; startMs?: number; why?: string; what?: string;
   /**
    * Money clarity: for a `deposit` or a `late_deposit`, when the customer said they paid (left out: nobody said so, the hold is only waiting) and the UPI reference they
@@ -80,6 +80,11 @@ export interface OwnerItemView {
    * would agree). Never the card's code: the runtime puts it in the answer, as the owner's own "approve b-3 K7M2QX".
    */
   deal?: { name: string; qty: number; listInr: number; offeredInr: number; totalInr: number };
+  /**
+   * The pickup hold (24 Nov 2026), kind "hold_pick": the listed item one button names (its name is `what`, its price `amountPaise`); the press sends "pick o-3 <item>". The
+   * card's other entry (no `pick`) is the "we don't have it" button. Kinds "hold_ask" (approve / deny) and "hold" (collected) carry nothing more.
+   */
+  pick?: string;
 }
 /**
  * Item 11h (Fees): a parent as the owner's page lists them, with their private link's state. `ref` names the parent without their number ("p-" and 12 hex digits
@@ -127,7 +132,7 @@ export interface OrderSlotView { id: string; mode: "pickup" | "delivery"; fromMs
 /** What an Orders shop's page offers: the menu, the days with their slots and what is left of each item, and the shop's rules. Prices come from the settings only. */
 export interface OrderOffer {
   kind: "orders";
-  shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character" | "contact"> & { advance: { mode: "full" | "part"; percent: number; holdMinutes: number }; cancellation: { windowHours: number } };
+  shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character" | "contact"> & { advance: { mode: "full" | "part" | "none"; percent: number; holdMinutes: number }; cancellation: { windowHours: number } };
   items: OfferItem[];
   /** Today and the days ahead the shop takes orders for. `left`: how many of each item are not held yet; `full`: the day's order count is reached. */
   days: { date: string; slots: OrderSlotView[]; left: Record<string, number>; full: boolean }[];
