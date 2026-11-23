@@ -849,3 +849,9 @@ reference: the "ONE link" test was made so after the first TypeScript run, which
 the day the agent first ran (`started()`, read from agent.db) instead of a fixed 1.5 s; `waitFor` waits up to 20 s (a TypeScript run under the shared lock once took more than 12 s
 to open a month). Checked on TypeScript: razorpay, month, owner, classes 29 of 29 and record 5 of 5 (run alone); Bookings' smoke on Go 12 of 12 after the kitserver.go hook;
 words-fresh 14 of 14; `go test` of runtime, bookings and accounting pass.
+
+**Measured at the end of this stream (23 Nov, after merging main 5c7df088, through the heat lock):** the Fees contract on Go **64 of 67** (fail: the assistant's "who owes
+fees" and cancel card, and the monthly report: not ported, Deferred.md), on TypeScript **67 of 67**; `go build ./...` and `go vet` of fees, runtime, bookings and accounting pass;
+`go test` of runtime, bookings and accounting pass (internal/fees has no Go unit tests and no Go vectors: it is proved by the contract only); words-fresh 16 of 16; Bookings'
+smoke on Go 14 of 14 after the kitserver.go hook; every go/scripts generator's `--check` passes. One more hour-dependent contract test was found and fixed (the to-do list's
+ask-again: on a UPI centre an open request is asked about first, and the first beat makes one only after 06:00 in India; the test now uses a Razorpay centre).
