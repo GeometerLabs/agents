@@ -108,6 +108,12 @@ func (a *Agent) onChannelOrder(ev map[string]any, channel, handle string) error 
 		a.pausedReply(conversation, "order", nil)
 		return nil
 	}
+	if a.settings.NoAdvance() {
+		// the pickup hold (agent_hold.go) runs on WhatsApp, where the owner accepts each hold; the shop's order page, its API and MCP take no order on such a shop (its
+		// public page for the counted items is Listings)
+		refuse("whatsapp_only", "this shop keeps items for pickup through WhatsApp only: nothing is held from its page", nil)
+		return nil
+	}
 	if reason, notes, ds := a.channelOrderProblem(lines, dateText, mode, slotID, address); reason != "" {
 		refuse(reason, notes, ds)
 		return nil
@@ -250,6 +256,10 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 			kind = ownermarked.ReplyKept
 		}
 		msg.Reply = &messaging.Reply{ID: ownermarked.MarkButtonID(kind, item.Code), Kind: "button"}
+	} else if item.Pick != "" {
+		msg.Text = "pick " + cs + " " + item.Pick // the pickup hold: the listed item pressed, exactly as the owner types it on WhatsApp (agent_hold.go onHoldPick)
+	} else if action == "collected" {
+		msg.Text = "collected " + cs
 	} else if item.Deal != nil {
 		msg.Text = action + " " + cs + " " + item.Deal.Code // E1: a price card's answer names its code, exactly as the owner types it on WhatsApp (onDiscountAnswer decides)
 	} else {

@@ -1465,3 +1465,36 @@ What was built is in `internal/discounts/Explanation.md` § Before the pilot, an
   - TypeScript: Bookings 838/838, Orders 215/215, modules (channels, limits, assistant, understanding) 334/334.
   - `--check` of every generator: fresh. The three generators without a `--check` (digest, format, rules vectors) were run and changed no file.
 - **Every shop sees one change: the model's prompt and schema.** They gain `askDiscount`, so a model reading sees it. A message the rules read is answered exactly as before.
+
+## pickup-hold-24nov: "keep one for me", the no-advance pickup hold (24 Nov 2026, stream PH; decision 63, catalogue job 3)
+
+What was built is in `internal/orders/Explanation.md` § "Keep one for me", and what is left is in its `Deferred.md`. It is a settings choice of Orders, `"advance": {"mode": "none"}`, off by default. Every existing contract case passes unchanged.
+
+- **Settings** (TypeScript for the panel and the deployer, Go for the shop). The `percent` is 0, and delivery and monthly plans are refused with it. The example shop is `ganesh-electricals-hold.example.json`, and the settings vectors were regenerated.
+- **The Go agent** (`agent_hold.go`):
+  - No link and no money.
+  - The hold lasts until the end of the agreed pickup slot. A slot that is already over is neither offered nor held.
+  - A photo (`photoStartsHold`), or words with a model number (`wordsStartHold`), goes to the owner. The owner answers `pick o-3 <item>` (its listed price) or `deny o-3`.
+  - Every other hold waits for the shop's `approve o-3`. "Held for you" is said only after the yes and the reservation, in the same step.
+  - The last unit is counted across days and against the shared count. A retry keeps the hold.
+  - `collected o-3` (WhatsApp, or the page's button) books it off the shared count once. Expiry and every cancel release it once and tell the owner.
+- **The words.** There are 18 messages in four languages: "we usually carry it", "in stock" and "held for you" kept apart. Seven are WhatsApp templates. They are generated to Go, and the review sheets and `whatsapp-templates.json` are regenerated.
+- **The monthly report.** The `holds` block counts collected, ended uncollected, enquiries, and collections per ten enquiries. It appears only when the month has a hold line. It is in TypeScript and Go, with vectors.
+- **The owner's page.** The kinds are `hold_ask`, `hold_pick` (one card, a button per listed item) and `hold`. The action `collected` is added to `OWNER_ACTIONS` / `ownerActions`.
+- **The shop's order page, API and MCP** refuse with `whatsapp_only`.
+- **The panel.** The rules step has a third advance choice. There is a variant `hold` and the "Hardware and electricals, keep one for me" preset. The certificate's limit line covers no advance.
+- **The demo engine's hand check** runs no situation on a hold shop, and says why.
+- **Not done** (Deferred.md):
+  - The panel's go-live gate refuses a hand check of 0 situations, so a hold shop cannot be certified by the panel until the owner decides how.
+  - The photo itself is not forwarded. That needs a WhatsApp Guard route.
+  - Staff on their own numbers.
+  - The assistant's "what needs me".
+  - An enquiry timeout.
+- **TypeScript findings: none.**
+- **Run of record** (24 Nov, on the branch, based on 361aa459). The branch had one pass. The three panel failures it showed were fixed and the panel suite was run again.
+  - `go build/vet/test ./...`: all ok.
+  - Contracts: Orders 136/136 (19 of them the hold's), Bookings 178/178, Fees 102/102, Stock orders 74/74, and listings 210/210 (words-fresh included).
+  - Every generator's `--check` (40): fresh.
+  - Panel: 266/269 in the pass. The 3 failures were the Bookings review sheets' section 7 (the panel's new words), which was regenerated. On the rerun it was 268 pass and 0 fail; the one test that did not run is the one that needs the monorepo path, which that command did not set.
+  - Bundle: 722 pass, 9 skipped (REAL_CADDY).
+  - TypeScript: Orders 215/215; modules/channels 219/219.

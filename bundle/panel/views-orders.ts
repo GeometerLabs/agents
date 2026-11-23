@@ -42,7 +42,8 @@ export function ordersRulesBody(c: Ctx, d: Draft, action: string, back: Raw | st
   ${area("area", r.area, f.area, 2, r.areaHelp)}
   <div class="field"><span>${r.advance}</span><div class="days">
     <label><input type="radio" name="advanceMode" value="part" ${f.advanceMode === "part" ? raw("checked") : ""}> ${r.advancePart}</label>
-    <label><input type="radio" name="advanceMode" value="full" ${f.advanceMode === "full" ? raw("checked") : ""}> ${r.advanceFull}</label></div></div>
+    <label><input type="radio" name="advanceMode" value="full" ${f.advanceMode === "full" ? raw("checked") : ""}> ${r.advanceFull}</label>
+    <label><input type="radio" name="advanceMode" value="none" ${f.advanceMode === "none" ? raw("checked") : ""}> ${r.advanceNone}</label></div></div>
   <div class="row">${h.text(r.percent, "advancePercent", f.advancePercent, { mode: "numeric", max: 3 })}${h.text(r.hold, "holdMinutes", f.holdMinutes, { mode: "numeric", max: 4 })}</div>
   <div class="row">${h.text(r.perDay, "maxPerDay", f.maxPerDay, { mode: "numeric", max: 5 })}${h.text(r.perOrder, "maxItems", f.maxItems, { mode: "numeric", max: 3 })}</div>
   <div class="row">${h.text(r.daysAhead, "daysAhead", f.daysAhead, { mode: "numeric", max: 2 })}${h.text(r.window, "windowHours", f.windowHours, { mode: "numeric", max: 3 })}</div>

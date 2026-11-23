@@ -100,6 +100,11 @@ func ReportSection(sr SealedReport, lang, check string) (string, error) {
 		rowsNumbers = append(rowsNumbers, append([]string{e(s.Discounts.Given)}, amountCells(accounting.Amount{Count: int(d.Given.Count), Paise: d.Given.Paise})...),
 			[]string{e(s.Discounts.Asked), fign(int(d.Asked)), ""}, []string{e(s.Discounts.Refused), fign(int(d.Refused)), ""})
 	}
+	// the pickup hold: four rows, only when the month has a hold line
+	if h := r.Holds; h != nil {
+		rowsNumbers = append(rowsNumbers, []string{e(s.Holds.Collected), fign(h.Collected), ""}, []string{e(s.Holds.Expired), fign(h.Expired), ""},
+			[]string{e(s.Holds.Enquiries), fign(h.Enquiries), ""}, []string{e(s.Holds.PerTen), fign(h.PerTen), ""})
+	}
 	head3 := []report.TableHead{{Text: p.Item}, {Text: p.Count, N: true}, {Text: p.Amount, N: true}}
 	numbers := report.Table(head3, rowsNumbers)
 	sold := report.Table(head3, [][]string{

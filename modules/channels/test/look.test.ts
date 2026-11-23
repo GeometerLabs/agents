@@ -82,3 +82,22 @@ test("a price card on the owner's page: the numbers and the two answers, in each
     assert.ok(page.includes('name="action" value="approve"') && page.includes('name="action" value="deny"'), language);
   }
 });
+
+// The pickup hold (24 Nov 2026): a customer's photo is ONE card on the owner's page, however many listed items it offers: a button per item with its name and price (each its
+// own digest, so a press picks exactly that item) and "we don't have it"; a held item has one "collected" button; a hold to accept has the two answers.
+test("the pickup hold's cards on the owner's page: one photo card with a button per item, the held item's collected, the ask's two answers, in each language", () => {
+  const who = { customer: { phone: "+919844444444" }, channel: "whatsapp" as const };
+  const pick = (id: string, what: string, paise: number, d: string) => ({ kind: "hold_pick" as const, case: "o-3", digest: d.repeat(32), actions: ["approve"], amountPaise: paise, what, pick: id, ...who });
+  const items = [pick("led-9w", "LED bulb 9W", 12000, "a"), pick("mcb-16a", "MCB 16A", 25000, "b"), { kind: "hold_pick" as const, case: "o-3", digest: "c".repeat(32), actions: ["deny"], amountPaise: 0, ...who },
+    { kind: "hold" as const, case: "o-4", digest: "e".repeat(32), actions: ["collected"], amountPaise: 25000, what: "1 × MCB 16A", ...who },
+    { kind: "hold_ask" as const, case: "o-5", digest: "f".repeat(32), actions: ["approve", "deny"], amountPaise: 12000, what: "1 × LED bulb 9W", ...who }];
+  for (const language of LANGUAGES) {
+    const page = ownerPage({ base: "https://pages.example/hw/o/x", language, view: { ...OWNER_VIEW, kind: "orders", app: undefined, items }, relayAsks: [] });
+    assert.equal(page.split(OWNER_LOOK[language].tag.holdPick).length - 1, 1, `${language}: one photo card`);
+    for (const d of ["a", "b", "c", "e"]) assert.equal(page.match(new RegExp(`name="digest" value="${d}{32}"`, "gu"))?.length, 1, `${language}: one button bound to ${d}`);
+    assert.equal(page.match(/name="digest" value="f{32}"/gu)?.length, 2, `${language}: the ask's two answers`);
+    assert.ok(page.includes("LED bulb 9W ₹120") && page.includes("MCB 16A ₹250"), `${language}: each item with its price`);
+    assert.ok(page.includes('name="action" value="collected"'), language);
+    assert.ok(page.includes(OWNER_LOOK[language].tag.held) && page.includes(OWNER_LOOK[language].tag.holdAsk), language);
+  }
+});

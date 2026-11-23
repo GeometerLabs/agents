@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (82)
+## 1. Messages to the customer (92)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -94,8 +94,18 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | अच्छी खबर: मालिक ने वेज थाली के लिए एक का ₹100 मान लिया है। | Good news: the owner agreed to ₹100 each for the veg thali. |  |
 | `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | माफ़ कीजिए, मालिक ₹100 पर राज़ी नहीं हुए। वेज थाली की सबसे कम कीमत ₹120 है। | Sorry, the owner couldn't agree to ₹100. The lowest for the veg thali is ₹120. |  |
 | `discount_which` | The customer asked for a discount without naming a price, before saying which item: the agent asks which one | किस चीज़ पर? क्या और कितना चाहिए बताइए, मैं बता दूँगा कि कितने में कर सकता हूँ। | Which item is it for? Tell me what you'd like and how many, and I'll tell you the price I can do. |  |
+| `hold_enquiry_asked` | The customer sent a photo or words naming no listed item (a model number): the shop is asked which item it is | धन्यवाद! मैंने दुकान से पूछा है कि यह कौन-सी चीज़ है। वे यहीं चीज़ और उसकी कीमत बताएँगे। | Thank you! I've asked the shop which item this is. They will tell you the item and its price here. |  |
+| `hold_still_asking` | The customer wrote again while the shop is still asked: no second ask | दुकान अभी देख रही है। जवाब आते ही मैं यहीं बताऊँगा। | The shop is still checking. I'll message you here as soon as they answer. |  |
+| `hold_offer` | The owner picked the listed item a photo or model number shows: it is in stock, at its price (the ask for a day follows) | दुकान में वेज थाली स्टॉक में है, कीमत ₹120। | The shop has veg thali in stock at ₹120. |  |
+| `hold_usually` | A listed item the customer asked to keep has none that can be kept now: the shop usually carries it | वेज थाली (₹120) हम आम तौर पर रखते हैं, पर अभी एक भी रोका नहीं जा सकता। कृपया बाद में फिर पूछें, या मालिक से बात करें। | We usually carry veg thali (₹120), but none can be kept just now. Please ask again later, or talk to the owner. |  |
+| `hold_only_left` | Fewer of the item can be kept now than the customer asked for: how many | अभी सिर्फ़ 3 वेज थाली रोके जा सकते हैं। कृपया कम माँगें। | Only 3 veg thali can be kept just now. Please ask for fewer. |  |
+| `hold_asked_shop` | The customer asked to keep a listed item for a pickup time: the shop is asked to say yes (not held yet) | मैंने दुकान से कहा है कि 2 × वेज थाली (₹240) आपके लिए रखें, पिकअप गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक। उनके हाँ कहते ही मैं बताऊँगा। | I've asked the shop to keep 2 × veg thali (₹240) for you, for pickup Thu 12 Nov, 12:00 pm to 1:00 pm. I'll message you as soon as they say yes. |  |
+| `hold_held` | The shop said yes and the item is reserved: held until the end of the pickup time; nothing to pay now | आपके लिए रखा गया: 2 × वेज थाली, ₹240। इसे गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक ले जाइए; तब तक यह आपके लिए रखा है। अभी कुछ नहीं देना है: लेते समय दुकान पर दीजिए। | Held for you: 2 × veg thali, ₹240. Collect it Thu 12 Nov, 12:00 pm to 1:00 pm; it is kept for you until then. Nothing to pay now: you pay at the shop when you collect it. |  |
+| `hold_declined` | The shop said it cannot keep the item | माफ़ कीजिए, दुकान अभी यह चीज़ आपके लिए नहीं रख सकती। कुछ नहीं देना है। | Sorry, the shop cannot keep this item for you just now. Nothing to pay. |  |
+| `hold_ended` | The pickup time ended and the item was not collected: it is no longer kept | आपका पिकअप समय (गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक) निकल गया, इसलिए 2 × वेज थाली अब आपके लिए नहीं रखा है। अगर अब भी चाहिए तो मुझे लिखिए। | Your pickup time (Thu 12 Nov, 12:00 pm to 1:00 pm) has passed, so 2 × veg thali is no longer kept for you. Message me if you would still like it. |  |
+| `hold_cancelled` | The customer cancelled a hold: it is no longer kept | ठीक है, 2 × वेज थाली अब आपके लिए नहीं रखा है। कुछ नहीं देना है। | Okay, 2 × veg thali is no longer kept for you. Nothing to pay. |  |
 
-## 2. Messages to the owner (44)
+## 2. Messages to the owner (52)
 
 Most owner messages are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -145,6 +155,14 @@ Most owner messages are also WhatsApp templates, because they are sent by the ag
 | `owner_discount_ask` | To the owner: the price card, with the exact price, answered with the reference and the card's code | कीमत पर आपकी मंज़ूरी चाहिए: +919811111111 वेज थाली के लिए एक का ₹100 माँग रहे हैं (आपकी कीमत ₹120 है), ऑर्डर 2 × वेज थाली, कुल ₹240। ठीक ₹240 मानने के लिए "approve o-3 Q7RM2X" या मना करने के लिए "deny o-3 Q7RM2X" लिखें। | A price needs your OK: +919811111111 asks ₹100 each for veg thali (your price is ₹120) in an order of 2 × veg thali, ₹240 in all. Reply "approve o-3 Q7RM2X" to agree to exactly ₹240, or "deny o-3 Q7RM2X". |  |
 | `owner_discount_use_code` | To the owner: they wrote "approve" or "deny" with the reference alone while a price card waits: the exact words to send | कीमत वाली माँग o-3 का जवाब देने के लिए "approve o-3 Q7RM2X" या "deny o-3 Q7RM2X" लिखें। | To answer the price ask on o-3, reply "approve o-3 Q7RM2X" or "deny o-3 Q7RM2X". |  |
 | `owner_discount_stale` | To the owner: an answer to a price card that changed or was already answered: nothing was done | यह जवाब ऐसी कीमत वाली माँग का है जो बदल गई है या जिसका जवाब पहले ही दिया जा चुका है, इसलिए कुछ नहीं किया गया। | That answer is for a price ask that has changed or was already answered, so nothing was done. |  |
+| `owner_hold_enquiry` | To the owner: a customer sent a photo or a model number; which listed item is it ("pick" or "deny") | चीज़ के बारे में पूछताछ o-3: +919811111111 ने फ़ोटो या मॉडल नंबर भेजा है। उनकी चैट में देखिए, फिर "pick o-3" और चीज़ का नाम वैसे ही लिखिए जैसे आपकी सूची में है, या अगर आपके पास नहीं है तो "deny o-3" लिखिए। | Item enquiry o-3: +919811111111 sent a photo or a model number. See it in your chat with them, then reply "pick o-3" and the item's name as you list it, or "deny o-3" if you do not have it. |  |
+| `owner_hold_ask` | To the owner: a customer asks to keep an item for a pickup time ("approve" or "deny") | एक रख दें? +919811111111 चाहते हैं कि आप 2 × वेज थाली (₹240) पिकअप गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक के लिए रखें। रखने के लिए "approve o-3" या मना करने के लिए "deny o-3" लिखिए। | Keep one? +919811111111 asks you to keep 2 × veg thali (₹240) for pickup Thu 12 Nov, 12:00 pm to 1:00 pm. Reply "approve o-3" to keep it for them, or "deny o-3". |  |
+| `owner_hold_held` | To the owner: an item is now held for a customer; how to mark it collected | रखा गया o-3: 2 × वेज थाली, +919811111111 के लिए, पिकअप गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक। जब वे ले जाएँ, तो "collected o-3" लिखिए। | Held o-3: 2 × veg thali for +919811111111, for pickup Thu 12 Nov, 12:00 pm to 1:00 pm. When they collect it, reply "collected o-3". |  |
+| `owner_hold_collected` | To the owner: their "collected" was recorded | ले जाना दर्ज हुआ: o-3, 2 × वेज थाली। धन्यवाद। | Marked collected: o-3, 2 × veg thali. Thank you. |  |
+| `owner_hold_ended` | To the owner: a held item was not collected by the end of its pickup time and is free again | रखा हुआ o-3 ख़त्म: +919811111111 गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक के ख़त्म होने तक 2 × वेज थाली नहीं ले गए। यह अब दूसरों के लिए फिर से खुला है। | Hold o-3 ended: +919811111111 did not collect 2 × veg thali by the end of Thu 12 Nov, 12:00 pm to 1:00 pm. It is free for others again. |  |
+| `owner_hold_cancelled` | To the owner: the customer no longer needs a held item, and it is free again | रखना रद्द: +919811111111 को अब 2 × वेज थाली (o-3) नहीं चाहिए। यह अब दूसरों के लिए फिर से खुला है। | Hold cancelled: +919811111111 no longer needs 2 × veg thali (o-3). It is free for others again. |  |
+| `owner_hold_none` | To the owner: "collected" for a number with no hold waiting: nothing was marked | उस नंबर का कोई रखा हुआ सामान ले जाने के लिए बाकी नहीं है, इसलिए कुछ दर्ज नहीं हुआ। | There is no hold with that number waiting to be collected, so nothing was marked. |  |
+| `owner_hold_pick_unclear` | To the owner: their "pick" named no listed item, or more than one | समझ नहीं आया कि आप सूची की कौन-सी चीज़ कह रहे हैं। "pick o-3" और चीज़ का नाम ठीक वैसे ही लिखिए जैसे आपकी सूची में है। | I could not tell which listed item you mean. Reply "pick o-3" and the item's name exactly as you list it. |  |
 
 ### The words on the buttons and the lists
 
@@ -334,6 +352,10 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `discounts.given` | दी गई छूट | Discounts given |  |
 | `discounts.asked` | आपसे पूछी गई छूट | Discounts asked of you |  |
 | `discounts.refused` | मना की गई छूट | Discounts refused |  |
+| `holds.collected` | रखा सामान जो ले जाया गया | Holds collected |  |
+| `holds.expired` | रखा सामान जो नहीं ले जाया गया | Holds that ended uncollected |  |
+| `holds.enquiries` | सामान की पूछताछ | Item enquiries |  |
+| `holds.perTen` | हर दस पूछताछ पर ले जाया गया | Collections per ten enquiries |  |
 | `moneyBlock.heading` | इस महीने के पैसे | Money this month |  |
 | `moneyBlock.owedBack` | महीने के अंत में ग्राहकों को लौटाना बाकी | Still owed back at the end of the month |  |
 | `moneyBlock.toCome` | महीने के अंत में अभी आना बाकी | Still to come at the end of the month |  |
@@ -383,6 +405,7 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `cert.orderLimits` | एक दिन में ज़्यादा से ज़्यादा 8 ऑर्डर, एक ऑर्डर में 10 चीज़ें, 7 दिन आगे तक | At most 8 orders a day, 10 items in one order, up to 7 days ahead |  |
 | `cert.cutoff` | आम कट-ऑफ़: ऑर्डर 1 दिन पहले 20:00 पर बंद होते हैं | The usual cut-off: orders close at 20:00, 1 day before |  |
 | `cert.advance` | कीमत का 50% एडवांस में लिया जाता है; इसके लिए ऑर्डर 30 मिनट रोका जाता है | 50% of the price is paid as the advance; the order is held 30 minutes for it |  |
+| `cert.noAdvance` | पहले कुछ नहीं लिया जाता: हर रोक आप मंज़ूर करते हैं, और सामान ग्राहक के चुने पिकअप समय के अंत तक रखा जाता है | Nothing is paid ahead: you accept each hold, and the item is kept until the end of the pickup time the customer chose |  |
 | `cert.delivery` | डिलीवरी सिर्फ़ यहाँ: Kakkanad, Edappally, Infopark | Delivery only to: Kakkanad, Edappally, Infopark |  |
 | `cert.noDelivery` | सिर्फ़ पिकअप, डिलीवरी नहीं | Pickup only, no delivery |  |
 | `cert.window` | स्लॉट से कम से कम 6 घंटे पहले रद्द करने पर एडवांस वापस होता है; उसके बाद का फ़ैसला आपका | Cancel at least 6 hours before the slot and the advance is refunded; later, it is your call |  |

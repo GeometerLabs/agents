@@ -110,7 +110,7 @@ type Settings struct {
 	Pickup     []Slot
 	Delivery   *DeliverySettings // nil: the shop does not deliver
 	Advance    struct {
-		Mode                 string // "full" or "part"
+		Mode                 string // "full", "part" or "none" (the pickup hold: NoAdvance)
 		Percent, HoldMinutes int64
 	}
 	Reminder     *struct{ HoursBefore int64 } // nil: no reminder
@@ -472,6 +472,13 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 		priced[i] = discounts.Priced{ID: it.ID, PriceInr: it.PriceInr}
 	}
 	s.Discounts = discounts.Read(in["discounts"], has(in, "discounts"), func(path string) []string { return r.order[path] }, priced, "item", nil, func(p string) { r.errs = append(r.errs, p) })
+	// the pickup hold (advance "none", 24 Nov 2026): a pickup at the counter with nothing paid ahead takes no delivery and no monthly plan (settings.ts, after readDiscounts)
+	if s.NoAdvance() && s.Delivery != nil {
+		r.add(`A shop that keeps items for pickup with no advance ("advance.mode": "none") does not deliver. Remove "delivery", or choose an advance.`)
+	}
+	if s.NoAdvance() && s.Plans != nil {
+		r.add(`Monthly plans are paid in advance, so they cannot run with "advance.mode": "none". Remove "plans", or choose an advance.`)
+	}
 	if len(r.errs) > 0 {
 		return nil, r.errs
 	}
@@ -801,11 +808,14 @@ func (r *reader) advance(in map[string]any, s *Settings) {
 	if m["mode"] != nil {
 		mode = m["mode"]
 	}
-	if mode != "full" && mode != "part" {
-		r.add(`The advance mode ("advance.mode") must be "full" (all of the order) or "part" (a percentage of it).`)
+	if mode != "full" && mode != "part" && mode != "none" {
+		r.add(`The advance mode ("advance.mode") must be "full" (all of the order), "part" (a percentage of it) or "none" (keep it for pickup, nothing paid ahead).`)
 		return
 	}
 	percent, pOK := int64(100), true
+	if mode == "none" {
+		percent = 0 // the pickup hold: nothing is paid ahead, whatever percentage the file says (as "full" is 100)
+	}
 	if mode == "part" {
 		percent = 50
 		if has(m, "percent") {
@@ -1129,9 +1139,16 @@ func (s *Settings) HighestPlanInr() int64 {
 	return n
 }
 
+// NoAdvance is the "keep one for me" pickup hold (advance mode "none", 24 Nov 2026; agent_hold.go): no payment link, no money; the owner accepts each hold, the unit is held
+// until the end of the agreed pickup slot, and staff mark it collected.
+func (s *Settings) NoAdvance() bool { return s.Advance.Mode == "none" }
+
 // AdvanceFor is settings.ts advanceFor: the advance for an order total in whole rupees: all of it, or the percentage rounded up (never 0, never more than the total). Integer
 // arithmetic: Math.ceil(total * percent / 100) of whole numbers is the ceiling of the integer quotient.
 func (s *Settings) AdvanceFor(totalInr int64) int64 {
+	if s.NoAdvance() {
+		return 0 // the pickup hold: no money moves
+	}
 	if s.Advance.Mode == "full" {
 		return totalInr
 	}

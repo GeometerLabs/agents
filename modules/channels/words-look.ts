@@ -43,23 +43,24 @@ export const STAMP: Record<Language, Record<StampKey, string>> = {
 
 /** What each thing waiting on the owner's app is, in two or three words, over its card. */
 // "discount" (E1, 24 Nov 2026): a price below the list that waits for the owner's yes (a Bookings or Orders price card)
-export type TagKey = "payment" | "refundToSend" | "lateCancel" | "calendar" | "bigOrder" | "waiver" | "refundAsked" | "refundToApprove" | "message" | "assistant" | "parent" | "discount";
+// "holdAsk", "holdPick", "held" (24 Nov 2026): the pickup hold's three cards (a hold to accept, a photo's item to pick, an item kept until it is collected)
+export type TagKey = "payment" | "refundToSend" | "lateCancel" | "calendar" | "bigOrder" | "waiver" | "refundAsked" | "refundToApprove" | "message" | "assistant" | "parent" | "discount" | "holdAsk" | "holdPick" | "held";
 export interface OwnerLookWords { tag: Record<TagKey, string>; theme: string }
 export const OWNER_LOOK: Record<Language, OwnerLookWords> = {
   en: {
-    tag: { payment: "Payment to check", refundToSend: "Refund to send", lateCancel: "Late cancellation", calendar: "Calendar problem", bigOrder: "Big order", waiver: "Fee waiver asked", refundAsked: "Refund asked", refundToApprove: "Refund to approve", message: "Message to send", assistant: "Your assistant asks", parent: "Parent's link", discount: "Price to approve" },
+    tag: { payment: "Payment to check", refundToSend: "Refund to send", lateCancel: "Late cancellation", calendar: "Calendar problem", bigOrder: "Big order", waiver: "Fee waiver asked", refundAsked: "Refund asked", refundToApprove: "Refund to approve", message: "Message to send", assistant: "Your assistant asks", parent: "Parent's link", discount: "Price to approve", holdAsk: "Keep one?", holdPick: "Which item?", held: "Kept for pickup" },
     theme: "Dark theme",
   },
   hi: {
-    tag: { payment: "जाँचने को भुगतान", refundToSend: "भेजने को रिफ़ंड", lateCancel: "देर से रद्द", calendar: "कैलेंडर में दिक़्क़त", bigOrder: "बड़ा ऑर्डर", waiver: "फ़ीस माफ़ी की माँग", refundAsked: "रिफ़ंड की माँग", refundToApprove: "मंज़ूर करने को रिफ़ंड", message: "भेजने को संदेश", assistant: "आपका असिस्टेंट पूछ रहा है", parent: "अभिभावक का लिंक", discount: "मंज़ूर करने को दाम" },
+    tag: { payment: "जाँचने को भुगतान", refundToSend: "भेजने को रिफ़ंड", lateCancel: "देर से रद्द", calendar: "कैलेंडर में दिक़्क़त", bigOrder: "बड़ा ऑर्डर", waiver: "फ़ीस माफ़ी की माँग", refundAsked: "रिफ़ंड की माँग", refundToApprove: "मंज़ूर करने को रिफ़ंड", message: "भेजने को संदेश", assistant: "आपका असिस्टेंट पूछ रहा है", parent: "अभिभावक का लिंक", discount: "मंज़ूर करने को दाम", holdAsk: "एक रख दें?", holdPick: "कौन-सी चीज़?", held: "पिकअप के लिए रखा" },
     theme: "डार्क थीम",
   },
   ml: {
-    tag: { payment: "പരിശോധിക്കാൻ പേയ്‌മെന്റ്", refundToSend: "അയയ്ക്കാൻ റീഫണ്ട്", lateCancel: "വൈകിയുള്ള റദ്ദാക്കൽ", calendar: "കലണ്ടറിൽ പ്രശ്നം", bigOrder: "വലിയ ഓർഡർ", waiver: "ഫീസ് ഇളവ് ചോദിച്ചു", refundAsked: "റീഫണ്ട് ചോദിച്ചു", refundToApprove: "അംഗീകരിക്കാൻ റീഫണ്ട്", message: "അയയ്ക്കാൻ സന്ദേശം", assistant: "നിങ്ങളുടെ അസിസ്റ്റന്റ് ചോദിക്കുന്നു", parent: "രക്ഷിതാവിന്റെ ലിങ്ക്", discount: "അംഗീകരിക്കാൻ വില" },
+    tag: { payment: "പരിശോധിക്കാൻ പേയ്‌മെന്റ്", refundToSend: "അയയ്ക്കാൻ റീഫണ്ട്", lateCancel: "വൈകിയുള്ള റദ്ദാക്കൽ", calendar: "കലണ്ടറിൽ പ്രശ്നം", bigOrder: "വലിയ ഓർഡർ", waiver: "ഫീസ് ഇളവ് ചോദിച്ചു", refundAsked: "റീഫണ്ട് ചോദിച്ചു", refundToApprove: "അംഗീകരിക്കാൻ റീഫണ്ട്", message: "അയയ്ക്കാൻ സന്ദേശം", assistant: "നിങ്ങളുടെ അസിസ്റ്റന്റ് ചോദിക്കുന്നു", parent: "രക്ഷിതാവിന്റെ ലിങ്ക്", discount: "അംഗീകരിക്കാൻ വില", holdAsk: "ഒന്ന് മാറ്റിവയ്ക്കണോ?", holdPick: "ഏത് സാധനം?", held: "പിക്കപ്പിന് മാറ്റിവച്ചത്" },
     theme: "ഡാർക്ക് തീം",
   },
   kn: {
-    tag: { payment: "ಪರಿಶೀಲಿಸಬೇಕಾದ ಪಾವತಿ", refundToSend: "ಕಳುಹಿಸಬೇಕಾದ ಮರುಪಾವತಿ", lateCancel: "ತಡವಾದ ರದ್ದತಿ", calendar: "ಕ್ಯಾಲೆಂಡರ್ ಸಮಸ್ಯೆ", bigOrder: "ದೊಡ್ಡ ಆರ್ಡರ್", waiver: "ಶುಲ್ಕ ವಿನಾಯಿತಿ ಕೇಳಿದ್ದಾರೆ", refundAsked: "ಮರುಪಾವತಿ ಕೇಳಿದ್ದಾರೆ", refundToApprove: "ಒಪ್ಪಬೇಕಾದ ಮರುಪಾವತಿ", message: "ಕಳುಹಿಸಬೇಕಾದ ಸಂದೇಶ", assistant: "ನಿಮ್ಮ ಸಹಾಯಕರು ಕೇಳುತ್ತಿದ್ದಾರೆ", parent: "ಪೋಷಕರ ಲಿಂಕ್", discount: "ಒಪ್ಪಬೇಕಾದ ಬೆಲೆ" },
+    tag: { payment: "ಪರಿಶೀಲಿಸಬೇಕಾದ ಪಾವತಿ", refundToSend: "ಕಳುಹಿಸಬೇಕಾದ ಮರುಪಾವತಿ", lateCancel: "ತಡವಾದ ರದ್ದತಿ", calendar: "ಕ್ಯಾಲೆಂಡರ್ ಸಮಸ್ಯೆ", bigOrder: "ದೊಡ್ಡ ಆರ್ಡರ್", waiver: "ಶುಲ್ಕ ವಿನಾಯಿತಿ ಕೇಳಿದ್ದಾರೆ", refundAsked: "ಮರುಪಾವತಿ ಕೇಳಿದ್ದಾರೆ", refundToApprove: "ಒಪ್ಪಬೇಕಾದ ಮರುಪಾವತಿ", message: "ಕಳುಹಿಸಬೇಕಾದ ಸಂದೇಶ", assistant: "ನಿಮ್ಮ ಸಹಾಯಕರು ಕೇಳುತ್ತಿದ್ದಾರೆ", parent: "ಪೋಷಕರ ಲಿಂಕ್", discount: "ಒಪ್ಪಬೇಕಾದ ಬೆಲೆ", holdAsk: "ಒಂದನ್ನು ಕಾಯ್ದಿರಿಸಬೇಕೇ?", holdPick: "ಯಾವ ವಸ್ತು?", held: "ಪಿಕಪ್‌ಗಾಗಿ ಕಾಯ್ದಿರಿಸಿದ್ದು" },
     theme: "ಡಾರ್ಕ್ ಥೀಮ್",
   },
 };

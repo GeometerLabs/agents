@@ -156,6 +156,9 @@ func (k *ordersSkill) waitingNow() []waiting {
 	items, _ := a.settings.OwnerItems(a.store, a.now())
 	var out []waiting
 	for _, it := range items {
+		if it.Kind == "hold_ask" || it.Kind == "hold_pick" || it.Kind == "hold" {
+			continue // the pickup hold's cards are on the owner's page and answered on WhatsApp; the assistant's words for them are not written yet (Deferred.md)
+		}
 		o := a.store.Order(it.Case)
 		ans := answers[it.Kind]
 		w := waiting{WaitingItem: runtime.WaitingItem{Case: it.Case, Kind: it.Kind, AmountPaise: it.AmountPaise, Money: true, Yes: ans[0], No: ans[1]}, digest: it.Digest}

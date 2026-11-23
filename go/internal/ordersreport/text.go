@@ -92,6 +92,10 @@ func OwnerText(r *Report, lang string) string {
 	if d := r.Discounts; d != nil {
 		lines = append(lines, strings.Join([]string{pair(s.Discounts.Given, fmt.Sprintf("%s (%d)", report.Rupees(d.Given.Paise), d.Given.Count)), pair(s.Discounts.Asked, int(d.Asked)), pair(s.Discounts.Refused, int(d.Refused))}, " · "))
 	}
+	// the pickup hold: one line, only when the month has a hold line
+	if h := r.Holds; h != nil {
+		lines = append(lines, strings.Join([]string{pair(s.Holds.Collected, h.Collected), pair(s.Holds.Expired, h.Expired), pair(s.Holds.Enquiries, h.Enquiries), pair(s.Holds.PerTen, h.PerTen)}, " · "))
+	}
 	return strings.Join(append(lines, notChecked), "\n")
 }
 

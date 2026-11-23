@@ -12,7 +12,7 @@ const errorsOf = (change: (s: any) => void): string[] => { const s = raw(); chan
 
 test("every example shop's settings are valid, and UPI is the default example", () => {
   const files = readdirSync(dir).filter((f) => f.endsWith(".example.json"));
-  assert.equal(files.length, 4);
+  assert.equal(files.length, 5); // the fifth (24 Nov 2026): Ganesh Electricals, the pickup hold (advance "none")
   for (const f of files) assert.ok(validateSettings(JSON.parse(readFileSync(new URL(f, dir), "utf8"))).ok, f);
   assert.equal(annapurna().payment.module, "upi");
 });

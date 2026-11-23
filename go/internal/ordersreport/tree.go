@@ -73,6 +73,9 @@ func (r *Report) Tree() map[string]any {
 	if r.Discounts != nil {
 		out["discounts"] = r.Discounts.Tree()
 	}
+	if h := r.Holds; h != nil {
+		out["holds"] = map[string]any{"enquiries": h.Enquiries, "collected": h.Collected, "expired": h.Expired, "perTen": h.PerTen}
+	}
 	if r.Plans != nil {
 		p := r.Plans
 		out["plans"] = map[string]any{"active": p.Active, "started": p.Started, "renewals": p.Renewals, "mealsDelivered": p.MealsDelivered,

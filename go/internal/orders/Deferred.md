@@ -64,3 +64,23 @@ still says "deposit".
 A new one, not fixed: a customer with no running plan who writes "cancel my plan" (or "my plan") is read as asking to subscribe (`readPlanIntent`: a message that names a plan,
 from a customer with none, is a subscription when the shop has plan types). They are quoted a new plan, or asked which one, instead of being told they have none. Go reads it the
 same way.
+
+## The pickup hold (24 Nov 2026, stream PH): what is left, and why
+
+* **The photo itself is not forwarded.** The inbox keeps only that a message was a picture (`InboundMessage.Image`), never its media id, and the WhatsApp Guard has no
+  send-by-media-id route. The owner's card says to see the photo in their chat with the customer (the shop's own WhatsApp app, coexistence). Forwarding it needs the inbox to
+  keep the media id and a Guard route: a change to Guard, which needs the owner's yes.
+* **Only the owner's number (and the owner's page) marks "collected".** Staff on their own numbers would be the approvers list or a staff list: not built.
+* **A price other than the listed one.** The owner picks the listed item, so its listed price is the price; a different price is changed in the listing (or by E1's discounts).
+* **The shop's assistant** does not list the hold's cards in "what needs me" (its card words are not written); the owner's page and WhatsApp do.
+* **The order page, the API and MCP** take no hold (`whatsapp_only`).
+* **The demo engine's hand check** runs no situation on a hold shop (the TypeScript demo has no hold); the go-live certificate says every situation was not run, with why.
+* **E4, a credit limit per customer, is not built (not approved).** Where it would fit if approved: a hold shop has no money owed, so E4 belongs to the credit book.
+* **One customer, one live hold.** A second item while one is held or asked is answered with the first; several items at once are one order with several lines.
+* **The panel's go-live gate refuses a hold shop** (`bundle/panel/golive.ts` `unmet`: a hand check of 0 situations is "hand-check" unmet). The demo engine's situations cannot run
+  a hold, and changing what the gate accepts is the owner's call, not this stream's: either port the hold's situations to run against the Go program (as the contract does),
+  or let the gate accept the Go contract run for a hold shop. Until then a hold shop is set up in one sitting but not certified for go-live by the panel.
+* **An enquiry nobody answers never ends** (no timeout; the customer can cancel it). **The owner is not told** when their "approve" finds the unit gone (the customer is, with
+  "we usually carry it"; the record says why).
+* **Words that start an enquiry** need a digit (a model number: `wordsStartHold`); "do you have havells wire" with no number gets the usual "tell me what you would like".
+* **The panel's stock box** still says "the most you make in a day"; on a hold shop it is the units on the shelf that can be held at once, across days.

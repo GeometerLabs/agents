@@ -45,6 +45,9 @@ const CANCEL: Record<Language, string> = { en: "cancel my order", hi: "ऑर्
 type Built = Situation | { id: string; title: string; skip: string };
 
 export function buildSituations(settings: Settings): { situations: Situation[]; skipped: Skipped[] } {
+  // the pickup hold (advance "none", 24 Nov 2026) is Go only (go/internal/orders agent_hold.go): these situations drive the TypeScript demo engine, which has no pickup hold, so
+  // none is run and the certificate says so; the hold's own checks are the Go contract cases (contract/hold.contract.test.ts)
+  if (settings.advance.mode === "none") return { situations: [], skipped: [{ id: "all", title: "every situation", reason: "this shop keeps items for pickup with no advance: the hand check runs on the demo engine, which has no pickup hold; the shop runtime's own contract cases check it" }] };
   const planned = planShop(settings);
   if ("problem" in planned) return { situations: [], skipped: [{ id: "all", title: "every situation", reason: planned.problem }] };
   const { shop } = planned;

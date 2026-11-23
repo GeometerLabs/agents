@@ -68,12 +68,13 @@ export const RAJESH = "+919833333333";
 export const OWNER_NUMBER = "+919800000001";
 export const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 
-/** The four example shops: Annapurna on UPI (the owner marks money), on Razorpay, with monthly plans (UPI), and Sweet Crumbs (a bakery: pickup only, all paid up front, Razorpay). */
+/** The example shops: Annapurna on UPI (the owner marks money), on Razorpay, with monthly plans (UPI), Sweet Crumbs (a bakery: pickup only, all paid up front, Razorpay), and Ganesh Electricals (the pickup hold: no advance). */
 const EXAMPLES = {
   upi: "annapurna-tiffins.example.json",
   razorpay: "annapurna-tiffins-razorpay.example.json",
   plans: "annapurna-tiffins-plans.example.json",
   bakery: "sweet-crumbs.example.json",
+  hold: "ganesh-electricals-hold.example.json", // "keep one for me" (24 Nov 2026): no advance, pickup holds the owner accepts (hold.contract.test.ts)
 } as const;
 export type Example = keyof typeof EXAMPLES;
 const exampleOf = (e: Example): Record<string, any> => JSON.parse(readFileSync(join(here, "..", "settings", EXAMPLES[e]), "utf8")) as Record<string, any>;

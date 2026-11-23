@@ -853,6 +853,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.orders.rules.advance` | पक्का करने के लिए ग्राहक कितना देता है | What the customer pays to confirm |  |
 | `setup.orders.rules.advancePart` | ऑर्डर का एक हिस्सा | A part of the order |  |
 | `setup.orders.rules.advanceFull` | पूरा ऑर्डर | All of the order |  |
+| `setup.orders.rules.advanceNone` | कुछ नहीं: पिकअप के लिए रखें (हर रोक पर मालिक हाँ कहते हैं; डिलीवरी नहीं) | Nothing: keep it for pickup (the owner says yes to each hold; no delivery) |  |
 | `setup.orders.rules.percent` | कितना हिस्सा (%) | Part to pay (%) |  |
 | `setup.orders.rules.hold` | एडवांस के लिए ऑर्डर कितने मिनट रुका रहे | Minutes an order is held for the advance |  |
 | `setup.orders.rules.perDay` | एक दिन के लिए ज़्यादा से ज़्यादा ऑर्डर | Most orders for one day |  |
@@ -1831,6 +1832,13 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.clinic.prefill.services.1.names` | परामर्श | Consultation |  |
 | `preset.clinic.prefill.services.2.names` | फ़िज़ियोथेरेपी सत्र | Physiotherapy session |  |
 | `preset.clinic.prefill.services.3.names` | फ़ॉलो-अप विज़िट | Follow-up visit |  |
+| `preset.hardware.name` | हार्डवेयर और बिजली का सामान, मेरे लिए एक रख दो | Hardware and electricals, keep one for me |  |
+| `preset.hardware.prefill.menu.1.names` | एलईडी बल्ब 9W | LED bulb 9W |  |
+| `preset.hardware.prefill.menu.2.names` | एक्सटेंशन बोर्ड 4-वे | Extension board 4-way |  |
+| `preset.hardware.prefill.menu.3.names` | एमसीबी 16A | MCB 16A |  |
+| `preset.hardware.prefill.menu.4.names` | छत के पंखे का कैपेसिटर | Ceiling fan capacitor |  |
+| `preset.hardware.prefill.pickup.1.names` | सुबह | morning |  |
+| `preset.hardware.prefill.pickup.2.names` | शाम | evening |  |
 | `preset.restock.name` | सप्लायर से दुकान का स्टॉक मँगाना | Shop restocking from suppliers |  |
 | `preset.restock.prefill.supplier` | मेरा सप्लायर | My supplier |  |
 | `preset.restock.prefill.items.1.names` | चावल 25 किलो | Rice 25 kg |  |

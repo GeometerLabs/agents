@@ -289,6 +289,13 @@ func (a *Agent) onPaidClaim(phone, via, upiRef string) error {
 func (a *Agent) onPicture(msg messaging.InboundMessage) error {
 	phone := msg.From
 	a.log(nil, phone, "receive_message", "confirmed", map[string]any{"image": true, "id": msg.ID}, logMore{notes: "a picture: it is not looked at and nothing of it is kept; a picture is never proof of a payment", refs: map[string]string{"messageId": msg.ID}})
+	if a.settings.NoAdvance() {
+		// the pickup hold: a picture is an item enquiry the owner answers by picking the listed item; the agent does not look at it (agent_hold.go)
+		if !a.photoStartsHold(phone) {
+			return nil
+		}
+		return a.startHoldEnquiry(phone, "photo")
+	}
 	if !a.ownerConfirms || a.store.Customer(phone).OptedOut {
 		return nil
 	}

@@ -900,6 +900,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.orders.rules.advance` | ഉറപ്പിക്കാൻ ഉപഭോക്താവ് എത്ര നൽകണം | What the customer pays to confirm |  |
 | `setup.orders.rules.advancePart` | ഓർഡറിന്റെ ഒരു ഭാഗം | A part of the order |  |
 | `setup.orders.rules.advanceFull` | ഓർഡർ മുഴുവൻ | All of the order |  |
+| `setup.orders.rules.advanceNone` | ഒന്നുമില്ല: പിക്കപ്പിനായി മാറ്റിവയ്ക്കൂ (ഓരോ മാറ്റിവയ്ക്കലിനും ഉടമ സമ്മതിക്കുന്നു; ഡെലിവറി ഇല്ല) | Nothing: keep it for pickup (the owner says yes to each hold; no delivery) |  |
 | `setup.orders.rules.percent` | ഭാഗം (%) | Part to pay (%) |  |
 | `setup.orders.rules.hold` | അഡ്വാൻസിനായി ഓർഡർ എത്ര മിനിറ്റ് പിടിച്ചുവയ്ക്കണം | Minutes an order is held for the advance |  |
 | `setup.orders.rules.perDay` | ഒരു ദിവസത്തേക്ക് പരമാവധി ഓർഡറുകൾ | Most orders for one day |  |
@@ -1878,6 +1879,13 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.clinic.prefill.services.1.names` | കൺസൾട്ടേഷൻ | Consultation |  |
 | `preset.clinic.prefill.services.2.names` | ഫിസിയോതെറാപ്പി സെഷൻ | Physiotherapy session |  |
 | `preset.clinic.prefill.services.3.names` | ഫോളോ-അപ്പ് സന്ദർശനം | Follow-up visit |  |
+| `preset.hardware.name` | ഹാർഡ്‌വെയറും ഇലക്ട്രിക്കൽസും, എനിക്കായി ഒന്ന് മാറ്റിവയ്ക്കൂ | Hardware and electricals, keep one for me |  |
+| `preset.hardware.prefill.menu.1.names` | എൽഇഡി ബൾബ് 9W | LED bulb 9W |  |
+| `preset.hardware.prefill.menu.2.names` | എക്സ്റ്റൻഷൻ ബോർഡ് 4-വേ | Extension board 4-way |  |
+| `preset.hardware.prefill.menu.3.names` | എംസിബി 16A | MCB 16A |  |
+| `preset.hardware.prefill.menu.4.names` | സീലിംഗ് ഫാൻ കപ്പാസിറ്റർ | Ceiling fan capacitor |  |
+| `preset.hardware.prefill.pickup.1.names` | രാവിലെ | morning |  |
+| `preset.hardware.prefill.pickup.2.names` | വൈകുന്നേരം | evening |  |
 | `preset.restock.name` | സപ്ലയർമാരിൽ നിന്ന് കടയ്ക്ക് സ്റ്റോക്ക് ഓർഡർ | Shop restocking from suppliers |  |
 | `preset.restock.prefill.supplier` | എന്റെ സപ്ലയർ | My supplier |  |
 | `preset.restock.prefill.items.1.names` | അരി 25 കിലോ | Rice 25 kg |  |

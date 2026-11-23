@@ -105,7 +105,7 @@ internal/orders/         the Orders template (wave W4): settings with the TypeSc
                          count worked out from the orders), the books, the channel's reads (offer, view, owner's page, documents), the Kit, and the agent over one step (agent_*.go: say, the
                          order flow and its limits, money and refunds, the owner-marked UPI money, cancelling, the owner's commands and the balance, the tick, recovery, the page); plans and
                          the Orders skill of the shop's assistant; the watch over its Guards, the owner's route and a page's outbox are bookings.Watch, bookings.OwnerMessaging and
-                         runtime.ChannelMessaging (23 Nov, no copies of its own); read Explanation.md and Deferred.md
+                         runtime.ChannelMessaging (23 Nov, no copies of its own); "keep one for me", the no-advance pickup hold (agent_hold.go, 24 Nov); read Explanation.md and Deferred.md
 internal/orders/words/   Orders' customer and owner messages in four languages, the WhatsApp templates, labels, lists and buttons, and the outgoing check (GENERATED: scripts/gen_orders_words.ts)
 internal/orders/reading/ how an Orders shop reads a message: the rule parser, the check on a model's answer, the router's reading, a tapped reply, the plan reading (GENERATED: scripts/gen_orders_reading.ts)
 internal/ordersreport/   Orders' monthly report (templates/commerce/orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job

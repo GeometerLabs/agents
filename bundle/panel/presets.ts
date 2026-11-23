@@ -41,14 +41,15 @@ export type Names = Record<Language, string>;
 export const VARIANTS: Record<string, { settable: readonly string[]; later: readonly string[] }> = {
   bookings: { settable: [], later: ["rental"] },
   fees: { settable: ["classes"], later: [] },
-  orders: { settable: [], later: ["plans"] },
+  // "hold" (24 Nov 2026): "keep one for me", the no-advance pickup hold; its preset's advance is {"mode": "none"}
+  orders: { settable: ["hold"], later: ["plans"] },
   "stock-orders": { settable: [], later: [] },
   listings: { settable: [], later: [] },
 };
 
 export interface BookingsPrefill { services: { names: Names; priceInr: number; minutes: number }[]; depositInr: number; windowHours: number; opens: string; closes: string; /** 0 = Sunday */ days: number[]; capacity?: number }
 export interface FeesPrefill { batches: { names: Names; feeInr: number }[]; dueDay: number; graceDays: number; lateFeeInr: number; /** Only with the variant "classes": batch = the row (from 0) in `batches`. */ timetable?: { batch: number; day: string; time: string; minutes: number }[] }
-export interface OrdersPrefill { menu: { names: Names; priceInr: number; dailyStock: number }[]; pickup: { from: string; to: string; names?: Names }[]; cutoffDays: number; cutoffTime: string; advance: { mode: "full" } | { mode: "part"; percent: number }; maxItemsPerOrder: number }
+export interface OrdersPrefill { menu: { names: Names; priceInr: number; dailyStock: number }[]; pickup: { from: string; to: string; names?: Names }[]; cutoffDays: number; cutoffTime: string; advance: { mode: "full" } | { mode: "part"; percent: number } | { mode: "none" }; maxItemsPerOrder: number }
 export interface StockPrefill { /** The name of the supplier the catalogue lines name until the Operator writes their own: never a real person or number. */ supplier: Names; items: { names: Names; unit: Names; priceInr: number; reorderQty?: number }[]; maxPerOrderInr: number; monthlyBudgetInr: number }
 
 /** A listings-only shop has no example values: the form starts empty (the Operator writes the town and the shop's words), so its prefill is `{}`. */
@@ -131,7 +132,7 @@ function readFees(v: Obj, variant: string | undefined, errors: string[]): FeesPr
   return { batches, dueDay: v.dueDay as number, graceDays: v.graceDays as number, lateFeeInr: v.lateFeeInr as number, ...(timetable ? { timetable } : {}) };
 }
 
-function readOrders(v: Obj, errors: string[]): OrdersPrefill {
+function readOrders(v: Obj, variant: string | undefined, errors: string[]): OrdersPrefill {
   onlyKeys(v, ["menu", "pickup", "cutoffDays", "cutoffTime", "advance", "maxItemsPerOrder"], "The prefill", errors);
   const menu = listOf(v.menu, "The menu", 1, MAX_ITEMS, errors).map((m, i) => {
     onlyKeys(m, ["names", "priceInr", "dailyStock"], `Item ${i + 1}`, errors);
@@ -151,8 +152,11 @@ function readOrders(v: Obj, errors: string[]): OrdersPrefill {
   else {
     onlyKeys(v.advance, ["mode", "percent"], "The advance", errors);
     if (v.advance.mode === "part") { if (!isWhole(v.advance.percent, 1, 99)) errors.push("The advance's percent must be from 1 to 99."); advance = { mode: "part", percent: v.advance.percent as number }; }
-    else if (v.advance.mode !== "full") errors.push("The advance's mode must be \"full\" or \"part\".");
+    else if (v.advance.mode === "none") advance = { mode: "none" }; // the pickup hold
+    else if (v.advance.mode !== "full") errors.push("The advance's mode must be \"full\", \"part\" or \"none\".");
   }
+  // the variant "hold" IS the advance "none" (the pickup hold), and the one goes only with the other
+  if ((variant === "hold") !== (advance.mode === "none")) errors.push("The variant \"hold\" and the advance {\"mode\": \"none\"} go together: a pickup-hold preset has both, any other neither.");
   if (!isWhole(v.maxItemsPerOrder, 1, 100)) errors.push("maxItemsPerOrder must be from 1 to 100.");
   // the pathway refuses an order that could come to more than can be refunded in a day (orders.ts says so in the person's language); the preset must not start the form in that state
   else if (menu.length > 0 && (v.maxItemsPerOrder as number) * Math.max(...menu.map((m) => (typeof m.priceInr === "number" ? m.priceInr : 0))) > DEFAULT_CAPS.refundPaisePerDay / 100) errors.push(`maxItemsPerOrder times the dearest item is more than the most a day's refunds may come to (${DEFAULT_CAPS.refundPaisePerDay / 100} rupees).`);
@@ -200,7 +204,7 @@ export function readPreset(input: unknown, known: readonly string[]): PresetRead
   if (!isObj(input.prefill)) errors.push("\"prefill\" must be an object.");
   else if (template === "bookings") prefill = readBookings(input.prefill, errors);
   else if (template === "fees") prefill = readFees(input.prefill, chosenVariant, errors);
-  else if (template === "orders") prefill = readOrders(input.prefill, errors);
+  else if (template === "orders") prefill = readOrders(input.prefill, chosenVariant, errors);
   else if (template === "stock-orders") prefill = readStock(input.prefill, errors);
   else if (template === "listings") { onlyKeys(input.prefill, [], "The prefill", errors); prefill = {} as ListingsPrefill; }
   let character: Preset["character"];

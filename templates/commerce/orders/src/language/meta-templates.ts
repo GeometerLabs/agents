@@ -132,6 +132,15 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("plan_renewal", "plan_renewal", "customer"),
   template("plan_pause_done", "plan_pause_done", "customer"),
   template("plan_skip_done", "plan_skip_done", "customer"),
+  // "keep one for me", the pickup hold (24 Nov 2026): what the owner is asked and told unasked (a customer's photo, a hold to accept, a hold that ended or was let go), and the
+  // customer's "held for you", which can come long after they wrote when the owner answers late, and the end of the hold
+  template("owner_hold_enquiry", "owner_hold_enquiry", "owner"),
+  template("owner_hold_asks", "owner_hold_ask", "owner"),
+  template("owner_hold_held", "owner_hold_held", "owner"),
+  template("owner_hold_ended", "owner_hold_ended", "owner"),
+  template("owner_hold_cancelled", "owner_hold_cancelled", "owner"),
+  template("order_hold_kept", "hold_held", "customer"),
+  template("order_hold_time_over", "hold_ended", "customer"),
   // the licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop
   template("owner_order_service_paused", "owner_licence_paused", "owner"),
   template("owner_order_service_stopped", "owner_licence_stopped", "owner"),

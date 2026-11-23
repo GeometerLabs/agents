@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "id": "hardware",
+  "names": {
+    "en": "Hardware and electricals, keep one for me",
+    "hi": "हार्डवेयर और बिजली का सामान, मेरे लिए एक रख दो",
+    "ml": "ഹാർഡ്‌വെയറും ഇലക്ട്രിക്കൽസും, എനിക്കായി ഒന്ന് മാറ്റിവയ്ക്കൂ",
+    "kn": "ಹಾರ್ಡ್‌ವೇರ್ ಮತ್ತು ಎಲೆಕ್ಟ್ರಿಕಲ್ಸ್, ನನಗಾಗಿ ಒಂದನ್ನು ಇಡಿ"
+  },
+  "template": "orders",
+  "variant": "hold",
+  "prefill": {
+    "menu": [
+      { "names": { "en": "LED bulb 9W", "hi": "एलईडी बल्ब 9W", "ml": "എൽഇഡി ബൾബ് 9W", "kn": "ಎಲ್ಇಡಿ ಬಲ್ಬ್ 9W" }, "priceInr": 120, "dailyStock": 10 },
+      { "names": { "en": "Extension board 4-way", "hi": "एक्सटेंशन बोर्ड 4-वे", "ml": "എക്സ്റ്റൻഷൻ ബോർഡ് 4-വേ", "kn": "ಎಕ್ಸ್‌ಟೆನ್ಶನ್ ಬೋರ್ಡ್ 4-ವೇ" }, "priceInr": 450, "dailyStock": 3 },
+      { "names": { "en": "MCB 16A", "hi": "एमसीबी 16A", "ml": "എംസിബി 16A", "kn": "ಎಂಸಿಬಿ 16A" }, "priceInr": 250, "dailyStock": 2 },
+      { "names": { "en": "Ceiling fan capacitor", "hi": "छत के पंखे का कैपेसिटर", "ml": "സീലിംഗ് ഫാൻ കപ്പാസിറ്റർ", "kn": "ಸೀಲಿಂಗ್ ಫ್ಯಾನ್ ಕೆಪಾಸಿಟರ್" }, "priceInr": 90, "dailyStock": 5 }
+    ],
+    "pickup": [
+      { "from": "10:00", "to": "13:00", "names": { "en": "morning", "hi": "सुबह", "ml": "രാവിലെ", "kn": "ಬೆಳಿಗ್ಗೆ" } },
+      { "from": "16:00", "to": "20:00", "names": { "en": "evening", "hi": "शाम", "ml": "വൈകുന്നേരം", "kn": "ಸಂಜೆ" } }
+    ],
+    "cutoffDays": 0,
+    "cutoffTime": "19:00",
+    "advance": { "mode": "none" },
+    "maxItemsPerOrder": 5
+  },
+  "character": { "personality": "brief", "paint": "blue" }
+}
