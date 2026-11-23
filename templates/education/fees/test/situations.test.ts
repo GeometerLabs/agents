@@ -3,7 +3,7 @@
 import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { brightTuition } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -59,7 +59,10 @@ test("the talk situations run once for each language the centre speaks, and say 
 });
 
 test("the hand check script prints the result line and a line for each situation, the way the deploy bundle reads them", { skip: goSkip("fees") }, () => {
-  const out = execFileSync(process.execPath, [new URL("../scripts/hand-check.ts", import.meta.url).pathname], { encoding: "utf8" });
+  // a situation that does not hold makes the script end with 1 (the known one on Go, KNOWN_ON_GO): its output is read all the same
+  const ran = spawnSync(process.execPath, [new URL("../scripts/hand-check.ts", import.meta.url).pathname], { encoding: "utf8" });
+  assert.equal(ran.status, BRIGHT.held === BRIGHT.total ? 0 : 1, ran.stderr);
+  const out = ran.stdout;
   assert.match(out, new RegExp(`^  Held ${BRIGHT.held} of ${BRIGHT.total}\\.  ${BRIGHT.total - BRIGHT.held} failed\\.  \\d+ not tested\\.  ${BRIGHT.skipped} not run on these settings\\.$`, "m"));
   assert.equal(out.split("\n").filter((l) => /^  [✓✗] /.test(l)).length, BRIGHT.total);
   assert.match(out, /Bright Tuition Centre · Fees · Hindi \+ English \+ Malayalam \+ Kannada/);
