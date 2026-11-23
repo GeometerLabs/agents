@@ -1142,20 +1142,156 @@
    "lang": "hi",
    "kind": "say",
    "go": {
-    "key": "help.warm.plain@fees",
-    "shop": "Bright Tuition Centre"
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
    },
-   "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो",
+   "text": "मैं Ravi Bakery का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• o-14 रद्द करो\n• o-14 को बोलो 15 मिनट देर होगी\n• ऑर्डर\n• वापस लो",
    "problems": [],
    "tampered": [
     {
-     "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो 7",
+     "text": "मैं Ravi Bakery का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• o-14 रद्द करो\n• o-14 को बोलो 15 मिनट देर होगी\n• ऑर्डर\n• वापस लो 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो https://pay.example.in/x",
+     "text": "मैं Ravi Bakery का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• o-14 रद्द करो\n• o-14 को बोलो 15 मिनट देर होगी\n• ऑर्डर\n• वापस लो https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "कौन-सी? ऐसे जवाब दें: cancel o-14।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: cancel o-14। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: cancel o-14। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "किस ग्राहक को? ऐसे जवाब दें: message o-14 15 मिनट देर होगी।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "किस ग्राहक को? ऐसे जवाब दें: message o-14 15 मिनट देर होगी। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "किस ग्राहक को? ऐसे जवाब दें: message o-14 15 मिनट देर होगी। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "कौन-सी? ऐसे जवाब दें: refund f-14।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: refund f-14। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: refund f-14। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹120 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹120 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹120 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹1209 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• f-14 रद्द करो\n• f-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• f-14 रद्द करो\n• f-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• f-14 रद्द करो\n• f-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
      ]
@@ -2339,20 +2475,156 @@
    "lang": "en",
    "kind": "say",
    "go": {
-    "key": "help.warm.plain@fees",
-    "shop": "Bright Tuition Centre"
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
    },
-   "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• who owes fees\n• undo",
+   "text": "I'm Ravi Bakery's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel o-14\n• message o-14 Running 15 minutes late\n• open orders\n• undo",
    "problems": [],
    "tampered": [
     {
-     "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• who owes fees\n• undo 7",
+     "text": "I'm Ravi Bakery's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel o-14\n• message o-14 Running 15 minutes late\n• open orders\n• undo 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• who owes fees\n• undo https://pay.example.in/x",
+     "text": "I'm Ravi Bakery's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel o-14\n• message o-14 Running 15 minutes late\n• open orders\n• undo https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "Which one? Reply like this: cancel o-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which one? Reply like this: cancel o-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which one? Reply like this: cancel o-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "Which customer? Reply like this: message o-14 Running 15 minutes late.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which customer? Reply like this: message o-14 Running 15 minutes late. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which customer? Reply like this: message o-14 Running 15 minutes late. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "Which one? Reply like this: refund f-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which one? Reply like this: refund f-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which one? Reply like this: refund f-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi cancelled order o-5 late. Refund the ₹120 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi cancelled order o-5 late. Refund the ₹120 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi cancelled order o-5 late. Refund the ₹120 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi cancelled order o-5 late. Refund the ₹1209 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel f-14\n• message f-14 Running 15 minutes late\n• who owes fees\n• undo",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel f-14\n• message f-14 Running 15 minutes late\n• who owes fees\n• undo 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel f-14\n• message f-14 Running 15 minutes late\n• who owes fees\n• undo https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
      ]
@@ -3536,20 +3808,156 @@
    "lang": "ml",
    "kind": "say",
    "go": {
-    "key": "help.warm.plain@fees",
-    "shop": "Bright Tuition Centre"
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
    },
-   "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി",
+   "text": "ഞാൻ Ravi Bakery-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• o-14 റദ്ദാക്കുക\n• o-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ഓർഡറുകൾ\n• പഴയപടി",
    "problems": [],
    "tampered": [
     {
-     "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി 7",
+     "text": "ഞാൻ Ravi Bakery-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• o-14 റദ്ദാക്കുക\n• o-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ഓർഡറുകൾ\n• പഴയപടി 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി https://pay.example.in/x",
+     "text": "ഞാൻ Ravi Bakery-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• o-14 റദ്ദാക്കുക\n• o-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ഓർഡറുകൾ\n• പഴയപടി https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel o-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel o-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel o-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message o-14 15 മിനിറ്റ് വൈകും.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message o-14 15 മിനിറ്റ് വൈകും. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message o-14 15 മിനിറ്റ് വൈകും. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund f-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund f-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund f-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹120 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹120 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹120 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹1209 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• f-14 റദ്ദാക്കുക\n• f-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• f-14 റദ്ദാക്കുക\n• f-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• f-14 റദ്ദാക്കുക\n• f-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
      ]
@@ -4733,20 +5141,156 @@
    "lang": "kn",
    "kind": "say",
    "go": {
-    "key": "help.warm.plain@fees",
-    "shop": "Bright Tuition Centre"
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
    },
-   "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ",
+   "text": "ನಾನು Ravi Bakery ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• o-14 ರದ್ದು\n• o-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಆರ್ಡರ್‌ಗಳು\n• ಹಿಂದಿನಂತೆ",
    "problems": [],
    "tampered": [
     {
-     "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ 7",
+     "text": "ನಾನು Ravi Bakery ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• o-14 ರದ್ದು\n• o-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಆರ್ಡರ್‌ಗಳು\n• ಹಿಂದಿನಂತೆ 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ https://pay.example.in/x",
+     "text": "ನಾನು Ravi Bakery ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• o-14 ರದ್ದು\n• o-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಆರ್ಡರ್‌ಗಳು\n• ಹಿಂದಿನಂತೆ https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel o-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel o-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel o-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message o-14 15 ನಿಮಿಷ ತಡ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message o-14 15 ನಿಮಿಷ ತಡ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message o-14 15 ನಿಮಿಷ ತಡ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund f-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund f-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund f-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹120 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹120 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹120 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹1209 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• f-14 ರದ್ದು\n• f-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• f-14 ರದ್ದು\n• f-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• f-14 ರದ್ದು\n• f-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
      ]

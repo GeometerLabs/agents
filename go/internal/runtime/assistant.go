@@ -237,8 +237,8 @@ func (c *conv) cardQuestion(w *assistant.Writer, skill, kind, itemKind, ref stri
 	case kind == "message":
 		return w.Say("card.message", "ref", ref, "who", sh.Who, "words", sh.Words)
 	}
-	if w.Pack().Has("card.answer." + itemKind) {
-		return w.Say("card.answer."+itemKind, "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+	if key := skillKey(w.Pack(), "card.answer."+itemKind, skill); w.Pack().Has(key) { // an Orders shop's late refund is its advance (SKILL_ASK.orders)
+		return w.Say(key, "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
 	}
 	return w.Say("card.answer", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
 }
@@ -733,10 +733,18 @@ func (c *conv) needRef(kind string, read assistant.Intent) {
 	c.needRefLine(kind, rows)
 }
 
+// ownKey is a key in the shop's own skill's wording when it has one (conversation.ts `ownSkill`, the template's skill first in wire.ts's order), else the shared key.
+func (c *conv) ownKey(key string) string {
+	if len(c.skills) == 0 {
+		return key
+	}
+	return skillKey(c.pack, key, c.skills[0].Name())
+}
+
 // needRefLine is words.ts need_ref: the question, then the candidates (at most 12) as rows.
 func (c *conv) needRefLine(kind string, rows []DayRow) {
 	w := c.pack.Writer()
-	text := w.Say("need_ref." + kind)
+	text := w.Say(c.ownKey("need_ref." + kind)) // an Orders shop's "cancel o-14", a Fees centre's "cancel f-14" (words.ts EXAMPLE_REF)
 	for i, r := range rows {
 		if i >= listRows {
 			break

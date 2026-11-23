@@ -392,10 +392,12 @@ function ordersWords(l: Language, m: Bag): void {
   const P = 12345600;
   const withInr = (text: string): string => { if (!text.includes(INR)) throw new Error(`the amount is not in: ${text}`); return text.replaceAll(INR, "{inr}"); };
   for (const p of PERSONALITIES) {
-    m[`help.${p}.plain@orders`] = say(l, "help", { shop: S("shop"), kinds: ORDERS_KINDS, personality: p });
-    m[`help.${p}.named@orders`] = say(l, "help", { name: S("name"), shop: S("shop"), kinds: ORDERS_KINDS, personality: p });
+    m[`help.${p}.plain@orders`] = say(l, "help", { shop: S("shop"), kinds: ORDERS_KINDS, personality: p, skill: "orders" });
+    m[`help.${p}.named@orders`] = say(l, "help", { name: S("name"), shop: S("shop"), kinds: ORDERS_KINDS, personality: p, skill: "orders" });
   }
-  m["not_understood@orders"] = say(l, "not_understood", { kinds: ORDERS_KINDS });
+  m["not_understood@orders"] = say(l, "not_understood", { kinds: ORDERS_KINDS, skill: "orders" });
+  // "which one?" naming an order (words.ts EXAMPLE_REF), and an order cancelled late: its advance (SKILL_ASK.orders), 23 Nov 2026
+  for (const kind of ["cancel", "refund", "message"] as const) m[`need_ref.${kind}@orders`] = say(l, "need_ref", { kind, rows: [], skill: "orders" });
   // the open orders: none, the head and one row, and "and N more" after twelve rows
   m["open_list.none"] = say(l, "open_list", { rows: [] });
   const row = { case: S("case"), who: S("who"), what: S("what"), amountPaise: P, state: "confirmed" };
@@ -409,6 +411,7 @@ function ordersWords(l: Language, m: Bag): void {
   // the cards: a big order to accept (BASE_ASK, any skill), and the Orders skill's own cancel and refund (SKILL_ASK.orders)
   const card = { skill: "orders", who: S("who"), ref: S("ref"), what: S("what"), code: "", hasNo: true };
   m["card.answer.big_order"] = withInr(slots(cardQuestion({ ...card, kind: "answer", itemKind: "big_order", amountPaise: P }, l, TZ)));
+  m["card.answer.late_refund@orders"] = withInr(slots(cardQuestion({ ...card, kind: "answer", itemKind: "late_refund", amountPaise: P }, l, TZ)));
   m["card.cancel.paid@orders"] = withInr(slots(cardQuestion({ ...card, kind: "cancel", amountPaise: P }, l, TZ)));
   m["card.cancel.free@orders"] = slots(cardQuestion({ ...card, kind: "cancel", amountPaise: 0 }, l, TZ));
   m["card.refund@orders"] = withInr(slots(cardQuestion({ ...card, kind: "refund", amountPaise: P }, l, TZ)));
@@ -427,10 +430,11 @@ function feesWords(l: Language, m: Bag): void {
   const P = 12345600;
   const withInr = (text: string): string => { if (!text.includes(INR)) throw new Error(`the amount is not in: ${text}`); return text.replaceAll(INR, "{inr}"); };
   for (const p of PERSONALITIES) {
-    m[`help.${p}.plain@fees`] = say(l, "help", { shop: S("shop"), kinds: FEES_KINDS, personality: p });
-    m[`help.${p}.named@fees`] = say(l, "help", { name: S("name"), shop: S("shop"), kinds: FEES_KINDS, personality: p });
+    m[`help.${p}.plain@fees`] = say(l, "help", { shop: S("shop"), kinds: FEES_KINDS, personality: p, skill: "fees" });
+    m[`help.${p}.named@fees`] = say(l, "help", { name: S("name"), shop: S("shop"), kinds: FEES_KINDS, personality: p, skill: "fees" });
   }
-  m["not_understood@fees"] = say(l, "not_understood", { kinds: FEES_KINDS });
+  m["not_understood@fees"] = say(l, "not_understood", { kinds: FEES_KINDS, skill: "fees" });
+  for (const kind of ["cancel", "refund", "message"] as const) m[`need_ref.${kind}@fees`] = say(l, "need_ref", { kind, rows: [], skill: "fees" });
   // who owes: none, the head and one row, and "and N more" after twelve rows (words.ts owes_list, oweRow)
   m["owes_list.none"] = say(l, "owes_list", { rows: [] });
   const row = { case: S("case"), who: S("who"), what: S("what"), amountPaise: P };

@@ -110,6 +110,9 @@ func (c *conv) sayCase(t *testing.T, k lineCase, said *[]saidFacts) saidFacts {
 		}
 		return saidFacts{text: q + "\n" + c.cardFoot(w, g["code"].(string), g["hasNo"] != false, false), facts: w.Facts()}
 	case "need_ref":
+		if skill, ok := g["skill"].(string); ok {
+			c.skills = []OwnerSkill{namedSkill{name: skill}} // the shop's own skill names its kind of case (conv.ownKey)
+		}
 		c.needRefLine(g["kind"].(string), vRows(g["rows"]))
 	case "owes_list":
 		var rows []OweRow
@@ -218,3 +221,13 @@ func nonNil(s []string) []string {
 	}
 	return s
 }
+
+// namedSkill is a skill with a name and nothing else: what the lines read of the shop's own skill.
+type namedSkill struct{ name string }
+
+func (k namedSkill) Name() string                                 { return k.name }
+func (namedSkill) Owns(string) bool                               { return false }
+func (namedSkill) Prepare(assistant.Raw) (Prepared, string)       { return Prepared{}, "not_here" }
+func (namedSkill) Execute(assistant.Action) Executed              { return Executed{} }
+func (namedSkill) Waiting() []WaitingItem                         { return nil }
+func (namedSkill) Problems() int                                  { return 0 }

@@ -97,7 +97,13 @@ export function generate(): string {
       { kind: "cancel", ref: "f-2", who: "Rohan Mehta", what: "Sep 2026", amountPaise: 0, hasNo: true },
       { kind: "refund", ref: "f-2", who: "Rohan Mehta", what: "Sep 2026", amountPaise: 180000, hasNo: true },
     ]) cases.push(said(lang, "card", { ...c, skill: "fees", code: "K7M2QX" }, "card", { ...c, skill: "fees", code: "K7M2QX" }));
-    cases.push(said(lang, "say", { key: "help.warm.plain@fees", shop: "Bright Tuition Centre" }, "help", { shop: "Bright Tuition Centre", kinds: ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget", "leave_file", "leave_operator", "owes"], personality: "warm" }));
+    // an Orders shop's and a Fees centre's examples name their own kind of case, and an order cancelled late is its advance (23 Nov 2026, go-orders-gaps-23nov's findings)
+    const ordersKinds = ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget", "leave_file", "leave_operator", "open_orders"];
+    cases.push(said(lang, "say", { key: "help.warm.plain@orders", shop: "Ravi Bakery" }, "help", { shop: "Ravi Bakery", kinds: ordersKinds, personality: "warm", skill: "orders" }));
+    for (const [skill, kind] of [["orders", "cancel"], ["orders", "message"], ["fees", "refund"]] as const) cases.push(said(lang, "need_ref", { kind, rows: [], skill }, "need_ref", { kind, rows: [], skill }));
+    const late = { kind: "answer", itemKind: "late_refund", ref: "o-5", who: "Ravi", what: "2 cakes", amountPaise: 12000, hasNo: true };
+    cases.push(said(lang, "card", { ...late, skill: "orders", code: "K7M2QX" }, "card", { ...late, skill: "orders", code: "K7M2QX" }));
+    cases.push(said(lang, "say", { key: "help.warm.plain@fees", shop: "Bright Tuition Centre" }, "help", { shop: "Bright Tuition Centre", kinds: ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget", "leave_file", "leave_operator", "owes"], personality: "warm", skill: "fees" }));
     const facts = dayFacts({ language: lang, timeZone: TZ, shop: "Sharma Salon 2", date: D, startMs: at(16, 5) });
     cases.push(one(lang, "tmpl", { id: "day_closed", shop: "Sharma Salon 2", date: D, startMs: at(16, 5) }, render("day_closed", facts), facts.check));
   }

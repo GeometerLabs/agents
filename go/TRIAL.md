@@ -1076,4 +1076,12 @@ waives the whole balance: assistant.ts prepareMoney shows amount 0 ("a cancel re
 it waives ("... and waive the ₹1,800 balance? No money moves.", which words.ts already has). (b) After that cancel's yes the owner reads "Done: ₹1,800 is on its way back to Rohan
 Mehta (f-2)." although no money moves: conversation.ts words a cancel with `fields.amountPaise > 0` as "refund_sent", and the Fees cancel binds the balance in that field; a Fees
 cancel should say "Cancelled f-2.". (c) "refund f-2 ₹2,000" above the payment answers "That is more than was paid on f-2 (₹0)." (the Fees skill's too_much refusal carries no
-`paidPaise`). (d) Help and "which one?" lines on a Fees centre give Bookings' examples ("cancel b-14"), as OG found for Orders.
+`paidPaise`). (d) Help and "which one?" lines on a Fees centre gave Bookings' examples ("cancel b-14"), as OG found for Orders: fixed with OG's two below.
+
+**OG's two Orders findings, fixed on both sides (the lead's note; words.ts and gen_words.ts are this stream's).** (1) An Orders shop's help, "didn't get that" and "which
+one?" lines named a Bookings case ("cancel b-14"): words.ts now takes the shop's own skill (`skill` on help, not_understood and need_ref; conversation.ts passes the
+template's skill, first in wire.ts's order) and EXAMPLE_REF names its kind of case ("o-14" for Orders, and "f-14" for Fees, the same fault); only the reference changes, so
+the translated words stay. Go: the @orders/@fees help lines and new `need_ref.<kind>@orders|@fees` keys, read through `conv.ownKey`. (2) An Orders shop's late-refund card
+said "deposit": SKILL_ASK.orders words it "Ravi cancelled order o-5 late. Refund the ₹120 advance?" in four languages; Go reads `card.answer.late_refund@orders` (cardQuestion
+looks for the skill's own answer key first). Tests: modules/assistant/test/words.test.ts (two new tests, every language) and the assistant line vectors (help@orders, three
+"which one?" lines, the Orders late-refund card, in four languages; run by internal/runtime TestAssistantLinesAreTheTypeScriptsAndTheirCheckToo).
