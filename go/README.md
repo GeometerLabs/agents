@@ -20,6 +20,7 @@ go build -o bin/listings ./cmd/listings                 # 23.3 MB; with -ldflags
 go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags "-s -w" 16.8 MB
 go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, "Waves 1b and 1c finished")
 go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (wave 2, in progress: TRIAL.md "Wave 2: the Bookings runtime")
+go build -o bin/orders ./cmd/orders                     # one Orders shop (wave W4: TRIAL.md "Wave W4: Orders on Go")
 go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (wave 2, go-w5-stock-22nov: TRIAL.md)
 go build -o bin/fees ./cmd/fees                         # one Fees (and Classes) centre (wave 3, in progress: TRIAL.md "Wave 3: Fees")
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
@@ -88,6 +89,13 @@ internal/slots/          fills `{0}` slots in words the TypeScript rendered (scr
 internal/accounting/     the shop's books (modules/accounting): the journal fold over the record, posting, gap-free document numbers per financial year, periods, documents and their page, the accountant's files (journal and documents CSV, settlements CSV, README, Tally XML), the owner's money view, invariants, figures, the books summary, the settlements read; accounting/render holds the HTML (owner's Money section, the report's money block, the document page)
 internal/report/         the generic monthly report (modules/report): canonical JSON, digest, sealed envelope, the signed summary link (grapheme cuts as Intl.Segmenter), the page and seal block, text helpers, the go-live reading, the once-a-month sender
 internal/bookingsreport/ Bookings' monthly report (templates/commerce/bookings/report): the data counted from the record, the report page, owner text, monthly certificate, WhatsApp text and template, the monthly job
+internal/orders/         the Orders template (wave W4): settings with the TypeScript's sentences, the store field for field (unknown members kept raw), the derived reads (stock and the day's
+                         count worked out from the orders), the books, the channel's reads (offer, view, owner's page, documents), the Kit, and the agent over one step (agent_*.go: say, the
+                         order flow and its limits, money and refunds, the owner-marked UPI money, cancelling, the owner's commands and the balance, the tick, recovery, the page); plans and
+                         the Orders skill of the shop's assistant; read Explanation.md and Deferred.md
+internal/orders/words/   Orders' customer and owner messages in four languages, the WhatsApp templates, labels, lists and buttons, and the outgoing check (GENERATED: scripts/gen_orders_words.ts)
+internal/orders/reading/ how an Orders shop reads a message: the rule parser, the check on a model's answer, the router's reading, a tapped reply, the plan reading (GENERATED: scripts/gen_orders_reading.ts)
+internal/ordersreport/   Orders' monthly report (templates/commerce/orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job
 internal/stock/          the shop's one stock count (modules/stock/stock.ts): the state under assistant.stock, the owner's acts, the shop's own record of a sale or a delivery (Orders,
                          Stock orders), the reconciles and their history rules, the low alerts once per crossing; listings keeps aliases of it (22 Nov)
 internal/stockorders/    the Stock orders template (wave 2, go-w5-stock-22nov): settings, the store field for field, the rule reader, the words (generated), the limits, the agent with
@@ -116,6 +124,7 @@ scripts/gen_stock_vectors.ts     writes internal/stock/testdata/stock-vectors.js
 scripts/gen_stockorders_words.ts writes internal/stockorders/words.json: Stock orders' messages, templates, labels, state and stock words and the reader's patterns (--check)
 scripts/gen_fees_words.ts  writes internal/fees/words/*.json.gz (every Fees and Classes message, where to pay, a family's line, the WhatsApp templates, the labels) and internal/fees/reading.json (the rule parser's word lists) from templates/education/fees; `--check` only compares (words-fresh)
 scripts/gen_bookings_reading.ts  writes internal/bookings/reading.json: the Bookings rule parser's patterns, the decision model's questions, the model's prompt and schema as templates
+scripts/gen_orders_settings.ts  writes internal/orders/settings_check.json and the settings and store vectors (a store the TypeScript agent wrote, and every read of it); scripts/gen_orders_words.ts, gen_orders_reading.ts, gen_orders_report_words.ts and gen_orders_report_vectors.ts the Orders words, reading and report data; each has `--check`, and words-fresh runs them
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
                            in a corpus); `--check` only compares; the test words-fresh fails when it was not run after a change to a pattern it names
 scripts/gen_words.ts       renders the owner's words (and the lists the rules read, and the owner-control alerts with the moment they carry) from the TypeScript into internal/assistant/words/*.json.gz; `--check` only compares. `node go/scripts/gen_words.ts` after any change to modules/assistant/words*.ts, modules/listings/words.ts or the alerts in modules/channels/owner-phones.ts and owner-signin.ts (the test words-fresh fails when it was not run)

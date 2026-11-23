@@ -10,27 +10,27 @@ import { inBoth } from "../../../../../modules/language/words.ts";
 import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../../../../modules/understanding/rules.ts";
 import type { IntentLine, Intent, IntentParser, ParseContext } from "./model.ts";
 
-const CANCEL_RE = wordRe(["cancel", "cancelled", "canceled", "cancellation", "कैंसल", "रद्द", "रद", "निरस्त", "radd", "cancle", ...inBoth((w) => w.cancel)]);
+export const CANCEL_RE = wordRe(["cancel", "cancelled", "canceled", "cancellation", "कैंसल", "रद्द", "रद", "निरस्त", "radd", "cancle", ...inBoth((w) => w.cancel)]);
 const REFUND_WORDS = [
   "refund", "refunded", "money back", "give back", "return my money", "get back my money", "रिफंड", "वापस", "paise wapas", "wapas",
   "റീഫണ്ട്", "തിരികെ", "ರೀಫಂಡ್", "ಮರುಪಾವತಿ", "ವಾಪಸ್",
 ];
-const REFUND_RE = wordRe(REFUND_WORDS);
+export const REFUND_RE = wordRe(REFUND_WORDS);
 const OWNER_WORDS = [
   "owner", "talk to", "call me", "speak to", "manager", "मालिक", "बात करनी", "बात करना", "फोन करो", "malik", "ഉടമ", "സംസാരിക്കണം", "വിളിക്കൂ", "ಮಾಲೀಕ", "ಮಾತನಾಡ", "ಕರೆ ಮಾಡಿ",
 ];
-const OWNER_RE = wordRe(OWNER_WORDS);
+export const OWNER_RE = wordRe(OWNER_WORDS);
 const ORDER_LIST = [
   "order", "orders", "want", "need", "get me", "send", "book", "tiffin", "i'd like", "i would like", "chahiye", "chahie", "bhej do", "mangwana", "ऑर्डर", "चाहिए", "मँगवाना", "बुक",
   ...inBoth((w) => w.book),
 ];
-const ORDER_RE = wordRe(ORDER_LIST);
+export const ORDER_RE = wordRe(ORDER_LIST);
 // "menu" (and its native spellings) shows the menu with its prices, as hello does: the chat page's first quick tap sends exactly this word (modules/channels/words-chat.ts QUICK), and a WhatsApp customer types it too
-const MENU_RE = wordRe(["menu", "मेन्यू", "मेनू", "മെനു", "ಮೆನು"]);
+export const MENU_RE = wordRe(["menu", "मेन्यू", "मेनू", "മെനു", "ಮೆನು"]);
 const PICKUP_WORDS = ["pickup", "pick up", "pick-up", "collect", "takeaway", "take away", "take-away", "come and take", "aake le", "lene aunga", "lene aaunga", "पिकअप", "पिक अप", "लेने आ", "खुद ले", "പിക്കപ്പ്", "പിക്ക് അപ്പ്", "വന്ന് എടുക്ക", "ಪಿಕಪ್", "ಪಿಕ್ ಅಪ್", "ನಾನೇ ಬಂದು"];
-const PICKUP_RE = phraseRe(PICKUP_WORDS);
+export const PICKUP_RE = phraseRe(PICKUP_WORDS);
 const DELIVERY_WORDS = ["deliver", "delivery", "home delivery", "send it to", "bhej do", "bhejna", "pahuncha", "डिलीवरी", "डिलिवरी", "पहुँचा", "पहुंचा", "घर पर", "ഡെലിവറി", "വീട്ടിൽ എത്തിക്ക", "എത്തിച്ച", "ಡೆಲಿವರಿ", "ಮನೆಗೆ ತಲುಪಿಸ", "ತಲುಪಿಸ"];
-const DELIVERY_RE = phraseRe(DELIVERY_WORDS);
+export const DELIVERY_RE = phraseRe(DELIVERY_WORDS);
 
 // "I have paid" in words (a UPI shop reads this as a claim and asks the owner to look). A "no" in the same message ("I have not paid yet") makes it not a claim.
 const PAID_WORDS = [
@@ -39,8 +39,8 @@ const PAID_WORDS = [
   "അടച്ചു", "പണം അടച്ചു", "പണം അയച്ചു", "അയച്ചു", "adachu", "payment cheythu", "paid aanu",
   "ಪಾವತಿಸಿದ್ದೇನೆ", "ಪಾವತಿಸಿದೆ", "ಹಣ ಕಳುಹಿಸಿದ್ದೇನೆ", "ಪಾವತಿ ಮಾಡಿದ್ದೇನೆ", "paavatisiddene", "payment madide",
 ];
-const PAID_RE = wordRe(PAID_WORDS);
-const NEGATION_RE = wordRe(["not", "haven't", "havent", "didn't", "didnt", "not yet", "never", "no", "नहीं", "नही", "अभी तक", "nahi", "nahin", "abhi tak", "ഇല്ല", "ഇതുവരെ", "illa", "ಇಲ್ಲ", "ಇನ್ನೂ", "innu"], "u", true);
+export const PAID_RE = wordRe(PAID_WORDS);
+export const NEGATION_RE = wordRe(["not", "haven't", "havent", "didn't", "didnt", "not yet", "never", "no", "नहीं", "नही", "अभी तक", "nahi", "nahin", "abhi tak", "ഇല്ല", "ഇതുവരെ", "illa", "ಇಲ್ಲ", "ಇನ್ನೂ", "innu"], "u", true);
 /** Does this say "I have paid"? Used on a UPI shop before any model is asked, and for the "paid" intent. */
 export const isPaidClaim = (text: string): boolean => { const t = canon(text); return PAID_RE.test(t) && !NEGATION_RE.test(t); };
 
@@ -57,8 +57,8 @@ export const NUMBER_WORDS: Record<string, number> = {
   ondu: 1, eradu: 2, mooru: 3, naalku: 4, aidu: 5, "ಒಂದು": 1, "ಎರಡು": 2, "ಮೂರು": 3, "ನಾಲ್ಕು": 4, "ಐದು": 5,
 };
 const WORD_LIST = Object.keys(NUMBER_WORDS).sort((a, b) => b.length - a.length).map((w) => w.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|");
-const BEFORE_RE = new RegExp(`(?:^|[^\\p{L}\\p{N}])(\\d{1,3}|${WORD_LIST})\\s*(?:x|×|\\*)?\\s*(?:plates?|pcs?|pieces?|nos?\\.?|packs?|boxes|box|meals?|tiffins?)?\\s*(?:of\\s+)?$`, "u");
-const AFTER_RE = /^\s*(?:x|×|\*)\s*(\d{1,3})(?!\d)/u;
+export const BEFORE_RE = new RegExp(`(?:^|[^\\p{L}\\p{N}])(\\d{1,3}|${WORD_LIST})\\s*(?:x|×|\\*)?\\s*(?:plates?|pcs?|pieces?|nos?\\.?|packs?|boxes|box|meals?|tiffins?)?\\s*(?:of\\s+)?$`, "u");
+export const AFTER_RE = /^\s*(?:x|×|\*)\s*(\d{1,3})(?!\d)/u;
 
 const quantityOf = (n: string): number => (/^\d+$/u.test(n) ? Number(n) : NUMBER_WORDS[n] ?? 1);
 

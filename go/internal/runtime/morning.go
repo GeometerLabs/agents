@@ -377,6 +377,14 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 			parts = append(parts, w.Say("morning.no_bookings"))
 		}
 	}
+	if os, ok := skill.(OpenSkill); ok { // an Orders shop's open orders (morning.ts `s.open`): "open orders: N", or the "nothing" word
+		if n := len(os.Open()); n > 0 {
+			parts = append(parts, w.Say("morning.open", "n", strconv.Itoa(n)))
+			something = true
+		} else {
+			parts = append(parts, pack.Say("morning.nothing"))
+		}
+	}
 	low := 0
 	if snap.Stock != nil {
 		for _, l := range snap.Stock.Lines {
