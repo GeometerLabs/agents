@@ -53,6 +53,9 @@ const BOOKINGS_KINDS = [...KINDS, "day", "close_day", "reopen_day", "move"];
 // The kinds of an Orders shop's assistant (kindsOf over the Orders skill, which has `open`, the limits and the listings). Keys made for this profile end in "@orders"; so do the
 // few lines the Orders skill words its own way (words.ts SKILL_ASK and SKILL_REFUSAL "orders": an advance, not a deposit).
 const ORDERS_KINDS = [...KINDS, "open_orders"];
+// The kinds of a Fees centre's assistant (kindsOf over the Fees skill, which has `owes`, the limits and the listings). Keys made for this profile end in "@fees"; so do the few
+// lines the Fees skill words its own way (words.ts SKILL_ASK and SKILL_REFUSAL "fees": a cancel waives a fee's balance, a refund gives back a fee's payment).
+const FEES_KINDS = [...KINDS, "owes"];
 
 type Bag = Record<string, string>;
 
@@ -262,6 +265,7 @@ function messages(l: Language): { m: Bag; cat: Bag; stamp: { months: string[]; h
   m["morning.low"] = slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ low: N }], moneyPaise: 0, waiting: 0 }).values as Bag).today);
   bookingsWords(l, m, D, dateText);
   ordersWords(l, m);
+  feesWords(l, m);
   alerts(l, m);
   return { m, cat, stamp: stampOf(l), f: factsOf(l, m) };
 }
@@ -413,6 +417,41 @@ function ordersWords(l: Language, m: Bag): void {
   m["morning.open"] = slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: { year: 2026, month: 11, day: 18 }, parts: [{ open: N }], moneyPaise: 0, waiting: 0 }).values as Bag).today);
 }
 
+/**
+ * The words of a Fees centre's assistant (23 Nov 2026): the help and "didn't get that" lines for its kinds, who owes (none, the head, one row, "and N more"), the cards that
+ * answer a waiver or a refund a parent asked for (BASE_ASK, any skill), the Fees skill's own cancel and refund cards and its two refusals (SKILL_ASK.fees, SKILL_REFUSAL.fees),
+ * and the morning line's "fees not paid" part. Each is rendered by the real write() / cardQuestion() / morningFacts() with sentinels, as ordersWords does.
+ */
+function feesWords(l: Language, m: Bag): void {
+  const INR = "₹1,23,456";
+  const P = 12345600;
+  const withInr = (text: string): string => { if (!text.includes(INR)) throw new Error(`the amount is not in: ${text}`); return text.replaceAll(INR, "{inr}"); };
+  for (const p of PERSONALITIES) {
+    m[`help.${p}.plain@fees`] = say(l, "help", { shop: S("shop"), kinds: FEES_KINDS, personality: p });
+    m[`help.${p}.named@fees`] = say(l, "help", { name: S("name"), shop: S("shop"), kinds: FEES_KINDS, personality: p });
+  }
+  m["not_understood@fees"] = say(l, "not_understood", { kinds: FEES_KINDS });
+  // who owes: none, the head and one row, and "and N more" after twelve rows (words.ts owes_list, oweRow)
+  m["owes_list.none"] = say(l, "owes_list", { rows: [] });
+  const row = { case: S("case"), who: S("who"), what: S("what"), amountPaise: P };
+  const one = write("owes_list", { rows: [row] }, l, TZ).text.split("\n");
+  if (one.length !== 2) throw new Error(`the owes list is not head and row: ${one.join(" / ")}`);
+  // the head with one row says "1": the count is the only "1" in it
+  m["owes_list.head"] = slots(one[0]).replace(/(^|\D)1(\D|$)/u, "$1{n}$2");
+  m["owes_list.row"] = withInr(slots(one[1]));
+  const many = write("owes_list", { rows: Array.from({ length: 13 }, () => ({ ...row, case: "b-1", who: "x", what: "y" })) }, l, TZ).text.split("\n");
+  m["owes_list.more"] = many.at(-1)!.replace("1", "{n}");
+  // the cards: a waiver or a refund a parent asked for, waiting for the owner (BASE_ASK, any skill), and the Fees skill's own cancel and refund (SKILL_ASK.fees)
+  const card = { skill: "fees", who: S("who"), ref: S("ref"), what: S("what"), code: "", hasNo: true };
+  for (const itemKind of ["waiver", "refund_request"]) m[`card.answer.${itemKind}`] = withInr(slots(cardQuestion({ ...card, kind: "answer", itemKind, amountPaise: P }, l, TZ)));
+  m["card.cancel.paid@fees"] = withInr(slots(cardQuestion({ ...card, kind: "cancel", amountPaise: P }, l, TZ)));
+  m["card.cancel.free@fees"] = slots(cardQuestion({ ...card, kind: "cancel", amountPaise: 0 }, l, TZ));
+  m["card.refund@fees"] = withInr(slots(cardQuestion({ ...card, kind: "refund", amountPaise: P }, l, TZ)));
+  for (const why of ["already_back", "cancel_first"] as const) m[`refusal.${why}@fees`] = say(l, "refusal", { why, ref: S("ref"), skill: "fees" });
+  // the morning line's Fees part (templates.ts MORNING_PARTS `owes`): "fees not paid: N (₹X)" (none is the "nothing" word, morning.nothing)
+  m["morning.owes"] = withInr(slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: { year: 2026, month: 11, day: 18 }, parts: [{ owes: N, owedPaise: P }], moneyPaise: 0, waiting: 0 }).values as Bag).today));
+}
+
 /** The word lists the rules read the owner's commands from, taken out of the TypeScript source (they are `const`s that are not exported, and the TypeScript is not changed for this). */
 function listAfter(src: string, marker: string, end: string): string[] {
   const at = src.indexOf(marker);
@@ -445,6 +484,9 @@ function rules(): unknown {
     // and for an Orders shop's (ORDERS_KINDS)
     kindsOrders: ORDERS_KINDS,
     routerOrders: routerOf(ORDERS_KINDS),
+    // and for a Fees centre's (FEES_KINDS)
+    kindsFees: FEES_KINDS,
+    routerFees: routerOf(FEES_KINDS),
     talkSchema: ownerPrompt({ shop: { name: "x" }, language: "en", sources: [], limits: [] }).schema,
     // the schema with declared limits: the limit's enum holds "{id}", which the Go side replaces with the declared ids in their order
     // the owner's "open my app" on WhatsApp (owner-signin.ts OPEN_MY_APP, compared after phraseOf)

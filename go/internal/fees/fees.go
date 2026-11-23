@@ -52,6 +52,11 @@ type Kit struct {
 	PageBase func() string
 	// MaterialsDir is <the centre's folder>/materials (server/materials.ts); "" for a centre without Classes.
 	MaterialsDir string
+	// LastSnap is the runtime's last saved state (Runtime.KitState's snap), set by cmd/fees once the runtime is made: the page head's character reads the assistant's part of it
+	// (agent_assistant.go publicCharacter). nil: no character.
+	LastSnap func() *runtime.Snap
+	// shared is the part of the settings every shop has (the assistant's character), kept for the assistant's views
+	shared *runtime.Settings
 	// Licence is the centre's licence now: "" in order, "paused", "stopped" (the runtime's LicenceNow, set once the runtime is made).
 	Licence func() string
 	// links are the parents' links this process made (runtime.ts linkMemory, in memory only: the store keeps their hashes).
@@ -107,6 +112,7 @@ func (k *Kit) ReadSettings(in map[string]any, raw []byte, shared *runtime.Settin
 	shared.Name, shared.Timezone, shared.Language = s.Name, s.Timezone, s.Languages
 	shared.Owner.Whatsapp, shared.Owner.Language = s.Owner.Whatsapp, s.Owner.Language
 	shared.ReadAssistant(in["assistant"])
+	k.shared = shared
 	return s, nil
 }
 

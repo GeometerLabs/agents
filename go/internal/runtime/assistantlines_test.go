@@ -1,10 +1,10 @@
 package runtime
 
 // The owner's assistant's lines against the TypeScript's own (testdata/assistant-lines.json, made by go/scripts/gen_assistant_vectors.ts from modules/assistant/words.ts and
-// templates.ts): for each line, in en, hi, ml and kn, the Go code that says it on a Bookings shop builds the same words from the same data, and the outgoing check over the facts
-// ITS writer noted finds nothing in the line and, once the line is tampered with (a stray number, a changed amount, a link, another date), the same problems as check.ts, word
-// for word. The combined lines (the day's list with its rows, "and N more" and the closed-day line; a closed day with the customers not reached; every limit line) are here so
-// that a change in how Go joins them is caught in every language.
+// templates.ts): for each line, in en, hi, ml and kn, the Go code that says it on a Bookings shop (and, since 23 Nov 2026, a Fees centre's who owes and its cards) builds the
+// same words from the same data, and the outgoing check over the facts ITS writer noted finds nothing in the line and, once the line is tampered with (a stray number, a changed
+// amount, a link, another date), the same problems as check.ts, word for word. The combined lines (the day's list with its rows, "and N more" and the closed-day line; who owes
+// with its rows; a closed day with the customers not reached; every limit line) are here so that a change in how Go joins them is caught in every language.
 
 import (
 	"encoding/json"
@@ -101,11 +101,24 @@ func (c *conv) sayCase(t *testing.T, k lineCase, said *[]saidFacts) saidFacts {
 		if k.Kind == "card_limit" {
 			q = c.cardQuestion(w, "limits", "limit", "", "limit:"+g["kind"].(string), Shown{Limit: &LimitCardView{LimitView: vLimit(g), Now: vInt(g["now"]), To: vInt(g["to"])}})
 		} else {
-			q = c.cardQuestion(w, "bookings", g["kind"].(string), "", g["ref"].(string), Shown{Who: g["who"].(string), What: g["what"].(string), AmountPaise: vInt(g["amountPaise"])})
+			skill, _ := g["skill"].(string)
+			if skill == "" {
+				skill = "bookings"
+			}
+			itemKind, _ := g["itemKind"].(string)
+			q = c.cardQuestion(w, skill, g["kind"].(string), itemKind, g["ref"].(string), Shown{Who: g["who"].(string), What: g["what"].(string), AmountPaise: vInt(g["amountPaise"])})
 		}
 		return saidFacts{text: q + "\n" + c.cardFoot(w, g["code"].(string), g["hasNo"] != false, false), facts: w.Facts()}
 	case "need_ref":
 		c.needRefLine(g["kind"].(string), vRows(g["rows"]))
+	case "owes_list":
+		var rows []OweRow
+		for _, x := range g["rows"].([]any) {
+			m := x.(map[string]any)
+			rows = append(rows, OweRow{Case: m["case"].(string), Who: m["who"].(string), What: m["what"].(string), AmountPaise: vInt(m["amountPaise"]), DueMs: vInt(m["dueMs"])})
+		}
+		w := c.pack.Writer()
+		c.tellText("owes_list", c.owesList(w, rows), w.Facts(), "", nil)
 	case "tmpl":
 		return c.dayTemplate(g["id"].(string), c.lang, g["shop"].(string), vDate(g["date"]), vInt(g["startMs"]))
 	case "say":

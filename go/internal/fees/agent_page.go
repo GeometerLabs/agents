@@ -2,8 +2,8 @@ package fees
 
 // The pages' presses: agent.ts onChannelFee (a parent's press on their private page: "show how to pay", "I have paid"), onOwnerAction (the owner's page: what waits, by its
 // digest, handled exactly as the same reply on WhatsApp; a parent's link sent anew or switched off; cash or a bank transfer marked by hand; Classes' attendance and doubts) and
-// onOwnerCash. The owner's talk box and a card's answer belong to the shop's assistant, which is not ported for Fees: both are refused in the record, as TypeScript does for a
-// centre without the assistant.
+// onOwnerCash. The owner's talk box and a card's answer belong to the shop's assistant (agent_assistant.go): on a centre without it both are refused in the record, as the
+// TypeScript does.
 
 import (
 	"github.com/GeometerLabs/agents/go/internal/accounting"
@@ -123,8 +123,19 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 	id, _ := ev["id"].(string)
 	switch action {
 	case "card_yes", "card_no":
-		a.pageAction(nil, "blocked", action, "a card's answer came for a shop without the assistant: nothing was done", map[string]any{"case": caseID})
-		return nil
+		// item 11e on the page: an answer to one of the assistant's cards, bound by the card's own digest, exactly as a tap on WhatsApp
+		as := a.assistantOf()
+		if as == nil {
+			a.pageAction(nil, "blocked", action, "a card's answer came for a shop without the assistant: nothing was done", map[string]any{"case": caseID})
+			return nil
+		}
+		a.pageAction(nil, "confirmed", action, "pressed by the owner on their page; the card's own binding decides, as for a tap on WhatsApp", map[string]any{"case": caseID})
+		answer := "yes"
+		if action == "card_no" {
+			answer = "no"
+		}
+		as.OnPageCard(caseID, digest, answer)
+		return a.stepErr
 	case "send_link", "revoke_link":
 		var shown *parentRow
 		for _, p := range parentsList(a.settings, a.store) {
@@ -260,9 +271,26 @@ func (a *Agent) onOwnerCash(ev map[string]any) error {
 	return nil
 }
 
-// onOwnerPageMessage is agent.ts onOwnerPageMessage for a centre without the shop's assistant (the assistant is not ported for Fees): nothing is read.
+// onOwnerPageMessage is agent.ts onOwnerPageMessage: the owner's talk box on their page (typed words, or a recording the runtime holds in memory) is the shop's assistant's; a
+// centre without one reads nothing. A recording is heard by no one on Go for Fees (Deferred.md): the owner is asked to type it, as with voice off.
 func (a *Agent) onOwnerPageMessage(ev map[string]any) error {
 	_, voice := ev["voice"]
-	a.log(nil, a.owner(), "owner_page_message", "blocked", map[string]any{"voice": voice}, logMore{refs: map[string]string{"channel": "owner_page"}, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read"})
-	return nil
+	as := a.assistantOf()
+	if as == nil {
+		a.log(nil, a.owner(), "owner_page_message", "blocked", map[string]any{"voice": voice}, logMore{refs: map[string]string{"channel": "owner_page"}, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read"})
+		return nil
+	}
+	id, _ := ev["id"].(string)
+	if !voice {
+		text, _ := ev["text"].(string)
+		if err := as.OnPageMessage("owner-page:"+id, text, a.now()); err != nil {
+			return err
+		}
+		return a.stepErr
+	}
+	ref, _ := ev["voice"].(string)
+	if err := as.OnPageVoice("owner-page:"+id, a.c.OwnerAudio(ref)); err != nil {
+		return err
+	}
+	return a.stepErr
 }

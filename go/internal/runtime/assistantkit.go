@@ -134,9 +134,10 @@ type AssistantHooks struct {
 	// Skill is the template's own skill.
 	Skill OwnerSkill
 	// Bookings: the shop's kinds are a Bookings shop's (the router's reading and the help lines for them). Orders: an Orders shop's (the open orders besides; its skill is an
-	// OpenSkill, assistantopen.go).
+	// OpenSkill, assistantopen.go). Fees: a Fees centre's (who owes besides; its skill is an OweSkill, assistantowes.go).
 	Bookings bool
 	Orders   bool
+	Fees     bool
 	// Messaging is the agent's own (its owner route included): the assistant's say goes through it.
 	Messaging messaging.Messaging
 	// Log writes a record line for a case of the template (caseID "" or one that is not the template's: no case), as the agent's own log does.
@@ -172,7 +173,7 @@ func (c *StepContext) Assistant(h AssistantHooks) *Assistant {
 	cv := c.rt.assistantFor(c.Snap, c.Rec, c.Now())
 	cv.hooks = &h
 	cv.toPage = false
-	cv.reading = assistant.OwnerReading{Bookings: h.Bookings, Orders: h.Orders}
+	cv.reading = assistant.OwnerReading{Bookings: h.Bookings, Orders: h.Orders, Fees: h.Fees}
 	cv.skills = []OwnerSkill{h.Skill}
 	if lim := cv.limitsSkill(); lim != nil {
 		cv.skills = append(cv.skills, lim)

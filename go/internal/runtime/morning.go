@@ -347,7 +347,8 @@ func (r *Runtime) runMorning(m morningRun) error {
 }
 
 // morningWords is morning.ts's middle: silent on a closed day (the owner closed it, or the weekday has no hours) and on a day with nothing to say; otherwise the personality's
-// template filled in with today's parts (a Bookings shop's day; the running-low count), the money recorded yesterday and what waits.
+// template filled in with today's parts (a Bookings shop's day, a Fees centre's fees not paid, an Orders shop's open orders; the running-low count), the money recorded yesterday
+// and what waits.
 func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Entry, now int64) (morningPlan, bool) {
 	set := r.o.Client.Settings
 	number, lang := r.owner()
@@ -375,6 +376,18 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 			something = true
 		} else {
 			parts = append(parts, w.Say("morning.no_bookings"))
+		}
+	}
+	if ow, ok := skill.(OweSkill); ok { // a Fees centre's fees not paid (morning.ts `s.owes`): "fees not paid: N (₹X)", or the "nothing" word
+		if rows := ow.Owes(); len(rows) > 0 {
+			var owed int64
+			for _, r := range rows {
+				owed += r.AmountPaise
+			}
+			parts = append(parts, w.Say("morning.owes", "n", strconv.Itoa(len(rows)), "inr", assistant.INR(owed)))
+			something = true
+		} else {
+			parts = append(parts, pack.Say("morning.nothing"))
 		}
 	}
 	if os, ok := skill.(OpenSkill); ok { // an Orders shop's open orders (morning.ts `s.open`): "open orders: N", or the "nothing" word

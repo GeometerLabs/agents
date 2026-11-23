@@ -10,7 +10,7 @@ package runtime
 //   - the card binding (answerCard, onPageCard): one verdict for an answer to a card (assistant.JudgeCard = cards.ts judgeCard): unknown, closed, expired, a no, "gone", "changed" (the old
 //     card is void and a new one is made), or do. A yes does the saved action only while the skill's action now has the card's digest;
 //   - propose and offerCard: a card for a prepared action, unless the owner said no to this same action in the last day; a message only while the customer's window is open;
-//   - the owner's words (onOwnerMessage, readIntent): a card's reply, a listing, then the router's reading and the answer: a day's list, what needs me, money, close or reopen a day,
+//   - the owner's words (onOwnerMessage, readIntent): a card's reply, a listing, then the router's reading and the answer: a day's list, who owes, what needs me, money, close or reopen a day,
 //     move a booking, undo, cancel / refund / message by card, a limit by card, the memory and the leave asks, help;
 //   - the clock's beat (onTick): cards past their time closed, what is no longer needed taken off, the limit changes that settled told, the morning question.
 //
@@ -656,6 +656,8 @@ func (c *conv) readIntent(text, key string) {
 		c.showWaiting()
 	case "open_orders":
 		c.openOrders()
+	case "owes":
+		c.owes()
 	case "money":
 		c.money(read.Date)
 	case "close_day", "reopen_day":
@@ -696,13 +698,17 @@ func (c *conv) readIntent(text, key string) {
 	}
 }
 
-// profile is the packed words' suffix for this shop's kinds ("" for a listings-only shop, "@bookings" for a Bookings shop, "@orders" for an Orders shop).
+// profile is the packed words' suffix for this shop's kinds ("" for a listings-only shop, "@bookings" for a Bookings shop, "@orders" for an Orders shop, "@fees" for a Fees
+// centre).
 func (c *conv) profile() string {
 	if c.reading.Bookings {
 		return "@bookings"
 	}
 	if c.reading.Orders {
 		return "@orders"
+	}
+	if c.reading.Fees {
+		return "@fees"
 	}
 	return ""
 }

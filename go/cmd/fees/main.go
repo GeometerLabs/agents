@@ -160,6 +160,11 @@ func run(folder string) error {
 		return err
 	}
 	kit.Licence = rt.LicenceNow
+	// item 11i: the page head's character reads the assistant's part of the last saved state (server/runtime.ts channel.offer)
+	kit.LastSnap = func() *runtime.Snap {
+		_, sn, _ := rt.KitState()
+		return sn
+	}
 	srv, err := runtime.Listen(rt, token, channelToken, client.Config.Host, client.Config.Port)
 	if err != nil {
 		return err
