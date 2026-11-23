@@ -96,6 +96,9 @@ export interface OwnerClassesView {
   pending: { case: string; digest: string; batch: Record<Language, string>; startMs: number; students: { n: number; name: string; missed: boolean }[] }[];
   doubts: { case: string; digest: string; student: string; batch: Record<Language, string>; text: string; atMs: number }[];
 }
+/** One account of the credit book on the owner's page (go/internal/fees credit.go creditRows): named by its name and ref, never its number; `askable` when the owner's tap may send the first question. */
+export interface OwnerCreditRow { ref: string; name: string; amountPaise: number; consent: "none" | "asked" | "yes"; stopped: boolean; askable: boolean; digest: string }
+
 export interface OwnerView {
   shop: { name: string; timezone: string; ownerLanguage: Language };
   /** Item 11h: the template, for the page's headings. Left out: Bookings. "stock": a Stock orders shop (an owner page only: no public page). "listings": a listings-only shop (an owner page, the storefront and the feed; no chat, nothing waiting). */
@@ -109,6 +112,8 @@ export interface OwnerView {
   cash?: OwnerCashView[];
   /** Classes (Fees add-on): the classes waiting for attendance and the open doubts. Left out by a centre without Classes. */
   classes?: OwnerClassesView;
+  /** The credit book (Fees with `creditBook`; owner-credit.ts): who owes what, the owner's alone. Left out for every other shop. */
+  credit?: OwnerCreditRow[];
   /**
    * Item 11e: the shop's assistant's view (its open cards, answered by id and digest; the mood; the talk), when the shop has the assistant. Left out otherwise.
    * `listen`: the shop has a voice service, so the page offers hold-to-record.
