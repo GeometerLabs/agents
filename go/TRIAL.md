@@ -836,7 +836,8 @@ Started from agents main ead21fd8. The method is Bookings': the black-box contra
    voice, the shop terms and the handover code, a parent's own chat.
 4. **The contract on Go** (`FEES_IMPL=go FEES_GO_BIN=go/bin/fees node --test --test-concurrency=1 templates/education/fees/contract/`, through the heat lock): **63 of 67**,
    0 skipped, on the first run that compiled (the cross-restart test both ways included). The 4 that fail are the parts not ported, by design: the shop's assistant (2: "who
-   owes fees" and the cancel card), the monthly report (1) and the shop's talk to a parent (1). Classes (5 tests and the reading material) pass on Go.
+   owes fees" and the cancel card), the monthly report (1) and the shop's talk to a parent (1). Classes (5 tests and the reading material) pass on Go. The shop's talk to a
+   parent was then ported (agent_customertalk.go, over runtime.CustomerTalk).
 
 **TypeScript findings (nothing changed).** (a) A parent who has never written is answered in the centre's FIRST language, not the student's (agent.ts `languageOf(phone)` with no fee:
 the customer's language is unset until they write in one, and a student's `language` is only the fee's), so Rohan's English-speaking parent asking to pay after his only fee is
