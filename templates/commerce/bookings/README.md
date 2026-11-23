@@ -37,8 +37,7 @@ const { payments, calendar, messaging } = createLiveAdapters(
 );
 ```
 
-**One command for the whole local stack.** From `templates/commerce/bookings`, `npm run stack` starts the stand-ins, the inbox, a stub Guard in front of the refunds, the approvals relay and a runtime in live mode against them, on a temp copy of the example client (`-- --client <folder>` for another, `-- --free-ports` if 8790, 8788, 8780 or 8795 are taken, `-- --refund-limit 100` to make a refund wait for the owner).
-It prints the URLs and three `curl`s: a customer writes, they pay the deposit link, read what the stand-ins hold. The secrets are generated into a temp folder, never into the repository, and Ctrl+C removes it with everything else. `test/full-chain.test.ts` runs the same chain.
+**The whole local stack** (stand-ins, inbox, stub Guard, relay and a runtime in one process, `npm run stack`) went with the TypeScript runtime on 24 Nov 2026; the shop runtime is the Go program (below), and each piece around it runs on its own: `npm run standins`, `npm run inbox`, `node templates/commerce/bookings/approvals/main.ts`.
 
 **Against stand-ins** (nothing real, no keys, no network beyond this computer). The stand-ins speak the three wire formats over HTTP in front of the same in-memory fakes the tests use, and deliver signed webhooks like the providers do:
 
@@ -130,12 +129,13 @@ node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bo
 
 ## Run the agent as a server
 
-`server/` runs one client's agent live: it saves every incoming event as a task before it answers, handles one task at a time, saves the agent's state after each step, and picks up where it stopped after a restart. Two pieces it does not contain: the inbox, which checks each provider's webhook signature and forwards the event to it, and Guard, which holds the service keys. The runtime holds no secret of either kind.
+The shop runtime is the Go program `go/cmd/bookings` (since 0.2.0, 24 Nov 2026: the TypeScript server runtime was deleted, decision 61; `go/TRIAL.md`). It runs one client's agent live: it saves every incoming event as a task before it answers, handles one task at a time, saves the agent's state after each step, and picks up where it stopped after a restart. On a server the deployer runs it from the programs' image; by hand:
 
 ```sh
 # from the root of this repository
+(cd go && go build -o bin/bookings ./cmd/bookings)
 openssl rand -hex 32 > /tmp/inbox-token                                 # the secret the inbox sends as a bearer token
-INTERNAL_TOKEN_FILE=/tmp/inbox-token npm run serve --prefix templates/commerce/bookings -- --client clients/glow-salon.example
+INTERNAL_TOKEN_FILE=/tmp/inbox-token go/bin/bookings --client templates/commerce/bookings/clients/glow-salon.example
 ```
 
 A client is a folder (`clients/glow-salon.example/` is a working example that runs on the stand-in services):
@@ -144,7 +144,7 @@ A client is a folder (`clients/glow-salon.example/` is a working example that ru
 | --- | --- |
 | `settings.json` | The business: the same format as `settings/glow-salon.example.json` |
 | `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard; a live run also needs `RECORD_KEY_FILE`, a file with 64 hex digits, `openssl rand -hex 32`, which the deploy bundle makes for you), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30), for live `services`: the base URL of the Guard in front of payments, the calendar and messaging, and optionally `parser`: the model that reads messages, see "Choose the model" (left out, the rule parser does), `decision` (a System One decision model, the step before it), `allowance` (this month's most AI messages), `ai` (`"buttons"` turns the AI off), `pauseMinutes`, and `report` (switches on the monthly report to the owner on WhatsApp: `preparedBy`, `pageBaseUrl`, and optionally `innovator`, `signingKeyFile`, `goLiveFile`, `source`, `pagesDir`; left out, none is sent) |
-| `pathway.lock` | The template version this client is pinned to, for example `bookings@0.1.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
+| `pathway.lock` | The template version this client is pinned to, for example `bookings@0.2.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
 
 What it answers:
 
@@ -160,14 +160,14 @@ curl -s localhost:8780/internal/events -H "Authorization: Bearer $(cat /tmp/inbo
   -d '{"events":[{"kind":"message","message":{"id":"wamid.1","from":"+919811111111","text":"I want a haircut tomorrow at 6pm","timestamp":'$(date +%s)'000}}]}'
 ```
 
-In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the stand-in services forget everything when the process stops, so use a new data folder for each local run. If the process dies in the middle of a step, the step runs again from the last saved state; read "Running it as a server" in [Explanation.md](Explanation.md) for what that means for a WhatsApp message. Live mode uses the live adapters (`src/adapters/live/`); `npm run stack` runs a client in live mode against the stand-ins.
+In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the stand-in services forget everything when the process stops, so use a new data folder for each local run. If the process dies in the middle of a step, the step runs again from the last saved state; read "Running it as a server" in [Explanation.md](Explanation.md) for what that means for a WhatsApp message. Live mode calls each service through its Guard (the Go program's adapters, go/internal/bookings and go/internal/payments).
 
 ## Owner approvals on WhatsApp
 
 A refund above `cancellation.refundLimitInr` is held by Guard; the agent does not ask the owner. `approvals/` is its own process (`node templates/commerce/bookings/approvals/main.ts`): it holds the owner's approver secret, reads Guard's held refunds, asks the owner once with a one-use code (`approve K7M2QX`), and carries the answer to Guard (signed) and then to the runtime, which sends the identical refund again.
 Guard's limits spec comes from the same settings: `node templates/commerce/bookings/scripts/guard-spec.ts --client clients/glow-salon.example --tenant glow-salon --reviewed-by <you> > spec.json`, then `geo-guard compile`.
 Guard also refuses any refund above one deposit (rule `refund-at-most-deposit`), whatever the customer wrote and whatever the owner's limit is: a customer who paid ₹200 and asks for ₹500 back gets ₹200. If the owner lowers the deposit, Guard refuses the refunds of older, larger deposits that are still open: lower it once those bookings are over, or refund them by hand in Razorpay ([Deferred.md](Deferred.md), "A refund is never more than one deposit").
-Try it end to end against a stub Guard: `npm run stack -- --refund-limit 100`. Why and how: [Explanation.md](Explanation.md), "Approvals on WhatsApp".
+The relay's tests run it against a stub Guard and the real geo-guard (`test/approvals-*.test.ts`). Why and how: [Explanation.md](Explanation.md), "Approvals on WhatsApp".
 
 ## The booking page, the booking API, MCP and the owner's page (item 11d)
 
@@ -374,9 +374,8 @@ standins/                          the stand-ins together (server.ts puts the ca
 src/guard-limits.ts                the settings turned into the numbers of the Razorpay limits spec (the one refund threshold); modules/payments/guard-limits.ts builds the spec
 src/language/                      Bookings' templates (hi, en, ml, kn), its facts for the outgoing check, its buttons and lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
-server/                            the runtime server, as Bookings gives it to the shared one in modules/runtime/ (the files keep their names so every import is the same): main.ts (command line), start.ts (read the client folder, wire, listen), config.ts,
-                                   runtime.ts (a step is saved whole), tasks.ts (one at a time, retries), store.ts (SQLite), snapshot.ts,
-                                   events.ts, server.ts (HTTP), ticker.ts, services.ts (fakes or live). The code is modules/runtime/ and modules/inbox/; what stays here is Bookings' store, agent, how bookings are counted and its report setup (modules/Explanation.md, "The second cut")
+server/                            what the deployer and the panel read of a client folder: config.ts (runtime.json checked), store.ts (SCHEMA_VERSION, which `geometer update` reads),
+                                   snapshot.ts (the store's fields). The runtime itself is the Go program go/cmd/bookings (go/internal/bookings) since 0.2.0
 clients/glow-salon.example/        an example client folder: settings.json, runtime.json, pathway.lock
 crash-test/situations.ts           the crash-test situations, judged from the fakes' own records
 crash-test/not-tested.ts           what the hand check does not cover (printed by it, carried by the go-live certificate)
@@ -386,7 +385,7 @@ report/                            the monthly report and the certificates: data
                                    whatsapp.ts (the report as a message and its two templates), monthly-job.ts (sends it once a month)
 scripts/report-key.ts, client-report.ts, go-live-certificate.ts, verify-report.ts, report-example.ts
 test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints;
-                                   the runtime server's tests (runtime, store, server, ticker, config, start) use test/runtime-kit.ts
+                                   the approvals relay's tests drive the agent in process (modules/test/agent-runtime.ts); the runtime's own behaviour is the contract (contract/, on Go)
 scripts/hand-check.ts              the hand check
 demo/                              the Operator demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
                                    view.ts (the owner's summary and the record), personalise.ts (the shop form), strings.ts, page.ts/.css/.js
@@ -416,7 +415,7 @@ A template core checked against stand-in services and a rule-based parser. A res
 
 <!-- modules it uses: made by modules/module-map.ts from the imports; run `node modules/module-map.ts --write` -->
 
-The shared modules Bookings uses, from its code's own imports: [`accounting/`](../../../modules/README.md#what-is-here), [`approvals/`](../../../modules/README.md#what-is-here), [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`demo/`](../../../modules/README.md#what-is-here), [`inbox/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`ondc/`](../../../modules/README.md#what-is-here), [`papers/`](../../../modules/README.md#what-is-here), [`payments/`](../../../modules/README.md#what-is-here), [`push/`](../../../modules/README.md#what-is-here), [`qr/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`terms/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here), [`unfinished/`](../../../modules/README.md#what-is-here), [`voice/`](../../../modules/README.md#what-is-here).
+The shared modules Bookings uses, from its code's own imports: [`accounting/`](../../../modules/README.md#what-is-here), [`approvals/`](../../../modules/README.md#what-is-here), [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`demo/`](../../../modules/README.md#what-is-here), [`inbox/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`ondc/`](../../../modules/README.md#what-is-here), [`papers/`](../../../modules/README.md#what-is-here), [`payments/`](../../../modules/README.md#what-is-here), [`qr/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`terms/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here), [`unfinished/`](../../../modules/README.md#what-is-here), [`voice/`](../../../modules/README.md#what-is-here).
 
 What each one does and what a template hands it: the table in [modules/README.md](../../../modules/README.md#what-is-here). A new template uses the same modules the same way.
 

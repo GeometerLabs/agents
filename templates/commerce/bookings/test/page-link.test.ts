@@ -16,7 +16,7 @@ const settings = parseSettings(JSON.parse(readFileSync(new URL("../settings/glow
 const BASE = "https://pages.example/glow-salon";
 const hashOf = (h: string) => createHash("sha256").update(`booking-handle:${h}`).digest("hex");
 
-/** A link maker as the runtime's (server/runtime.ts): 24 random bytes, the whole address once, the hash kept. Every link it ever made, for the test to try. */
+/** A link maker as the runtime's (go/internal/bookings, the Go runtime): 24 random bytes, the whole address once, the hash kept. Every link it ever made, for the test to try. */
 function maker() {
   const made: { handle: string; url: string; hash: string }[] = [];
   return { made, pageLink: () => { const handle = randomBytes(24).toString("base64url"); const m = { handle, url: `${BASE}/b/${handle}`, hash: hashOf(handle) }; made.push(m); return { url: m.url, hash: m.hash }; } };

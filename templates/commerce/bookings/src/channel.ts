@@ -1,5 +1,5 @@
 // Item 11d: what Bookings' booking page, its API, the MCP endpoint and the owner's private page may READ, built from the shop's saved state and settings. Used by the
-// runtime (server/runtime.ts, the channel kit) for the reads, and by the agent (src/agent.ts) to check that an owner's press matches what waits now.
+// runtime (go/internal/bookings, the Go runtime, the channel kit) for the reads, and by the agent (src/agent.ts) to check that an owner's press matches what waits now.
 //
 // Everything here is an allowlist: a field is in a view because the page shows it. Never the owner's one-use code, never another customer, never a record line. The
 // payment link and the shop's UPI ID are shown because the customer pays with them (they are on the WhatsApp message too).

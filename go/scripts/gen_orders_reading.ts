@@ -58,6 +58,9 @@ function harvest(): string[] {
     if (t.split(/\s+/u).length > 8) return; // prose of a test's message, not what a customer types
     found.add(t);
   };
+  // The strings of the Orders and Bookings unit tests that were deleted with the TypeScript runtimes on 24 Nov 2026 (decision 61), kept as they were harvested then, so the
+  // vectors keep every input they had (written once from 6a51bf7a's test folders; a phrase still in a kept test is found there as well, which changes nothing).
+  for (const t of JSON.parse(readFileSync(join(here, "vectors", "orders-reading-kept-phrases.json"), "utf8")) as string[]) add(t);
   for (const f of files) {
     const src = readFileSync(f, "utf8");
     for (const m of src.matchAll(/"((?:[^"\\\n]|\\.)*)"/gu)) { try { add(JSON.parse(`"${m[1]}"`) as string); } catch { /* not a string literal */ } }

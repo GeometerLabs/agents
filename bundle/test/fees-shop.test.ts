@@ -21,9 +21,9 @@ import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { buildHeartbeat } from "../services/heartbeat.ts";
 import { validateRuntimeConfig } from "../../templates/education/fees/server/config.ts";
-import { createKit } from "../../templates/education/fees/test/runtime-kit.ts";
-import { PARENT } from "../../templates/education/fees/test/runtime-kit.ts";
 import { zonedToMs } from "../../modules/core/time.ts";
+import { openStore } from "../../modules/runtime/store.ts";
+import { SHARMA, SKIP as CENTRE_SKIP, makeCentre } from "../../templates/education/fees/contract/harness.ts";
 import { PHONE_NUMBER_ID, serverConfig, writePersonKey } from "./helpers.ts";
 import { secretsFor, world } from "./world.ts";
 import type { World } from "./world.ts";
@@ -51,7 +51,7 @@ test("a shop's settings are judged by the template its pathway.lock names; a loc
     addFees(w);
     const shop = readShop(w.root, "bright");
     assert.deepEqual(shop.problems, []);
-    assert.deepEqual(shop.lock, { pathway: "fees", version: "0.1.0" });
+    assert.deepEqual(shop.lock, { pathway: "fees", version: "0.2.0" });
     assert.equal(shop.settings.batches.length, 3, "Fees' own settings, with batches and students");
     assert.equal(shop.settings.owner.language, "en");
 
@@ -155,7 +155,7 @@ test("the compose file: the centre's runtime waits for its two Guards, runs the 
 
 // ---- deploy, on a fake machine -------------------------------------------------------------------------------------------------
 
-test("check and deploy a Fees centre: no Google key is asked for, even on a server that holds one; two Guards are proven; the status says fees@0.1.0; the runtime config on disk is Fees'", async () => {
+test("check and deploy a Fees centre: no Google key is asked for, even on a server that holds one; two Guards are proven; the status says fees@0.2.0; the runtime config on disk is Fees'", async () => {
   const w = world({}); try {
     addFees(w);
     w.handIn("bright", feesSecrets("bright"));
@@ -167,7 +167,7 @@ test("check and deploy a Fees centre: no Google key is asked for, even on a serv
     assert.equal(r.proven.line, "12 of 12 limits proven to bite (3 cannot be tested without writing, and are not counted)"); // item 11h: with the push Guard
     assert.deepEqual(Object.keys(r.guards), ["razorpay", "whatsapp", "push"]);
     const status = readStatus(w.root, "bright")!;
-    assert.deepEqual([status.deploy.state, status.versions?.pathway], ["applied", "fees@0.1.0"]);
+    assert.deepEqual([status.deploy.state, status.versions?.pathway], ["applied", "fees@0.2.0"]);
     assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1, push: 1 });
     const onDisk = JSON.parse(readFileSync(join(w.paths.generated, "shops", "bright", "client", "runtime.json"), "utf8"));
     assert.ok(validateRuntimeConfig(onDisk, "/").ok);
@@ -179,7 +179,7 @@ test("check and deploy a Fees centre: no Google key is asked for, even on a serv
     const ops = JSON.parse(readFileSync(join(w.paths.generated, "ops", "ops.json"), "utf8"));
     assert.equal(ops.shops.bright.pathway, "fees");
     const state = loadState(w.root);
-    assert.equal(state.shops.bright.applied?.pathway, "fees@0.1.0");
+    assert.equal(state.shops.bright.applied?.pathway, "fees@0.2.0");
   } finally { w.done(); }
 });
 
@@ -237,7 +237,7 @@ test("shop add --template fees starts a centre from the template: the example se
     assert.equal(r.result, 0, r.err);
     assert.match(r.out, /somebody else's made-up centre/);
     const dir = w.paths.shop("bright");
-    assert.equal(readFileSync(join(dir, "pathway.lock"), "utf8"), "fees@0.1.0\n");
+    assert.equal(readFileSync(join(dir, "pathway.lock"), "utf8"), "fees@0.2.0\n");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 } });
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "settings.json"), "utf8")), { ...JSON.parse(readFileSync(new URL("../../templates/education/fees/settings/bright-tuition-upi.example.json", import.meta.url), "utf8")), payment: { module: "razorpay" } }, "the example, with the gateway the person chose");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local Operator" });
@@ -261,7 +261,7 @@ test("shop add --template fees starts a centre from the template: the example se
     const salon = await add("glow", "--template", "bookings", "--payment", "razorpay", "--whatsapp-number-id", PHONE_NUMBER_ID, "--calendar-id", "glow@group.calendar.google.com");
     assert.equal(salon.result, 0, salon.err);
     assert.equal(JSON.parse(readFileSync(join(w.paths.shop("glow"), "runtime.json"), "utf8")).services.calendar.calendarId, "glow@group.calendar.google.com");
-    assert.equal(readFileSync(join(w.paths.shop("glow"), "pathway.lock"), "utf8"), "bookings@0.1.0\n");
+    assert.equal(readFileSync(join(w.paths.shop("glow"), "pathway.lock"), "utf8"), "bookings@0.2.0\n");
 
     // the refusals, each in a sentence
     assert.match((await add("a1", "--template", "fees", "--payment", "razorpay", "--calendar-id", "x@y")).err, /no calendar/);
@@ -276,35 +276,40 @@ test("shop add --template fees starts a centre from the template: the example se
 
 // ---- the export for the monthly report ---------------------------------------------------------------------------------------------
 
-test("the export for a Fees centre is dues.json: the parent's number and the child's name are hashed, in the fees and in the record's notes, and Bookings still gets bookings.json", async () => {
-  const kit = createKit();
+test("the export for a Fees centre is dues.json: the parent's number and the child's name are hashed, in the fees and in the record's notes, and the ledger is the centre's own", { skip: CENTRE_SKIP }, async () => {
+  // The centre is the Go program (go/bin/fees), as every Fees centre is since 0.2.0, started by its contract's harness on the test clock; the export reads the very file it
+  // wrote. (Until 24 Nov 2026 this ran the TypeScript runtime in process.)
+  const c = await makeCentre({ example: "razorpay" });
   const out = mkdtempSync(join(tmpdir(), "geo-export-"));
   try {
-    const { runtime, db } = kit.open();
-    await runtime.tick();
-    kit.clock.set(zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 10, minute: 5 }, "Asia/Kolkata"));
-    await runtime.tick();
+    await c.start();
+    await c.started();
+    c.advance(zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 10, minute: 5 }, "Asia/Kolkata") - c.now());
+    await c.waitFor(() => c.record().filter((e) => e.action === "open_fee" && e.outcome === "confirmed").length === 5, "November's five fees opened");
+    await c.stop();
     const names = ["Aarav Sharma", "Anaya Sharma", "Meera Nair", "Kiran Gowda", "Rohan Mehta"];
-    const wrote = db.loadState().record.map((e) => e.notes).join("\n");
-    assert.ok(names.some((n) => wrote.includes(n)), "the record's own notes do name a student (that is what the export has to hide)");
+    const own = openStore(c.dataDir);
+    const ownRecord = own.loadState().record;
+    own.close();
+    assert.ok(names.some((n) => ownRecord.map((e) => e.notes).join("\n").includes(n)), "the record's own notes do name a student (that is what the export has to hide)");
 
-    const result = exportShop({ name: "bright", db: db.file, out, personKeyFile: writePersonKey(mkdtempSync(join(tmpdir(), "geo-key-"))) });
+    const result = exportShop({ name: "bright", db: join(c.dataDir, "agent.db"), out, personKeyFile: writePersonKey(mkdtempSync(join(tmpdir(), "geo-key-"))) });
     assert.equal(result.ok, true);
     assert.deepEqual([result.dues, result.bookings], [5, undefined]);
     assert.deepEqual(readdirSync(out).sort(), ["dues.json", "ledger.json", "person-form.json", "record.json"]);
     const exported = readFileSync(join(out, "dues.json"), "utf8") + readFileSync(join(out, "record.json"), "utf8") + readFileSync(join(out, "ledger.json"), "utf8");
     // B28: the ledger is chained from the centre's OWN record (names in its notes), and its head is the head of the exported record (names hashed): one fingerprint for both
-    const own = headOf(db.loadState().record, "bright")!;
-    assert.equal(headOf(JSON.parse(readFileSync(join(out, "record.json"), "utf8")), "bright")!.head, own.head);
-    assert.equal((JSON.parse(readFileSync(join(out, "ledger.json"), "utf8")) as { hash: string }[]).at(-1)!.hash, own.head);
-    assert.deepEqual(result.ledger, { seq: own.seq, head: own.head });
+    const head = headOf(ownRecord, "bright")!;
+    assert.equal(headOf(JSON.parse(readFileSync(join(out, "record.json"), "utf8")), "bright")!.head, head.head);
+    assert.equal((JSON.parse(readFileSync(join(out, "ledger.json"), "utf8")) as { hash: string }[]).at(-1)!.hash, head.head);
+    assert.deepEqual(result.ledger, { seq: head.seq, head: head.head });
     for (const name of names) assert.ok(!exported.includes(name), `${name} left the volume`);
-    assert.ok(!exported.includes(PARENT) && !exported.includes("+9198"), "no parent's number left the volume");
+    assert.ok(!exported.includes(SHARMA) && !exported.includes("+9198"), "no parent's number left the volume");
     const dues = JSON.parse(readFileSync(join(out, "dues.json"), "utf8")) as { studentName: string; customer: string; feeInr: number }[];
     assert.ok(dues.every((d) => /^s-[0-9a-f]{12}$/.test(d.studentName) && /^p-[0-9a-f]{12}$/.test(d.customer) && d.feeInr > 0), "the amounts stay: the report counts them");
     // the same student is the same hash, so two fees of one child can still be told apart from two children
     assert.equal(new Set(dues.map((d) => d.studentName)).size, 5);
-  } finally { kit.cleanup(); rmSync(out, { recursive: true, force: true }); }
+  } finally { await c.cleanup(); rmSync(out, { recursive: true, force: true }); }
 });
 
 // ---- the heartbeat -------------------------------------------------------------------------------------------------------------------
@@ -324,17 +329,17 @@ test("geometer update moves a Fees centre: the real Fees hand check runs at both
     addFees(w);
     w.handIn("bright", feesSecrets("bright"));
     await deploy(w.ctx);
-    // version 0.2.0 on the server: a copy of the template, as a checkout of a tag would give, with the modules it imports beside it
-    const kept = join(w.root, "templates", "education", "fees@0.2.0");
+    // version 0.3.0 on the server: a copy of the template, as a checkout of a tag would give, with the modules it imports beside it
+    const kept = join(w.root, "templates", "education", "fees@0.3.0");
     cpSync(join(w.ctx.appDir, "templates", "education", "fees"), kept, { recursive: true });
     if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
     const pkg = join(kept, "package.json");
-    writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', '"version": "0.2.0"'));
+    writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.2.0"', '"version": "0.3.0"'));
     const next = w.ctx.runner.run.bind(w.ctx.runner);
     w.ctx.runner.run = (command, args, options) => (command === process.execPath ? realRunner.run(command, args, options) : next(command, args, options));
-    const r = await quiet(() => main(["update", "--to", "0.2.0", "--server", w.root], w.ctx));
+    const r = await quiet(() => main(["update", "--to", "0.3.0", "--server", w.root], w.ctx));
     assert.equal(r.result, 0, r.out + r.err);
-    assert.equal(readFileSync(join(w.paths.shop("bright"), "pathway.lock"), "utf8").trim(), "fees@0.2.0");
+    assert.equal(readFileSync(join(w.paths.shop("bright"), "pathway.lock"), "utf8").trim(), "fees@0.3.0");
     const step = loadState(w.root).update!.steps.bright;
     assert.ok(step.after && step.after.held === step.after.of && step.after.of >= 20, JSON.stringify(step));
     assert.ok(step.layout && step.layout.from > 0 && step.layout.from === step.layout.to, "the Fees runtime's saved-data layout was asked of both versions");

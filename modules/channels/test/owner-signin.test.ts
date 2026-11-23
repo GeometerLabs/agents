@@ -14,7 +14,6 @@ import { checkChannelEvent } from "../events.ts";
 import { ACCESS_TOKEN, LINK_LIMITS, MAX_SESSIONS, OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER, SESSION_MS, SIGNIN_LINK_MS, openOwnerAccess, ownerSessionChecker, readEndBefore } from "../owner-access.ts";
 import { OPEN_MY_APP, createOwnerSignin, phraseOf } from "../owner-signin.ts";
 import type { PagesFile } from "../pages-file.ts";
-import { startServer } from "../../runtime/http.ts";
 import type { IncomingEvent } from "../../runtime/events.ts";
 
 const T0 = Date.parse("2026-11-12T05:00:00Z");
@@ -153,37 +152,6 @@ test("sign-ins are in the record; the panel's sign-out of every device is said o
     r.signin.tick(r);
     assert.equal(r.record.entries().filter((e) => e.refs.what === "all_ended").length, 1);
   } finally { r.done(); }
-});
-
-test("the runtime's routes: a link is used up once over HTTP, the session then opens the owner's reads, and the relay's question needs the internal token", async () => {
-  const r = runner();
-  const submitted: IncomingEvent[] = [];
-  const runtime = {
-    submit: (events: IncomingEvent[]) => { submitted.push(...events); return { saved: events.length, duplicates: 0 }; }, kick: () => undefined,
-    status: () => ({}), refundContext: () => null, ready: () => ({ ok: true as const }),
-    channel: { offer: async () => ({}), view: () => null, owner: () => ({ shop: { name: "Veena Salon" }, items: [] }) },
-  };
-  const server = await startServer(runtime as never, { token: "i".repeat(40), channelToken: "c".repeat(40), port: 0, ownerSignin: r.signin.http });
-  const call = (path: string, init: { method?: string; headers?: Record<string, string> } = {}, token = "c".repeat(40)) => fetch(`${server.url}${path}`, { method: init.method ?? "GET", headers: { authorization: `Bearer ${token}`, ...init.headers } });
-  try {
-    r.messaging.receive(OWNER, "open my app");
-    await r.signin.run({ kind: "owner_signin", id: "p-1" }, r);
-    const token = /\/owner\/in\/([A-Za-z0-9_-]{43})/u.exec(r.messaging.outbox()[0].text)![1];
-    assert.deepEqual(await (await call("/internal/channel/owner-signin", { headers: { [OWNER_SIGNIN_HEADER]: token } })).json(), { state: "valid" }, "looking does not use it up");
-    const got = await call("/internal/channel/owner-signin", { method: "POST", headers: { [OWNER_SIGNIN_HEADER]: token } });
-    assert.equal(got.status, 200);
-    const { session } = await got.json() as { session: string };
-    assert.equal((await call("/internal/channel/owner-signin", { method: "POST", headers: { [OWNER_SIGNIN_HEADER]: token } })).status, 403, "the second press gets nothing");
-    assert.deepEqual(submitted.map((e) => [e.kind, (e as { what?: string }).what]), [["owner_access", "signed_in"]], "the sign-in goes to the record");
-    assert.equal((await call("/internal/channel/owner", { headers: { [OWNER_SESSION_HEADER]: session } })).status, 200, "the session opens what the panel's link opens");
-    assert.equal((await call("/internal/channel/owner", { headers: { [OWNER_SESSION_HEADER]: "x".repeat(43) } })).status, 403);
-    // the relay asks with the INBOX's internal token, never the channel token
-    const checker = ownerSessionChecker({ url: server.url, token: "i".repeat(40) });
-    assert.equal(await checker(session), true);
-    assert.equal(await ownerSessionChecker({ url: server.url, token: "c".repeat(40) })(session), false);
-    assert.equal((await call("/internal/channel/owner-signout", { method: "POST", headers: { [OWNER_SESSION_HEADER]: session } })).status, 200);
-    assert.equal(await checker(session), false, "signed out everywhere at once");
-  } finally { await server.close(); r.done(); }
 });
 
 test("the panel's file is read as a moment, and anything unreadable never widens access", () => {

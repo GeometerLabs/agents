@@ -4,7 +4,8 @@
 // Same shape as Fees' test (templates/education/fees/test/approvals-guard-binary.test.ts); the numbers are read from the settings and the generator, not typed here.
 //
 // It needs the built binary (monorepo target/debug/geo-guard, macOS). Without it every test here is skipped, and says so. Set GEO_GUARD_BIN to use another. It needs no Docker.
-// Nothing is written inside the monorepo: the binary is run on a temp folder.
+// Nothing is written inside the monorepo: the binary is run on a temp folder. The runtime here is the Orders agent driven in process (modules/test/agent-runtime.ts): the
+// TypeScript server runtime was deleted on 24 Nov 2026, and what this holds is Guard, the relay and the agent's identical call again.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -18,9 +19,9 @@ import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts"
 import { createRazorpayPayments } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { systemClock } from "../../../../modules/core/clock.ts";
-import { createGuardClient, createRuntimeClient } from "../../../../modules/approvals/clients.ts";
+import { createGuardClient } from "../../../../modules/approvals/clients.ts";
+import type { RefundContext } from "../../../../modules/approvals/clients.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
-import { startServer } from "../../../../modules/runtime/http.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { highestOrderInr, parseSettings } from "../src/settings.ts";
@@ -28,7 +29,45 @@ import { AMIT, HARNESS_GUARD, annapurnaRazorpay } from "../src/harness.ts";
 import { highestPaise, gatewayLimitsSpec, refundThresholdPaise } from "../src/guard-limits.ts";
 import { createRelay } from "../approvals/relay.ts";
 import { startStandins } from "../standins/server.ts";
-import { createKit } from "./runtime-kit.ts";
+import { createAgent } from "../src/agent.ts";
+import { createRuleParser } from "../src/adapters/rule-parser.ts";
+import { createStore } from "../src/order.ts";
+import type { Store } from "../src/order.ts";
+import type { Settings } from "../src/settings.ts";
+import { createRecord } from "../../../../modules/record/record.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
+import type { Payments } from "../../../../modules/payments/payments.ts";
+import { agentRuntime, countRefunds, inProcessRuntimeClient } from "../../../../modules/test/agent-runtime.ts";
+
+/** What the Orders runtime's /internal/refund-context answered for a held refund (the Go runtime's answer is held by contract/money.contract.test.ts): the order behind it. */
+function ordersRefundContext(settings: Settings, store: Store, receipt: string): RefundContext | null {
+  const match = /^(o-\d+):/u.exec(receipt);
+  const order = match ? store.orders.get(match[1]) : undefined;
+  const hold = order?.pending.find((p) => p.kind === "guard_hold" && p.receipt === receipt);
+  if (!order || !hold || hold.kind !== "guard_hold") return null;
+  return {
+    booking: order.id, customerPhone: order.contact?.phone ?? order.customer, businessName: settings.name, timeZone: settings.timezone, ownerLanguage: settings.owner.language,
+    slotMs: order.slotStartMs ?? 0, paymentId: hold.paymentId, amountPaise: hold.amountInr * 100, approval: hold.approval, expiresAtMs: hold.expiresAtMs, ...(hold.requestedBy ? { requestedBy: hold.requestedBy } : {}),
+  };
+}
+
+/**
+ * The Orders agent on its own fake days (Mon 9 Nov 2026, 10:00) with `payments` (Razorpay through the real Guard), behind the runtime's queue (modules/test/agent-runtime.ts:
+ * the TypeScript server runtime went on 24 Nov 2026, the shops run the Go program), with the runtime's /status counts and the relay's two calls answered in process.
+ */
+function ordersAgent(settings: Settings, payments: Payments) {
+  const clock = fakeClock(zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, settings.timezone));
+  const messaging = createFakeMessaging(clock);
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
+  const store = createStore();
+  const agent = createAgent({ settings, clock, payments, messaging, parser: createRuleParser(), record: createRecord(clock), store });
+  const queue = agentRuntime(agent);
+  const byState = (): Record<string, number> => { const n: Record<string, number> = {}; for (const o of store.orders.values()) n[o.state] = (n[o.state] ?? 0) + 1; return n; };
+  const runtime = { ...queue, status: () => ({ orders: byState(), refunds: countRefunds(store.orders.values()) }) };
+  const say = async (_r: unknown, text: string, o: { from?: string } = {}) => { runtime.submit([{ kind: "message", message: messaging.receive(o.from ?? AMIT, text) }]); runtime.kick(); await runtime.idle(); };
+  return { clock, messaging, runtime, say, client: inProcessRuntimeClient(runtime, (receipt) => ordersRefundContext(settings, store, receipt)) };
+}
 
 const BINARY = process.env.GEO_GUARD_BIN ?? "../monorepo/target/debug/geo-guard";
 const skip = existsSync(BINARY) ? false : `needs the built geo-guard binary, which is not at ${BINARY} (build it in the monorepo, or set GEO_GUARD_BIN); these tests run the real Guard`;
@@ -181,18 +220,16 @@ test("the longest approval time Guard accepts is 7 days; one second more is refu
 });
 
 /** A runtime on the real Guard, a relay beside it, and a customer whose paid order is cancelled: everything up to the refund request. The shop's limit is ₹100, below the 50% advance. */
-async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<ReturnType<typeof startStandins>>; kit: ReturnType<typeof createKit>; runtime: any; relay: ReturnType<typeof createRelay>; whatsapp: ReturnType<typeof createFakeMessaging>; owner: string; lines: string[]; stage: () => Promise<number> }) => Promise<void>): Promise<void> {
+async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<ReturnType<typeof startStandins>>; kit: ReturnType<typeof ordersAgent>; runtime: any; relay: ReturnType<typeof createRelay>; whatsapp: ReturnType<typeof createFakeMessaging>; owner: string; lines: string[]; stage: () => Promise<number> }) => Promise<void>): Promise<void> {
   const settings = settingsWithLimit(100);
   const { standins, guard } = await standinsAndGuard(settings);
-  const kit = createKit(settings);
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-orders-"));
-  const whatsapp = createFakeMessaging(kit.clock);
+  const whatsapp = createFakeMessaging(systemClock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) whatsapp.approve(name, language);
   const lines: string[] = [];
   const payments = createRazorpayPayments({ baseUrl: guard.agentUrl, agentToken: guard.agentToken });
-  const { runtime } = kit.open({ settings, services: { payments, messaging: kit.messaging }, log: (l) => lines.push(l) });
-  const INTERNAL = "internal-token-0123456789abcdef";
-  const runtimeServer = await startServer(runtime, { token: INTERNAL, port: 0 });
+  const kit = ordersAgent(settings, payments);
+  const { runtime } = kit;
   const store = openRelayStore(dir);
   try {
     // the relay's reading credential: an approver credential Guard issues from its admin port, which expires; the relay never holds the admin token
@@ -202,7 +239,7 @@ async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<R
     const relay = createRelay({
       clock: systemClock, store, ownerWhatsapp: settings.owner.whatsapp, messaging: whatsapp, expectedAgent: `runtime-${HARNESS_GUARD.tenant}`, log: (l) => lines.push(`relay: ${l}`),
       guard: createGuardClient({ adminUrl: guard.adminUrl, readToken: issued.token, approverId: `owner-${HARNESS_GUARD.tenant}`, approverSecret: guard.ownerSecret, now: () => Date.now() }),
-      runtime: createRuntimeClient({ url: runtimeServer.url, token: INTERNAL }),
+      runtime: kit.client,
     });
     // the order goes through the real Guard (the advance link must be inside the range the generator wrote), and the customer pays it; the answer is the advance in paise
     const stage = async () => {
@@ -217,7 +254,7 @@ async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<R
     };
     await run({ guard, standins, kit, runtime, relay, whatsapp, owner: settings.owner.whatsapp, lines, stage });
   } finally {
-    store.close(); await runtimeServer.close(); await runtime.close(); kit.cleanup(); rmSync(dir, { recursive: true, force: true });
+    store.close(); rmSync(dir, { recursive: true, force: true });
     await guard.stop(); await standins.close();
   }
 }

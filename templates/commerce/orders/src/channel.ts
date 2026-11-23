@@ -1,5 +1,5 @@
 // Item 11h: what Orders' part of the shop page, its API, the MCP endpoint and the owner's page may READ, built from the shop's saved state and settings. Used by the
-// runtime (server/runtime.ts, the channel kit) for the reads, by the agent (src/agent.ts) to check that an owner's press matches what waits now, and by the assistant's
+// runtime (go/internal/orders, the Go runtime, the channel kit) for the reads, by the agent (src/agent.ts) to check that an owner's press matches what waits now, and by the assistant's
 // skill (src/assistant.ts), so "what needs me", the owner's page and the mood always list the same things. The pattern is Bookings' (templates/commerce/bookings/src/
 // channel.ts).
 //

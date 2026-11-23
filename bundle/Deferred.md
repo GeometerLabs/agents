@@ -617,3 +617,27 @@ The service is `bundle/services/speech/` (README there). It was written and test
 - [ ] **`STATE_DIR` is not set for `listings-shared`** (as it was not for the Node process): a quarantined shop's strike memory is kept in memory only and is forgotten when the container restarts.
 - [ ] **The shared Go process's memory wall (1024m) is a measured-by-extrapolation figure**, not one set from a long run on a real server (`generate/shop.ts` `SHARED_GO_MEM_LIMIT_MB`).
 - [ ] **The scratch image has no CA certificates and no zone files other than the binary's own** (`time/tzdata` is in the binary). Today the Go programs call only the Guards over the private network (plain http); the day one of them must call an https address itself, the image needs a certificate bundle added (one more `COPY` in `dockerfileOf`).
+
+## Every shop on Go (24 Nov 2026, `go-switch-24nov`): what the deletion of the TypeScript runtimes left
+
+- [ ] **The whole local stack on the Go program.** `scripts/local-stack.ts` (Bookings, Orders, Fees) ran the stand-ins, the inbox, a stub Guard, the approvals relay and a
+  TypeScript runtime in one process, and `test/full-chain.test.ts` drove it end to end; both went with the runtime. Their refund-above-the-limit and restart cases are in each
+  contract (L, R), the inbox's own end-to-end is `templates/commerce/bookings/test/e2e.test.ts`, and the relay's are `test/approvals-*.test.ts`. Done when a local stack
+  starts the Go program (go/bin/<template>) beside the stand-ins, the inbox and the relay, and a full-chain test drives a message, a payment and a held refund through all of it.
+- [ ] **The chat identity front against a runtime.** `modules/channels/test/chat-identity-front.test.ts` drove the front through the TypeScript runtime's chat-identity
+  routes; the routes are Go now (go/internal/runtime chatidroute.go, held by the contracts' chat cases). Done when the front's side (keep this chat, open it on another phone,
+  a new phone's link, delete my chat) is tested against a Go shop started by a contract harness.
+- [ ] **The demo's words when time passes.** Each template's `contract/differential.test.ts` compares the demo and the Go shop message for message, but only on paths that
+  need no clock: a guards shop runs on the real clock and a fakes shop keeps no outbox. The reminders, a hold that lapses and the monthly turns are walked on the Go shop by
+  the contracts (record and pages), and their words are held for Bookings by `go/internal/bookings/testdata/scenarios-vectors.json`, not for Orders, Fees and Stock orders.
+  Done when a fakes shop lets a contract read what its in-memory WhatsApp sent (the Fees differential already reads the stand-in's printed lines), or a guards shop may take
+  the test clock.
+
+- [ ] **A server whose Bookings, Orders, Fees or Stock orders shops stay on 0.1.0 needs a kept 0.1.0 checkout beside it, with that commit's modules.** The Node runtimes
+  are no longer in this checkout, so a shop pinned to 0.1.0 starts only from `<server>/templates/<domain>/<name>@0.1.0` (a checkout of 6a51bf7a or earlier) with
+  `<server>/modules` from the same commit; without it the deployer says the version is not installed. Done when `geometer update` (or the install) offers to make that
+  kept checkout, or every shop is on 0.2.0.
+- [ ] **A customer's web push from a Go shop.** The TypeScript runtimes pushed a page's message to a customer who allowed alerts (Bookings, Orders) and a centre's reminder
+  to a parent (Fees, `test/parent-push.test.ts`, deleted with the runtime); the Go programs do not yet (go/internal/bookings/Deferred.md "A page message's web push to the
+  customer", go/internal/fees/Deferred.md "The parents' web push"): the message is on the page and on WhatsApp, nothing is pushed. A shop with no WhatsApp therefore tells
+  its customers only on its page. Done when the Go runtime pushes them, with a contract case per template.

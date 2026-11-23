@@ -79,6 +79,14 @@ export const chatKnown = (state: ChannelState | undefined, hash: string): boolea
 /** Has the shop said anything to this guest yet? */
 export const chatAnswered = (state: ChannelState | undefined, hash: string): boolean => (state?.outbox ?? []).some((m) => m.to === chatConversationOf(hash));
 
+/** What the page reads of a chat: the thread, how the latest send stands, the character's small-talk personality (settings.assistant.character) and whether hold-to-talk is on. The signboard's paint is not here: it travels in the shop's pages file (pages-file.ts). It lives here, beside ChatThread, because the front reads it (backend.ts); the runtime that writes it is Go since 0.2.0. */
+export interface ChatRead extends ChatThread {
+  send?: "pending" | "done" | "failed";
+  personality?: string;
+  /** Hold-to-talk is on (the shop has a voice service): the page draws the button; without it there is none, not a hidden one. */
+  listen?: true;
+}
+
 /**
  * The guest's thread: the shop's lines (the outbox) and the guest's own, in order, after `after` (0: all). Only the latest shop line carries its choices (an older
  * line's buttons are no longer on offer to draw). An unknown guest has an empty thread: the same answer for a guest never seen and for one at another shop, so a

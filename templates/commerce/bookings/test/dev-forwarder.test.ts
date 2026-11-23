@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BANNER, configFromEnv, parseEnv, startDevForwarder } from "../standins/dev-forwarder.ts";
-import { createLiveAdapters } from "../src/adapters/live/index.ts";
+import { createLiveAdapters } from "./helpers/live-adapters.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { fixture, scripted } from "./helpers/scripted-server.ts";
 

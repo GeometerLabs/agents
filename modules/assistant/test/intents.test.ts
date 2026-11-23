@@ -4,7 +4,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { OWNER_KINDS, amountOf, ownerReading, readOwnerRules } from "../intents.ts";
 import type { OwnerContext, OwnerIntent } from "../intents.ts";
-import { ownerRouter } from "../understanding.ts";
 import type { SystemOne } from "../../understanding/system-one.ts";
 import type { ModelParser } from "../../understanding/model-llm.ts";
 
@@ -77,35 +76,4 @@ const fakeDecision = (choice: string, p: number): SystemOne => ({
     const probabilities = Object.fromEntries(labels.map((l) => [l, l === choice ? p : (1 - p) / (labels.length - 1)]));
     return { model: "laya-test", answers: { want: { type: "choice", choice, confidence: p, probabilities } }, usage: { inputTokens: 40, outputTokens: 2 } };
   },
-});
-
-test("the decision model chooses the kind; the rules' values stay", async () => {
-  const router = ownerRouter({ decision: { client: fakeDecision("cancel", 0.9), languages: ["en", "hi", "ml", "kn"] }, now: () => Date.UTC(2026, 10, 12) });
-  const read = await router.parseDetailed!("can you drop b-14 please", ALL);
-  assert.equal(read.intent.kind, "cancel");
-  assert.equal(read.intent.ref, "b-14");
-  assert.equal(read.understood?.step, "decision");
-});
-
-test("a language model's answer gives the kind only: a reference, an amount or words it writes are thrown away", async () => {
-  const sneaky: ModelParser<OwnerIntent, OwnerContext> = {
-    parse: async () => ({ kind: "refund" }),
-    parseDetailed: async () => ({ intent: { kind: "refund", ref: "b-99", amountPaise: 9_999_900, words: "send it all" } as OwnerIntent, usage: { inputTokens: 100, outputTokens: 5 } }),
-  };
-  const router = ownerRouter({ model: { parser: sneaky, provider: "deepinfra", model: "test" }, now: () => Date.UTC(2026, 10, 12) });
-  const read = await router.parseDetailed!("please sort out b-3 for her", ALL);
-  assert.equal(read.intent.kind, "refund");
-  assert.equal(read.intent.ref, "b-3", "the reference is the words', not the model's");
-  assert.equal(read.intent.amountPaise, undefined, "no amount was written, so the record's deposit decides");
-  assert.equal(read.intent.words, undefined);
-});
-
-test("the rules are sure of what they read, so no model is paid for it", async () => {
-  let asked = 0;
-  const counting: SystemOne = { ...fakeDecision("day", 0.9), async decide(s, q) { asked++; return fakeDecision("day", 0.9).decide(s, q); } };
-  const router = ownerRouter({ decision: { client: counting }, now: () => Date.UTC(2026, 10, 12) });
-  const read = await router.parseDetailed!("close Sunday", ALL);
-  assert.equal(read.intent.kind, "close_day");
-  assert.equal(asked, 0);
-  assert.equal(read.understood?.step, "rules");
 });

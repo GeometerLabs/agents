@@ -9,6 +9,9 @@ A WhatsApp agent for tiffin services, bakeries, caterers and the like. A custome
 ## Run it
 
 ```sh
+(cd go && go build -o bin/orders ./cmd/orders)                    # the shop runtime: the Go program since 0.2.0 (24 Nov 2026; go/TRIAL.md)
+INTERNAL_TOKEN_FILE=token.txt go/bin/orders --client templates/commerce/orders/clients/annapurna-tiffins.example   # one shop, as the deployer runs it
+node --test templates/commerce/orders/contract/         # the runtime's contract, on the Go program (it skips, saying so, without go/bin/orders)
 node --test templates/commerce/orders/test/                          # the tests
 node templates/commerce/orders/scripts/hand-check.ts                 # the hand check on Annapurna Tiffins (UPI); add --details, or --settings shop.json
 node templates/commerce/orders/scripts/hand-check.ts --settings templates/commerce/orders/settings/annapurna-tiffins-razorpay.example.json
@@ -112,7 +115,7 @@ Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada peop
 | `src/language/` | The messages in four languages, the buttons and lists, the Meta template list, the outgoing check's facts |
 | `src/adapters/` | The rule parser (items, quantities, day, slot, way), the intents, the reading steps |
 | `crash-test/`, `scripts/hand-check.ts` | The situations, the plan that picks them from any shop's settings, the not-tested list |
-| `report/`, `server/`, `inbox/`, `approvals/` | The monthly report, certificate and papers; the runtime; the entry points and the relay's voice |
+| `report/`, `server/`, `inbox/`, `approvals/` | The monthly report, certificate and papers; what the deployer and the panel read of a shop's folder (the runtime is the Go program `go/cmd/orders` since 0.2.0); the entry points and the relay's voice |
 | `sell/`, `whatsapp-templates.json`, `REVIEW-*.md` | The sell guide, the list to submit to Meta, the review sheets |
 
 ## What is not done yet
@@ -123,7 +126,7 @@ See [Deferred.md](Deferred.md).
 
 <!-- modules it uses: made by modules/module-map.ts from the imports; run `node modules/module-map.ts --write` -->
 
-The shared modules Orders uses, from its code's own imports: [`accounting/`](../../../modules/README.md#what-is-here), [`approvals/`](../../../modules/README.md#what-is-here), [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`demo/`](../../../modules/README.md#what-is-here), [`inbox/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`ondc/`](../../../modules/README.md#what-is-here), [`papers/`](../../../modules/README.md#what-is-here), [`payments/`](../../../modules/README.md#what-is-here), [`push/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`stock/`](../../../modules/README.md#what-is-here), [`terms/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here), [`unfinished/`](../../../modules/README.md#what-is-here), [`voice/`](../../../modules/README.md#what-is-here).
+The shared modules Orders uses, from its code's own imports: [`accounting/`](../../../modules/README.md#what-is-here), [`approvals/`](../../../modules/README.md#what-is-here), [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`demo/`](../../../modules/README.md#what-is-here), [`inbox/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`ondc/`](../../../modules/README.md#what-is-here), [`papers/`](../../../modules/README.md#what-is-here), [`payments/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`stock/`](../../../modules/README.md#what-is-here), [`terms/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here), [`unfinished/`](../../../modules/README.md#what-is-here), [`voice/`](../../../modules/README.md#what-is-here).
 
 What each one does and what a template hands it: the table in [modules/README.md](../../../modules/README.md#what-is-here). A new template uses the same modules the same way.
 

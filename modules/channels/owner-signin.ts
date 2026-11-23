@@ -1,5 +1,5 @@
-// The owner's sign-in on the shop's page, the runtime's side (plan item 11f, decision 44). Used by the runtime core (runtime/core.ts), which hands it three events
-// before the agent sees anything, and by the runtime's HTTP layer (runtime/http.ts), which uses up links and checks sessions through `http`:
+// The owner's sign-in on the shop's page, the runtime's side (plan item 11f, decision 44). Used by the runtime core (go/internal/runtime), which hands it three events
+// before the agent sees anything, and by the runtime's HTTP layer (go/internal/runtime), which uses up links and checks sessions through `http`:
 //
 //   owner_signin        the page's "send me a sign-in link" (from the public front, with the channel token). It names no number: the link goes to the owner's
 //                       number in the shop's settings, and only there.
@@ -259,7 +259,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       end: (session: string) => access.end(session, clock.now()),
       // ---- item 11h: passkeys (each answers "unknown" or nothing for a shop with no pages file or no grants reader) ----
       shopName: setup.shopName,
-      /** The owner's language and the shop's clock, for the new-phone alert (modules/runtime/http.ts). */
+      /** The owner's language and the shop's clock, for the new-phone alert (go/internal/runtime). */
       ownerLanguage: owner.language,
       now: (): number => clock.now(),
       passkeysOn: (): boolean => setup.grants !== undefined && who() !== undefined,

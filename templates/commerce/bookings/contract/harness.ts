@@ -3,14 +3,13 @@
 // credential for its payments Guard), starts the shop as a SEPARATE PROCESS on a free port, and gives the tests an HTTP caller. The shop runtime (server/, src/agent.ts) is never imported: it is only
 // ever reached over HTTP. What is imported is pure helpers that MAKE files and handles and say what a webhook looks like, and the settings parser (README.md section 7 lists them).
 //
-// Which implementation runs is chosen by the environment:
-//   BOOKINGS_IMPL=ts   (default)  node templates/commerce/bookings/server/main.ts --client <folder>
-//   BOOKINGS_IMPL=go              the built binary named by BOOKINGS_GO_BIN (default <repo>/go/bin/bookings) with the same arguments
-// An unknown value stops the run. On `go` without the binary EVERY test is skipped, with the reason below (`contract()` below is the one wrapper, so no test is forgotten).
+// The shop runs on the Go program bookings (go/cmd/bookings), built to go/bin/bookings or named by BOOKINGS_GO_BIN, as a separate process with `--client <folder>`. The
+// TypeScript runtime it was held to was deleted on 24 Nov 2026 (decision 61; go/TRIAL.md), so BOOKINGS_IMPL=ts is gone; BOOKINGS_IMPL may still say go. Without the binary EVERY
+// test is skipped, with the reason below (`contract()` is the one wrapper, so no test is forgotten).
 //
 // Two kinds of shop, because a shop's services are either in-memory (the test clock may move) or Guards over HTTP (the real clock only):
 //   mode "fakes"   runtime.json "fakes": the calendar, payments and WhatsApp are the runtime's own in-memory stand-ins, on the TEST clock (GEOMETER_TEST=1, GEOMETER_TEST_CLOCK_FILE;
-//                  modules/runtime/test-clock.ts honours it for a "fakes" shop only), put at the instant the unit tests use: Tue 3 Nov 2026, 10:00 in India. Observed through
+//                  go/internal/testclock honours it for a "fakes" shop only), put at the instant the unit tests use: Tue 3 Nov 2026, 10:00 in India. Observed through
 //                  the channel routes, /status, the owner's page and agent.db. The Go runtime must reproduce the in-memory stand-ins for these.
 //   mode "guards"  runtime.json "live": the services are the FAKE GUARDS of guards.ts (HTTP servers that record every request and answer from the stand-ins and the captured
 //                  Guard answers), the real clock, the record key required. Observed through what the Guards were sent and what they hold.
@@ -43,13 +42,13 @@ export type { FakeModel, Answer };
 const here = dirname(fileURLToPath(import.meta.url));
 /** The repository root, found from this file's own address. */
 export const REPO = join(here, "..", "..", "..", "..");
-const KNOWN = ["ts", "go"] as const;
-export const IMPL = (process.env.BOOKINGS_IMPL ?? "ts") as (typeof KNOWN)[number];
-if (!KNOWN.includes(IMPL)) throw new Error(`BOOKINGS_IMPL is "${process.env.BOOKINGS_IMPL}": say ts or go.`);
+/** Which runtime the tests start: the Go program, the only one since 24 Nov 2026. */
+export const IMPL = "go" as const;
+if (process.env.BOOKINGS_IMPL !== undefined && process.env.BOOKINGS_IMPL !== "go") throw new Error(`BOOKINGS_IMPL is "${process.env.BOOKINGS_IMPL}": the TypeScript runtime was deleted on 24 Nov 2026, so only go is left.`);
 const GO_BIN = process.env.BOOKINGS_GO_BIN ?? join(REPO, "go", "bin", "bookings");
 
 /** Why every test is skipped (undefined: they run). */
-export const SKIP: string | undefined = IMPL === "go" && !existsSync(GO_BIN) ? "no Go Bookings runtime yet (wave 2)" : undefined;
+export const SKIP: string | undefined = !existsSync(GO_BIN) ? `the Go Bookings program is not built (go build -o go/bin/ ./cmd/bookings, or set BOOKINGS_GO_BIN)` : undefined;
 
 /** The ONE wrapper every contract test goes through: a test is skipped only when what it needs is not there, and says so. */
 export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, fn); };
@@ -140,7 +139,7 @@ export interface Shop {
   settings: Record<string, any>;
   call(path: string, o?: Omit<CallOptions, "token"> & { token?: string | null }): Promise<Answer>;
   stop(): Promise<void>;
-  start(impl?: "ts" | "go"): Promise<void>;
+  start(impl?: "go"): Promise<void>;
   /** Wait until nothing is pending in the shop's queue (steps are asynchronous). */
   settle(): Promise<any>;
   log(): string;
@@ -257,10 +256,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   let running: RuntimeProcess | undefined;
   const printed = { text: "" };
   const url = `http://127.0.0.1:${port}`;
-  const command = (impl: "ts" | "go"): { cmd: string; args: string[] } => {
-    if (impl === "go") return { cmd: GO_BIN, args: ["--client", client] };
-    return { cmd: process.execPath, args: [join(REPO, "templates", "commerce", "bookings", "server", "main.ts"), "--client", client] };
-  };
+  // the Go program only (the TypeScript runtime it once could start went on 24 Nov 2026); `impl` stays in the signature for the tests that name it
+  const command = (_impl: "go"): { cmd: string; args: string[] } => ({ cmd: GO_BIN, args: ["--client", client] });
   let ids = 0;
   const uid = (p: string): string => `${p}-${Date.now().toString(36)}-${++ids}`;
 

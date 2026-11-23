@@ -104,8 +104,8 @@ test("a Fees centre and an Orders shop get the block and the folder on each of t
       w.handIn(name, rest);
     };
     const repo = new URL("../../", import.meta.url).pathname;
-    add("bright", join(repo, "templates/education/fees/clients/bright-tuition.example/settings.json"), "fees@0.1.0", "fees");
-    add("annapurna", join(repo, "templates/commerce/orders/settings/annapurna-tiffins-razorpay.example.json"), "orders@0.1.0", "orders");
+    add("bright", join(repo, "templates/education/fees/clients/bright-tuition.example/settings.json"), "fees@0.2.0", "fees");
+    add("annapurna", join(repo, "templates/commerce/orders/settings/annapurna-tiffins-razorpay.example.json"), "orders@0.2.0", "orders");
     await deploy(w.ctx);
     const compose = read(join(w.paths.generated, "compose.yaml"));
     const owners: Record<string, string> = {

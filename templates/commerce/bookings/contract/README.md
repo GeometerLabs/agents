@@ -7,12 +7,14 @@ model, the fake push Guard, the soft passkey authenticator, the test-clock file,
 `modules/channels/test/soft-authenticator.ts`.
 
 ```
-BOOKINGS_IMPL=ts node --test --test-concurrency=1 templates/commerce/bookings/contract/        # the TypeScript runtime (the default)
-BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/
+(cd go && go build -o bin/bookings ./cmd/bookings)
+node --test --test-concurrency=1 templates/commerce/bookings/contract/        # the Go program go/bin/bookings (or BOOKINGS_GO_BIN)
 ```
 
-On `go`, when the binary is not there, every test is skipped with the reason "no Go Bookings runtime yet (wave 2)". Any other value of `BOOKINGS_IMPL` stops the run. Nothing
-here is TypeScript only.
+Since 24 Nov 2026 the shop runs on the Go program only: the TypeScript runtime this contract was written against was deleted (decision 61; go/TRIAL.md, "The switch"),
+so `BOOKINGS_IMPL=ts` is gone (`BOOKINGS_IMPL` may still say go; anything else stops the run). Without the binary every test is skipped and says why. Nothing here is
+TypeScript only. `cross-restart.test.ts` is a Go-to-Go restart on one folder (it ran the two runtimes in turn until then), and `differential.test.ts` holds the
+public demo's TypeScript world (src/harness.ts) to the Go shop on the demo's own paths.
 
 Part 1 (this file, sections 1 to 6) is the INVENTORY a later agent ports Bookings to Go from. Part 2 (section 7 on) says what the suite is and how to run it.
 
@@ -316,7 +318,7 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
   samples and Guard's captured answers), `modules/standins/guard.ts` (the stub Guard), `modules/payments/providers/razorpay/{standin,webhook}.ts` and `modules/payments/guard-model.ts`,
   `modules/channels/{handle,owner-link,owner-grants,owner-access}.ts` and `modules/channels/test/soft-authenticator.ts` (making files and handles, soft passkeys),
   `modules/runtime/test-clock.ts` (the two variables' names), `modules/core/time.ts`, `modules/language/format.ts` and `modules/test/contract/`.
-* **Every test goes through `contract()`** (harness.ts): with `BOOKINGS_IMPL=go` and no binary every test is skipped with "no Go Bookings runtime yet (wave 2)".
+* **Every test goes through `contract()`** (harness.ts): without the Go binary every test is skipped with "the Go Bookings program is not built (...)".
 
 | File | Group | Shop | What it holds the runtime to |
 |------|-------|------|-----------------------------|
@@ -328,7 +330,8 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
 | `chat.contract.test.ts` | C | fakes | the chat's thread and limits, the four languages, the model's answer as untrusted input |
 | `recovery.contract.test.ts` | R | guards | a Guard down, the process killed mid-step, a lost reply, the to-do list's recovery steps, a restored snapshot |
 | `record-licence.contract.test.ts` | D | fakes, guards | agent.db's format, the append-only record without a customer's number, the licence's wind-down and final stop, the owner's notice, the monthly report |
-| `cross-restart.test.ts` | | guards | the TypeScript and Go runtimes in turn on one folder, both ways (skipped without the Go binary) |
+| `cross-restart.test.ts` | | guards | a Go-to-Go restart on one folder (the TypeScript and Go runtimes in turn until 24 Nov 2026) (skipped without the Go binary) |
+| `differential.test.ts` | | guards | the public demo's TypeScript world and the Go shop on the demo's own paths, every WhatsApp message compared whole |
 
 ## 8. Status of the suite (TypeScript, 19 Nov 2026)
 

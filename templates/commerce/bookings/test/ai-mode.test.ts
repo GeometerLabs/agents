@@ -17,9 +17,7 @@ import { zonedToMs } from "../../../../modules/core/time.ts";
 import { aiOverrideReader, validateRuntimeConfig } from "../server/config.ts";
 import type { ClientFolder } from "../server/config.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
-import { buildUnderstanding, parserArguments } from "../server/start.ts";
 import { startStandins } from "../standins/server.ts";
-import { createKit } from "./runtime-kit.ts";
 import { systemOneFetch, systemOneStandin } from "../../../../modules/standins/system-one.ts";
 import type { Decider } from "../../../../modules/standins/system-one.ts";
 import { answer, openaiReply, startStubModel } from "./stub-model-server.ts";
@@ -216,28 +214,6 @@ test("under the AI cap a paused decision model is still asked: nothing is left t
   assert.deepEqual([s.state.decision, s.state.model], [1, 0]);
 });
 
-test("runtime.json takes model: normal or off, and the switch is read again whenever the file changes", () => {
-  for (const model of ["normal", "off"]) {
-    const r = validateRuntimeConfig({ mode: "fakes", model }, "/x");
-    assert.ok(r.ok && r.config.model === model, model);
-  }
-  const bad = validateRuntimeConfig({ mode: "fakes", model: "capped" }, "/x");
-  assert.ok(!bad.ok && /"model" must be "normal".*"off"/u.test(bad.errors.join()));
-  const folder = mkdtempSync(join(tmpdir(), "geo-model-"));
-  after(() => rmSync(folder, { recursive: true, force: true }));
-  const file = join(folder, "runtime.json");
-  const write = (text: string, second: number) => { writeFileSync(file, text); utimesSync(file, second, second); };
-  write('{"mode":"fakes"}', 1000);
-  const built = buildUnderstanding(client({}, folder), { clock: fakeClock(TEN_NOV), env: {}, log: () => {} });
-  assert.equal(built.ai.model!(), "normal");
-  write('{"mode":"fakes","model":"off"}', 2000);
-  assert.equal(built.ai.model!(), "off");
-  write('{"mode":"fakes","model":', 3000);
-  assert.equal(built.ai.model!(), "off", "a file caught in the middle of a write changes nothing");
-  write('{"mode":"fakes","model":"normal"}', 4000);
-  assert.equal(built.ai.model!(), "normal");
-});
-
 // ---- a model that fails -------------------------------------------------------------------------------------------------------------------------
 
 test("a failing model puts the agent on buttons for the pause and then tries again; the owner hears once a day", async () => {
@@ -325,61 +301,3 @@ test("the outside switch is read from runtime.json again whenever the file chang
 // ---- keys ------------------------------------------------------------------------------------------------------------------------------------------
 
 const client = (runtime: object, folder = "/nowhere"): ClientFolder => ({ name: "t", folder, settings: createWorld().settings, runtime: { mode: "fakes", host: "127.0.0.1", port: 0, dataDir: "/nowhere", tickSeconds: 30, ...runtime } as ClientFolder["runtime"], lock: { pathway: "bookings", version: "0.1.0" } });
-
-test("a step whose key is named but not in the environment stays off, says so by the variable's name, and sends nothing; with the key it is sent only as a bearer token to that address", async () => {
-  const lines: string[] = [];
-  const clock = fakeClock(TEN_NOV);
-  const stub = await startStubModel(() => ({ json: openaiReply(answer({ kind: "book", language: "en", serviceId: "haircut" })) }));
-  closers.push(stub.close);
-  const s = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y", systemOne: { requireKey: "made-up-jev-key", decider: (name) => ({ choice: name === "intent" ? "book" : name === "service" ? "haircut" : "no_slot", p: 0.9 }) } }, { port: 0 });
-  closers.push(s.close);
-  const runtime = {
-    decision: { provider: "jev", baseUrl: s.url, model: "jev-1", keyEnv: "JEV_API_KEY" },
-    parser: { wire: "openai", baseUrl: `${stub.url}/v1`, model: "deepseek-ai/DeepSeek-V4.1-Flash", provider: "deepinfra", keyEnv: "DEEPINFRA_API_KEY" },
-  };
-  const context = { services: createWorld().settings.services, languages: ["en" as const] };
-  const off = buildUnderstanding(client(runtime), { clock, env: {}, log: (l) => lines.push(l) });
-  assert.equal((await off.parser.parse(UNCLEAR, context)).kind, "unknown", "no key, no model: the rules read it");
-  assert.equal(stub.requests.length + s.systemOne!.requests.length, 0, "nothing was sent to either service");
-  assert.ok(lines.some((l) => l.includes("JEV_API_KEY")) && lines.some((l) => l.includes("DEEPINFRA_API_KEY")));
-
-  lines.length = 0;
-  const on = buildUnderstanding(client(runtime), { clock, env: { JEV_API_KEY: "made-up-jev-key", DEEPINFRA_API_KEY: "made-up-deepinfra-key" }, log: (l) => lines.push(l) });
-  const read = await on.parser.parseDetailed!("kuch facial wagairah", context);
-  assert.equal(read.understood?.step, "decision");
-  assert.equal(s.systemOne!.requests[0].authorization, "Bearer made-up-jev-key");
-  assert.ok(![...lines].join("\n").includes("made-up"), "a key is never logged");
-  // the model parser's own fetch carries the key only as the Authorization header, to the configured address
-  const [config, keyed] = parserArguments({ wire: "openai", baseUrl: `${stub.url}/v1`, model: "m", keyEnv: "DEEPINFRA_API_KEY" }, { DEEPINFRA_API_KEY: "made-up-deepinfra-key" });
-  assert.ok(!JSON.stringify(config).includes("made-up"), "the key is not in the model's config");
-  await createModelParser(config, keyed).parseDetailed("hello", context);
-  assert.equal(stub.requests.at(-1)!.headers.authorization, "Bearer made-up-deepinfra-key");
-});
-
-test("a Guard-fronted model sends no key from here, as before; and with neither step configured the rule parser reads everything", () => {
-  const [, keyless] = parserArguments({ wire: "openai", baseUrl: "http://guard.test/model/v1", model: "m" }, { DEEPINFRA_API_KEY: "made-up" });
-  assert.equal(keyless, undefined);
-  const plain = buildUnderstanding(client({}), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  assert.equal(plain.parser.parseDetailed, undefined, "the plain rule parser");
-  assert.equal(plain.ai.override?.(), "auto");
-});
-
-test("the runtime tells the builder once, in its log, when the agent moves to buttons, and /status counts the month", async () => {
-  const kit = createKit();
-  after(() => kit.cleanup());
-  const lines: string[] = [];
-  let flag: "auto" | "buttons" = "auto";
-  const { runtime } = kit.open({ ai: { override: () => flag, allowance: { messages: 5 } }, log: (l) => lines.push(l) });
-  await kit.say(runtime, "hello");
-  assert.deepEqual(runtime.status().ai.messages, { rules: 1, decision: 0, model: 0 });
-  assert.equal(runtime.status().ai.mode, "ai");
-  assert.equal(lines.filter((l) => l.includes("answers with buttons")).length, 0);
-  flag = "buttons";
-  await kit.say(runtime, "hello again");
-  await kit.say(runtime, "and again");
-  assert.equal(lines.filter((l) => l.includes("answers with buttons")).length, 1, "once, not at every message");
-  assert.ok(lines.some((l) => l.includes("(override)")));
-  const ai = runtime.status().ai;
-  assert.deepEqual([ai.mode, ai.reason, ai.allowance.messages], ["buttons", "override", 5]);
-  assert.ok(!JSON.stringify(runtime.status()).includes("hello"), "counts only: no word of a message is in the status");
-});

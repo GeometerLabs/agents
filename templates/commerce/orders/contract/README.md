@@ -7,12 +7,14 @@ Guards, the timed work and the state, are the shared runtime's and hold here too
 Bookings contract's (`guards.ts` imports its `recorder` and `fixture`); the process tracker, fake model, test-clock file, process starter and HTTP caller are `modules/test/contract/`.
 
 ```
-ORDERS_IMPL=ts node --test --test-concurrency=1 templates/commerce/orders/contract/                                  # the TypeScript runtime (the default)
-ORDERS_IMPL=go ORDERS_GO_BIN=go/bin/orders node --test --test-concurrency=1 templates/commerce/orders/contract/
+(cd go && go build -o bin/orders ./cmd/orders)
+node --test --test-concurrency=1 templates/commerce/orders/contract/        # the Go program go/bin/orders (or ORDERS_GO_BIN)
 ```
 
-On `go`, when the binary is not there, every test is skipped with the reason "no Go Orders runtime yet". Any other value of `ORDERS_IMPL` stops the run. Nothing here is
-TypeScript only; `cross-restart.test.ts` needs both runtimes and is skipped without the Go binary.
+Since 24 Nov 2026 the shop runs on the Go program only: the TypeScript runtime this contract was written against was deleted (decision 61; go/TRIAL.md, "The switch"),
+so `ORDERS_IMPL=ts` is gone (`ORDERS_IMPL` may still say go; anything else stops the run). Without the binary every test is skipped and says why. Nothing here is
+TypeScript only. `cross-restart.test.ts` is a Go-to-Go restart on one folder (it ran the two runtimes in turn until then), and `differential.test.ts` holds the
+public demo's TypeScript world (src/harness.ts) to the Go shop on the demo's own paths.
 
 ## How Orders differs from Bookings, as the outside sees it
 
@@ -41,7 +43,8 @@ TypeScript only; `cross-restart.test.ts` needs both runtimes and is skipped with
 | `chat.contract.test.ts` | C | fakes | a chat guest's order through the same flow, "Chat guest 1" to the owner, a send made again, Hindi, a model's answer checked and fallen back from |
 | `plans.contract.test.ts` | P | fakes (plans, UPI) | a monthly plan asked, quoted and started by the owner's mark; skip before and after the cut-off; plan meals holding slot places (a second plan refused on a full slot, a skipped day giving its place back); the renewal with the credit carried, asked once; its reminder and its lapse with the credit owed back; a cancel mid-month with the unused days owed back; a cancel while the renewal waits; a pause and a resume credited at the renewal; a shop without plans |
 | `gaps.contract.test.ts` | G | fakes, guards | money, limit, approval and licence behaviour only a unit test held before 23 Nov 2026: the same order again (one link), a changed order (old link closed, stock freed), a UPI mark of part of the advance, the balance marked once, a full-advance order with no balance, the late advance's 48-hour and 14-day windows, a slot's place given back, Guard's licence refusal (402), and the owner's cancel and refund from the chat (above the refund limit, a waiting order, a big order, a kept advance, a UPI shop) |
-| `cross-restart.test.ts` | X | guards | TypeScript then Go and Go then TypeScript on one folder |
+| `cross-restart.test.ts` | X | guards | a Go-to-Go restart on one folder (the TypeScript and Go runtimes in turn until 24 Nov 2026) |
+| `differential.test.ts` | | guards | the public demo's TypeScript world and the Go shop on the demo's own paths, every WhatsApp message compared whole |
 
 ## The 36 unit-test files of `templates/commerce/orders/test/`, and where each ends up
 

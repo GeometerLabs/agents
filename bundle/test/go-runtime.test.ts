@@ -82,12 +82,19 @@ test("the shared process on Go: its program, the same mounts without /app, no No
 
 // ---- the template folder says which runtime it has ----------------------------------------------------------------------------------------------
 
-test("the current listings template is on Go (version 0.2.0, matching the program's own constant); a folder with no runtime field, or an unknown program, runs on Node", () => {
+test("the current listings, Bookings, Orders, Fees and Stock orders templates are on Go (version 0.2.0, matching each program's own constant); a folder with no runtime field, or an unknown program, runs on Node", () => {
   const folder = join(REPO, "templates", "commerce", "listings");
   assert.deepEqual(goRuntimeOf(folder), { program: "listings", sharedProgram: "listings-shared" });
   assert.equal((JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as { version: string }).version, "0.2.0");
   assert.match(readFileSync(join(REPO, "go", "internal", "runtime", "config.go"), "utf8"), /Version = "0\.2\.0"/u);
-  assert.equal(goRuntimeOf(join(REPO, "templates", "commerce", "bookings")), undefined, "a template with no runtime field");
+  // the switch of 24 Nov 2026: Bookings, Orders, Fees and Stock orders are on Go from 0.2.0, each version matching its program's own constant (go/internal/<package>/<package>.go)
+  for (const [folder, program, pkg] of [["commerce/bookings", "bookings", "bookings"], ["commerce/orders", "orders", "orders"], ["education/fees", "fees", "fees"], ["commerce/stock-orders", "stock-orders", "stockorders"]]) {
+    const dir = join(REPO, "templates", ...folder.split("/"));
+    assert.deepEqual(goRuntimeOf(dir), { program }, folder);
+    assert.equal((JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { version: string }).version, "0.2.0", folder);
+    assert.match(readFileSync(join(REPO, "go", "internal", pkg, `${pkg}.go`), "utf8"), /Version = "0\.2\.0"/u, folder);
+    assert.ok((GO_PROGRAMS as readonly string[]).includes(program), `${program} is in the programs' image`);
+  }
   assert.equal(goRuntimeOf(join(REPO, "templates", "commerce", "nowhere")), undefined);
   const dir = mkdtempSync(join(tmpdir(), "geo-gort-"));
   try {
@@ -147,6 +154,9 @@ test("the build: the pinned Go image by digest, the source read-only, the settin
   assert.ok(script.includes("go build -p 1 "), "one package at a time");
   for (const flag of ["-trimpath", "-mod=readonly", '-ldflags "-s -w"']) assert.ok(script.includes(flag), flag);
   assert.deepEqual(run.slice(run.indexOf("-c") + 3), [...GO_PROGRAMS], "every program of GO_PROGRAMS is built by the same command");
+  // the seven programs, named here and not only through the constant: a program dropped from GO_PROGRAMS would leave its shops with no runtime in the image
+  assert.deepEqual([...GO_PROGRAMS].sort(), ["bookings", "directory", "fees", "listings", "listings-shared", "orders", "stock-orders"]);
+  for (const p of ["bookings", "orders", "fees", "stock-orders", "listings", "listings-shared", "directory"]) assert.ok(script.includes('-o "/out/$p" "./cmd/$p"') && run.includes(p), `${p} is compiled from go/cmd/${p}`);
   assert.ok(script.endsWith(`cp /${GO_CA_FILE} /out/${GO_CA_FILE}`), "the builder image's certificate authorities are copied, for the directory's https calls");
   assert.deepEqual(s.seen.context!.sort(), ["Dockerfile", "root/", "root/home/", "root/home/node/", "root/etc/", "root/etc/ssl/", "root/etc/ssl/certs/", `root/${GO_CA_FILE}`, ...GO_PROGRAMS.map((p) => `root/${p}`)].sort(), "the programs, the empty home folder and the certificate authorities, nothing else");
   assert.match(s.seen.dockerfile!, /^FROM scratch$/mu);
@@ -190,16 +200,22 @@ test("a build that fails changes nothing and says why in plain words; a release 
 // ---- update -------------------------------------------------------------------------------------------------------------------------------------
 
 const SHOP = "glow-salon";
-/** A server with one shop at bookings 0.1.0, and a kept checkout of 0.2.0 whose template.json says it runs on a Go program (the stand-in for the day a template has one). */
+/**
+ * A server with one shop on bookings 0.1.0, a kept checkout that runs on Node (today's folder copied, its template.json without the runtime fields, as every version made before
+ * the switch of 24 Nov 2026 has), and today's Bookings, 0.2.0, which runs on the Go program: the move every Node shop makes when it takes the Go version.
+ */
 async function oneShopWithGoVersion() {
   const w = world({ [SHOP]: panelRuntime() });
   w.handIn(SHOP);
-  await deploy(w.ctx);
-  const dir = join(w.root, "templates", "commerce", "bookings@0.2.0");
+  const dir = join(w.root, "templates", "commerce", "bookings@0.1.0");
   cpSync(join(w.ctx.appDir, "templates", "commerce", "bookings"), dir, { recursive: true });
   cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
-  writeFileSync(join(dir, "package.json"), readFileSync(join(dir, "package.json"), "utf8").replaceAll('"version": "0.1.0"', '"version": "0.2.0"'));
-  writeFileSync(join(dir, "template.json"), JSON.stringify({ ...JSON.parse(readFileSync(join(dir, "template.json"), "utf8")), runtime: "go", program: "listings" }));
+  writeFileSync(join(dir, "package.json"), readFileSync(join(dir, "package.json"), "utf8").replaceAll('"version": "0.2.0"', '"version": "0.1.0"'));
+  const { runtime: _runtime, program: _program, ...nodeTemplate } = JSON.parse(readFileSync(join(dir, "template.json"), "utf8")) as Record<string, unknown>;
+  writeFileSync(join(dir, "template.json"), JSON.stringify(nodeTemplate));
+  assert.equal(goRuntimeOf(dir), undefined, "the kept version runs on Node");
+  writeFileSync(join(w.root, "shops", SHOP, "pathway.lock"), "bookings@0.1.0\n");
+  await deploy(w.ctx);
   // every question the update asks of the hand check and the saved-data layout is answered "all held, layout 1"
   const next = w.ctx.runner.run.bind(w.ctx.runner);
   const handCheck = "CRASH TEST   Glow · Bookings\n\n  Held 1 of 1.  0 failed.\n\n  ✓      A normal booking\n\n  Held 1 of 1 within what was tried.";
@@ -254,7 +270,7 @@ test("update to a Go version whose programs are already built moves the shop ont
     const compose = readFileSync(join(w.root, "generated", "compose.yaml"), "utf8");
     const rt = /\n  rt-glow-salon:\n([\s\S]*?)\n  [a-z]/u.exec(compose)![1];
     assert.match(rt, new RegExp(`image: "${goImageFor(w.ctx.appDir).replace(".", "\\.")}"`, "u"));
-    assert.match(rt, /command:\s+- "\/listings"\s+- "--client"\s+- "\/client"/u);
+    assert.match(rt, /command:\s+- "\/bookings"\s+- "--client"\s+- "\/client"/u);
     assert.ok(!rt.includes("/pathway"), "no template code is mounted for a Go program");
   } finally { w.done(); }
 });

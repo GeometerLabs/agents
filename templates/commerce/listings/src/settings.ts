@@ -2,8 +2,8 @@
 // hours, deposits or limits, because this shop takes no booking, no order and no fee and holds no money. What it keeps is its LISTINGS, in the shop's own store
 // (modules/listings), and those are the owner's to write from their app.
 //
-// Two things the validator always makes true, because the rest of the system quietly switches the product off without them (modules/runtime/core.ts drops listings for a
-// shop with no `assistant` or no `owner`; modules/runtime/start.ts drops the owner's sign-in without an `owner`):
+// Two things the validator always makes true, because the rest of the system quietly switches the product off without them (go/internal/runtime drops listings for a
+// shop with no `assistant` or no `owner`; go/internal/runtime drops the owner's sign-in without an `owner`):
 //   - `assistant` is always there (an empty block turns the shop's assistant on with its defaults);
 //   - `owner.whatsapp` is always a string. An owner who gave NO number gets the marker NO_NUMBER: it names the owner inside the store (cards, the record) and is never dialled,
 //     because this shop has no WhatsApp at all. The owner signs in with a passkey on the Operator's one-use code (README.md, "The first sign-in").

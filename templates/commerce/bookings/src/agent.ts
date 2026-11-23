@@ -1531,7 +1531,7 @@ export function createAgent(deps: AgentDeps): Agent {
         if (b.depositInr !== undefined && b.depositInr > 0) books.post({ kind: "applied", case: b.id, amountPaise: b.depositInr * 100, service: b.serviceId ?? "bookings" }, own); else own({});
       }
     }
-    await assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
+    await assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (go/internal/assistant)
   }
 
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------

@@ -7,10 +7,6 @@ import { join } from "node:path";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { ClientError, loadClient, parseLock, pathwayVersion, validateRuntimeConfig } from "../server/config.ts";
-import { loadLiveModule, buildServices } from "../server/services.ts";
-import type { LiveModule } from "../server/services.ts";
-import { readToken } from "../server/start.ts";
-
 const EXAMPLE = new URL("../clients/glow-salon.example", import.meta.url).pathname;
 
 /** A copy of the example client in a temp folder, with its files changed. */
@@ -158,79 +154,4 @@ test("a client folder whose parser is malformed does not load, and the refusal n
     assert.match(said, /runtime\.json needs fixing/);
     assert.match(said, /parser\.baseUrl must not hold a user name or password/);
   } finally { c.done(); }
-});
-
-test("the internal token comes from a file: trimmed, and refused when missing or too short", () => {
-  const dir = mkdtempSync(join(tmpdir(), "geo-token-"));
-  try {
-    assert.throws(() => readToken(undefined), /Set INTERNAL_TOKEN_FILE/);
-    assert.throws(() => readToken(join(dir, "nope")), /could not read the internal token file/);
-    writeFileSync(join(dir, "short"), "abc\n");
-    assert.throws(() => readToken(join(dir, "short")), /too short/);
-    writeFileSync(join(dir, "empty"), "\n");
-    assert.throws(() => readToken(join(dir, "empty")), /too short/);
-    writeFileSync(join(dir, "ok"), "  0123456789abcdef0123  \n");
-    assert.equal(readToken(join(dir, "ok")), "0123456789abcdef0123");
-  } finally { rmSync(dir, { recursive: true, force: true }); }
-});
-
-test("fakes mode wires the stand-ins and says what the stand-in WhatsApp sends", async () => {
-  const lines: string[] = [];
-  const clock = fakeClock(0);
-  const services = await buildServices({ mode: "fakes" }, { clock, window: { lastInboundAt: () => undefined }, say: (l) => lines.push(l) });
-  await services.messaging.sendTemplate("+91900", { name: TEMPLATE_NAMES.customer, language: "en", text: "hello there" });
-  assert.equal((await services.calendar.list()).length, 0);
-  assert.equal((await services.payments.listRequests()).length, 0);
-  assert.equal(await services.messaging.isWindowOpen("+91900"), false);
-  assert.deepEqual(lines, ["[stand-in WhatsApp] to +91900: hello there"]);
-});
-
-test("live mode loads the live adapters only then, hands them the services and the window store", async () => {
-  const asked: unknown[] = [];
-  const stub: LiveModule = { createLiveAdapters: (services, deps) => { asked.push(services, deps); return { calendar: {} as any, payments: {} as any, messaging: {} as any }; } };
-  const clock = fakeClock(0);
-  const window = { lastInboundAt: (p: string) => (p === "+91900" ? 42 : undefined) };
-  const services = { payments: { baseUrl: "http://g1" }, calendar: { baseUrl: "http://g2", calendarId: "c" }, messaging: { baseUrl: "http://g3", phoneNumberId: "p" } };
-  await buildServices({ mode: "live", services }, { clock, window, loadLive: async () => stub });
-  assert.deepEqual(asked[0], services);
-  assert.equal((asked[1] as any).clock, clock);
-  assert.equal((asked[1] as any).window.lastInboundAt("+91900"), 42);
-
-  let loaded = false;
-  await buildServices({ mode: "fakes" }, { clock, window, loadLive: async () => { loaded = true; return stub; } });
-  assert.equal(loaded, false, "fakes mode never loads the live module");
-});
-
-test("when this build has no live adapters, live mode refuses with a clear message", { skip: existsSync(new URL("../src/adapters/live/index.ts", import.meta.url)) }, async () => {
-  await assert.rejects(loadLiveModule(), /does not have them.*"fakes"/s);
-});
-
-test("services may name a file that holds this agent's credential for each Guard; it is read at start, a relative path is measured from the client folder, and nothing else called a token is allowed", async () => {
-  const { validateRuntimeConfig } = await import("../server/config.ts");
-  const { readAgentTokens } = await import("../server/services.ts");
-  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
-  const { tmpdir } = await import("node:os");
-  const { join } = await import("node:path");
-  const dir = mkdtempSync(join(tmpdir(), "geo-agent-token-"));
-  try {
-    writeFileSync(join(dir, "payments.token"), "gg_payments-agent-token\n");
-    const services = { payments: { baseUrl: "http://guard-razorpay:8080", agentTokenFile: "payments.token" }, calendar: { baseUrl: "http://guard-calendar:8080", calendarId: "c" }, messaging: { baseUrl: "http://guard-whatsapp:8080", phoneNumberId: "1" } };
-    const checked = validateRuntimeConfig({ mode: "live", services }, dir);
-    assert.ok(checked.ok);
-    const config = checked.ok ? checked.config.services! : undefined!;
-    assert.equal(config.payments.agentTokenFile, join(dir, "payments.token"));
-    const read = readAgentTokens(config);
-    assert.equal(read.payments.agentToken, "gg_payments-agent-token", "the newline is dropped");
-    assert.equal((read.payments as Record<string, unknown>).agentTokenFile, undefined, "the file's name does not travel on");
-    assert.equal(read.calendar.agentToken, undefined, "a Guard that is not given one gets no Authorization header");
-    // a file that is not there, or empty, is said plainly
-    assert.throws(() => readAgentTokens({ ...config, calendar: { ...config.calendar, agentTokenFile: join(dir, "missing") } }), /could not read the agent credential file/);
-    writeFileSync(join(dir, "empty"), "\n");
-    assert.throws(() => readAgentTokens({ ...config, calendar: { ...config.calendar, agentTokenFile: join(dir, "empty") } }), /is empty/);
-    // what is not allowed: a token in the file itself, or a path that is not text
-    const bad = validateRuntimeConfig({ mode: "live", services: { ...services, payments: { baseUrl: "http://g:8080", token: "hunter2" } } }, dir);
-    assert.ok(!bad.ok && /I don't know what "token" means in services\.payments/.test(bad.errors.join(" ")) && !bad.errors.join(" ").includes("hunter2"));
-    const notText = validateRuntimeConfig({ mode: "live", services: { ...services, payments: { baseUrl: "http://g:8080", agentTokenFile: 7 } } }, dir);
-    assert.ok(!notText.ok && /agentTokenFile must be the path of a file/.test(notText.errors.join(" ")));
-  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

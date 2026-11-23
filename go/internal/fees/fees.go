@@ -27,7 +27,7 @@ import (
 // Pathway and Version are what a Fees folder's pathway.lock must name: the number in templates/education/fees/package.json.
 const (
 	Pathway = "fees"
-	Version = "0.1.0"
+	Version = "0.2.0"
 )
 
 // Ports are the services of one centre (services.ts buildServices): Fees has payments (a Razorpay centre only) and WhatsApp. It has no calendar.

@@ -1,7 +1,7 @@
 // The shop's memory (block M, decision 58, plan B62's agent half): short standing notes the owner (or the Operator or builder) gave the shop's assistant, kept in the shop's
 // own store, for every template and for any model. This file is PURE: no disk, no node:sqlite, no network, no model, so the agents (and the browser demo built from them)
 // can import it. The state it works on is plain JSON; the assistant keeps it under `assistant.memory` (modules/assistant/state.ts), so it is saved in the same step and
-// transaction as everything else (modules/runtime/core.ts).
+// transaction as everything else (go/internal/runtime).
 //
 // What it promises, and how:
 //  - ONLY a person with authority writes. Every write takes an `Authority`, which only `ownerAuthority` and `panelAuthority` make, and which is checked at run time

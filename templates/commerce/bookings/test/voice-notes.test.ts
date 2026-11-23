@@ -11,7 +11,7 @@ import { fakeVoiceNote, fakeWebmVoiceNote, scriptedSpeech, scriptedWire } from "
 import { sttCostMicroInr } from "../../../../modules/voice/speech.ts";
 import { summarizeUsage } from "../../../../bundle/lib/usage.ts";
 import { parseWhatsAppWebhook } from "../../../../modules/messaging/webhooks.ts";
-import { checkEvents } from "../server/events.ts";
+import { checkEvents } from "../../../../modules/runtime/events.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
 import { parseSettings } from "../src/settings.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";

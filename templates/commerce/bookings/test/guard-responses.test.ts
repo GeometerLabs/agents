@@ -7,7 +7,7 @@ import { fakeClock } from "../../../../modules/core/clock.ts";
 import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardDeniedError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
 import { ensureLink } from "../../../../modules/payments/links.ts";
 import { classify, createHttp } from "../../../../modules/core/http.ts";
-import { createLiveAdapters } from "../src/adapters/live/index.ts";
+import { createLiveAdapters } from "./helpers/live-adapters.ts";
 import { createRazorpayPayments } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { fixture, scripted } from "./helpers/scripted-server.ts";
 

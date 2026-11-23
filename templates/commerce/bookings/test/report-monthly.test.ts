@@ -17,8 +17,6 @@ import type { MonthlyReportContext, MonthlyReportSetup } from "../report/monthly
 import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { MINUTE } from "../../../../modules/core/time.ts";
-import { createKit } from "./runtime-kit.ts";
-
 const TZ = "Asia/Kolkata";
 const at = (month: number, day: number, hour: number, minute = 0, year = 2026) => zonedToMs({ year, month, day }, { hour, minute }, TZ);
 const BASE = "https://reports.example.com/r";
@@ -364,87 +362,3 @@ async function runtimeWithNovember(kit: ReturnType<typeof createKit>, options: P
   await kit.deliverPaymentEvents(opened.runtime);
   return opened;
 }
-
-test("in the runtime the report goes out on the first tick after 09:00 on the 1st, is saved with its claim and ending, and a restart on the same folder sends nothing", async () => {
-  const kit = createKit();
-  try {
-    const lines: string[] = [];
-    const report = setup({ dir: join(kit.dir, "reports") });
-    const first = await runtimeWithNovember(kit, { report, log: (l) => lines.push(l) });
-    kit.clock.set(at(12, 1, 8, 30));
-    await first.runtime.tick();
-    assert.equal(kit.messaging.sentTo(kit.settings.owner.whatsapp).length, 0);
-    kit.clock.set(at(12, 1, 9, 1));
-    await first.runtime.tick();
-    await first.runtime.tick();
-    const owner = kit.messaging.sentTo(kit.settings.owner.whatsapp);
-    assert.equal(owner.length, 1);
-    assert.equal(owner[0].templateName, "monthly_report");
-    assert.deepEqual(first.db.loadState().record.filter((e) => e.refs.report === "2026-11").map((e) => e.outcome), ["attempted", "confirmed"]);
-    assert.equal(first.runtime.status().recordLength, first.db.loadState().record.length);
-    await first.runtime.close();
-
-    const second = kit.open({ report: setup({ dir: join(kit.dir, "reports") }), log: (l) => lines.push(l) });
-    kit.clock.set(at(12, 1, 9, 10));
-    await second.runtime.tick();
-    kit.clock.set(at(12, 2, 9));
-    await second.runtime.tick();
-    assert.equal(kit.messaging.sentTo(kit.settings.owner.whatsapp).length, 1, "the same one");
-    assert.equal(second.db.loadState().record.filter((e) => e.refs.report === "2026-11").length, 2);
-  } finally { kit.cleanup(); }
-});
-
-test("in the runtime a crash after the send and before the ending is saved leaves the claim, and the restart does not send again", async () => {
-  const kit = createKit();
-  try {
-    const lines: string[] = [];
-    const report = setup({ dir: join(kit.dir, "reports") });
-    // the store the runtime is given refuses to save the step that carries the ending, as a power cut would
-    const doomed = { cut: false };
-    const first = await runtimeWithNovember(kit, { report, log: (l) => lines.push(l) });
-    await first.runtime.close();
-    const { openStore } = await import("../server/store.ts");
-    const real = openStore(join(kit.dir, "data"));
-    const faulty = { ...real, commitStep: (step: Parameters<typeof real.commitStep>[0]) => { if (doomed.cut && step.entries.some((e) => e.refs.report === "2026-11" && e.outcome === "confirmed")) throw new Error("power cut"); real.commitStep(step); }, close: () => real.close() };
-    const { createRuntime } = await import("../server/runtime.ts");
-    const { createRuleParser } = await import("../src/adapters/rule-parser.ts");
-    const runtime = createRuntime({ settings: kit.settings, store: faulty, clock: kit.clock, services: { calendar: kit.calendar, payments: kit.payments, messaging: kit.messaging }, parser: createRuleParser(), pathwayVersion: "0.1.0", retryDelaysMs: [0, 0, 0], report: setup({ dir: join(kit.dir, "reports") }), log: (l) => lines.push(l) });
-    doomed.cut = true;
-    kit.clock.set(at(12, 1, 9, 1));
-    await runtime.tick();
-    assert.equal(kit.messaging.sentTo(kit.settings.owner.whatsapp).length, 1, "it went out");
-    assert.deepEqual(real.loadState().record.filter((e) => e.refs.report === "2026-11").map((e) => e.outcome), ["attempted"], "only the claim was saved");
-    assert.ok(lines.some((l) => /power cut/.test(l)));
-    await runtime.close();
-
-    const second = kit.open({ report: setup({ dir: join(kit.dir, "reports") }), log: (l) => lines.push(l) });
-    kit.clock.set(at(12, 1, 9, 5));
-    await second.runtime.tick();
-    kit.clock.set(at(12, 3, 9));
-    await second.runtime.tick();
-    assert.equal(kit.messaging.sentTo(kit.settings.owner.whatsapp).length, 1, "not sent again");
-    assert.deepEqual(second.db.loadState().record.filter((e) => e.refs.report === "2026-11").map((e) => e.outcome), ["attempted", "unconfirmed"]);
-  } finally { kit.cleanup(); }
-});
-
-test("a report that cannot be made is said once and never holds up the beat: a hold still expires", async () => {
-  const kit = createKit();
-  try {
-    const lines: string[] = [];
-    const blocker = join(kit.dir, "not-a-folder");
-    writeFileSync(blocker, "a file where the report folder should be");
-    const { runtime } = await runtimeWithNovember(kit, { report: setup({ dir: blocker }), log: (l) => lines.push(l) });
-    // a second customer asks for a time and does not pay; the hold runs out on the beat even though the report cannot be made
-    await kit.say(runtime, "facial the day after tomorrow at 11am", { from: "+919822222222" });
-    const held = () => runtime.status().bookings.awaiting_deposit ?? 0;
-    assert.equal(held(), 1);
-    kit.clock.set(at(12, 1, 9, 1));
-    await runtime.tick();
-    await runtime.tick();
-    await runtime.tick();
-    assert.equal(held(), 0, "the hold expired");
-    assert.equal(lines.filter((l) => /monthly report could not be made/.test(l)).length, 1, lines.join("\n"));
-    assert.equal(kit.messaging.sentTo(kit.settings.owner.whatsapp).length, 0);
-    assert.equal(runtime.status().recordLength > 0, true);
-  } finally { kit.cleanup(); }
-});

@@ -14,7 +14,7 @@ import type { InteractiveMessage } from "../../../../modules/language/interactiv
 import { parseSettings } from "../src/settings.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
-import { checkEvents } from "../server/events.ts";
+import { checkEvents } from "../../../../modules/runtime/events.ts";
 import { startStandins } from "../standins/server.ts";
 
 const salon = glowSalon();

@@ -14,7 +14,7 @@ import type { DocumentsKey } from "../accounting/case-documents.ts";
 import type { Document } from "../accounting/documents.ts";
 import type { ExportFile } from "../accounting/export.ts";
 import type { MoneyView } from "../accounting/owner-money.ts";
-import type { ChatRead } from "../runtime/core.ts";
+import type { ChatRead } from "./chat.ts";
 
 /**
  * Who is acting as the owner: the panel-made private link (item 11d), or a session the runtime made from a one-time WhatsApp link (item 11f). A bare string is a
@@ -178,18 +178,18 @@ export interface ChannelBackend {
   /** Item 11f: end this session. */
   signout?(session: string): Promise<void>;
   /**
-   * Item 11h: one step of a passkey ceremony, passed to the runtime as it is (the runtime checks everything: modules/runtime/http.ts "owner-passkey"). The answer's
+   * Item 11h: one step of a passkey ceremony, passed to the runtime as it is (the runtime checks everything: go/internal/runtime "owner-passkey"). The answer's
    * status and body, so the front can tell a refusal (403) from a fault.
    */
   passkey?(body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
    * Item 11h: one web push step (the shop's public key, the owner's subscription and choice with the owner's credential, a customer page's subscription by its
-   * handle's hash), passed to the runtime, which checks and keeps it (modules/runtime/http.ts "push").
+   * handle's hash), passed to the runtime, which checks and keeps it (go/internal/runtime "push").
    */
   push?(body: Record<string, unknown>, owner?: OwnerCred): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
    * Owner's item 2: one step of "Phones that can open your shop" (list, dismiss the news, remove one, make the owner's own recovery codes, add a phone, cancel the
-   * Operator's request), for the owner's SESSION only (never the panel's link). The runtime checks everything (modules/runtime/http.ts "owner-phones").
+   * Operator's request), for the owner's SESSION only (never the panel's link). The runtime checks everything (go/internal/runtime "owner-phones").
    */
   phones?(session: string, body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
@@ -231,7 +231,7 @@ export interface ChannelBackend {
    */
   chat?(guestHash: string, q?: { after?: number; cid?: string; parent?: string }): Promise<ChatRead>;
   /**
-   * W2: the guest's identity (keep this chat, open it on another phone, a new phone's link, delete my chat), one call by op (chat-identity-http.ts). `body` carries the guest's hash
+   * W2: the guest's identity (keep this chat, open it on another phone, a new phone's link, delete my chat), one call by op (go/internal/runtime). `body` carries the guest's hash
    * as `handle` and the op's own fields; the answer is the runtime's status and JSON. Left out: the shop has no chat identity.
    */
   chatId?(body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }>;
@@ -264,7 +264,7 @@ export interface ChannelBackend {
   material?(linkHash: string, batchId: string, file?: string): Promise<MaterialAnswer | null>;
 }
 
-/** What the reading-material read answers (templates/education/fees/src/classes/view.ts and server/materials.ts make it): the page's words, or one file. */
+/** What the reading-material read answers (templates/education/fees/src/classes/view.ts and go/internal/fees make it): the page's words, or one file. */
 export type MaterialAnswer =
   | { kind: "list"; batch: Record<Language, string>; students: string[]; files: { id: string; name: string; bytes: number }[]; left: number; maxMb: number }
   | { kind: "file"; name: string; type: string; base64: string };
@@ -287,7 +287,7 @@ async function call(url: string, init: RequestInit, timeoutMs: number): Promise<
   finally { clearTimeout(timer); }
 }
 
-/** The runtime's channel routes (modules/runtime/http.ts), through the shop's door, with the channel token. */
+/** The runtime's channel routes (go/internal/runtime), through the shop's door, with the channel token. */
 export function runtimeBackend(o: { url: string; token: string; timeoutMs?: number }): ChannelBackend {
   const timeout = o.timeoutMs ?? 4_000;
   const headers = (owner?: OwnerCred, extra: Record<string, string> = {}) => ({ authorization: `Bearer ${o.token}`, "content-type": "application/json", ...ownerCredHeader(owner), ...extra });

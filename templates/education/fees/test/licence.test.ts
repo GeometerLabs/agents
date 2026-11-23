@@ -9,7 +9,6 @@ import { ROHAN_PARENT, createWorld } from "../src/harness.ts";
 import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
-import { createKit } from "./runtime-kit.ts";
 import { buildFeesReport } from "../report/data.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 
@@ -75,22 +74,6 @@ test("every licence message has its words in all four languages; the owner's not
       assert.doesNotMatch(text, /₹|invoice|safe|guarantee/iu, `${language} ${id}`);
     }
   }
-});
-
-test("the runtime sends the owner the wind-down's notice once, as the utility template", async () => {
-  const kit = createKit();
-  try {
-    for (const name of ["owner_fee_service_paused", "owner_fee_service_stopped"]) for (const l of ["en", "hi", "ml", "kn"]) kit.messaging.approve(name, l);
-    let now: LicenceNow = UNRESTRICTED;
-    const { runtime } = kit.open({ licence: () => now });
-    const owner = kit.settings.owner.whatsapp;
-    const notices = () => kit.messaging.sentTo(owner).filter((m) => m.templateName?.startsWith("owner_fee_service_"));
-    now = { state: "wind_down", restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: null, partner: "Divya, local Operator" };
-    await runtime.tick();
-    await runtime.tick();
-    assert.equal(notices().length, 1);
-    assert.equal(notices()[0].text, "Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local Operator.");
-  } finally { kit.cleanup(); }
 });
 
 test("the monthly report of a month with a wind-down is made, and never counts a licence refusal as one of the centre's limits that held", async () => {

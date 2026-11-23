@@ -22,7 +22,6 @@ import { STOCK_WORDS } from "../../../../modules/channels/words-stock.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
-import { createRuntime } from "../server/runtime.ts";
 import { openStore } from "../server/store.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import type { Store } from "../src/order.ts";
@@ -107,41 +106,6 @@ test("a crash after the send, before the ending is saved: the order is never sen
   assert.equal(w.orderMessagesTo(RAVI).length, 1, "never resent");
   assert.equal(restarted.orders.get("po-1")?.state, "send_unknown");
   assert.equal(items(w, restarted).filter((i) => i.kind === "po_unsure").length, 1);
-});
-
-test("through the runtime: the process dies after WhatsApp took the order, and after the restart it is not sent again and the owner is asked", async () => {
-  const settings = glowSalon();
-  const dir = mkdtempSync(join(tmpdir(), "geo-send-once-"));
-  const clock = fakeClock(zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, settings.timezone));
-  const messaging = createFakeMessaging(clock);
-  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES, ...REPORT_TEMPLATE_NAMES]) for (const l of LANGUAGES) messaging.approve(name, l);
-  const orderMessages = () => messaging.sentTo(RAVI).filter((m) => m.templateName === "stock_order_to_supplier").length;
-  const make = (db: ReturnType<typeof openStore>, services: Messaging) => createRuntime({ settings, store: db, clock, services: { messaging: services }, pathwayVersion: "0.1.0", retryDelaysMs: [0, 0, 0] });
-  try {
-    const first = openStore(join(dir, "data"));
-    // WhatsApp takes the order, then the "process dies": the database closes before the ending can be saved
-    const dying = { ...messaging, sendTemplate: async (...a: Parameters<Messaging["sendTemplate"]>) => { const sent = await messaging.sendTemplate(...a); if (a[0] === RAVI) { first.close(); throw new TimeoutError("send template"); } return sent; } } as Messaging;
-    const one = make(first, dying);
-    one.submit([{ kind: "message", message: messaging.receive(settings.owner.whatsapp, "order 10 boxes of hair colour from Ravi Traders") }]);
-    one.kick();
-    await one.idle();
-    const code = /\byes ([A-Z0-9]{4,6})\b/u.exec(messaging.sentTo(settings.owner.whatsapp).map((m) => m.text).join("\n"));
-    one.submit([{ kind: "message", message: messaging.receive(settings.owner.whatsapp, `yes ${code?.[1] ?? code?.[2]}`) }]);
-    one.kick();
-    try { await one.idle(); } catch { /* the database is gone, as in a real death */ }
-    assert.equal(orderMessages(), 1);
-
-    const second = openStore(join(dir, "data"));
-    const two = make(second, messaging);
-    await two.tick(); // the first thing the restarted process does
-    await two.tick();
-    const saved = parseStore(second.loadState().snapshot);
-    assert.equal(orderMessages(), 1, "not sent again after the restart");
-    assert.equal(saved.orders.get("po-1")?.state, "send_unknown");
-    assert.equal(saved.sendOnce?.intents[0].status, "unconfirmed");
-    assert.equal(ownerItems(settings, saved, clock.now(), saved.assistant).filter((i) => i.kind === "po_unsure").length, 1);
-    second.close();
-  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("a refusal that says nothing went out is tried again once, an hour later, and the order is then sent once", async () => {

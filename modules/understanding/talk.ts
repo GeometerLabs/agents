@@ -3,7 +3,7 @@
 // hosts all work the same way. What the model SAYS is not trusted here: the assistant's talk checks (modules/assistant/talk-check.ts) decide whether any of it is sent.
 //
 // Kept apart from the agents on purpose: it reads the dated price table (rates.ts) from disk, and an agent's own import graph must not, so the browser demo can still be built
-// from the agent. It is built once at a runtime's start (modules/assistant/understanding.ts) and handed to the agent as `talker`, the way the owner's router is; the agent
+// from the agent. It is built once at a runtime's start (go/internal/assistant) and handed to the agent as `talker`, the way the owner's router is; the agent
 // imports only its types.
 import { askJson } from "./model-llm.ts";
 import type { JsonCall, ModelConfig } from "./model-llm.ts";

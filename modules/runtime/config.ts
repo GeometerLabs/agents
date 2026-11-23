@@ -13,12 +13,14 @@ import { LANGUAGES } from "../language/languages.ts";
 import { licenceNow, parseLicenceFile } from "../licence/rules.ts";
 import type { LicenceFile, LicenceNow } from "../licence/rules.ts";
 import type { Language } from "../language/languages.ts";
-import { DEFAULT_PORT } from "./http.ts";
 import { readSpeech } from "../voice/config.ts";
 import type { SpeechConfig } from "../voice/config.ts";
 import { messagingConfigProblem } from "../messaging/providers.ts";
 import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../understanding/rates.ts";
 import type { BuilderRate } from "../understanding/rates.ts";
+
+/** The port a shop runtime listens on when runtime.json names none (the compose file's RUNTIME_PORT is the same number). Here, not in the HTTP layer, because the deployer reads this file. */
+export const DEFAULT_PORT = 8780;
 
 /**
  * One service a template calls, as runtime.json names it. Each base URL is a Guard instance in front of that service. `agentTokenFile`: a file holding the credential THIS

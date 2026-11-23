@@ -1,7 +1,7 @@
 // Send once, for a message that COMMITS someone (17 Nov 2026): Stock orders' purchase order to a supplier and its reminder first. A repeat of an ordinary message is a nuisance;
-// a repeat of a purchase order can mean goods delivered twice. A step saves only at its end (modules/runtime/core.ts), so a step that sends inside itself can die after WhatsApp
+// a repeat of a purchase order can mean goods delivered twice. A step saves only at its end (go/internal/runtime), so a step that sends inside itself can die after WhatsApp
 // took the message and before the save, and then runs again and sends it again. This file is the way out, and it is the same protocol the monthly report
-// (modules/report/monthly-job.ts) and the owner's morning line (modules/assistant/morning.ts) already follow, applied to a message a step asks for:
+// (modules/report/monthly-job.ts) and the owner's morning line (go/internal/assistant) already follow, applied to a message a step asks for:
 //
 //   1. THE STEP DOES NOT SEND. It records an INTENT in the store: the message's id, who it goes to, the templates and the values, and the case. The step is saved whole.
 //   2. AFTER THAT SAVE the runtime runs `runSendOnce`: it writes the CLAIM (`claimed`, a record line `attempted`) and SAVES it; then it sends; then it writes the ENDING

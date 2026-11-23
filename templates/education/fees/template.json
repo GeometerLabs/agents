@@ -4,5 +4,7 @@
   "setup": "fees",
   "steps": ["business", "deposit", "languages", "accounts", "character", "checks"],
   "accounts": ["whatsapp", "payment"],
-  "settingsExample": "settings/bright-tuition-upi.example.json"
+  "settingsExample": "settings/bright-tuition-upi.example.json",
+  "runtime": "go",
+  "program": "fees"
 }

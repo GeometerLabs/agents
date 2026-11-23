@@ -1,5 +1,5 @@
 // WhatsApp's later reports on the messages a shop sent (delivered, read, failed), written into the shop's record against the message they are about. The runtime
-// (modules/runtime/core.ts) calls `recordMessageStatus` for each `message_status` event the inbox forwards; the agent never sees one, so a report changes no
+// (go/internal/runtime) calls `recordMessageStatus` for each `message_status` event the inbox forwards; the agent never sees one, so a report changes no
 // booking, no fee and no order, and nothing is ever sent again because of one. A failure the shop counted on is listed for a person instead (B31,
 // modules/unfinished/builtin.ts `message_not_delivered`).
 //

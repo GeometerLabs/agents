@@ -101,8 +101,10 @@ test("a shop deployed from the old folder is mounted from the new one the next t
     await deploy(w.ctx, "pet-spa");
     const compose = readFileSync(join(w.paths.generated, "compose.yaml"), "utf8");
     assert.ok(!compose.includes(old), "the stale folder is in no mount");
-    assert.equal(compose.split(`${current}:/pathway:ro`).length - 1, 2, "both shops mount the current folder as /pathway");
-    assert.ok(compose.includes(`${join(w.ctx.appDir, "modules")}:/modules:ro`));
+    // the folder is found again from the pin: today's Bookings folder, which runs on the Go program (0.2.0, the switch of 24 Nov 2026), so both shops run /bookings and mount no
+    // template code; the stale folder (no template.json) would have made them Node shops mounting it
+    assert.equal([...compose.matchAll(/- "\/bookings"\s+- "--client"/gu)].length, 2, "both shops run the current folder's program");
+    assert.ok(!compose.includes(":/pathway:ro"));
     assert.ok(existsSync(join(current, "package.json")));
   } finally { w.done(); }
 });

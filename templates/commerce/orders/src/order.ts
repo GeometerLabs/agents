@@ -178,7 +178,7 @@ export function newDraft(customer: string, language: Language): Order {
 
 /**
  * The delivery address, as the customer wrote it, is kept on the order for the owner while the order is being done. Once the order is over and its slot ended before
- * `beforeMs`, only its place on the delivery list (`area`) stays: the words are deleted (the runtime's daily compaction, modules/runtime/core.ts). Returns how many.
+ * `beforeMs`, only its place on the delivery list (`area`) stays: the words are deleted (the runtime's daily compaction, go/internal/runtime). Returns how many.
  */
 export function compactFinishedOrders(store: Store, beforeMs: number): number {
   let n = 0;

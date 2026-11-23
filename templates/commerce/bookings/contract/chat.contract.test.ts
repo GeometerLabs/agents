@@ -6,7 +6,8 @@ import { after, describe } from "node:test";
 import assert from "node:assert/strict";
 import { languageOfScript } from "../../../../modules/language/format.ts";
 import { SAYS } from "../crash-test/says.ts";
-import { contract, makeShop, startFakeModel } from "./harness.ts";
+import { CUSTOMER, contract, makeShop, startFakeModel } from "./harness.ts";
+import { SELF_HOSTED_PROVIDER, costMicroInr, dayOf, selfHostedRate } from "../../../../modules/understanding/rates.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -208,5 +209,28 @@ describe("the model's answer is untrusted input", () => {
     assert.equal((await s.status()).ai.mode, "buttons");
     const lines = await shopLines(s, g.hash);
     assert.equal(lines.length, 1);
+  });
+});
+
+// A model the builder hosts (B73): no line of the shared rate table prices it, so the runtime prices its calls at the builder's own rate (runtime.json parser.rate), keeps 0
+// as 0, and with no rate records the call with no price (never 0). Moved here from bundle/test/self-hosted-model.test.ts, which ran it on the TypeScript runtime until
+// 24 Nov 2026. The fake model answers every call with 100 input and 50 output tokens.
+describe("a self-hosted model's calls are priced at the builder's rate", () => {
+  const RATE = { inputUsdPerMillion: 0.2, outputUsdPerMillion: 0.6 };
+  const read = async (rate: Record<string, number> | undefined): Promise<{ provider: string; model: string; cost: string | undefined; day: string }> => {
+    const { s } = await withModel(() => intent({ kind: "book", language: "en", serviceId: "haircut" }), { parser: { provider: SELF_HOSTED_PROVIDER, model: "llama-local", ...(rate ? { rate } : {}) } });
+    assert.equal((await s.inbound(CUSTOMER, UNREADABLE)).status, 200);
+    const line = s.record().find((r) => r.action === "receive_message" && r.refs.step === "model");
+    assert.ok(line, "the language model read the message");
+    return { provider: line!.refs.provider, model: line!.refs.model, cost: line!.refs.costMicroInr, day: dayOf(s.now()) };
+  };
+  contract("priced at the builder's rate, from the day the shop started with it; 0 kept as 0; no rate is no price, never 0", async () => {
+    const priced = await read(RATE);
+    assert.deepEqual([priced.provider, priced.model], [SELF_HOSTED_PROVIDER, "llama-local"]);
+    const want = costMicroInr(selfHostedRate("llama-local", RATE, priced.day), { inputTokens: 100, outputTokens: 50 })!;
+    assert.ok(want > 0);
+    assert.equal(priced.cost, String(want));
+    assert.equal((await read({ inputUsdPerMillion: 0, outputUsdPerMillion: 0 })).cost, "0", "0 is the builder's own number, and is kept as 0");
+    assert.equal((await read(undefined)).cost, undefined, "no rate: unknown, never 0");
   });
 });

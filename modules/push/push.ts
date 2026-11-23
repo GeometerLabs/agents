@@ -1,10 +1,10 @@
 // A shop's web push, as the rest of the runtime sees it (plan item 11h, decision 45): alerts to the owner by the owner's choice of WhatsApp, push or both, and
-// optional alerts to a customer who allowed them on their booking's or order's own page. Made once per runtime by the shared start (modules/runtime/start.ts)
+// optional alerts to a customer who allowed them on their booking's or order's own page. Made once per runtime by the shared start (go/internal/runtime)
 // and handed to:
 //   - the template's start, which wraps the shop's messaging with `pushMessaging`, so every message to the owner's number (a payment to check, a refund to approve,
 //     "needs you", the morning summary, the sign-in link's answer) also, or only, becomes a push, whichever path sent it;
 //   - the template's runtime, whose channel outbox (modules/channels/outbox.ts) calls `customer` when it keeps a message for a page's conversation;
-//   - the runtime's HTTP layer, which takes the subscriptions and the choice (modules/runtime/http.ts, "push").
+//   - the runtime's HTTP layer, which takes the subscriptions and the choice (go/internal/runtime, "push").
 // The words are the same checked words the message would carry (modules/messaging/say.ts ran on them before any send); the push only carries them, encrypted.
 import type { Clock } from "../core/clock.ts";
 import { ApiError } from "../core/faults.ts";

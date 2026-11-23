@@ -2,11 +2,11 @@
 // a message, a payment event or an approvals answer; a template's agent adds one more event of its own, the tick, which only its own clock makes.
 // The inbox has already checked each provider's signature; this only makes sure a malformed body cannot reach the agent.
 import type { InboundMessage, MessageStatus } from "../messaging/messaging.ts";
+import type { Language } from "../language/languages.ts";
 import type { PaymentEvent } from "../payments/payments.ts";
 import { channelEventKey } from "../channels/events.ts";
 import type { ChannelEvent } from "../channels/events.ts";
 import type { OwnerAccessEvent } from "../channels/owner-signin.ts";
-import type { ChatLinkEvent } from "../channels/chat-link-send.ts";
 import type { LimitsEvent } from "../limits/runtime-limits.ts";
 import { limitsEventKey } from "../limits/runtime-limits.ts";
 import type { ListingsEvent } from "../listings/kit.ts";
@@ -15,6 +15,8 @@ import { stockEventKey } from "../stock/kit.ts";
 import type { OwnerStockEvent } from "../stock/kit.ts";
 
 /** Ticks come from our own clock, never from outside. */
+/** W2: a link a chat guest asked for, to send to the number they gave (what the runtime's chat_link step does). Here, with the event union, so the inbox side needs nothing of the TypeScript runtime. */
+export interface ChatLinkEvent { kind: "chat_link"; id: string; what: "recover" | "links" | "confirm"; language: Language; /** recover, confirm: the number (digits). */ phone?: string; /** links, confirm: the thread's hash. */ handle?: string }
 export type IncomingEvent =
   | { kind: "message"; message: InboundMessage } // a customer's (or the owner's) WhatsApp message
   // WhatsApp's later report on a message the shop sent: delivered, read or failed. The runtime records it against that message (modules/messaging/statuses.ts) and
@@ -32,7 +34,7 @@ export type IncomingEvent =
   | ChannelEvent
   // Item 11f: the runtime's own HTTP layer says an owner's session started or ended, for the record. Never from outside: neither token can send it.
   | OwnerAccessEvent
-  // W2: a link a chat guest asked for, to send to the number they gave (modules/channels/chat-link-send.ts). Made only by the runtime's HTTP layer; the core runs it, never the agent.
+  // W2: a link a chat guest asked for, to send to the number they gave (go/internal/runtime). Made only by the runtime's HTTP layer; the core runs it, never the agent.
   | ChatLinkEvent
   // "Limits, tightened by a tap" (modules/limits/runtime-limits.ts): the deployer's word that Guard has a changed limit (or that it failed), and the owner's own limits page
   // behind their passkey. Like an owner_access, never from outside: only the runtime's own HTTP layer makes them, and the core, not the agent, runs them.

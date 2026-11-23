@@ -10,7 +10,7 @@ import { createFakePayments } from "../../../../../modules/payments/payments.ts"
 import type { FakePaymentsOptions } from "../../../../../modules/payments/payments.ts";
 import { createFakeMessaging } from "../../../../../modules/messaging/messaging.ts";
 import { createFakeCalendar } from "../../src/adapters/calendar.ts";
-import { createLiveAdapters } from "../../src/adapters/live/index.ts";
+import { createLiveAdapters } from "./live-adapters.ts";
 import { parseWhatsAppWebhook } from "../../../../../modules/messaging/webhooks.ts";
 import { parseRazorpayEvent } from "../../../../../modules/payments/providers/razorpay/webhook.ts";
 import { createRuleParser } from "../../src/adapters/rule-parser.ts";

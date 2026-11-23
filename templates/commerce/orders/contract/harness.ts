@@ -7,10 +7,9 @@
 // an order from the page instead of a booking, two Guards instead of three. The generic pieces (the process tracker, the fake model, the test-clock file, the process starter, the
 // HTTP caller) are modules/test/contract's, shared by every contract.
 //
-// Which implementation runs is chosen by the environment:
-//   ORDERS_IMPL=ts   (default)  node templates/commerce/orders/server/main.ts --client <folder>
-//   ORDERS_IMPL=go              the built binary named by ORDERS_GO_BIN (default <repo>/go/bin/orders) with the same arguments
-// An unknown value stops the run. On `go` without the binary EVERY test is skipped, with the reason below (`contract()` is the one wrapper, so no test is forgotten).
+// The shop runs on the Go program orders (go/cmd/orders), built to go/bin/orders or named by ORDERS_GO_BIN, as a separate process with `--client <folder>`. The
+// TypeScript runtime it was held to was deleted on 24 Nov 2026 (decision 61; go/TRIAL.md), so ORDERS_IMPL=ts is gone; ORDERS_IMPL may still say go. Without the binary EVERY
+// test is skipped, with the reason below (`contract()` is the one wrapper, so no test is forgotten).
 //
 // Two kinds of shop:
 //   mode "fakes"   runtime.json "fakes": payments and WhatsApp are the runtime's own in-memory stand-ins, on the TEST clock (GEOMETER_TEST=1, GEOMETER_TEST_CLOCK_FILE), put at
@@ -45,13 +44,13 @@ export type { FakeModel, Answer };
 const here = dirname(fileURLToPath(import.meta.url));
 /** The repository root, found from this file's own address. */
 export const REPO = join(here, "..", "..", "..", "..");
-const KNOWN = ["ts", "go"] as const;
-export const IMPL = (process.env.ORDERS_IMPL ?? "ts") as (typeof KNOWN)[number];
-if (!KNOWN.includes(IMPL)) throw new Error(`ORDERS_IMPL is "${process.env.ORDERS_IMPL}": say ts or go.`);
+/** Which runtime the tests start: the Go program, the only one since 24 Nov 2026. */
+export const IMPL = "go" as const;
+if (process.env.ORDERS_IMPL !== undefined && process.env.ORDERS_IMPL !== "go") throw new Error(`ORDERS_IMPL is "${process.env.ORDERS_IMPL}": the TypeScript runtime was deleted on 24 Nov 2026, so only go is left.`);
 const GO_BIN = process.env.ORDERS_GO_BIN ?? join(REPO, "go", "bin", "orders");
 
 /** Why every test is skipped (undefined: they run). */
-export const SKIP: string | undefined = IMPL === "go" && !existsSync(GO_BIN) ? "no Go Orders runtime yet" : undefined;
+export const SKIP: string | undefined = !existsSync(GO_BIN) ? `the Go Orders program is not built (go build -o go/bin/ ./cmd/orders, or set ORDERS_GO_BIN)` : undefined;
 
 /** The ONE wrapper every contract test goes through: a test is skipped only when what it needs is not there, and says so. */
 export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, fn); };
@@ -156,7 +155,7 @@ export interface Shop {
   settings: Record<string, any>;
   call(path: string, o?: Omit<CallOptions, "token"> & { token?: string | null }): Promise<Answer>;
   stop(): Promise<void>;
-  start(impl?: "ts" | "go"): Promise<void>;
+  start(impl?: "go"): Promise<void>;
   /** Wait until nothing is pending in the shop's queue (steps are asynchronous). */
   settle(): Promise<any>;
   log(): string;
@@ -259,10 +258,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   let running: RuntimeProcess | undefined;
   const printed = { text: "" };
   const url = `http://127.0.0.1:${port}`;
-  const command = (impl: "ts" | "go"): { cmd: string; args: string[] } => {
-    if (impl === "go") return { cmd: GO_BIN, args: ["--client", client] };
-    return { cmd: process.execPath, args: [join(REPO, "templates", "commerce", "orders", "server", "main.ts"), "--client", client] };
-  };
+  // the Go program only (the TypeScript runtime it once could start went on 24 Nov 2026); `impl` stays in the signature for the tests that name it
+  const command = (_impl: "go"): { cmd: string; args: string[] } => ({ cmd: GO_BIN, args: ["--client", client] });
   let ids = 0;
   const uid = (p: string): string => `${p}-${Date.now().toString(36)}-${++ids}`;
   const readDb = <T>(f: (db: DatabaseSync) => T): T => { const db = new DatabaseSync(join(dataDir, "agent.db"), { readOnly: true }); try { return f(db); } finally { db.close(); } };

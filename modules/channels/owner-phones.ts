@@ -1,5 +1,5 @@
 // The owner's phones, the small pure parts (owner's item 2, "no Operator holds a shop hostage"): the coarse label a phone gets when its passkey is made, and how a
-// passkey's origin is worded. Used by the runtime's HTTP layer (modules/runtime/http.ts, which reads the browser's User-Agent at registration) and by the owner's
+// passkey's origin is worded. Used by the runtime's HTTP layer (go/internal/runtime, which reads the browser's User-Agent at registration) and by the owner's
 // phones page (owner-phones-page.ts). Nothing here touches a file or the network.
 import type { Language } from "../language/languages.ts";
 

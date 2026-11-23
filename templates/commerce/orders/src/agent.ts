@@ -1288,7 +1288,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function onTick(): Promise<void> {
     reconcileStock();
-    await assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
+    await assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (go/internal/assistant)
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their order is in (modules/payments/refunds.ts)

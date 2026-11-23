@@ -26,8 +26,9 @@ import type { RealGuard } from "./real-guard.ts";
 import { panelRuntime, serverConfig, tempServer } from "./helpers.ts";
 import { world } from "./world.ts";
 import { validateRuntimeConfig } from "../../templates/commerce/bookings/server/config.ts";
+import { CUSTOMER, makeShop } from "../../templates/commerce/bookings/contract/harness.ts";
+import type { Shop } from "../../templates/commerce/bookings/contract/harness.ts";
 import type { ClientFolder } from "../../templates/commerce/bookings/server/config.ts";
-import { buildUnderstanding } from "../../templates/commerce/bookings/server/start.ts";
 import { createModelParser } from "../../templates/commerce/bookings/src/adapters/model-llm.ts";
 import { createWorld } from "../../templates/commerce/bookings/src/harness.ts";
 import { answer, openaiReply, startStubModel } from "../../templates/commerce/bookings/test/stub-model-server.ts";
@@ -236,42 +237,6 @@ const stubModel = async (): Promise<StubModel> => {
 };
 const expectedCost = (rate = RATE) => costMicroInr(selfHostedRate("llama-local", rate, dayOf(TEN_NOV)), { inputTokens: 2000, outputTokens: 150 });
 
-test("the runtime prices a self-hosted call at the builder's rate, and without one counts it with no price (never 0); the shared table is never asked to price it", async () => {
-  const stub = await stubModel();
-  const bare = { wire: "openai", baseUrl: `${stub.url}/v1`, model: "llama-local", provider: SELF_HOSTED_PROVIDER };
-  assert.equal(rateFor(SELF_HOSTED_PROVIDER, "llama-local", dayOf(TEN_NOV), RATES), null, "no file in rates/ prices a model the builder hosts");
-  const priced = buildUnderstanding(client({ ...bare, rate: RATE }), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  const u = (await priced.parser.parseDetailed!(UNCLEAR, context)).understood!;
-  assert.deepEqual([u.step, u.provider, u.model, u.inputTokens, u.outputTokens], ["model", SELF_HOSTED_PROVIDER, "llama-local", 2000, 150]);
-  assert.equal(u.costMicroInr, expectedCost());
-  assert.ok((u.costMicroInr as number) > 0);
-  assert.equal(u.rateDate, dayOf(TEN_NOV), "the builder's rate holds from the day the runtime started with it");
-  assert.ok(!("rate" in JSON.parse(JSON.stringify(stub.requests[0].body))), "the rate is for pricing, never sent to the model");
-  const free = buildUnderstanding(client({ ...bare, rate: { inputUsdPerMillion: 0, outputUsdPerMillion: 0 } }), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  assert.equal((await free.parser.parseDetailed!(UNCLEAR, context)).understood!.costMicroInr, 0, "0 is the builder's own number, and is kept as 0");
-  const unpriced = buildUnderstanding(client(bare), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  assert.equal((await unpriced.parser.parseDetailed!(UNCLEAR, context)).understood!.costMicroInr, null, "no rate: unknown, never 0");
-});
-
-test("the fix end to end, without Guard: the generated deepinfra parser prices the call in the runtime, the agent's record carries the cost, and the meter's model spend (the heartbeat's model_micro_inr) is above 0", async () => {
-  const stub = await stubModel();
-  const deepinfra = { wire: "openai", model: "deepseek-ai/DeepSeek-V4.1-Flash", upstream: "api.deepinfra.com:443", path: "/v1/openai/chat/completions" };
-  const t = tempServer({ "glow-salon": panelRuntime({ parser: { wire: "openai", model: deepinfra.model } }) });
-  let generatedParser: Record<string, unknown>;
-  try { generatedParser = planShop(serverConfig({ model: deepinfra }), t.shop("glow-salon")).runtime.parser as Record<string, unknown>; } finally { t.done(); }
-  // the generated parser as the runtime reads it, pointed at the stand-in instead of http://g-model:8080 (no Guard here, so no credential file)
-  const { agentTokenFile: _file, ...parser } = { ...generatedParser, baseUrl: `${stub.url}/v1` };
-  const built = buildUnderstanding(client(parser), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  const w = createWorld({ parser: built.parser as never });
-  await w.say(UNCLEAR);
-  const expected = costMicroInr(rateFor("deepinfra", deepinfra.model, dayOf(TEN_NOV), RATES), { inputTokens: 2000, outputTokens: 150 });
-  assert.ok(expected !== null && expected > 0);
-  const entry = w.record.entries().find((e) => e.action === "receive_message" && e.outcome === "confirmed")!;
-  assert.deepEqual([entry.refs.provider, entry.refs.costMicroInr], ["deepinfra", String(expected)]);
-  const totals = summarizeUsage(w.record.entries(), {});
-  assert.deepEqual([totals.modelMicroInr, totals.unpriced], [expected, 0], "what the heartbeat sends as model_micro_inr, and fleet adds up against ai.cap");
-});
-
 // ---- the whole path, with the real programs --------------------------------------------------------------------------------------------------------------------
 
 const GATEWAY = process.env.GEO_MODEL_GATEWAY_BIN ?? join(dirname(BINARY), "geo-model-gateway");
@@ -321,17 +286,24 @@ async function startModelGuard(model: Record<string, unknown>, gatewayUrl: strin
   return guard;
 }
 
-/** The runtime's understanding as the deployed shop builds it: the GENERATED parser, pointed at the real Guard instead of http://g-model:8080, with the agent's credential file. */
-function shopUnderstanding(model: Record<string, unknown>, guard: RealGuard, agentToken: string, more: Record<string, unknown> = {}) {
+/**
+ * A Bookings shop as a server runs it since 0.2.0 (the Go program go/bin/bookings, started by the Bookings contract's harness as a separate process), with the GENERATED
+ * parser pointed at the real Guard instead of http://g-model:8080 and the agent's credential file. Until 24 Nov 2026 this built the TypeScript runtime's understanding in
+ * process; the shop now reads the message itself and the test reads its record.
+ */
+async function shopWith(model: Record<string, unknown>, guard: RealGuard, agentToken: string, more: Record<string, unknown> = {}): Promise<Shop> {
   const t = tempServer({ "glow-salon": panelRuntime({ parser: { wire: "openai", model: "llama-local" } }) });
-  try {
-    const generated = planShop(serverConfig({ model }), t.shop("glow-salon")).runtime.parser as Record<string, unknown>;
-    const tokenFile = join(t.root, "agent_model");
-    writeFileSync(tokenFile, agentToken, { mode: 0o600 });
-    const parser = { ...generated, baseUrl: `${guard.agentUrl}/v1`, agentTokenFile: tokenFile };
-    return buildUnderstanding(client(parser, more), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  } finally { t.done(); }
+  let generated: Record<string, unknown>;
+  try { generated = planShop(serverConfig({ model }), t.shop("glow-salon")).runtime.parser as Record<string, unknown>; } finally { t.done(); }
+  const dir = mkdtempSync(join(tmpdir(), "geo-agent-model-"));
+  const tokenFile = join(dir, "agent_model");
+  writeFileSync(tokenFile, agentToken, { mode: 0o600 });
+  const s = await makeShop({ runtime: { parser: { ...generated, baseUrl: `${guard.agentUrl}/v1`, agentTokenFile: tokenFile }, ...more } });
+  closers.push(async () => { await s.stop(); await s.cleanup(); rmSync(dir, { recursive: true, force: true }); });
+  await s.start();
+  return s;
 }
+const read = (s: Shop) => s.record().filter((e) => e.action === "receive_message" && e.outcome === "confirmed");
 
 test("end to end: the runtime reads a message through the real model Guard and the real model gateway; the agent's record and the cost meter count it at the builder's rate", { skip: skipEndToEnd }, async () => {
   const stub = await stubModel();
@@ -340,18 +312,16 @@ test("end to end: the runtime reads a message through the real model Guard and t
   const agent = credential();
   const model = { ...selfHosted({ rate: RATE }), selfHosted: { url: "http://192.168.1.20:8787/v1", rate: RATE } };
   const guard = await startModelGuard(model, gateway.url, `Bearer ${gateway.token}`, agent.token);
-  const built = shopUnderstanding(model, guard, agent.token);
-
-  // the shop's agent, with the parser it would have on the server: one customer message the rules cannot read
-  const w = createWorld({ parser: built.parser as never });
-  await w.say(UNCLEAR);
+  // the shop, with the parser it would have on the server: one customer message the rules cannot read
+  const s = await shopWith(model, guard, agent.token);
+  await s.inbound(CUSTOMER, UNCLEAR);
   assert.equal(stub.requests.length, 1, "the call reached the model server");
   const seen = stub.requests[0];
   assert.equal(seen.headers.authorization, `Bearer ${MODEL_SERVER_KEY}`, "the model server sees only its own key: the gateway's token and the agent's credential stop at the gateway and at Guard");
   assert.equal(seen.body.model, UPSTREAM_MODEL, "the gateway maps the pinned name to the model server's own");
-  const entry = w.record.entries().find((e) => e.action === "receive_message" && e.outcome === "confirmed")!;
+  const entry = read(s).at(-1)!;
   assert.deepEqual([entry.refs.step, entry.refs.provider, entry.refs.model, entry.refs.costMicroInr], ["model", SELF_HOSTED_PROVIDER, "llama-local", String(expectedCost())]);
-  const totals = summarizeUsage(w.record.entries(), {});
+  const totals = summarizeUsage(s.record() as never, {});
   assert.deepEqual([totals.byStep.model, totals.modelMicroInr, totals.unpriced], [1, expectedCost(), 0], "the cost meter counts it, at the builder's rate");
 
   // the gateway metered the same call in its own ledger, at the same prices
@@ -360,9 +330,9 @@ test("end to end: the runtime reads a message through the real model Guard and t
 
   // without a rate the same call is counted, with no price
   const unpricedModel = { ...model, selfHosted: { url: model.selfHosted.url } };
-  const plain = createWorld({ parser: shopUnderstanding(unpricedModel, guard, agent.token).parser as never });
-  await plain.say(UNCLEAR);
-  const t2 = summarizeUsage(plain.record.entries(), {});
+  const plain = await shopWith(unpricedModel, guard, agent.token);
+  await plain.inbound(CUSTOMER, UNCLEAR);
+  const t2 = summarizeUsage(plain.record() as never, {});
   assert.deepEqual([t2.byStep.model, t2.modelMicroInr, t2.unpriced], [1, 0, 1], "unknown, never 0: counted apart as unpriced");
 });
 
@@ -381,25 +351,21 @@ test("end to end: Guard's limits hold in front of the model the builder hosts: t
   assert.equal(stub.requests.length, 0);
 
   // the AI cap's switch: with runtime.json model "off" the shop's agent leaves the language model out, so nothing is sent and the record says it was skipped
-  const capped = shopUnderstanding(model, guard, agent.token, { model: "off" });
-  assert.equal(capped.ai.model?.(), "off");
-  const w = createWorld({ parser: capped.parser as never, ai: capped.ai });
-  await w.say(UNCLEAR);
-  const entry = w.record.entries().find((e) => e.action === "receive_message" && e.outcome === "confirmed")!;
+  const capped = await shopWith(model, guard, agent.token, { model: "off" });
+  await capped.inbound(CUSTOMER, UNCLEAR);
+  const entry = read(capped).at(-1)!;
   assert.deepEqual([entry.refs.step, entry.refs.skipped], ["rules", "model"]);
   assert.equal(stub.requests.length, 0);
 
   // the calls-per-day cap: two go through, the third is refused by Guard and the rules read the message
-  const built = shopUnderstanding(model, guard, agent.token);
-  for (let i = 0; i < 2; i++) assert.equal((await built.parser.parseDetailed!(UNCLEAR, context)).understood!.step, "model");
-  const third = await built.parser.parseDetailed!(UNCLEAR, context);
-  assert.deepEqual([third.understood!.step, third.understood!.failed], ["rules", ["model"]]);
-  assert.match(third.fallbackReason ?? "", /the model answered HTTP 4\d\d/);
+  const shop = await shopWith(model, guard, agent.token);
+  for (let i = 0; i < 3; i++) await shop.inbound(CUSTOMER, UNCLEAR);
+  assert.deepEqual(read(shop).map((e) => [e.refs.step, e.refs.failed]), [["model", undefined], ["model", undefined], ["rules", "model"]]);
   assert.equal(stub.requests.length, 2, "Guard's daily cap held: the third call never reached the gateway");
 
   // the gateway's own check: a model Guard holding a wrong token gets nothing from it
   const wrong = await startModelGuard({ ...model, callsPerDay: 100 }, gateway.url, "Bearer not-the-gateway-token", agent.token);
-  const refused = await shopUnderstanding(model, wrong, agent.token).parser.parseDetailed!(UNCLEAR, context);
+  const refused = await createModelParser({ wire: "openai", baseUrl: `${wrong.agentUrl}/v1`, model: "llama-local", timeoutMs: 5000 }, bearer).parseDetailed(UNCLEAR, context);
   assert.match(refused.fallbackReason ?? "", /the model answered HTTP 401/);
   assert.equal(stub.requests.length, 2);
 });

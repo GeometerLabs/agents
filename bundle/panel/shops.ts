@@ -8,7 +8,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { canonicalJson } from "../../modules/record/record.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
 import { parseLock, pathwayVersion } from "../../templates/commerce/bookings/server/config.ts";
-import { PATHWAY } from "../../templates/commerce/bookings/server/runtime.ts";
+import { PATHWAY } from "../../templates/commerce/bookings/server/config.ts";
 import { guardsOf, kindFor } from "../lib/kinds.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";

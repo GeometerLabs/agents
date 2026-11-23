@@ -25,7 +25,7 @@ import (
 // Pathway and Version are what an Orders folder's pathway.lock must name: the number in templates/commerce/orders/package.json (the contract suite pins a folder to it).
 const (
 	Pathway = "orders"
-	Version = "0.1.0"
+	Version = "0.2.0"
 )
 
 // Kit is the Orders template (runtime.Kit). The channel's reads need the shop's settings, the clock and the licence, which the command line hands in once the folder is read and

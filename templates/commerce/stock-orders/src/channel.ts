@@ -5,7 +5,7 @@
 // press for something that has changed since (a new quantity, an answer already given on WhatsApp) does nothing, and the same press twice is done once.
 // An order message whose delivery is unknown is its own item (`po_unsure`: "They got it" / "Send it again"); "Send it again" is a fresh act of the owner's, never automatic.
 // An approval is the agent's own approval card: its case is the card's id and its digest the card's own, so the page answers it through the same judge as a tap
-// (cards.ts judgeCard). The assistant's app would list that card too; the runtime takes it out of the app's list (server/runtime.ts) so one order is never shown twice.
+// (cards.ts judgeCard). The assistant's app would list that card too; the runtime takes it out of the app's list (go/internal/stockorders, the Go runtime) so one order is never shown twice.
 import { createHash } from "node:crypto";
 import type { OwnerItemView, OwnerView } from "../../../../modules/channels/backend.ts";
 import { openCards } from "../../../../modules/assistant/cards.ts";

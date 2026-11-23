@@ -3,10 +3,9 @@
 // shop as a SEPARATE PROCESS on a free port, and gives the tests an HTTP caller and readers of the files the shop writes (agent.db). The shop runtime (server/, src/agent.ts) is
 // never imported: only pure helpers that MAKE files and handles, and the WhatsApp stand-in on the other side of the wire (guards.ts).
 //
-// Which implementation runs is chosen by the environment, as in the Bookings contract:
-//   STOCK_ORDERS_IMPL=ts   (default)  node templates/commerce/stock-orders/server/main.ts --client <folder>
-//   STOCK_ORDERS_IMPL=go              the binary named by STOCK_ORDERS_GO_BIN (default <repo>/go/bin/stock-orders) with the same arguments
-// An unknown value stops the run. On `go` without the binary EVERY test is skipped with the reason below (`contract()` is the one wrapper).
+// The shop runs on the Go program stock-orders (go/cmd/stock-orders), built to go/bin/stock-orders or named by STOCK_ORDERS_GO_BIN, as a separate process with
+// `--client <folder>`. The TypeScript runtime it was held to was deleted on 24 Nov 2026 (decision 61; go/TRIAL.md), so STOCK_ORDERS_IMPL=ts is gone; STOCK_ORDERS_IMPL may still
+// say go. Without the binary EVERY test is skipped with the reason below (`contract()` is the one wrapper, so no test is forgotten).
 //
 // Two kinds of shop:
 //   mode "guards" (default)  runtime.json "live", WhatsApp is the fake Guard of guards.ts on the real clock. What went to whom is read from the stand-in's outbox: the approval card's
@@ -37,15 +36,15 @@ export type { Answer };
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, "..", "..", "..", "..");
-const KNOWN = ["ts", "go"] as const;
-export const IMPL = (process.env.STOCK_ORDERS_IMPL ?? "ts") as (typeof KNOWN)[number];
-if (!KNOWN.includes(IMPL)) throw new Error(`STOCK_ORDERS_IMPL is "${process.env.STOCK_ORDERS_IMPL}": say ts or go.`);
+/** Which runtime the tests start: the Go program, the only one since 24 Nov 2026. */
+export const IMPL = "go" as const;
+if (process.env.STOCK_ORDERS_IMPL !== undefined && process.env.STOCK_ORDERS_IMPL !== "go") throw new Error(`STOCK_ORDERS_IMPL is "${process.env.STOCK_ORDERS_IMPL}": the TypeScript runtime was deleted on 24 Nov 2026, so only go is left.`);
 const GO_BIN = process.env.STOCK_ORDERS_GO_BIN ?? join(REPO, "go", "bin", "stock-orders");
 
 /** Why every test is skipped (undefined: they run). */
-export const SKIP: string | undefined = IMPL === "go" && !existsSync(GO_BIN) ? "no Go Stock orders runtime yet (wave 2)" : undefined;
-/** Both binaries are there: the cross-restart test runs. */
-export const BOTH = existsSync(process.env.STOCK_ORDERS_GO_BIN ?? join(REPO, "go", "bin", "stock-orders"));
+export const SKIP: string | undefined = !existsSync(GO_BIN) ? "the Go Stock orders program is not built (go build -o go/bin/ ./cmd/stock-orders, or set STOCK_ORDERS_GO_BIN)" : undefined;
+/** The Go program is there: the restart test runs (it ran both runtimes in turn until 24 Nov 2026, hence the name). */
+export const BOTH = existsSync(GO_BIN);
 
 /** The ONE wrapper every contract test goes through. */
 export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, fn); };
@@ -87,7 +86,7 @@ export interface Shop {
   root: string; client: string; dataDir: string; internal: string; channel: string; owner: string; port: number; mode: "guards" | "fakes";
   guard: WhatsAppGuard | undefined;
   call(path: string, o?: Omit<CallOptions, "token"> & { token?: string | null }): Promise<Answer>;
-  start(impl?: "ts" | "go"): Promise<void>;
+  start(impl?: "go"): Promise<void>;
   stop(): Promise<void>;
   /** SIGKILL: the process dies at once, nothing is finished. */
   kill(): void;
@@ -204,8 +203,9 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     },
     async start(impl = IMPL) {
       await running?.stop(); running = undefined;
-      const cmd = impl === "go" ? GO_BIN : process.execPath;
-      const args = impl === "go" ? ["--client", client] : [join(REPO, "templates", "commerce", "stock-orders", "server", "main.ts"), "--client", client];
+      // the Go program only (the TypeScript runtime it once could start went on 24 Nov 2026)
+      const cmd = GO_BIN;
+      const args = ["--client", client];
       const env: Record<string, string | undefined> = { ...process.env, INTERNAL_TOKEN_FILE: join(secrets, "internal_token"), CHANNEL_TOKEN_FILE: join(secrets, "channel_token"), RECORD_KEY_FILE: join(secrets, "record_key") };
       delete env[TEST_SWITCH]; delete env[TEST_CLOCK_FILE];
       if (clock) { env[TEST_SWITCH] = "1"; env[TEST_CLOCK_FILE] = clock.file; }

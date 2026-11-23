@@ -1,5 +1,9 @@
 # Explanation: how the Fees template was built, and why
 
+**24 November 2026: the runtime is the Go program.** From 0.2.0 this template's shops run on `go/cmd/fees`, and its TypeScript server runtime (`server/` main, start,
+runtime and services, the live adapters' glue, the local stack and the runtime kit of the tests) is deleted (decision 61; go/TRIAL.md, "The switch"). Where the dated
+sections below describe those files they are this template's history; `src/` (the demo's engine), `server/config.ts`, `store.ts` and `snapshot.ts` stay.
+
 5 November 2026. This explains the choices in `templates/education/fees/`. It builds plan item B16 (fee and dues collection) on the shared modules that item B30 moved out of Bookings (see [modules/Explanation.md](../../../modules/Explanation.md)). Read [README.md](README.md) first for what it does; [Deferred.md](Deferred.md) lists what it leaves open.
 
 ## What was asked, and what this is

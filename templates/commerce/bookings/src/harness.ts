@@ -109,7 +109,7 @@ export interface WorldOptions {
   interactive?: boolean;
   /** A UPI shop: where the QR pictures go (modules/payments/owner-marked/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
   qrImage?: (text: string) => Promise<string | null>;
-  /** Item 11h: makes a WhatsApp booking's own page link (the runtime's, server/runtime.ts). Left out: none is sent. */
+  /** Item 11h: makes a WhatsApp booking's own page link (the runtime's, go/internal/bookings, the Go runtime). Left out: none is sent. */
   pageLink?: () => { url: string; hash: string } | undefined;
   /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
   licence?: () => LicenceNow;
@@ -144,7 +144,7 @@ export function createWorld(options: WorldOptions = {}): World {
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
-  // made again by `renew()`: the runtime makes the agent afresh for every step (runtime/core.ts), so a number the owner is reached on is read again at each step
+  // made again by `renew()`: the runtime makes the agent afresh for every step (go/internal/runtime), so a number the owner is reached on is read again at each step
   const makeAgent = () => createAgent({ settings, clock, ...(options.talker ? { talker: options.talker } : {}), ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.pageLink ? { pageLink: options.pageLink } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageAudio ? { pageAudio: options.pageAudio } : {}) });
   let agent = makeAgent();
   let deliveredEvents = 0;
