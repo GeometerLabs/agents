@@ -13,7 +13,6 @@ import { LICENCE_RULE, UNRESTRICTED, licenceNow } from "../../../../modules/lice
 import type { LeaseShop, LicenceFile, LicenceNow } from "../../../../modules/licence/rules.ts";
 import { licenceReader } from "../../../../modules/runtime/config.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
-import { createKit } from "./runtime-kit.ts";
 import { buildMonthlyReport } from "../report/data.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 
@@ -114,36 +113,6 @@ test("every licence message has its words in all four languages, and the owner's
 });
 
 // ---- the runtime: the owner's notice, once for each paid_through ----------------------------------------------------------------------------------------------------
-
-test("the runtime sends the owner one service notice at the wind-down and one at the final stop, once each, and again only for a new paid_through", async () => {
-  const kit = createKit();
-  try {
-    for (const name of ["owner_service_paused", "owner_service_stopped"]) for (const l of ["en", "hi", "ml", "kn"]) kit.messaging.approve(name, l);
-    let now: LicenceNow = UNRESTRICTED;
-    const { runtime } = kit.open({ licence: () => now });
-    const owner = kit.settings.owner.whatsapp;
-    await runtime.tick();
-    assert.equal(kit.messaging.sentTo(owner).length, 0, "nothing to say while the shop is in order");
-    now = { state: "wind_down", restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: null, partner: "Divya, local Operator" };
-    await runtime.tick();
-    await runtime.tick();
-    const first = kit.messaging.sentTo(owner);
-    assert.equal(first.length, 1, "once");
-    assert.equal(first[0].templateName, "owner_service_paused", "the owner has not written today, so it goes as the utility template");
-    assert.equal(first[0].text, "Heads up: online booking for Glow Salon is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact Divya, local Operator.");
-    now = { ...now, state: "stopped", exportUntil: PAID_THROUGH + 150 * 86_400 };
-    await runtime.tick();
-    await runtime.tick();
-    const all = kit.messaging.sentTo(owner);
-    assert.equal(all.length, 2);
-    assert.equal(all[1].templateName, "owner_service_stopped");
-    assert.equal(all[1].text, "Heads up: online booking for Glow Salon has stopped, because the service from Divya, local Operator has ended. Bookings still in your calendar after today: 0. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.");
-    assert.doesNotMatch(all[1].text, /copy|export|records|owe|pay|keys/iu, "no money, no blame, no copy or export for the owner");
-    now = { ...now, state: "wind_down", paidThrough: PAID_THROUGH + 40 * 86_400, exportUntil: null };
-    await runtime.tick();
-    assert.equal(kit.messaging.sentTo(owner).length, 3, "a later lapse is a new paid_through, and a new notice");
-  } finally { kit.cleanup(); }
-});
 
 // ---- the reader: client/licence.json ------------------------------------------------------------------------------------------------------------------------------
 

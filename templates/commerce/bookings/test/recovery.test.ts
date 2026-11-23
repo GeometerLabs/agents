@@ -5,9 +5,6 @@ import assert from "node:assert/strict";
 import { createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { handoverHash } from "../../../../modules/approvals/handover.ts";
-import { startServer } from "../server/server.ts";
-import { createKit } from "./runtime-kit.ts";
-
 const BOOK = "haircut tomorrow at 6pm";
 const recover = (w: World, action: string, id = "r-1", c = "b-1") => w.agent.handle({ kind: "recovery", id, case: c, action });
 const entries = (w: World, action: string) => w.record.entries().filter((e) => e.action === action);
@@ -113,31 +110,4 @@ test("'move CODE' from the owner's number is the owner agreeing to a handover: o
   // the same words from a customer are just a customer's message
   await w.say("move k7m2qx", { from: "+919811111111" });
   assert.equal(entries(w, "handover_agreed").length, 1);
-});
-
-test("the runtime's recovery endpoint: only with the token, only a well-formed request, saved once, and /internal/events refuses a recovery", async () => {
-  const kit = createKit();
-  const { runtime, db } = kit.open();
-  const server = await startServer(runtime, { token: "test-token-0123456789abcdef", port: 0 });
-  const post = (path: string, body: unknown, token = "test-token-0123456789abcdef") =>
-    fetch(`${server.url}${path}`, { method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
-  try {
-    assert.equal((await post("/internal/recover", { id: "r-1", case: "b-1", action: "recheck_payment" }, "")).status, 401);
-    assert.equal((await post("/internal/recover", { id: "r-1", case: "b-1", action: "recheck_payment" }, "wrong")).status, 401);
-    assert.equal((await post("/internal/recover", { id: "r 1", case: "b-1", action: "recheck_payment" })).status, 400);
-    assert.equal((await post("/internal/recover", { id: "r-1", case: "../etc", action: "recheck_payment" })).status, 400);
-    assert.equal((await post("/internal/recover", { id: "r-1", case: "b-1", action: "Recheck Payment" })).status, 400);
-    assert.equal((await fetch(`${server.url}/internal/recover`, { headers: { authorization: "Bearer test-token-0123456789abcdef" } })).status, 405);
-    const ok = await post("/internal/recover", { id: "r-1", case: "b-1", action: "recheck_payment" });
-    assert.equal(ok.status, 200);
-    assert.deepEqual(await ok.json(), { saved: 1, duplicates: 0 });
-    const again = await post("/internal/recover", { id: "r-1", case: "b-1", action: "recheck_payment" });
-    assert.deepEqual(await again.json(), { saved: 0, duplicates: 1 }, "pressing the button twice is one request");
-    await runtime.idle();
-    const [recovery] = db.loadState().record.filter((e) => e.action === "recovery");
-    assert.equal(recovery.outcome, "blocked", "there is no booking b-1 in an empty shop");
-    // the inbox's endpoint does not take one
-    const viaInbox = await post("/internal/events", { events: [{ kind: "recovery", id: "r-2", case: "b-1", action: "recheck_payment" }] });
-    assert.equal(viaInbox.status, 400);
-  } finally { await server.close(); await runtime.close(); kit.cleanup(); }
 });

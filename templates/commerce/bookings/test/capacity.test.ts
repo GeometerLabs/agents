@@ -11,14 +11,11 @@ import { checkNoDoubleBooking } from "../src/limits.ts";
 import { parseSettings, validateSettings, unitsFor } from "../src/settings.ts";
 import { MINUTE } from "../../../../modules/core/time.ts";
 import { CUSTOMER, createWorld } from "../src/harness.ts";
-import { createKit } from "./runtime-kit.ts";
-
 const glow = JSON.parse(readFileSync(new URL("../settings/glow-salon.example.json", import.meta.url), "utf8"));
 const H = 60 * MINUTE;
 const NOW = 0;
 const ev = (start: number, end: number, ref: string, resource?: string) => ({ start, end, bookingRef: ref, ...(resource ? { resource } : {}) });
 const BOOK = "I want a haircut tomorrow at 6pm";
-const told = (kit: ReturnType<typeof createKit>, phone: string) => kit.messaging.sentTo(phone).map((m) => m.text).join("\n");
 
 test("no-double-booking with units: one is the old rule, two lets a second booking in and refuses a third", () => {
   const one = (others: ReturnType<typeof ev>[], units?: number, resource?: string) => checkNoDoubleBooking({ startMs: 10 * H, endMs: 11 * H, bufferMinutes: 0, ownBookingRef: "me", others, nowMs: NOW, units, resource }).verdict;
@@ -58,31 +55,6 @@ test("the longest booking is a whole day, no longer", () => {
   assert.ok(long(1440).ok);
   const tooLong = long(1441);
   assert.ok(!tooLong.ok && tooLong.errors.some((e) => /between 5 and 1440/.test(e)));
-});
-
-test("two chairs, three customers at the same moment for the same time: exactly two get it, the third is told it is taken", async () => {
-  const kit = createKit();
-  kit.settings.resources = { shop: 2 };
-  const { runtime } = kit.open();
-  try {
-    const phones = [CUSTOMER, "+919822222222", "+919833333333"];
-    await Promise.all(phones.map((from) => kit.say(runtime, BOOK, { from })));
-    assert.equal(kit.calendar.events().length, 2, "two holds on the time");
-    assert.equal(runtime.status().bookings.awaiting_deposit, 2);
-    assert.equal(kit.payments.links().length, 2, "and two deposit links");
-    const refused = phones.filter((p) => /not available/u.test(told(kit, p)));
-    assert.equal(refused.length, 1, "exactly one is told the time is taken");
-  } finally { await runtime.close(); kit.cleanup(); }
-});
-
-test("one unit (no resources key): the last one goes to exactly one of two customers, as before", async () => {
-  const kit = createKit();
-  const { runtime } = kit.open();
-  try {
-    await Promise.all([kit.say(runtime, BOOK), kit.say(runtime, BOOK, { from: "+919822222222" })]);
-    assert.equal(kit.calendar.events().length, 1);
-    assert.equal(kit.payments.links().length, 1);
-  } finally { await runtime.close(); kit.cleanup(); }
 });
 
 test("a move: the calendar is read again after it, and an event written on the new time meanwhile sends the booking back to its old time", async () => {

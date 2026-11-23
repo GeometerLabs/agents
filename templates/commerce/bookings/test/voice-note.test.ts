@@ -14,11 +14,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { buildMonthlyReport } from "../report/data.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 import { ownerText } from "../report/text.ts";
-import { checkEvents, eventKey } from "../server/events.ts";
-import { startServer } from "../server/server.ts";
+import { checkEvents, eventKey } from "../../../../modules/runtime/events.ts";
 import { fixture } from "./helpers/scripted-server.ts";
-import { createKit } from "./runtime-kit.ts";
-
 const LINE: Record<Language, string> = {
   en: "Sorry, I can't listen to voice notes yet. Could you type your message?",
   hi: "माफ़ कीजिए, मैं अभी वॉइस नोट नहीं सुन सकता। क्या आप लिखकर भेज देंगे?",
@@ -190,34 +187,6 @@ test("a voice note from the owner is answered in the owner's language, and never
 });
 
 // ---- through the runtime: saved, and a redelivery is a no-op ----------------------------------------------------------------
-
-test("through the runtime's HTTP face: a voice note is saved, answered once, and a redelivery of the same message is a no-op; a malformed one is a 400", async () => {
-  const kit = createKit();
-  const { runtime, db } = kit.open();
-  const token = "test-token-0123456789abcdef";
-  const server = await startServer(runtime, { token, port: 0 });
-  const post = (body: unknown) => fetch(`${server.url}/internal/events`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
-  try {
-    kit.messaging.receive(CUSTOMER, ""); // the person writing opens their 24-hour window at the provider
-    const [parsed] = parseWhatsAppWebhook(webhookWith(audio("wamid.http-note", CUSTOMER.slice(1))));
-    const event = { kind: "message", message: { ...parsed, timestamp: kit.clock.now() } };
-    assert.deepEqual(await (await post({ events: [event] })).json(), { saved: 1, duplicates: 0 });
-    await runtime.idle();
-    assert.deepEqual(await (await post({ events: [event, event] })).json(), { saved: 0, duplicates: 2 }, "a redelivery, alone or twice in one request");
-    await runtime.idle();
-    assert.deepEqual(kit.messaging.sentTo(CUSTOMER).map((m) => m.text), [LINE.hi], "one reply, not three");
-    assert.equal(db.lastInboundAt(CUSTOMER), event.message.timestamp, "writing a voice note opens the 24-hour window like any message");
-    const record = db.loadState().record;
-    assert.equal(record.filter((e) => e.action === "voice_note_reply").length, 1);
-    assert.ok(!JSON.stringify(record).includes("MEDIA"));
-    // the saved task holds the flag and no words (and, once done, nothing at all)
-    const bad = await post({ events: [{ kind: "message", message: { ...event.message, id: "wamid.bad", voiceNote: "yes" } }] });
-    assert.equal(bad.status, 400);
-    assert.deepEqual(await (await post({ events: [{ ...event, message: { ...event.message, id: "wamid.other" } }] })).json(), { saved: 1, duplicates: 0 });
-    await runtime.idle();
-    assert.equal(kit.messaging.sentTo(CUSTOMER).length, 2, "a different voice note is a different message and is answered");
-  } finally { await server.close(); await runtime.close(); kit.cleanup(); }
-});
 
 // ---- the monthly report -----------------------------------------------------------------------------------------------------
 

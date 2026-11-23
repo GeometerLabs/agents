@@ -27,7 +27,6 @@ import { panelRuntime, serverConfig, tempServer } from "./helpers.ts";
 import { world } from "./world.ts";
 import { validateRuntimeConfig } from "../../templates/commerce/bookings/server/config.ts";
 import type { ClientFolder } from "../../templates/commerce/bookings/server/config.ts";
-import { buildUnderstanding } from "../../templates/commerce/bookings/server/start.ts";
 import { createModelParser } from "../../templates/commerce/bookings/src/adapters/model-llm.ts";
 import { createWorld } from "../../templates/commerce/bookings/src/harness.ts";
 import { answer, openaiReply, startStubModel } from "../../templates/commerce/bookings/test/stub-model-server.ts";
@@ -235,42 +234,6 @@ const stubModel = async (): Promise<StubModel> => {
   return m;
 };
 const expectedCost = (rate = RATE) => costMicroInr(selfHostedRate("llama-local", rate, dayOf(TEN_NOV)), { inputTokens: 2000, outputTokens: 150 });
-
-test("the runtime prices a self-hosted call at the builder's rate, and without one counts it with no price (never 0); the shared table is never asked to price it", async () => {
-  const stub = await stubModel();
-  const bare = { wire: "openai", baseUrl: `${stub.url}/v1`, model: "llama-local", provider: SELF_HOSTED_PROVIDER };
-  assert.equal(rateFor(SELF_HOSTED_PROVIDER, "llama-local", dayOf(TEN_NOV), RATES), null, "no file in rates/ prices a model the builder hosts");
-  const priced = buildUnderstanding(client({ ...bare, rate: RATE }), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  const u = (await priced.parser.parseDetailed!(UNCLEAR, context)).understood!;
-  assert.deepEqual([u.step, u.provider, u.model, u.inputTokens, u.outputTokens], ["model", SELF_HOSTED_PROVIDER, "llama-local", 2000, 150]);
-  assert.equal(u.costMicroInr, expectedCost());
-  assert.ok((u.costMicroInr as number) > 0);
-  assert.equal(u.rateDate, dayOf(TEN_NOV), "the builder's rate holds from the day the runtime started with it");
-  assert.ok(!("rate" in JSON.parse(JSON.stringify(stub.requests[0].body))), "the rate is for pricing, never sent to the model");
-  const free = buildUnderstanding(client({ ...bare, rate: { inputUsdPerMillion: 0, outputUsdPerMillion: 0 } }), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  assert.equal((await free.parser.parseDetailed!(UNCLEAR, context)).understood!.costMicroInr, 0, "0 is the builder's own number, and is kept as 0");
-  const unpriced = buildUnderstanding(client(bare), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  assert.equal((await unpriced.parser.parseDetailed!(UNCLEAR, context)).understood!.costMicroInr, null, "no rate: unknown, never 0");
-});
-
-test("the fix end to end, without Guard: the generated deepinfra parser prices the call in the runtime, the agent's record carries the cost, and the meter's model spend (the heartbeat's model_micro_inr) is above 0", async () => {
-  const stub = await stubModel();
-  const deepinfra = { wire: "openai", model: "deepseek-ai/DeepSeek-V4.1-Flash", upstream: "api.deepinfra.com:443", path: "/v1/openai/chat/completions" };
-  const t = tempServer({ "glow-salon": panelRuntime({ parser: { wire: "openai", model: deepinfra.model } }) });
-  let generatedParser: Record<string, unknown>;
-  try { generatedParser = planShop(serverConfig({ model: deepinfra }), t.shop("glow-salon")).runtime.parser as Record<string, unknown>; } finally { t.done(); }
-  // the generated parser as the runtime reads it, pointed at the stand-in instead of http://g-model:8080 (no Guard here, so no credential file)
-  const { agentTokenFile: _file, ...parser } = { ...generatedParser, baseUrl: `${stub.url}/v1` };
-  const built = buildUnderstanding(client(parser), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
-  const w = createWorld({ parser: built.parser as never });
-  await w.say(UNCLEAR);
-  const expected = costMicroInr(rateFor("deepinfra", deepinfra.model, dayOf(TEN_NOV), RATES), { inputTokens: 2000, outputTokens: 150 });
-  assert.ok(expected !== null && expected > 0);
-  const entry = w.record.entries().find((e) => e.action === "receive_message" && e.outcome === "confirmed")!;
-  assert.deepEqual([entry.refs.provider, entry.refs.costMicroInr], ["deepinfra", String(expected)]);
-  const totals = summarizeUsage(w.record.entries(), {});
-  assert.deepEqual([totals.modelMicroInr, totals.unpriced], [expected, 0], "what the heartbeat sends as model_micro_inr, and fleet adds up against ai.cap");
-});
 
 // ---- the whole path, with the real programs --------------------------------------------------------------------------------------------------------------------
 

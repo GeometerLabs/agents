@@ -9,10 +9,8 @@
     "hand-check": "node scripts/hand-check.ts",
     "demo": "node demo/server.ts",
     "build:web-demo": "node scripts/build-web-demo.ts",
-    "serve": "node server/main.ts",
     "standins": "node standins/main.ts",
     "inbox": "node inbox/main.ts",
-    "stack": "node scripts/local-stack.ts",
     "dev-forwarder": "node standins/dev-forwarder.ts",
     "whatsapp-templates": "node scripts/whatsapp-templates.ts"
   }

@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../../modules/core/faults.ts";
 import { HOUR } from "../../../../modules/core/time.ts";
-import { createLiveAdapters } from "../src/adapters/live/index.ts";
+import { createLiveAdapters } from "./helpers/live-adapters.ts";
 import { liveWorld, CUSTOMER, PHONE_NUMBER_ID } from "./helpers/live-world.ts";
 import type { LiveWorld } from "./helpers/live-world.ts";
 import { groupPhone } from "../../../../modules/language/format.ts";

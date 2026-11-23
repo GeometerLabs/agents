@@ -1,6 +1,7 @@
 // B37 against the REAL geo-guard: a Bookings shop where the owner, Ravi and Meena approve, and refunds above ₹150 need two of them. The Guard runs the
 // guard.toml the bundle writes for such a shop (generate/guards.ts: shop-owner up to ₹150, shop-two with approvals_needed = 2, a notify secret per person),
-// the runtime is the real Bookings server over the live Razorpay adapter, and the relay is the real one with the shop's people. The services are the
+// the runtime is the Bookings agent over the live Razorpay adapter, driven in process (the TypeScript server runtime went on 24 Nov 2026; the shops run the Go program,
+// whose side of the relay's two calls each contract holds), and the relay is the real one with the shop's people. The services are the
 // stand-ins, behind a small recorder that shows what reached Razorpay's side. Skipped, saying so, without the built binary.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -9,28 +10,26 @@ import { createServer } from "node:http";
 import type { IncomingHttpHeaders } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createGuardClient, createRuntimeClient } from "../../modules/approvals/clients.ts";
+import { createGuardClient } from "../../modules/approvals/clients.ts";
 import { openRelayStore } from "../../modules/approvals/store.ts";
 import { systemClock } from "../../modules/core/clock.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import { createFakeMessaging } from "../../modules/messaging/messaging.ts";
 import { createRazorpayPayments } from "../../modules/payments/providers/razorpay/api.ts";
 import { createRelay } from "../../templates/commerce/bookings/approvals/relay.ts";
-import { startServer } from "../../templates/commerce/bookings/server/server.ts";
 import { glowSalon, HARNESS_GUARD } from "../../templates/commerce/bookings/src/harness.ts";
 import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../../templates/commerce/bookings/src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../../templates/commerce/bookings/src/language/templates.ts";
 import { parseSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { startStandins } from "../../templates/commerce/bookings/standins/server.ts";
-import { createKit } from "../../templates/commerce/bookings/test/runtime-kit.ts";
+import { bookingsAgent } from "../../templates/commerce/bookings/test/helpers/approvals-world.ts";
 import { guardDef } from "../generate/guards.ts";
 import { credential, skipWithoutBinary, startRealGuard } from "./real-guard.ts";
 
 const RAVI = { id: "ravi", whatsapp: "+919800000002", language: "hi" as const };
 const MEENA = { id: "meena", whatsapp: "+919800000003", language: "en" as const };
 const CUSTOMER = "+919811111111";
-const INTERNAL = "internal-token-0123456789abcdef";
 const codeIn = (text: string) => /"approve ([A-Z0-9]{6})"/u.exec(text)?.[1] ?? "";
 
 /** The world: stand-ins behind a recorder, the real Guard with the bundle's group guard.toml, the Bookings runtime, the relay with the shop's people. */
@@ -60,10 +59,9 @@ async function world() {
   const admin = (path: string, init: RequestInit = {}) => fetch(`${guard.adminUrl}${path}`, { ...init, headers: { authorization: `Bearer ${guard.adminToken}`, "content-type": "application/json" } });
   // the relay's reading credential holds the lower role only, as ops `issue-approver` gives it
   const issued = await (await admin("/admin/approvers", { method: "POST", body: JSON.stringify({ id: "relay-glow-salon", roles: ["shop-owner"], ttl_seconds: 3600 }) })).json() as { token: string };
-  const kit = createKit();
   const payments = createRazorpayPayments({ baseUrl: guard.agentUrl, agentToken: agent.token });
-  const { runtime } = kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging } });
-  const runtimeServer = await startServer(runtime, { token: INTERNAL, port: 0 });
+  const kit = bookingsAgent(settings, payments);
+  const { runtime } = kit;
   const whatsapp = createFakeMessaging(kit.clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) whatsapp.approve(name, language);
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-group-"));
@@ -71,7 +69,7 @@ async function world() {
   const relay = createRelay({
     clock: systemClock, store, ownerWhatsapp: settings.owner.whatsapp, messaging: whatsapp, expectedAgent: "runtime-glow-salon", approvers: [RAVI, MEENA], ownerApproverId: "owner",
     guard: createGuardClient({ adminUrl: guard.adminUrl, readToken: issued.token, approverId: "owner", approverSecret: guard.ownerSecret!, secretOf: (id) => guard.secrets?.[id], now: () => Date.now() }),
-    runtime: createRuntimeClient({ url: runtimeServer.url, token: INTERNAL }),
+    runtime: kit.client,
   });
   /** A person writes from their own number: the relay's copy and the runtime's copy, as the inbox gives them. Ids of their own: the kit's fake numbers its messages from the same start, and the runtime drops an id it has seen. */
   let written = 0;
@@ -90,7 +88,7 @@ async function world() {
   };
   const reviews = async () => ((await (await fetch(`${guard.adminUrl}/admin/reviews`, { headers: { authorization: `Bearer ${issued.token}` } })).json()) as { reviews: any[] }).reviews;
   const close = async () => {
-    store.close(); await runtimeServer.close(); await runtime.close(); kit.cleanup(); rmSync(dir, { recursive: true, force: true });
+    store.close(); rmSync(dir, { recursive: true, force: true });
     await guard.stop(); await new Promise<void>((done) => { recorder.closeAllConnections(); recorder.close(() => done()); }); await standins.close();
   };
   return { settings, standins, seen, guard, admin, kit, runtime, whatsapp, relay, writes, bookAndPay, reviews, close, owner: settings.owner.whatsapp };

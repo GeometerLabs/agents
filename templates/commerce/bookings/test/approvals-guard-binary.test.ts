@@ -3,7 +3,8 @@
 // the owner's "approve <code>" reaches Guard as a signed notification, the agent sends the identical call again, and the refund is recorded once.
 //
 // It needs the built binary (monorepo target/debug/geo-guard, macOS). Without it every test here is skipped, and says so. Set GEO_GUARD_BIN to use another.
-// Nothing is written inside the monorepo: the binary is run on a temp folder.
+// Nothing is written inside the monorepo: the binary is run on a temp folder. The runtime here is the Bookings agent driven in process (modules/test/agent-runtime.ts): the
+// TypeScript server runtime was deleted on 24 Nov 2026 (the shops run the Go program), and what this holds is Guard, the relay and the agent's identical call again.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -13,7 +14,6 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
-import { createFakeCalendar } from "../src/adapters/calendar.ts";
 import { createRazorpayPayments } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
@@ -22,12 +22,11 @@ import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { systemClock } from "../../../../modules/core/clock.ts";
 import { glowSalon, HARNESS_GUARD } from "../src/harness.ts";
 import { gatewayLimitsSpec, refundThresholdPaise } from "../src/guard-limits.ts";
-import { startServer } from "../server/server.ts";
 import { startStandins } from "../standins/server.ts";
-import { createGuardClient, createRuntimeClient } from "../../../../modules/approvals/clients.ts";
+import { createGuardClient } from "../../../../modules/approvals/clients.ts";
 import { createRelay } from "../approvals/relay.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
-import { createKit } from "./runtime-kit.ts";
+import { bookingsAgent as agentWith } from "./helpers/approvals-world.ts";
 import { createHmac, randomUUID } from "node:crypto";
 import { GuardDeniedError, GuardHeldError } from "../../../../modules/core/faults.ts";
 
@@ -207,15 +206,13 @@ test("the longest approval time Guard accepts is 7 days; one second more is refu
 test("held → relay asks once → the owner approves → a signed notify → the identical call again → the refund is made once, and the owner was asked exactly once", { skip }, async () => {
   const settings = limited(100);
   const { standins, guard } = await standinsAndGuard(settings);
-  const kit = createKit();
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-it-"));
-  const whatsapp = createFakeMessaging(kit.clock);
+  const whatsapp = createFakeMessaging(systemClock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) whatsapp.approve(name, language);
   const lines: string[] = [];
   const payments = createRazorpayPayments({ baseUrl: guard.agentUrl, agentToken: guard.agentToken });
-  const { runtime } = kit.open({ settings, services: { calendar: createFakeCalendar(), payments, messaging: kit.messaging }, log: (l) => lines.push(l) });
-  const INTERNAL = "internal-token-0123456789abcdef";
-  const runtimeServer = await startServer(runtime, { token: INTERNAL, port: 0 });
+  const kit = agentWith(settings, payments);
+  const { runtime } = kit;
   const store = openRelayStore(dir);
   try {
     // the relay's reading credential: an approver credential Guard issues from its admin port, which expires; the relay never holds the admin token
@@ -225,7 +222,7 @@ test("held → relay asks once → the owner approves → a signed notify → th
     const relay = createRelay({
       clock: systemClock, store, ownerWhatsapp: settings.owner.whatsapp, messaging: whatsapp, expectedAgent: "runtime-glow-salon", log: (l) => lines.push(`relay: ${l}`),
       guard: createGuardClient({ adminUrl: guard.adminUrl, readToken: issued.token, approverId: "owner-glow-salon", approverSecret: guard.ownerSecret, now: () => Date.now() }),
-      runtime: createRuntimeClient({ url: runtimeServer.url, token: INTERNAL }),
+      runtime: kit.client,
     });
 
     // a customer books and pays (the deposit link goes through Guard: ₹200 is the deposit bound the generator wrote)
@@ -288,7 +285,7 @@ test("held → relay asks once → the owner approves → a signed notify → th
     assert.equal(standins.fakes.payments.refunds().length, 1);
     assert.equal((await (await admin(guard, "/admin/approvals?state=pending")).json() as any).approvals.length, 0, "and Guard holds nothing new");
   } finally {
-    store.close(); await runtimeServer.close(); await runtime.close(); kit.cleanup(); rmSync(dir, { recursive: true, force: true });
+    store.close(); rmSync(dir, { recursive: true, force: true });
     await guard.stop(); await standins.close();
   }
 });
@@ -296,20 +293,19 @@ test("held → relay asks once → the owner approves → a signed notify → th
 test("a denied refund against the real Guard: the owner says no, nothing is refunded, and Guard is not asked again", { skip }, async () => {
   const settings = limited(100);
   const { standins, guard } = await standinsAndGuard(settings);
-  const kit = createKit();
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-it-"));
-  const whatsapp = createFakeMessaging(kit.clock);
+  const whatsapp = createFakeMessaging(systemClock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) whatsapp.approve(name, language);
   const payments = createRazorpayPayments({ baseUrl: guard.agentUrl, agentToken: guard.agentToken });
-  const { runtime } = kit.open({ settings, services: { calendar: createFakeCalendar(), payments, messaging: kit.messaging } });
-  const runtimeServer = await startServer(runtime, { token: "internal-token-0123456789abcdef", port: 0 });
+  const kit = agentWith(settings, payments);
+  const { runtime } = kit;
   const store = openRelayStore(dir);
   try {
     const issued = await (await admin(guard, "/admin/approvers", { method: "POST", body: JSON.stringify({ id: "owner-phone", roles: ["shop-owner"], ttl_seconds: 3600 }) })).json() as any;
     const relay = createRelay({
       clock: systemClock, store, ownerWhatsapp: settings.owner.whatsapp, messaging: whatsapp,
       guard: createGuardClient({ adminUrl: guard.adminUrl, readToken: issued.token, approverId: "owner-glow-salon", approverSecret: guard.ownerSecret, now: () => Date.now() }),
-      runtime: createRuntimeClient({ url: runtimeServer.url, token: "internal-token-0123456789abcdef" }),
+      runtime: kit.client,
     });
     await kit.say(runtime, "haircut day after tomorrow at 6pm");
     standins.fakes.payments.customerPays(standins.fakes.payments.links()[0].id);
@@ -334,7 +330,7 @@ test("a denied refund against the real Guard: the owner says no, nothing is refu
     assert.equal(whatsapp.sentTo(settings.owner.whatsapp).filter((m) => m.templateName === "owner_approval_request").length, 1, "and the owner was not asked again");
     assert.equal(standins.fakes.payments.refunds().length, 0);
   } finally {
-    store.close(); await runtimeServer.close(); await runtime.close(); kit.cleanup(); rmSync(dir, { recursive: true, force: true });
+    store.close(); rmSync(dir, { recursive: true, force: true });
     await guard.stop(); await standins.close();
   }
 });

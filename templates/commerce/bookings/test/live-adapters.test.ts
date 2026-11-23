@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../../modules/core/faults.ts";
-import { createLiveAdapters } from "../src/adapters/live/index.ts";
+import { createLiveAdapters } from "./helpers/live-adapters.ts";
 import { createRazorpayPayments, toPayment, toPaymentRequest, toRefund } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { toEvent, toRfc3339 } from "../src/adapters/live/google-calendar.ts";
 import { GRAPH_VERSION, templateBody } from "../../../../modules/messaging/whatsapp.ts";

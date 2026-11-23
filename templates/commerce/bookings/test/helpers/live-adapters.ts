@@ -1,21 +1,20 @@
-// The live services: the same Payments, Calendar and Messaging the agent already uses, over the real wire formats of the shop's gateway (its folder's
-// runtime.ts), Google Calendar and WhatsApp. They hold NO keys and send NO Authorization header. Each points at a base URL, which in production
-// is a Guard instance in front of that one service (Guard adds the credential), and in a test or a demo is a stand-in
-// (templates/commerce/bookings/standins). Same code for all three; only the base URL changes.
-import type { Clock } from "../../../../../../modules/core/clock.ts";
-import type { Calendar } from "../calendar.ts";
-import type { Messaging } from "../../../../../../modules/messaging/messaging.ts";
-import type { Payments } from "../../../../../../modules/payments/payments.ts";
-import { DEFAULT_TIMEOUT_MS } from "../../../../../../modules/core/http.ts";
-import { createGoogleCalendar } from "./google-calendar.ts";
-import { noGateway } from "../../../../../../modules/payments/owner-marked/ledger.ts";
-import { gatewayAdapter } from "../../../../../../modules/payments/providers/runtime.ts";
-import type { PaymentSettings } from "../../../../../../modules/payments/providers/index.ts";
-import { createLiveMessaging } from "../../../../../../modules/messaging/providers.ts";
-import type { MessagingProvider } from "../../../../../../modules/messaging/providers.ts";
-import type { WindowStore } from "../../../../../../modules/messaging/whatsapp.ts";
+// The TypeScript live clients of the stand-ins and of Guard's answers, for the tests of what stays TypeScript (the stand-ins, the dev forwarder, the inbox end to end, Guard's
+// answers as an adapter reads them): Payments, Calendar and Messaging over the real wire formats, pointed at a base URL, holding no key and sending no Authorization header.
+// Until 24 Nov 2026 this was src/adapters/live/index.ts, the TypeScript runtime's live mode; the runtime is the Go program now (go/internal/bookings), so only these tests use it.
+import type { Clock } from "../../../../../modules/core/clock.ts";
+import type { Calendar } from "../../src/adapters/calendar.ts";
+import type { Messaging } from "../../../../../modules/messaging/messaging.ts";
+import type { Payments } from "../../../../../modules/payments/payments.ts";
+import { DEFAULT_TIMEOUT_MS } from "../../../../../modules/core/http.ts";
+import { createGoogleCalendar } from "../../src/adapters/live/google-calendar.ts";
+import { noGateway } from "../../../../../modules/payments/owner-marked/ledger.ts";
+import { gatewayAdapter } from "../../../../../modules/payments/providers/runtime.ts";
+import type { PaymentSettings } from "../../../../../modules/payments/providers/index.ts";
+import { createLiveMessaging } from "../../../../../modules/messaging/providers.ts";
+import type { MessagingProvider } from "../../../../../modules/messaging/providers.ts";
+import type { WindowStore } from "../../../../../modules/messaging/whatsapp.ts";
 
-export type { WindowStore } from "../../../../../../modules/messaging/whatsapp.ts";
+export type { WindowStore } from "../../../../../modules/messaging/whatsapp.ts";
 
 export interface LiveServices {
   // Each Guard may ask the agent for its own credential (`agentToken`: what Guard calls the agent's token, never a service key).
