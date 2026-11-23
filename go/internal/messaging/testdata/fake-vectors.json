@@ -401,6 +401,24 @@
     {
      "op": "receive",
      "from": "+914",
+     "text": " sToP\n"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+914"
+    },
+    {
+     "op": "receive",
+     "from": "+915",
+     "text": "ＳＴＯＰ"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+915"
+    },
+    {
+     "op": "receive",
+     "from": "+914",
      "text": " STOP "
     },
     {
@@ -495,7 +513,7 @@
      "said": []
     },
     {
-     "ok": true,
+     "ok": false,
      "said": []
     },
     {
@@ -508,7 +526,7 @@
      "said": []
     },
     {
-     "ok": true,
+     "ok": false,
      "said": []
     },
     {
@@ -528,7 +546,7 @@
      "ok": {
       "id": "wamid.in_6",
       "from": "+914",
-      "text": " STOP ",
+      "text": " sToP\n",
       "timestamp": 1793700000000
      },
      "said": []
@@ -540,6 +558,32 @@
     {
      "ok": {
       "id": "wamid.in_7",
+      "from": "+915",
+      "text": "ＳＴＯＰ",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_8",
+      "from": "+914",
+      "text": " STOP ",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_9",
       "from": "+915",
       "text": "stoP​",
       "timestamp": 1793700000000

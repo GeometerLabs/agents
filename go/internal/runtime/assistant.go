@@ -54,6 +54,8 @@ type conv struct {
 	skills  []OwnerSkill
 	reading assistant.OwnerReading
 	say_    *messaging.Say
+	// tellSpy, when set (tests only), is handed each page line and its facts before the outgoing check
+	tellSpy func(text string, facts language.Facts)
 }
 
 // assistantFor is the listings-only shop's assistant: its listings are its one skill, and it talks on the page.
@@ -74,7 +76,13 @@ func (c *conv) say(key string, vals ...string) {
 
 // sayAbout is say for a line about a case (the record's line names it).
 func (c *conv) sayAbout(caseID, key string, vals ...string) {
-	c.tellText(idOf(key), c.pack.Say(key, vals...), caseID, nil)
+	c.sayWith(c.pack.Writer(), caseID, key, vals...)
+}
+
+// sayWith is sayAbout over a writer in which the caller has already noted the values it put together (a list of names, a limit's value), as words.ts's callers write them
+// through the same Writer.
+func (c *conv) sayWith(w *assistant.Writer, caseID, key string, vals ...string) {
+	c.tellText(idOf(key), w.Say(key, vals...), w.Facts(), caseID, nil)
 }
 
 // logLine is conversation.ts `logLine`: a line of the record for the owner, in the owner's language, about a case or none.
@@ -199,44 +207,44 @@ func (c *conv) buttonsFor(kind, code string, hasNo bool) []messaging.Choice {
 }
 
 // cardQuestion is words.ts cardQuestion: the question a card asks, by its skill and what it does (the listings' own words, a limit's rule, or the shared ones).
-func (c *conv) cardQuestion(skill, kind, itemKind, ref string, sh Shown) string {
+func (c *conv) cardQuestion(w *assistant.Writer, skill, kind, itemKind, ref string, sh Shown) string {
 	if sh.Limit != nil {
-		return c.pack.Say("card.limit", "rule", c.ruleText(sh.Limit.LimitView, sh.Limit.To), "now", c.valueText(sh.Limit.LimitView, sh.Limit.Now))
+		return w.Say("card.limit", "rule", c.ruleText(w, sh.Limit.LimitView, sh.Limit.To), "now", c.valueText(w, sh.Limit.LimitView, sh.Limit.Now))
 	}
 	if skill == "listings" {
 		switch kind {
 		case "listing_ask":
-			return c.pack.Say("card.listing_ask", "title", sh.What)
+			return w.Say("card.listing_ask", "title", sh.What)
 		case "listing":
 			if sh.AmountPaise > 0 {
-				price := assistant.INR(sh.AmountPaise)
+				price := w.INR(sh.AmountPaise) // words-listings.ts listingCardLine: w.inr, then the owner's price words as w.lit
 				if sh.Words != "" {
-					price += " " + sh.Words
+					price += " " + w.Lit(sh.Words)
 				}
-				return c.pack.Say("card.listing.priced", "title", sh.What, "who", sh.Who, "price", price)
+				return w.Say("card.listing.priced", "title", sh.What, "who", sh.Who, "price", price)
 			}
-			return c.pack.Say("card.listing.ask", "title", sh.What, "who", sh.Who)
+			return w.Say("card.listing.ask", "title", sh.What, "who", sh.Who)
 		}
 	}
 	inr := assistant.INR(sh.AmountPaise)
 	switch {
 	case kind == "cancel" && sh.AmountPaise > 0:
-		return c.pack.Say("card.cancel.paid", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+		return w.Say("card.cancel.paid", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
 	case kind == "cancel":
-		return c.pack.Say("card.cancel.free", "ref", ref, "who", sh.Who, "what", sh.What)
+		return w.Say("card.cancel.free", "ref", ref, "who", sh.Who, "what", sh.What)
 	case kind == "refund":
-		return c.pack.Say("card.refund", "ref", ref, "who", sh.Who, "inr", inr)
+		return w.Say("card.refund", "ref", ref, "who", sh.Who, "inr", inr)
 	case kind == "message":
-		return c.pack.Say("card.message", "ref", ref, "who", sh.Who, "words", sh.Words)
+		return w.Say("card.message", "ref", ref, "who", sh.Who, "words", sh.Words)
 	}
-	if c.pack.Has("card.answer." + itemKind) {
-		return c.pack.Say("card.answer."+itemKind, "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+	if w.Pack().Has("card.answer." + itemKind) {
+		return w.Say("card.answer."+itemKind, "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
 	}
-	return c.pack.Say("card.answer", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+	return w.Say("card.answer", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
 }
 
 // cardFoot is words.ts CARD_FOOT: the line under every card on WhatsApp, with the card's code (never on the page).
-func (c *conv) cardFoot(code string, hasNo, aboveLimit bool) string {
+func (c *conv) cardFoot(w *assistant.Writer, code string, hasNo, aboveLimit bool) string {
 	key := "card.foot."
 	if aboveLimit {
 		key += "above."
@@ -246,7 +254,7 @@ func (c *conv) cardFoot(code string, hasNo, aboveLimit bool) string {
 	} else {
 		key += "yes"
 	}
-	return c.pack.Say(key, "code", code)
+	return w.Say(key, "code", code)
 }
 
 // offerCard is conversation.ts `offerCard`: a card for a prepared action, unless the owner said no to this same action in the last day. Returns whether a card went.
@@ -271,9 +279,10 @@ func (c *conv) offerCard(skill OwnerSkill, proposal assistant.Raw, prep Prepared
 		itemKind = rawString(proposal["itemKind"])
 	}
 	// the owner's page shows the same question beside the card's buttons, without the code (items 11d and 11e together)
-	q := c.cardQuestion(skill.Name(), kind, itemKind, cs, sh)
+	w := c.pack.Writer()
+	q := c.cardQuestion(w, skill.Name(), kind, itemKind, cs, sh)
 	card.Question = q
-	c.tellText("card", q+"\n"+c.cardFoot(code, hasNo, prep.AboveLimit), cs, c.buttonsFor(kind, code, hasNo))
+	c.tellText("card", q+"\n"+c.cardFoot(w, code, hasNo, prep.AboveLimit), w.Facts(), cs, c.buttonsFor(kind, code, hasNo))
 	return true
 }
 
@@ -570,6 +579,13 @@ func (c *conv) onOwnerMessage(msg messaging.InboundMessage, key string) error {
 			return nil
 		}
 	}
+	// a tap on a proposed note: Remember saves it, No is final for a day (notes.ts parseNoteReply)
+	if msg.Reply != nil {
+		if m := noteButton.FindStringSubmatch(msg.Reply.ID); m != nil {
+			c.onProposalReply(m[1], m[2])
+			return nil
+		}
+	}
 	taken, err := c.listingFromWords(text, key)
 	if err != nil || taken {
 		return err
@@ -631,7 +647,8 @@ func (c *conv) readIntent(text, key string) {
 			}
 		}
 		sort.SliceStable(rows, func(i, j int) bool { return rows[i].StartMs < rows[j].StartMs })
-		c.tellText("day_list", c.dayList(d, rows, c.isClosedDay(d)), "", nil)
+		w := c.pack.Writer()
+		c.tellText("day_list", c.dayList(w, d, rows, c.isClosedDay(d)), w.Facts(), "", nil)
 	case "waiting":
 		c.showWaiting()
 	case "money":
@@ -699,39 +716,45 @@ func (c *conv) needRef(kind string, read assistant.Intent) {
 		}
 		break // conversation.ts `skills.find((s) => s.day)`: the first skill with a day
 	}
-	text := c.pack.Say("need_ref." + kind)
+	c.needRefLine(kind, rows)
+}
+
+// needRefLine is words.ts need_ref: the question, then the candidates (at most 12) as rows.
+func (c *conv) needRefLine(kind string, rows []DayRow) {
+	w := c.pack.Writer()
+	text := w.Say("need_ref." + kind)
 	for i, r := range rows {
 		if i >= listRows {
 			break
 		}
-		text += "\n" + c.pack.Say("need_ref.row", "slot", c.slotText(r.StartMs), "what", r.What, "who", r.Who, "case", r.Case)
+		text += "\n" + w.Say("need_ref.row", "slot", c.slotText(r.StartMs), "what", r.What, "who", r.Who, "case", r.Case)
 	}
-	c.tellText("need_ref", text, "", nil)
+	c.tellText("need_ref", text, w.Facts(), "", nil)
 }
 
 // listRows is words.ts LIST_ROWS: how many rows a list shows; the rest are counted ("and 4 more").
 const listRows = 12
 
 // dayList is words.ts day_list: none, or the head and the rows (at most 12, then "and N more"), and the closed-day line.
-func (c *conv) dayList(d LocalDate, rows []DayRow, closed bool) string {
+func (c *conv) dayList(w *assistant.Writer, d LocalDate, rows []DayRow, closed bool) string {
 	date := c.pack.DateText(d.Year, d.Month, d.Day)
 	var text string
 	if len(rows) == 0 {
-		text = c.pack.Say("day_list.none", "date", date)
+		text = w.Say("day_list.none", "date", date)
 	} else {
-		text = c.pack.Say("day_list.head", "date", date, "n", strconv.Itoa(len(rows)))
+		text = w.Say("day_list.head", "date", date, "n", strconv.Itoa(len(rows)))
 		for i, r := range rows {
 			if i >= listRows {
 				break
 			}
-			text += "\n" + c.pack.Say("day_list.row", "time", c.localTime(r.StartMs), "what", r.What, "who", r.Who, "case", r.Case)
+			text += "\n" + w.Say("day_list.row", "time", c.localTime(r.StartMs), "what", r.What, "who", r.Who, "case", r.Case)
 		}
 		if len(rows) > listRows {
-			text += "\n" + c.pack.Say("day_list.more", "n", strconv.Itoa(len(rows)-listRows))
+			text += "\n" + w.Say("day_list.more", "n", strconv.Itoa(len(rows)-listRows))
 		}
 	}
 	if closed {
-		text += c.pack.Say("day_list.closed")
+		text += w.Say("day_list.closed")
 	}
 	return text
 }

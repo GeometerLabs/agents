@@ -21,6 +21,7 @@ go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags
 go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, "Waves 1b and 1c finished")
 go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (wave 2, in progress: TRIAL.md "Wave 2: the Bookings runtime")
 go build -o bin/orders ./cmd/orders                     # one Orders shop (wave W4, in progress: internal/orders/Deferred.md)
+go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (wave 2, go-w5-stock-22nov: TRIAL.md)
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -69,11 +70,11 @@ internal/language/       the bottom layer of reading words (modules/language): p
                          toLowerCase, NFC, TextDecoder, Date.parse (js.go, shared by the directory, access and listings); regex.go matches a JavaScript pattern the way
                          JavaScript does (each top-level alternative tried in turn at each place, the look-behind and look-ahead edges checked by hand, since RE2 has neither), over the
                          TypeScript's own built patterns (patterns.json, written by scripts/gen_patterns.ts); dates.go (findDatePhrase, resolveDate); check.go (the outgoing check, with the moments a booking may state); format.go + formats.json (dates, times, phone numbers and the English capital, written from the TypeScript by scripts/gen_bookings_words.ts: shared by every template)
-internal/memory/         the shop's memory (modules/memory): notes with who, where, when and an audience, forget, the end of a note, recall within a scope; `assistant.memory`, field for field
+internal/memory/         the shop's memory (modules/memory): notes with who, where, when and an audience, forget, the end of a note, recall within a scope, the talk's proposed notes (proposals.go: Remember / No); `assistant.memory`, field for field
 internal/understanding/  the model steps (modules/understanding): one JSON call over the OpenAI-compatible wire (model.go; the directory's assistant uses it too, `Open` + `AskContext`), the System One decision model (systemone.go), the router
                          that reads cheapest first over any template's reading (router.go, generic), and the details taken out before a model sees words (redact.go); every model
                          answer is decoded to `any` and checked by hand
-internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule (rules.go), the owner's reading for the router (reading.go), the owner's talk (talk.go: prompt, answer, checks), notes from words (notes.go), and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, notes.go, talk.go, morning.go, ownerview.go)
+internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule (rules.go), the owner's reading for the router (reading.go), the owner's talk (talk.go: prompt, answer, checks), notes from words (notes.go), the outgoing check's facts of each line it says (writer.go, from each key's generated facts), and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, notes.go, talk.go, morning.go, ownerview.go)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts), the decision model's breaker and the day's notices (steps.go)
 internal/shared/         the multi-shop host (it replaced modules/runtime/shared.ts, deleted): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
 internal/zone/           modules/core/time.ts in Go (localParts, zonedToMs, addDays...): time zones from the binary's own tzdata; vectors from the TypeScript on Node
@@ -88,6 +89,10 @@ internal/orders/         the Orders template (wave W4): settings with the TypeSc
 internal/orders/words/   Orders' customer and owner messages in four languages, the WhatsApp templates, labels, lists and buttons, and the outgoing check (GENERATED: scripts/gen_orders_words.ts)
 internal/orders/reading/ how an Orders shop reads a message: the rule parser, the check on a model's answer, the router's reading, a tapped reply, the plan reading (GENERATED: scripts/gen_orders_reading.ts)
 internal/ordersreport/   Orders' monthly report (templates/commerce/orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job
+internal/stock/          the shop's one stock count (modules/stock/stock.ts): the state under assistant.stock, the owner's acts, the shop's own record of a sale or a delivery (Orders,
+                         Stock orders), the reconciles and their history rules, the low alerts once per crossing; listings keeps aliases of it (22 Nov)
+internal/stockorders/    the Stock orders template (wave 2, go-w5-stock-22nov): settings, the store field for field, the rule reader, the words (generated), the limits, the agent with
+                         its approval cards and send once for the purchase order and the reminder, the owner's page, the assistant skill; cmd/stock-orders runs one shop
 cmd/directory/           main of the directory of local shops (CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change, `health <url>`; the contract's test clock on 127.0.0.1 only)
 internal/directory/      the directory (modules/discovery): signed feeds read, checked and indexed (SQLite + FTS5, the TypeScript's own file), the fair order, search, the pages, the MCP endpoint, the signed
                          Agent Card, the buyer's assistant; the words are GENERATED from modules/discovery/words.ts (scripts/gen_directory.ts), the page's style, script, tools, card and prompt are Go source (words/); read Explanation.md and Deferred.md
@@ -108,6 +113,8 @@ internal/voice/          voice notes (modules/voice, B29): the runtime.json `spe
 scripts/gen_chat_words.ts  writes internal/runtime/chatwords/words.json (the chat's own words: the rate line, the quick taps, "Voice message") from the TypeScript
 scripts/gen_customer_talk.ts  writes internal/assistant/customerwords/words.json: a customer's talk prompt for every personality, character name and language, and its answer schema; gen_customer_talk_vectors.ts the checks, answers and prompts the Go ones are proved on
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
+scripts/gen_stock_vectors.ts     writes internal/stock/testdata/stock-vectors.json: modules/stock/stock.ts run over six scenarios, every step's answer and state (--check)
+scripts/gen_stockorders_words.ts writes internal/stockorders/words.json: Stock orders' messages, templates, labels, state and stock words and the reader's patterns (--check)
 scripts/gen_bookings_reading.ts  writes internal/bookings/reading.json: the Bookings rule parser's patterns, the decision model's questions, the model's prompt and schema as templates
 scripts/gen_orders_settings.ts  writes internal/orders/settings_check.json and the settings and store vectors (a store the TypeScript agent wrote, and every read of it); scripts/gen_orders_words.ts, gen_orders_reading.ts, gen_orders_report_words.ts and gen_orders_report_vectors.ts the Orders words, reading and report data; each has `--check`, and words-fresh runs them
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
@@ -117,6 +124,8 @@ scripts/gen_directory.ts   writes internal/directory/words/pack.json.gz (+ the f
 scripts/sync_rates.sh      copies the dated rate tables (modules/understanding/rates) into internal/budget/rates, which the binary embeds (a test keeps them equal)
 scripts/gen_guard_vectors.ts  runs the TypeScript Guard clients against a recording HTTP server (lib/record.ts) and writes what they sent and made of each answer to internal/*/testdata (cases in scripts/vectors/); `--check` only compares; the words-fresh test fails when it is stale
 scripts/gen_*_vectors.ts   what the TypeScript digest, formatters and rules give on a set of cases, for the Go tests (internal/assistant/testdata)
+scripts/gen_assistant_vectors.ts  writes internal/runtime/testdata/assistant-lines.json: the assistant's lines in four languages (the day's list, a closed day, every limit line, cards, a customer's closed-day template) and what the outgoing check finds in them as written and tampered
+scripts/gen_talk_facts_vectors.ts  writes internal/bookings/testdata/talk-facts-vectors.json: what the owner's talk on a Bookings shop is given (the skill's facts and public sources, the prompt with the declared limits, the schema)
 ```
 
 ## Dependencies, and why each

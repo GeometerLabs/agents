@@ -70,7 +70,7 @@ func CheckGenuine(lang string) string { return loadWords().CheckGenuine[lang] }
 func ScanSummary(lang string) string { return loadWords().ScanSummary[lang] }
 
 // SettledWho is settledWho: who settled it, as a document shows them: the id alone (Guard's "operator:" left off), on one line, at most 40 UTF-16 units (longer is cut to 39 and "…";
-// a cut inside a surrogate pair drops the half character, where JavaScript would leave a lone surrogate).
+// a cut inside a surrogate pair drops the half character, as text.ts does since 22 Nov with format.ts sliceUnits).
 func SettledWho(by string) string {
 	who := OneLine(strings.TrimPrefix(by, "operator:"))
 	if who == "" {

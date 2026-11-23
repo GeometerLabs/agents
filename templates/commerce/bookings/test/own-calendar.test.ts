@@ -63,6 +63,22 @@ test("a customer who writes 'today' is a customer, not the owner: no day list go
   assert.doesNotMatch(w.textsTo(OTHER_CUSTOMER).join("\n"), /Your bookings/u);
 });
 
+test("reading the own list before anything was booked does not write it into the saved state (fixed 22 Nov: every read made `ownCalendar`)", async () => {
+  const { createOwnCalendar } = await import("../src/adapters/own-calendar.ts");
+  const store = { bookings: new Map() } as unknown as Parameters<typeof createOwnCalendar>[0];
+  const cal = createOwnCalendar(store, () => 0);
+  assert.deepEqual(await cal.list({}), []);
+  assert.equal(await cal.get("own_1"), null);
+  assert.deepEqual(await cal.freeBusy(0, 1), []);
+  assert.deepEqual(await cal.conflicts(0, 1), []);
+  await cal.delete("own_1");
+  await assert.rejects(cal.update("own_1", { status: "confirmed" }), /No such event/);
+  assert.equal((store as { ownCalendar?: unknown }).ownCalendar, undefined);
+  const made = await cal.insert({ start: 10, end: 20, summary: "x", status: "tentative" } as never);
+  assert.equal(made.id, "own_1");
+  assert.ok((store as { ownCalendar?: unknown }).ownCalendar);
+});
+
 test("the own list survives a restart: it is part of the saved state", async () => {
   const w = await bookedWorld();
   const back = parseStore(serializeStore(w.store));

@@ -10,8 +10,6 @@
   deployer's export and the CLI's.
 * **An entry whose language is none of the four.** The TypeScript's `byLanguage[e.language]++` would add a key whose value is NaN (written as null); Go ignores such a message in the
   by-language counts (the total still counts it). A record entry's language is always one of the four.
-* **A rule id that is a member of `Object.prototype`** (`constructor`, `toString`, `__proto__` ...): `STOP_SITES[d.ruleId] ?? []` finds the inherited member in the TypeScript and
-  `.includes` is then not a function (a TypeError, so the report would not be made); Go treats it as an unknown rule (never counted). Rule ids are fixed names.
 * **Text that is not valid UTF-8 in the ledger body.** The TypeScript refuses a lone surrogate with a sentence naming the first bad path in insertion order of `refs`; Go refuses invalid
   UTF-8 with the same sentence, naming the path in the order seq, time, booking, action, outcome, inputsDigest, decisions, language, then refs in sorted key order.
 * **`go/README.md` and `go/TRIAL.md` were not updated** (this stream was told not to touch them); the package map line is: `internal/bookingsreport/  the Bookings monthly report
@@ -19,7 +17,9 @@
 * **Not tested at the exact limit.** No vector lands exactly on 1024 UTF-16 units for the settled-words fit or the check link (the cases sit either side: 982 to 997 characters with the
   summary or #digest link, and 1007 and more with the #code link); `<=` against `<` at the boundary is therefore held only by reading the code (`report.MessageCheckLink` and the
   `fits` closure in `whatsapp.go` both use `<=`, as the TypeScript does).
-* **TypeScript behaviour that may be a bug (copied, not changed):** `workOf` clears a refund held for the owner only when an `owner_decision` is written after it. A held refund that a person
-  settled by their word (Guard's already_done, no owner decision) or that the payments service later confirmed with no owner answer leaves its booking "unresolved:
-  refund-waiting-for-owner" for that month and every month after, though the refund is settled (the vectors' b-6 and b-7, `rules-gateway`, show it). Whether the real flow always writes
-  an `owner_decision` was not checked.
+* **Fixed on both sides on 22 Nov 2026 (go-w2-tsfix-22nov):** `workOf` cleared a refund held for the owner only when an `owner_decision` was written after it, so a hold
+  settled by a person's word (Guard's already_done) or by the payments service's list, or ended by a refusal, left its booking "unresolved: refund-waiting-for-owner" in that
+  month and every month after. A later `refund` line of the same payment that is confirmed, blocked or failed now ends it too (data.ts `holdEnded`, data.go). And a rule id
+  that is a member of `Object.prototype` (`constructor`, `toString`) is an unknown rule in `STOP_SITES` (it threw, so no report was made; Go never threw); Orders' copy too.
+* **"The UPI go-live certificate is read as the example"** (reported to stream B, 22 Nov): not found. A certificate made on the UPI example's settings and read by that shop is
+  `own`, and Glow Salon's is `example` (report-go-live.test.ts); the hand check, the CLI and the runtime digest the same validated settings.

@@ -57,6 +57,7 @@ var chatWordsJSON []byte
 var chatWords = func() (w struct {
 	Rate      map[string]string `json:"rate"`
 	VoiceNote map[string]string `json:"voiceNote"`
+	Guest     map[string]string `json:"guest"`
 	Quick     map[string]struct {
 		Command []string            `json:"command"`
 		Label   map[string][]string `json:"label"`

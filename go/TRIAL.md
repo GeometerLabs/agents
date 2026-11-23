@@ -254,7 +254,7 @@ source of a listings shop carries one); the "anthropic" model wire (the model Gu
 header and sticker (the push-only messaging sends words). `runtime.json`'s `decision` is checked for its provider, address and model; its other fields' ranges are TypeScript's to
 refuse (the deployer writes them).
 
-**TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
+*(Fixed or answered in "go-w2-tsfix-22nov" below.)* **TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
 sees ASCII letters, so a goal written in those scripts is filed as a fact unless an ASCII letter follows; `historyText` cuts at 300 UTF-16 units and can leave a lone surrogate
 (Go drops the half character); `COMPLETION` holds `बुक ചെയ്തു` (Devanagari and Malayalam mixed), carried as it is.
 
@@ -515,7 +515,7 @@ stream's `internal/accounting` needs an adapter of a few lines. `go/internal/zon
 **Differences from TypeScript, recorded:** money and times read from a reply are whole numbers only (a fractional amount reads as absent, where `num` passes it); `UntoldRefund.amountInr`
 is kept in paise and written as the exact decimal; the Go fake gateway has no fault plans; keep-alive is off in the Guard client (net/http would send a GET again on a cut connection).
 
-**TypeScript findings (reported, not fixed):** `refunds.ts` line 429 `amountInr: r.amount / 100` can be fractional (a refund of 12.5 rupees), while every other amount in the file is whole rupees;
+*(Fixed or answered in "go-w2-tsfix-22nov" below.)* **TypeScript findings (reported, not fixed):** `refunds.ts` line 429 `amountInr: r.amount / 100` can be fractional (a refund of 12.5 rupees), while every other amount in the file is whole rupees;
 the 24 hour hold and the limit are whole-rupee settings, so it cannot happen with these settings, but nothing enforces it. `recordMessageStatus` throws `RangeError` for a failed status with a
 timestamp past 8.64e15 ms, which a forged webhook could cause; `say.ts` falls back from buttons to text after any ApiError under 500, a Guard hold or refusal included; `interactiveProblem`
 counts code points while the document checks count UTF-16 units; STOP uses `toUpperCase`, so `"ﬆop"` opts a customer out; `own-calendar.ts` creates `store.ownCalendar` on a read; and the
@@ -548,7 +548,7 @@ key order where the TypeScript uses insertion order (`BooksFaults` privacy sente
 Finding: the monthly job runs after the step in `core.ts` with its own `save` (claim saved before the send, ending after); `StepContext` has no `Save` yet, so a Go step that runs it saves the claim only
 with the step (a crash between the send and the save could send a month twice): the runtime needs a mid-step save for it.
 
-TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
+*(Fixed or answered in "go-w2-tsfix-22nov" below.)* TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
 is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`
 last; `invariants.ts` privacy faults depend on refs insertion order; `fitText` folds whitespace before stripping zero-width characters (so a name can turn a signed summary into the older link); `settledWho` slices at
 UTF-16 and can leave half an emoji; `workOf` leaves a refund settled by a person's word "waiting for owner" in every later month unless an `owner_decision` follows; a rule id like `constructor` would throw in `STOP_SITES`.
@@ -723,3 +723,130 @@ templates/commerce/bookings/contract/`: **143 of 143** (0 fail, 0 skipped). `nod
 words-fresh test included). `go build ./...`, `go vet ./...` and `go test ./...` pass (`internal/voice` is new). TypeScript was not changed (only go/scripts generators and one
 assertion in words-fresh.test.ts); no TypeScript bug was found. Not done (Deferred.md of bookings and runtime): the outgoing check over the assistant's own lines (recorded as
 allowed), a message to a chat guest and a guest's label, the morning line's picture, Sarvam, a chat guest's hold-to-talk, "open my app" on WhatsApp for a template's shop.
+
+## go-w2-tsfix-22nov (22 Nov 2026): wave 2's TypeScript findings fixed on both sides
+
+Each real bug found by the Go port in the TypeScript is fixed in the TypeScript AND its Go twin, the same way, with a test on each side (a TypeScript unit test, and the
+Go vectors made by running the TypeScript, or a Go unit test; a contract case where HTTP can see it). Fixes that change how old records are read (the books, the report's jobs)
+can change a past month's figures where its record had such a line.
+
+**Fixed (money and opt-out first):**
+- `journal.ts readNew`: a `kept` event naming an `owed` refund carries no amount, and the reader demanded one (post threw unless the template added `amountPaise`). (journal.go)
+- `bookings/report/data.ts workOf`: a refund held for the owner is also ended by a later `refund` line of the same payment that is confirmed (a person's word, the provider's
+  list), blocked or failed; before, only an `owner_decision` ended it, so a settled hold was "waiting for owner" in every later month. (bookingsreport/data.go)
+- `figures.ts`: the borrowed refund amount is whole paise as the journal writes it (a bare `Number()` took "1e3", "12.5"). (figures.go)
+- `owner-money.ts tally()`: a NaN time is in no range (Go already left it out).
+- `settlements.ts`: a settled `post()` that throws after its write is not listed as a problem as well; a read line with no `day` does not hide the last day read. (settlements.go)
+- `messaging.ts` (the fake's STOP): ASCII letters only, so "ﬆop" is not STOP, as the agent's own reading (`isStop`) never took it. (messaging/fake.go)
+- `STOP_SITES` (Bookings, and Orders' copy of the same line): a rule id such as `constructor` is an unknown rule (`Object.hasOwn`); it threw and no report was made.
+- `statuses.ts recordMessageStatus`: a time no Date holds (a forged webhook, past 8.64e15 ms) is left out of the line instead of throwing; the runtime's Go copy (which wrote
+  a wrong year) uses `messaging.ISOString`. Contract: `smoke.contract.test.ts` "a status report whose time no date can hold", on both runtimes.
+- `say.ts`: buttons answered by the shop's Guard (held, refused, conflict, unauthenticated) are not sent again as text; only the provider's own 4xx falls back. (messaging/say.go)
+- `own-calendar.ts`: a read, update or delete never makes `store.ownCalendar`; only an insert does. (bookings/agent_offer.go `ownRead`)
+- `summary.ts fitText`: the characters that go are removed before the spaces are folded (a zero-width space between spaces left two, and the paper got the older link). (report/summary.go)
+- `text.ts settledWho` and `talk-prompt.ts historyText`: cut with the new `sliceUnits` (modules/language/format.ts), never through a surrogate pair (Go's UTF16Slice already).
+- `notes.ts GOAL_WORDS`: the word ends at `(?![\p{L}\p{M}\p{N}_])`, not `\b`, so a goal written in Devanagari, Malayalam or Kannada is a goal (Go reads the generated pattern).
+- `invariants.ts`: the privacy faults visit refs in key order (Go always did).
+
+**Not changed, one line each:**
+- `refunds.ts amountInr: r.amount / 100`: the amount is the payments service's own figure for that refund; rounding would tell the customer a wrong amount, and JSON keeps a
+  fraction exact (Go writes the same decimal). Not reachable with whole-rupee settings.
+- `interactiveProblem` counting code points: deliberate (the comment: a label is counted as the reader sees it); Meta does not document its counting; it differs only for
+  characters outside the Basic Multilingual Plane.
+- "The UPI go-live certificate is read as the example": not found. A certificate made on the UPI example's settings is `own` for that shop and Glow Salon's is `example`
+  (new case in report-go-live.test.ts); hand check, CLI and runtime digest the same validated settings.
+- Listings and directory: the `file_taken` session token is fixed on main (http.ts records the short id). The Stock page's 60-unit pre-check and `start` with a missing stock
+  id are `modules/stock` behaviour, which streams W4 and W5 are porting now: changing it here would collide (left to them). "I can tighten: ." with no declared limits needs a
+  new sentence in four languages (a review of the Malayalam and Kannada), so it is not small. The restore entry's "moved on by 100,000" is one sentence for every template;
+  for a listings shop it is only beside the point.
+
+**Measured once at the end (22/23 Nov, through the heat lock):** every generator's `--check` passes after regenerating the five whose output the fixes change (books,
+Bookings report, Guard clients, patterns, report). `go build ./...`, `go vet ./...`, `go test ./...` pass (30 packages). Bookings contract on TypeScript 144 of 144 (143 in the
+whole run, plus the new forged-time case after its lookup was fixed, rerun on its own file: 13 of 13) and on Go 144 of 144; listings contract 198 of 198; the unit tests of
+modules/accounting, messaging, assistant, language, the report tests in modules/test and Orders' report tests 296 of 296; Bookings' unit tests 947 of 949, with one skipped and
+one failing: `sample-report.test.ts`, whose committed sample report predates main's 21 Nov price list (`priceList` "2026-11-19" against "2026-11-21"); regenerating it needs
+`scripts/sample-report.ts` and public-web's `sample:pull`, outside this stream.
+
+## Wave 2's Go gaps closed (22 Nov 2026, `go-w2-gaps-22nov`)
+
+Started from agents main ead21fd8 (Bookings on Go 143 of 143). Stream A of five. Code first for every item, `go build` the only check while writing (owner, 22 Nov); the tests ran once at
+the end (counts below).
+
+1. **The outgoing check on the assistant's own lines: done.** Every line goes through `language.CheckText` with the facts its writer noted, as conversation.ts runs check.ts over
+   the Writer's facts: the page's talk (`tellText`), WhatsApp through the shared say (`assistantVoice.Matches`, no longer "allowed" by fiat), the customer's closed-day template,
+   a message card's words, the talk's reply and the morning line. The facts are `assistant.Writer` (writer.go) over each packed key's own facts, generated by `gen_words.ts
+   factsOf` (the literals and fixed counts the words always carry, proved there with the real checkText), plus the values put in. A held-back line is recorded as blocked and
+   nothing goes in its place, as in TypeScript (say.ts's `heldBack` is a no-op for the assistant; the brief's "sends the fixed line" is the talk's `talk_fallback`, after the
+   talk's own five checks, which was already so). Vectors: `runtime/testdata/assistant-lines.json` (gen_assistant_vectors.ts, 23 lines x 4 languages, the words and the problems of
+   four tampered forms each, word for word); `assistant/writer_test.go` checks every packed key in every language with its own facts.
+2. **The owner's open question on a Bookings shop: done.** The talk's sources are the notes, then each skill's `Facts` (Bookings: agent_talkfacts.go, talkReads.facts), then each
+   skill's `PublicContext("")` (Bookings' publicContext, the listings), in talk-owner.ts's order; the prompt and the schema carry the declared limits (generated
+   `talk.system.*.limits`, `talkSchemaLimits`, `TalkSchemaFor`); the fixed line counts every skill's waiting items and the open cards, with today's count for a skill with a day
+   (`talk_fallback.today`); a proposed note goes to WhatsApp with Remember / No (`proposeNote`, memory `Propose`/`AcceptProposal`/`DeclineProposal`, the `note-yes:p-3` tap), and a
+   note written from WhatsApp is now by "whatsapp", not "app" (notes.ts `ownerAuthority(via())`; the Go code wrote "app" for every note before). Vectors:
+   `bookings/testdata/talk-facts-vectors.json` (gen_talk_facts_vectors.ts: facts, public sources, prompt and schema, en and hi). Contract: `talk.contract.test.ts`.
+3. **Tests for what was checked by hand: done.** `talk.contract.test.ts`: a WhatsApp customer whose window has closed (a 25-hour-old message) gets, when their day is closed, the day-closed template with TypeScript's
+   templateMessageFor name and values; the morning line to an owner who never wrote goes as its template, once. The combined lines in hi, ml and kn are in the vectors of item 1.
+4. **The smaller gaps: done.** A chat guest is "Chat guest 3" to the owner (`runtime.GuestLabel`; owner items, upcoming, whoOf, shownPhone), and "tell chat guest 3 ..." makes the
+   message card (`prepareGuestMessage`); "open my app" from the owner on WhatsApp sends the sign-in link before the agent sees it (`runtime/openmyapp.go`, OPEN_MY_APP generated);
+   a limit tightened by a card's tap is in force for the rest of the same step (`AssistantHooks.InForce`); a UPI shop with a `report` block sends the QR picture before the words
+   (`Kit.QRImage` = `ownermarked.FolderImages`). Contract cases for "open my app", the chat guest's message card (label, words in the guest's thread, "not here" for anything else) and
+   the QR picture are in `talk.contract.test.ts`. Not done, as the brief says: Sarvam and the morning line's mood picture (Deferred.md; see the morning finding below). Not covered
+   by a test of their own: the same-step limit (no contract path taps a card and refunds in the one step) and the guest's label on the owner page's items (a chat guest's
+   booking must be confirmed first, which no contract path does).
+
+**Findings (22 Nov, stream A).** TypeScript, not changed: (a) the morning templates were made with an image header (templates.ts, item 11i), but morning.ts sends the template
+without one when the shop's pages.json has no mood pictures, which Meta refuses; observed on both runtimes in talk.contract.test.ts (the stand-in answers 400, #132012 "Variable parameter
+values formatted incorrectly", and the line ends "failed", tried again in an hour). Every Go shop has the gap (no morning picture yet), so outside the owner's window a Go shop's
+morning line cannot reach the owner until pictures are given or the template loses its header (the test does not assert the send). (b) limits-card.ts:
+an "off when 0" limit made Active at 0 reads "Active: Orders above never need your approval before any payment is asked." (c) The Hindi Active line ends with "." where the other
+Hindi lines end with "।". (d) money_in shows a paise amount as "₹1,500.5" (formatInr of a fraction). Test infrastructure: the Bookings WhatsApp stand-in did not approve the
+assistant's own templates, so a closed-day template could not be sent there on either runtime; templates/commerce/bookings/standins/server.ts now approves
+`assistantCatalogue.templates` too. Go bugs found and fixed: a note saved from WhatsApp was written as from "app"; the Bookings message routes (the owner's route, the channel
+route) dropped `SendImage`, so no picture could have gone even with a maker.
+
+**Measured at the end of this stream (22 Nov, through the heat lock, once after the code; one fix round after the narrow files):** `go vet ./...` clean; `go test ./...` 30 packages
+ok. `BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/`: **148 of 148** (143 + the five of
+talk.contract.test.ts). The same on TypeScript: **148 of 148**. `node --test --test-concurrency=1 templates/commerce/listings/contract/` on Go: **192 of 192** without go/bin/listings-shared,
+whose absence registers none of shared.contract.test.ts's 8 (shared-harness.ts haveGo); with it built, shared.contract.test.ts on its own: 8 of 8. 192 + 8 = 200 = ead21fd8's
+198 + words-fresh's two new checks. The TypeScript unit tests that import the Bookings stand-in (approvals-guard-binary, understanding, ai-mode, buttons, model-eval, e2e,
+report-whatsapp, standins): 110 of 110 after it approves the assistant's templates. After the whole run, the chat guest's case was added to talk.contract.test.ts and the file run again on both runtimes:
+6 of 6 on TypeScript and 6 of 6 on Go, so the Bookings contract is 149 on each (148 measured whole, plus this one run on its own file).
+
+**go-w2-tsfix-22nov, final run after merging main 6c16bbf5 (stream A), 23 Nov, once through the heat lock:** every generator `--check` fresh (none needed writing
+after the merge); `go build`, `go vet ./...`, `go test ./...` pass (30 packages); Bookings contract 151 of 151 on TypeScript and 151 of 151 on Go (the forged status time and the
+held buttons cases included); listings contract 200 of 200; the changed modules' unit tests 296 of 296; Orders' and Fees' accounting-figures, Fees' classes and the channels tests
+68 of 68; Bookings' unit tests 947 of 949 (one skipped; `sample-report.test.ts` fails the same way at the base ead21fd8, the same code 192V-X9KH: the committed sample predates
+main's 21 Nov price list, so it is not this stream's).
+## Wave 2: Stock orders on Go (22 Nov 2026, `go-w5-stock-22nov`, stream W5)
+
+**The contract first.** `templates/commerce/stock-orders/contract/` (README there): 59 tests in 8 files, black-box over HTTP and agent.db, in front of a recording WhatsApp
+Guard over the shared stand-in (guards mode, the real clock) or on the runtime's own stand-in with the test clock (fakes mode). Green on TypeScript: **57 pass, 2 skipped**
+(the cross-restart pair, which needs the Go binary). `server/main.ts` took the same test-clock seam Bookings' has (nothing changes without the two variables).
+
+**The shared stock count** is its own package, `internal/stock` (modules/stock/stock.ts whole), moved out of `internal/listings` (which keeps aliases, so the runtime's call sites
+did not change) and proved on vectors made by running the TypeScript (`scripts/gen_stock_vectors.ts`, in words-fresh). Orders (W4) uses `Sale`, `ReconcileSales`,
+`UnbookedHolds` and `LeftFor` from it.
+
+**The template**: `internal/stockorders` and `cmd/stock-orders` (Explanation.md there). Shared changes, all additions (`internal/runtime/kitstock.go`): a Kit's agent that is
+an `AfterSaver` is called after the step's save on every step and beat (core.ts `agent.sendOnce.run`), unless the licence is in its final stop; a Kit that is a `StockKit` gets
+the owner's Stock page (its items after the shop's listings) and its `owner_stock` events run in the step (Bookings is not one: 404 and dropped, as before);
+`Snap.EnsureAssistant`, `Snap.EnsureStock`, `StepContext.LooksLikeLimitRule`.
+
+**End of the stream (main with streams A and B merged in, one pass through the heat lock):** the contract is now 62 tests (the assistant's three added): TypeScript **62 of 62**, Go **61 of 62** (only the monthly report, not ported); listings contract on Go 203 of 203 (words-fresh with the three Stock orders checks); `go vet ./...` clean, `go test ./...` 31 packages ok, none failing; Bookings on Go 149 of 149 after stream A's merge (not run again after stream B's).
+
+**Earlier, on Go: 58 of 59** (`STOCK_ORDERS_IMPL=go STOCK_ORDERS_GO_BIN=go/bin/stock-orders node --test --test-concurrency=1 templates/commerce/stock-orders/contract/`, through the
+heat lock), the cross-restart pair included (a shop moved TypeScript to Go and Go to TypeScript keeps its orders field for field, its open card, its record and its counter).
+The one that fails is the monthly report: `report/` is not ported (Deferred.md of internal/stockorders), so a Go shop with a `report` block makes none.
+
+Not done, with the reason in `internal/stockorders/Deferred.md`: the monthly report and the go-live certificate; the `assistant` block's own sentences; settings vectors (the
+sentences are copied from settings.ts); the assistant's talk reads, open list and routing words, and the morning line over Stock orders; the owner's push; waiting for a Guard
+that is down inside a step. TypeScript was not changed in behaviour: `server/main.ts` gained the test-clock seam, `src/reading.ts` exports its two word lists for the generator.
+
+TypeScript findings (nothing was changed):
+- A message to the owner OUTSIDE their 24-hour window that has no WhatsApp template of its own (the supplier asked for no more messages, a card ran out, a delivery marked, ...)
+  goes as the generic `stock_owner_notice` with no parameters; a provider that knows only the real templates refuses it, so the owner is not told. Only the card, the supplier's
+  OK, no and silence have templates (meta-templates.ts).
+- `lowStockTick` says "X is low (n left). Order from Y?" only because `pendingAlerts` returns the queue's own alert objects, so `noteAsked` has already counted the question
+  when `a.asked === 1` is read. A copy there would silently drop the line; Go reads the count `noteAsked` returns.
+- A Stock orders monthly report writes the report, its page and the owner's lines, and no monthly certificate (the go-live certificate is separate): different from Bookings.

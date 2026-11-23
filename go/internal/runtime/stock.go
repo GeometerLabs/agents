@@ -36,7 +36,7 @@ func (r *Runtime) ownerStock(snap *Snap, rec *recorder, ev map[string]any, now i
 	st := snap.touchStock()
 	// a new line takes the item's own name when the page did not send one, so the Stock page says the item's name (kit.ts `fixed`)
 	if op.Op == "start" && op.Name == "" {
-		for _, ref := range snap.listingRefs(lang) {
+		for _, ref := range r.stockRefs(snap, lang) {
 			if ref.ID == op.ID {
 				op.Name = ref.Name
 				break
@@ -88,7 +88,7 @@ func (r *Runtime) StockView(lang string) listings.StockView {
 		_, lang = r.owner()
 	}
 	s := r.current()
-	return listings.StockViewOf(s.Stock, s.listingRefs(lang))
+	return listings.StockViewOf(s.Stock, r.stockRefs(s, lang))
 }
 
 // StockCheck is `check`: what an op would do now on a copy of the saved state, "" when it would work.

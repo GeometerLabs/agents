@@ -1,0 +1,3357 @@
+{
+ "timeZone": "Asia/Kolkata",
+ "cases": [
+  {
+   "lang": "hi",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ],
+    "closed": false
+   },
+   "text": "बुधवार, 25 नवंबर, बुकिंग: 2\nसुबह 10:30 बजे Haircut, Asha (b-7)\nशाम 4:05 बजे Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर, बुकिंग: 2\nसुबह 10:30 बजे Haircut, Asha (b-7)\nशाम 4:05 बजे Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर, बुकिंग: 2\nसुबह 10:30 बजे Haircut, Asha (b-7)\nशाम 4:05 बजे Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर, बुकिंग: 2\nसुबह 10:30 बजे Haircut, Asha (b-7)\nशाम 4:05 बजे Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-1",
+      "startMs": 1795577400000,
+      "what": "Haircut",
+      "who": "Guest 1",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-2",
+      "startMs": 1795579200000,
+      "what": "Haircut",
+      "who": "Guest 2",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-3",
+      "startMs": 1795581000000,
+      "what": "Haircut",
+      "who": "Guest 3",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-4",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Guest 4",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-5",
+      "startMs": 1795584600000,
+      "what": "Haircut",
+      "who": "Guest 5",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-6",
+      "startMs": 1795586400000,
+      "what": "Haircut",
+      "who": "Guest 6",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-7",
+      "startMs": 1795588200000,
+      "what": "Haircut",
+      "who": "Guest 7",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-8",
+      "startMs": 1795590000000,
+      "what": "Haircut",
+      "who": "Guest 8",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-9",
+      "startMs": 1795591800000,
+      "what": "Haircut",
+      "who": "Guest 9",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-10",
+      "startMs": 1795593600000,
+      "what": "Haircut",
+      "who": "Guest 10",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-11",
+      "startMs": 1795595400000,
+      "what": "Haircut",
+      "who": "Guest 11",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795597200000,
+      "what": "Haircut",
+      "who": "Guest 12",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-13",
+      "startMs": 1795599000000,
+      "what": "Haircut",
+      "who": "Guest 13",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-14",
+      "startMs": 1795600800000,
+      "what": "Haircut",
+      "who": "Guest 14",
+      "state": "confirmed"
+     }
+    ],
+    "closed": true
+   },
+   "text": "बुधवार, 25 नवंबर, बुकिंग: 14\nसुबह 9:00 बजे Haircut, Guest 1 (b-1)\nसुबह 9:30 बजे Haircut, Guest 2 (b-2)\nसुबह 10:00 बजे Haircut, Guest 3 (b-3)\nसुबह 10:30 बजे Haircut, Guest 4 (b-4)\nसुबह 11:00 बजे Haircut, Guest 5 (b-5)\nसुबह 11:30 बजे Haircut, Guest 6 (b-6)\nदोपहर 12:00 बजे Haircut, Guest 7 (b-7)\nदोपहर 12:30 बजे Haircut, Guest 8 (b-8)\nदोपहर 1:00 बजे Haircut, Guest 9 (b-9)\nदोपहर 1:30 बजे Haircut, Guest 10 (b-10)\nदोपहर 2:00 बजे Haircut, Guest 11 (b-11)\nदोपहर 2:30 बजे Haircut, Guest 12 (b-12)\nऔर 2 और\nउस दिन दुकान बंद है।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर, बुकिंग: 14\nसुबह 9:00 बजे Haircut, Guest 1 (b-1)\nसुबह 9:30 बजे Haircut, Guest 2 (b-2)\nसुबह 10:00 बजे Haircut, Guest 3 (b-3)\nसुबह 10:30 बजे Haircut, Guest 4 (b-4)\nसुबह 11:00 बजे Haircut, Guest 5 (b-5)\nसुबह 11:30 बजे Haircut, Guest 6 (b-6)\nदोपहर 12:00 बजे Haircut, Guest 7 (b-7)\nदोपहर 12:30 बजे Haircut, Guest 8 (b-8)\nदोपहर 1:00 बजे Haircut, Guest 9 (b-9)\nदोपहर 1:30 बजे Haircut, Guest 10 (b-10)\nदोपहर 2:00 बजे Haircut, Guest 11 (b-11)\nदोपहर 2:30 बजे Haircut, Guest 12 (b-12)\nऔर 2 और\nउस दिन दुकान बंद है। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर, बुकिंग: 14\nसुबह 9:00 बजे Haircut, Guest 1 (b-1)\nसुबह 9:30 बजे Haircut, Guest 2 (b-2)\nसुबह 10:00 बजे Haircut, Guest 3 (b-3)\nसुबह 10:30 बजे Haircut, Guest 4 (b-4)\nसुबह 11:00 बजे Haircut, Guest 5 (b-5)\nसुबह 11:30 बजे Haircut, Guest 6 (b-6)\nदोपहर 12:00 बजे Haircut, Guest 7 (b-7)\nदोपहर 12:30 बजे Haircut, Guest 8 (b-8)\nदोपहर 1:00 बजे Haircut, Guest 9 (b-9)\nदोपहर 1:30 बजे Haircut, Guest 10 (b-10)\nदोपहर 2:00 बजे Haircut, Guest 11 (b-11)\nदोपहर 2:30 बजे Haircut, Guest 12 (b-12)\nऔर 2 और\nउस दिन दुकान बंद है। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर, बुकिंग: 14\nसुबह 9:00 बजे Haircut, Guest 1 (b-1)\nसुबह 9:30 बजे Haircut, Guest 2 (b-2)\nसुबह 10:00 बजे Haircut, Guest 3 (b-3)\nसुबह 10:30 बजे Haircut, Guest 4 (b-4)\nसुबह 11:00 बजे Haircut, Guest 5 (b-5)\nसुबह 11:30 बजे Haircut, Guest 6 (b-6)\nदोपहर 12:00 बजे Haircut, Guest 7 (b-7)\nदोपहर 12:30 बजे Haircut, Guest 8 (b-8)\nदोपहर 1:00 बजे Haircut, Guest 9 (b-9)\nदोपहर 1:30 बजे Haircut, Guest 10 (b-10)\nदोपहर 2:00 बजे Haircut, Guest 11 (b-11)\nदोपहर 2:30 बजे Haircut, Guest 12 (b-12)\nऔर 2 और\nउस दिन दुकान बंद है।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [],
+    "closed": true
+   },
+   "text": "बुधवार, 25 नवंबर को कोई बुकिंग नहीं।\nउस दिन दुकान बंद है।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर को कोई बुकिंग नहीं।\nउस दिन दुकान बंद है। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर को कोई बुकिंग नहीं।\nउस दिन दुकान बंद है। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर को कोई बुकिंग नहीं।\nउस दिन दुकान बंद है।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-2"
+    ]
+   },
+   "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। इन तक मैसेज नहीं पहुँचा, कृपया इन्हें फ़ोन करें: b-1 (Asha), b-3 (Meena 2). फिर से खोलने के लिए undo लिखें।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। इन तक मैसेज नहीं पहुँचा, कृपया इन्हें फ़ोन करें: b-1 (Asha), b-3 (Meena 2). फिर से खोलने के लिए undo लिखें। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। इन तक मैसेज नहीं पहुँचा, कृपया इन्हें फ़ोन करें: b-1 (Asha), b-3 (Meena 2). फिर से खोलने के लिए undo लिखें। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। इन तक मैसेज नहीं पहुँचा, कृपया इन्हें फ़ोन करें: b-1 (Asha), b-3 (Meena 2). फिर से खोलने के लिए undo लिखें।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-1",
+     "b-2",
+     "b-3"
+    ]
+   },
+   "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। फिर से खोलने के लिए undo लिखें।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। फिर से खोलने के लिए undo लिखें। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। फिर से खोलने के लिए undo लिखें। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर बंद कर दिया। उस दिन की बुकिंग: 3। मैंने उनसे दूसरा दिन चुनने को कहा है। फिर से खोलने के लिए undo लिखें।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [],
+    "told": []
+   },
+   "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन कोई बुकिंग नहीं। फिर से खोलने के लिए undo लिखें।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन कोई बुकिंग नहीं। फिर से खोलने के लिए undo लिखें। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर बंद कर दिया। उस दिन कोई बुकिंग नहीं। फिर से खोलने के लिए undo लिखें। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर बंद कर दिया। उस दिन कोई बुकिंग नहीं। फिर से खोलने के लिए undo लिखें।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "say",
+   "go": {
+    "key": "reopened.n",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "n": 2
+   },
+   "text": "बुधवार, 25 नवंबर फिर से खुला। मैंने ग्राहकों को बताया कि उनकी बुकिंग पक्की है: 2।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर फिर से खुला। मैंने ग्राहकों को बताया कि उनकी बुकिंग पक्की है: 2। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर फिर से खुला। मैंने ग्राहकों को बताया कि उनकी बुकिंग पक्की है: 2। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर फिर से खुला। मैंने ग्राहकों को बताया कि उनकी बुकिंग पक्की है: 2।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "limit",
+   "go": {
+    "what": "pending",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 500
+   },
+   "text": "प्रतीक्षा में: ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। यह यहाँ अभी से लागू है, और चालू होते ही मैं बता दूँगा।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "प्रतीक्षा में: ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। यह यहाँ अभी से लागू है, और चालू होते ही मैं बता दूँगा। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "प्रतीक्षा में: ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। यह यहाँ अभी से लागू है, और चालू होते ही मैं बता दूँगा। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "प्रतीक्षा में: ₹5009 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। यह यहाँ अभी से लागू है, और चालू होते ही मैं बता दूँगा।",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 300
+   },
+   "text": "चालू: ₹300 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "चालू: ₹300 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "चालू: ₹300 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "चालू: ₹3009 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए.",
+     "problems": [
+      "The message says ₹3,009, but the record only has ₹300."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "limit",
+   "go": {
+    "what": "failed",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 1000
+   },
+   "text": "यह नहीं हो पाया। पहले वाली सीमा ही लागू है: ₹1,000 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। आप फिर कोशिश कर सकते हैं।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "यह नहीं हो पाया। पहले वाली सीमा ही लागू है: ₹1,000 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। आप फिर कोशिश कर सकते हैं। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "यह नहीं हो पाया। पहले वाली सीमा ही लागू है: ₹1,000 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। आप फिर कोशिश कर सकते हैं। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "यह नहीं हो पाया। पहले वाली सीमा ही लागू है: ₹1,0009 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। आप फिर कोशिश कर सकते हैं।",
+     "problems": [
+      "The message says ₹10,009, but the record only has ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "perDay",
+    "unit": "count",
+    "value": 12
+   },
+   "text": "चालू: एक दिन में ज़्यादा से ज़्यादा 12 ऑर्डर.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "चालू: एक दिन में ज़्यादा से ज़्यादा 12 ऑर्डर. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "चालू: एक दिन में ज़्यादा से ज़्यादा 12 ऑर्डर. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "bigOrder",
+    "unit": "inr",
+    "zeroIsOff": true,
+    "value": 0
+   },
+   "text": "चालू: कभी नहीं से ऊपर के ऑर्डर पर पैसे माँगने से पहले आपकी मंज़ूरी चाहिए.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "चालू: कभी नहीं से ऊपर के ऑर्डर पर पैसे माँगने से पहले आपकी मंज़ूरी चाहिए. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "चालू: कभी नहीं से ऊपर के ऑर्डर पर पैसे माँगने से पहले आपकी मंज़ूरी चाहिए. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "not_tighter",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 500,
+    "to": 800
+   },
+   "text": "आपकी रिफंड की सीमा अभी ₹500 है, इसलिए ₹800 इसे कसने की जगह ढीला करेगा। मैं यहाँ से सिर्फ़ कसता हूँ; ढीला करने के लिए अपना ऐप खोलें और पासकी से साइन इन करें।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "आपकी रिफंड की सीमा अभी ₹500 है, इसलिए ₹800 इसे कसने की जगह ढीला करेगा। मैं यहाँ से सिर्फ़ कसता हूँ; ढीला करने के लिए अपना ऐप खोलें और पासकी से साइन इन करें। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "आपकी रिफंड की सीमा अभी ₹500 है, इसलिए ₹800 इसे कसने की जगह ढीला करेगा। मैं यहाँ से सिर्फ़ कसता हूँ; ढीला करने के लिए अपना ऐप खोलें और पासकी से साइन इन करें। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "आपकी रिफंड की सीमा अभी ₹5009 है, इसलिए ₹800 इसे कसने की जगह ढीला करेगा। मैं यहाँ से सिर्फ़ कसता हूँ; ढीला करने के लिए अपना ऐप खोलें और पासकी से साइन इन करें।",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "which",
+   "go": {
+    "kinds": [
+     "refund",
+     "perDay"
+    ]
+   },
+   "text": "आप कौन सी सीमा की बात कर रहे हैं? मैं ये कस सकता हूँ: रिफंड की सीमा, एक दिन के ऑर्डर। बाकी के लिए मैं उसे नोट के रूप में रख लूँगा।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "आप कौन सी सीमा की बात कर रहे हैं? मैं ये कस सकता हूँ: रिफंड की सीमा, एक दिन के ऑर्डर। बाकी के लिए मैं उसे नोट के रूप में रख लूँगा। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "आप कौन सी सीमा की बात कर रहे हैं? मैं ये कस सकता हूँ: रिफंड की सीमा, एक दिन के ऑर्डर। बाकी के लिए मैं उसे नोट के रूप में रख लूँगा। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card_limit",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 1000,
+    "to": 500,
+    "code": "K7M2QX"
+   },
+   "text": "₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. अभी: ₹1,000.\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. अभी: ₹1,000.\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. अभी: ₹1,000.\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "₹5009 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. अभी: ₹1,000.\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "b-12",
+    "who": "Room 4 Ravi",
+    "what": "Beard trim",
+    "amountPaise": 50000,
+    "code": "K7M2QX",
+    "hasNo": true
+   },
+   "text": "b-12 (Room 4 Ravi, Beard trim) रद्द करें और ₹500 जमा राशि लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) रद्द करें और ₹500 जमा राशि लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) रद्द करें और ₹500 जमा राशि लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) रद्द करें और ₹5009 जमा राशि लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "say",
+   "go": {
+    "key": "refusal.no_window",
+    "ref": "b-12",
+    "who": "Room 4 Ravi"
+   },
+   "text": "Room 4 Ravi ने पिछले 24 घंटे में मैसेज नहीं किया, इसलिए WhatsApp दुकान से सिर्फ़ मंज़ूर किए गए मैसेज भेजने देता है। कृपया उन्हें फ़ोन करें।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Room 4 Ravi ने पिछले 24 घंटे में मैसेज नहीं किया, इसलिए WhatsApp दुकान से सिर्फ़ मंज़ूर किए गए मैसेज भेजने देता है। कृपया उन्हें फ़ोन करें। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Room 4 Ravi ने पिछले 24 घंटे में मैसेज नहीं किया, इसलिए WhatsApp दुकान से सिर्फ़ मंज़ूर किए गए मैसेज भेजने देता है। कृपया उन्हें फ़ोन करें। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "say",
+   "go": {
+    "key": "money_in.some",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "paise": 150050,
+    "n": 3
+   },
+   "text": "बुधवार, 25 नवंबर को दर्ज: ₹1,500.5, भुगतान: 3।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बुधवार, 25 नवंबर को दर्ज: ₹1,500.5, भुगतान: 3। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर को दर्ज: ₹1,500.5, भुगतान: 3। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "बुधवार, 25 नवंबर को दर्ज: ₹1,5009.5, भुगतान: 3।",
+     "problems": [
+      "The message says ₹15,009.5, but the record only has ₹1,500.5."
+     ]
+    },
+    {
+     "text": "गुरुवार, 26 नवंबर को दर्ज: ₹1,500.5, भुगतान: 3।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@bookings",
+    "shop": "Sharma Salon 2"
+   },
+   "text": "मैं Sharma Salon 2 का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• कल\n• मेरे लिए क्या है\n• आज कितना आया\n• रविवार बंद\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• b-14 शिफ्ट शाम 5 बजे\n• वापस लो",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "मैं Sharma Salon 2 का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• कल\n• मेरे लिए क्या है\n• आज कितना आया\n• रविवार बंद\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• b-14 शिफ्ट शाम 5 बजे\n• वापस लो 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "मैं Sharma Salon 2 का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• कल\n• मेरे लिए क्या है\n• आज कितना आया\n• रविवार बंद\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• b-14 शिफ्ट शाम 5 बजे\n• वापस लो https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ]
+   },
+   "text": "कौन-सी? ऐसे जवाब दें: cancel b-14।\nबुधवार, 25 नवंबर, सुबह 10:30 बजे: Haircut, Asha (b-7)\nबुधवार, 25 नवंबर, शाम 4:05 बजे: Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: cancel b-14।\nबुधवार, 25 नवंबर, सुबह 10:30 बजे: Haircut, Asha (b-7)\nबुधवार, 25 नवंबर, शाम 4:05 बजे: Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: cancel b-14।\nबुधवार, 25 नवंबर, सुबह 10:30 बजे: Haircut, Asha (b-7)\nबुधवार, 25 नवंबर, शाम 4:05 बजे: Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: cancel b-14।\nगुरुवार, 26 नवंबर, सुबह 10:30 बजे: Haircut, Asha (b-7)\nबुधवार, 25 नवंबर, शाम 4:05 बजे: Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "tmpl",
+   "go": {
+    "id": "day_closed",
+    "shop": "Sharma Salon 2",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "startMs": 1795602900000
+   },
+   "text": "माफ़ कीजिए: Sharma Salon 2 बुधवार, 25 नवंबर को बंद है, इसलिए शाम 4:05 बजे की आपकी बुकिंग उस दिन नहीं हो पाएगी। इसे बदलने के लिए दूसरा दिन और समय लिखें, या रद्द करने के लिए CANCEL लिखें।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "माफ़ कीजिए: Sharma Salon 2 बुधवार, 25 नवंबर को बंद है, इसलिए शाम 4:05 बजे की आपकी बुकिंग उस दिन नहीं हो पाएगी। इसे बदलने के लिए दूसरा दिन और समय लिखें, या रद्द करने के लिए CANCEL लिखें। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "माफ़ कीजिए: Sharma Salon 2 बुधवार, 25 नवंबर को बंद है, इसलिए शाम 4:05 बजे की आपकी बुकिंग उस दिन नहीं हो पाएगी। इसे बदलने के लिए दूसरा दिन और समय लिखें, या रद्द करने के लिए CANCEL लिखें। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "माफ़ कीजिए: Sharma Salon 2 गुरुवार, 26 नवंबर को बंद है, इसलिए शाम 4:05 बजे की आपकी बुकिंग उस दिन नहीं हो पाएगी। इसे बदलने के लिए दूसरा दिन और समय लिखें, या रद्द करने के लिए CANCEL लिखें।",
+     "problems": [
+      "The message says the date \"गुरुवार, 26 नवंबर\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ],
+    "closed": false
+   },
+   "text": "Wed 25 Nov, bookings: 2\n10:30 am Haircut, Asha (b-7)\n4:05 pm Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Wed 25 Nov, bookings: 2\n10:30 am Haircut, Asha (b-7)\n4:05 pm Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Wed 25 Nov, bookings: 2\n10:30 am Haircut, Asha (b-7)\n4:05 pm Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Thu 26 Nov, bookings: 2\n10:30 am Haircut, Asha (b-7)\n4:05 pm Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-1",
+      "startMs": 1795577400000,
+      "what": "Haircut",
+      "who": "Guest 1",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-2",
+      "startMs": 1795579200000,
+      "what": "Haircut",
+      "who": "Guest 2",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-3",
+      "startMs": 1795581000000,
+      "what": "Haircut",
+      "who": "Guest 3",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-4",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Guest 4",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-5",
+      "startMs": 1795584600000,
+      "what": "Haircut",
+      "who": "Guest 5",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-6",
+      "startMs": 1795586400000,
+      "what": "Haircut",
+      "who": "Guest 6",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-7",
+      "startMs": 1795588200000,
+      "what": "Haircut",
+      "who": "Guest 7",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-8",
+      "startMs": 1795590000000,
+      "what": "Haircut",
+      "who": "Guest 8",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-9",
+      "startMs": 1795591800000,
+      "what": "Haircut",
+      "who": "Guest 9",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-10",
+      "startMs": 1795593600000,
+      "what": "Haircut",
+      "who": "Guest 10",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-11",
+      "startMs": 1795595400000,
+      "what": "Haircut",
+      "who": "Guest 11",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795597200000,
+      "what": "Haircut",
+      "who": "Guest 12",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-13",
+      "startMs": 1795599000000,
+      "what": "Haircut",
+      "who": "Guest 13",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-14",
+      "startMs": 1795600800000,
+      "what": "Haircut",
+      "who": "Guest 14",
+      "state": "confirmed"
+     }
+    ],
+    "closed": true
+   },
+   "text": "Wed 25 Nov, bookings: 14\n9:00 am Haircut, Guest 1 (b-1)\n9:30 am Haircut, Guest 2 (b-2)\n10:00 am Haircut, Guest 3 (b-3)\n10:30 am Haircut, Guest 4 (b-4)\n11:00 am Haircut, Guest 5 (b-5)\n11:30 am Haircut, Guest 6 (b-6)\n12:00 pm Haircut, Guest 7 (b-7)\n12:30 pm Haircut, Guest 8 (b-8)\n1:00 pm Haircut, Guest 9 (b-9)\n1:30 pm Haircut, Guest 10 (b-10)\n2:00 pm Haircut, Guest 11 (b-11)\n2:30 pm Haircut, Guest 12 (b-12)\nand 2 more\nThe shop is closed that day.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Wed 25 Nov, bookings: 14\n9:00 am Haircut, Guest 1 (b-1)\n9:30 am Haircut, Guest 2 (b-2)\n10:00 am Haircut, Guest 3 (b-3)\n10:30 am Haircut, Guest 4 (b-4)\n11:00 am Haircut, Guest 5 (b-5)\n11:30 am Haircut, Guest 6 (b-6)\n12:00 pm Haircut, Guest 7 (b-7)\n12:30 pm Haircut, Guest 8 (b-8)\n1:00 pm Haircut, Guest 9 (b-9)\n1:30 pm Haircut, Guest 10 (b-10)\n2:00 pm Haircut, Guest 11 (b-11)\n2:30 pm Haircut, Guest 12 (b-12)\nand 2 more\nThe shop is closed that day. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Wed 25 Nov, bookings: 14\n9:00 am Haircut, Guest 1 (b-1)\n9:30 am Haircut, Guest 2 (b-2)\n10:00 am Haircut, Guest 3 (b-3)\n10:30 am Haircut, Guest 4 (b-4)\n11:00 am Haircut, Guest 5 (b-5)\n11:30 am Haircut, Guest 6 (b-6)\n12:00 pm Haircut, Guest 7 (b-7)\n12:30 pm Haircut, Guest 8 (b-8)\n1:00 pm Haircut, Guest 9 (b-9)\n1:30 pm Haircut, Guest 10 (b-10)\n2:00 pm Haircut, Guest 11 (b-11)\n2:30 pm Haircut, Guest 12 (b-12)\nand 2 more\nThe shop is closed that day. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Thu 26 Nov, bookings: 14\n9:00 am Haircut, Guest 1 (b-1)\n9:30 am Haircut, Guest 2 (b-2)\n10:00 am Haircut, Guest 3 (b-3)\n10:30 am Haircut, Guest 4 (b-4)\n11:00 am Haircut, Guest 5 (b-5)\n11:30 am Haircut, Guest 6 (b-6)\n12:00 pm Haircut, Guest 7 (b-7)\n12:30 pm Haircut, Guest 8 (b-8)\n1:00 pm Haircut, Guest 9 (b-9)\n1:30 pm Haircut, Guest 10 (b-10)\n2:00 pm Haircut, Guest 11 (b-11)\n2:30 pm Haircut, Guest 12 (b-12)\nand 2 more\nThe shop is closed that day.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [],
+    "closed": true
+   },
+   "text": "No bookings on Wed 25 Nov.\nThe shop is closed that day.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "No bookings on Wed 25 Nov.\nThe shop is closed that day. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "No bookings on Wed 25 Nov.\nThe shop is closed that day. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "No bookings on Thu 26 Nov.\nThe shop is closed that day.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-2"
+    ]
+   },
+   "text": "Closed Wed 25 Nov. Bookings that day: 3. I've asked them to pick another day. I could not reach these, please call them: b-1 (Asha), b-3 (Meena 2). Reply undo to open it again.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Closed Wed 25 Nov. Bookings that day: 3. I've asked them to pick another day. I could not reach these, please call them: b-1 (Asha), b-3 (Meena 2). Reply undo to open it again. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Closed Wed 25 Nov. Bookings that day: 3. I've asked them to pick another day. I could not reach these, please call them: b-1 (Asha), b-3 (Meena 2). Reply undo to open it again. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Closed Thu 26 Nov. Bookings that day: 3. I've asked them to pick another day. I could not reach these, please call them: b-1 (Asha), b-3 (Meena 2). Reply undo to open it again.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-1",
+     "b-2",
+     "b-3"
+    ]
+   },
+   "text": "Closed Wed 25 Nov. Bookings that day: 3. I've asked them to pick another day. Reply undo to open it again.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Closed Wed 25 Nov. Bookings that day: 3. I've asked them to pick another day. Reply undo to open it again. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Closed Wed 25 Nov. Bookings that day: 3. I've asked them to pick another day. Reply undo to open it again. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Closed Thu 26 Nov. Bookings that day: 3. I've asked them to pick another day. Reply undo to open it again.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [],
+    "told": []
+   },
+   "text": "Closed Wed 25 Nov. No bookings that day. Reply undo to open it again.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Closed Wed 25 Nov. No bookings that day. Reply undo to open it again. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Closed Wed 25 Nov. No bookings that day. Reply undo to open it again. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Closed Thu 26 Nov. No bookings that day. Reply undo to open it again.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "say",
+   "go": {
+    "key": "reopened.n",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "n": 2
+   },
+   "text": "Open again on Wed 25 Nov. I've told customers their booking stands: 2.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Open again on Wed 25 Nov. I've told customers their booking stands: 2. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Open again on Wed 25 Nov. I've told customers their booking stands: 2. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Open again on Thu 26 Nov. I've told customers their booking stands: 2.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "limit",
+   "go": {
+    "what": "pending",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 500
+   },
+   "text": "Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Pending: Refunds above ₹5009 need your approval. It already applies here, and I'll tell you when it is Active.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 300
+   },
+   "text": "Active: Refunds above ₹300 need your approval.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Active: Refunds above ₹300 need your approval. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Active: Refunds above ₹300 need your approval. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Active: Refunds above ₹3009 need your approval.",
+     "problems": [
+      "The message says ₹3,009, but the record only has ₹300."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "limit",
+   "go": {
+    "what": "failed",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 1000
+   },
+   "text": "That did not go through. The previous limit is still in force: Refunds above ₹1,000 need your approval. You can try again.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "That did not go through. The previous limit is still in force: Refunds above ₹1,000 need your approval. You can try again. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "That did not go through. The previous limit is still in force: Refunds above ₹1,000 need your approval. You can try again. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "That did not go through. The previous limit is still in force: Refunds above ₹1,0009 need your approval. You can try again.",
+     "problems": [
+      "The message says ₹10,009, but the record only has ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "perDay",
+    "unit": "count",
+    "value": 12
+   },
+   "text": "Active: At most 12 orders a day.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Active: At most 12 orders a day. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Active: At most 12 orders a day. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "bigOrder",
+    "unit": "inr",
+    "zeroIsOff": true,
+    "value": 0
+   },
+   "text": "Active: Orders above never need your approval before any payment is asked.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Active: Orders above never need your approval before any payment is asked. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Active: Orders above never need your approval before any payment is asked. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "not_tighter",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 500,
+    "to": 800
+   },
+   "text": "Your refund limit is ₹500 now, so ₹800 would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Your refund limit is ₹500 now, so ₹800 would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Your refund limit is ₹500 now, so ₹800 would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Your refund limit is ₹5009 now, so ₹800 would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "which",
+   "go": {
+    "kinds": [
+     "refund",
+     "perDay"
+    ]
+   },
+   "text": "Which limit do you mean? I can tighten: refund limit, orders a day. For anything else, I'll keep it as a note instead.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which limit do you mean? I can tighten: refund limit, orders a day. For anything else, I'll keep it as a note instead. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which limit do you mean? I can tighten: refund limit, orders a day. For anything else, I'll keep it as a note instead. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card_limit",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 1000,
+    "to": 500,
+    "code": "K7M2QX"
+   },
+   "text": "Refunds above ₹500 need your approval. Now: ₹1,000.\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Refunds above ₹500 need your approval. Now: ₹1,000.\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Refunds above ₹500 need your approval. Now: ₹1,000.\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Refunds above ₹5009 need your approval. Now: ₹1,000.\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "b-12",
+    "who": "Room 4 Ravi",
+    "what": "Beard trim",
+    "amountPaise": 50000,
+    "code": "K7M2QX",
+    "hasNo": true
+   },
+   "text": "Cancel b-12 (Room 4 Ravi, Beard trim) and refund the ₹500 deposit?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Cancel b-12 (Room 4 Ravi, Beard trim) and refund the ₹500 deposit?\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Cancel b-12 (Room 4 Ravi, Beard trim) and refund the ₹500 deposit?\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Cancel b-12 (Room 4 Ravi, Beard trim) and refund the ₹5009 deposit?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "say",
+   "go": {
+    "key": "refusal.no_window",
+    "ref": "b-12",
+    "who": "Room 4 Ravi"
+   },
+   "text": "Room 4 Ravi has not written in the last 24 hours, so WhatsApp lets the shop send only approved messages. Please call them.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Room 4 Ravi has not written in the last 24 hours, so WhatsApp lets the shop send only approved messages. Please call them. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Room 4 Ravi has not written in the last 24 hours, so WhatsApp lets the shop send only approved messages. Please call them. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "say",
+   "go": {
+    "key": "money_in.some",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "paise": 150050,
+    "n": 3
+   },
+   "text": "Recorded on Wed 25 Nov: ₹1,500.5 from payments: 3.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Recorded on Wed 25 Nov: ₹1,500.5 from payments: 3. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Recorded on Wed 25 Nov: ₹1,500.5 from payments: 3. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Recorded on Wed 25 Nov: ₹1,5009.5 from payments: 3.",
+     "problems": [
+      "The message says ₹15,009.5, but the record only has ₹1,500.5."
+     ]
+    },
+    {
+     "text": "Recorded on Thu 26 Nov: ₹1,500.5 from payments: 3.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@bookings",
+    "shop": "Sharma Salon 2"
+   },
+   "text": "I'm Sharma Salon 2's assistant. You can say, for example:\n• tomorrow\n• what needs me\n• money today\n• close Sunday\n• cancel b-14\n• message b-14 Running 15 minutes late\n• move b-14 to 5pm\n• undo",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "I'm Sharma Salon 2's assistant. You can say, for example:\n• tomorrow\n• what needs me\n• money today\n• close Sunday\n• cancel b-14\n• message b-14 Running 15 minutes late\n• move b-14 to 5pm\n• undo 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "I'm Sharma Salon 2's assistant. You can say, for example:\n• tomorrow\n• what needs me\n• money today\n• close Sunday\n• cancel b-14\n• message b-14 Running 15 minutes late\n• move b-14 to 5pm\n• undo https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ]
+   },
+   "text": "Which one? Reply like this: cancel b-14.\nWed 25 Nov, 10:30 am: Haircut, Asha (b-7)\nWed 25 Nov, 4:05 pm: Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which one? Reply like this: cancel b-14.\nWed 25 Nov, 10:30 am: Haircut, Asha (b-7)\nWed 25 Nov, 4:05 pm: Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which one? Reply like this: cancel b-14.\nWed 25 Nov, 10:30 am: Haircut, Asha (b-7)\nWed 25 Nov, 4:05 pm: Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Which one? Reply like this: cancel b-14.\nThu 26 Nov, 10:30 am: Haircut, Asha (b-7)\nWed 25 Nov, 4:05 pm: Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "tmpl",
+   "go": {
+    "id": "day_closed",
+    "shop": "Sharma Salon 2",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "startMs": 1795602900000
+   },
+   "text": "Sorry: Sharma Salon 2 is closed on Wed 25 Nov, so your booking at 4:05 pm cannot go ahead that day. Reply with another day and time to move it, or CANCEL to cancel it.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Sorry: Sharma Salon 2 is closed on Wed 25 Nov, so your booking at 4:05 pm cannot go ahead that day. Reply with another day and time to move it, or CANCEL to cancel it. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Sorry: Sharma Salon 2 is closed on Wed 25 Nov, so your booking at 4:05 pm cannot go ahead that day. Reply with another day and time to move it, or CANCEL to cancel it. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Sorry: Sharma Salon 2 is closed on Thu 26 Nov, so your booking at 4:05 pm cannot go ahead that day. Reply with another day and time to move it, or CANCEL to cancel it.",
+     "problems": [
+      "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ],
+    "closed": false
+   },
+   "text": "ബുധൻ, 25 നവംബർ, ബുക്കിംഗുകൾ: 2\nരാവിലെ 10:30 Haircut, Asha (b-7)\nവൈകുന്നേരം 4:05 Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ, ബുക്കിംഗുകൾ: 2\nരാവിലെ 10:30 Haircut, Asha (b-7)\nവൈകുന്നേരം 4:05 Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ, ബുക്കിംഗുകൾ: 2\nരാവിലെ 10:30 Haircut, Asha (b-7)\nവൈകുന്നേരം 4:05 Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ, ബുക്കിംഗുകൾ: 2\nരാവിലെ 10:30 Haircut, Asha (b-7)\nവൈകുന്നേരം 4:05 Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-1",
+      "startMs": 1795577400000,
+      "what": "Haircut",
+      "who": "Guest 1",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-2",
+      "startMs": 1795579200000,
+      "what": "Haircut",
+      "who": "Guest 2",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-3",
+      "startMs": 1795581000000,
+      "what": "Haircut",
+      "who": "Guest 3",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-4",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Guest 4",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-5",
+      "startMs": 1795584600000,
+      "what": "Haircut",
+      "who": "Guest 5",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-6",
+      "startMs": 1795586400000,
+      "what": "Haircut",
+      "who": "Guest 6",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-7",
+      "startMs": 1795588200000,
+      "what": "Haircut",
+      "who": "Guest 7",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-8",
+      "startMs": 1795590000000,
+      "what": "Haircut",
+      "who": "Guest 8",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-9",
+      "startMs": 1795591800000,
+      "what": "Haircut",
+      "who": "Guest 9",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-10",
+      "startMs": 1795593600000,
+      "what": "Haircut",
+      "who": "Guest 10",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-11",
+      "startMs": 1795595400000,
+      "what": "Haircut",
+      "who": "Guest 11",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795597200000,
+      "what": "Haircut",
+      "who": "Guest 12",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-13",
+      "startMs": 1795599000000,
+      "what": "Haircut",
+      "who": "Guest 13",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-14",
+      "startMs": 1795600800000,
+      "what": "Haircut",
+      "who": "Guest 14",
+      "state": "confirmed"
+     }
+    ],
+    "closed": true
+   },
+   "text": "ബുധൻ, 25 നവംബർ, ബുക്കിംഗുകൾ: 14\nരാവിലെ 9:00 Haircut, Guest 1 (b-1)\nരാവിലെ 9:30 Haircut, Guest 2 (b-2)\nരാവിലെ 10:00 Haircut, Guest 3 (b-3)\nരാവിലെ 10:30 Haircut, Guest 4 (b-4)\nരാവിലെ 11:00 Haircut, Guest 5 (b-5)\nരാവിലെ 11:30 Haircut, Guest 6 (b-6)\nഉച്ചയ്ക്ക് 12:00 Haircut, Guest 7 (b-7)\nഉച്ചയ്ക്ക് 12:30 Haircut, Guest 8 (b-8)\nഉച്ചയ്ക്ക് 1:00 Haircut, Guest 9 (b-9)\nഉച്ചയ്ക്ക് 1:30 Haircut, Guest 10 (b-10)\nഉച്ചയ്ക്ക് 2:00 Haircut, Guest 11 (b-11)\nഉച്ചയ്ക്ക് 2:30 Haircut, Guest 12 (b-12)\nകൂടാതെ 2 എണ്ണം കൂടി\nആ ദിവസം കട അടച്ചിരിക്കും.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ, ബുക്കിംഗുകൾ: 14\nരാവിലെ 9:00 Haircut, Guest 1 (b-1)\nരാവിലെ 9:30 Haircut, Guest 2 (b-2)\nരാവിലെ 10:00 Haircut, Guest 3 (b-3)\nരാവിലെ 10:30 Haircut, Guest 4 (b-4)\nരാവിലെ 11:00 Haircut, Guest 5 (b-5)\nരാവിലെ 11:30 Haircut, Guest 6 (b-6)\nഉച്ചയ്ക്ക് 12:00 Haircut, Guest 7 (b-7)\nഉച്ചയ്ക്ക് 12:30 Haircut, Guest 8 (b-8)\nഉച്ചയ്ക്ക് 1:00 Haircut, Guest 9 (b-9)\nഉച്ചയ്ക്ക് 1:30 Haircut, Guest 10 (b-10)\nഉച്ചയ്ക്ക് 2:00 Haircut, Guest 11 (b-11)\nഉച്ചയ്ക്ക് 2:30 Haircut, Guest 12 (b-12)\nകൂടാതെ 2 എണ്ണം കൂടി\nആ ദിവസം കട അടച്ചിരിക്കും. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ, ബുക്കിംഗുകൾ: 14\nരാവിലെ 9:00 Haircut, Guest 1 (b-1)\nരാവിലെ 9:30 Haircut, Guest 2 (b-2)\nരാവിലെ 10:00 Haircut, Guest 3 (b-3)\nരാവിലെ 10:30 Haircut, Guest 4 (b-4)\nരാവിലെ 11:00 Haircut, Guest 5 (b-5)\nരാവിലെ 11:30 Haircut, Guest 6 (b-6)\nഉച്ചയ്ക്ക് 12:00 Haircut, Guest 7 (b-7)\nഉച്ചയ്ക്ക് 12:30 Haircut, Guest 8 (b-8)\nഉച്ചയ്ക്ക് 1:00 Haircut, Guest 9 (b-9)\nഉച്ചയ്ക്ക് 1:30 Haircut, Guest 10 (b-10)\nഉച്ചയ്ക്ക് 2:00 Haircut, Guest 11 (b-11)\nഉച്ചയ്ക്ക് 2:30 Haircut, Guest 12 (b-12)\nകൂടാതെ 2 എണ്ണം കൂടി\nആ ദിവസം കട അടച്ചിരിക്കും. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ, ബുക്കിംഗുകൾ: 14\nരാവിലെ 9:00 Haircut, Guest 1 (b-1)\nരാവിലെ 9:30 Haircut, Guest 2 (b-2)\nരാവിലെ 10:00 Haircut, Guest 3 (b-3)\nരാവിലെ 10:30 Haircut, Guest 4 (b-4)\nരാവിലെ 11:00 Haircut, Guest 5 (b-5)\nരാവിലെ 11:30 Haircut, Guest 6 (b-6)\nഉച്ചയ്ക്ക് 12:00 Haircut, Guest 7 (b-7)\nഉച്ചയ്ക്ക് 12:30 Haircut, Guest 8 (b-8)\nഉച്ചയ്ക്ക് 1:00 Haircut, Guest 9 (b-9)\nഉച്ചയ്ക്ക് 1:30 Haircut, Guest 10 (b-10)\nഉച്ചയ്ക്ക് 2:00 Haircut, Guest 11 (b-11)\nഉച്ചയ്ക്ക് 2:30 Haircut, Guest 12 (b-12)\nകൂടാതെ 2 എണ്ണം കൂടി\nആ ദിവസം കട അടച്ചിരിക്കും.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [],
+    "closed": true
+   },
+   "text": "ബുധൻ, 25 നവംബർ-ന് ബുക്കിംഗുകൾ ഇല്ല.\nആ ദിവസം കട അടച്ചിരിക്കും.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ-ന് ബുക്കിംഗുകൾ ഇല്ല.\nആ ദിവസം കട അടച്ചിരിക്കും. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ-ന് ബുക്കിംഗുകൾ ഇല്ല.\nആ ദിവസം കട അടച്ചിരിക്കും. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ-ന് ബുക്കിംഗുകൾ ഇല്ല.\nആ ദിവസം കട അടച്ചിരിക്കും.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-2"
+    ]
+   },
+   "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. ഇവരെ എനിക്ക് എത്തിക്കാനായില്ല, ദയവായി വിളിക്കുക: b-1 (Asha), b-3 (Meena 2). വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. ഇവരെ എനിക്ക് എത്തിക്കാനായില്ല, ദയവായി വിളിക്കുക: b-1 (Asha), b-3 (Meena 2). വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. ഇവരെ എനിക്ക് എത്തിക്കാനായില്ല, ദയവായി വിളിക്കുക: b-1 (Asha), b-3 (Meena 2). വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. ഇവരെ എനിക്ക് എത്തിക്കാനായില്ല, ദയവായി വിളിക്കുക: b-1 (Asha), b-3 (Meena 2). വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-1",
+     "b-2",
+     "b-3"
+    ]
+   },
+   "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ അടച്ചു. ആ ദിവസത്തെ ബുക്കിംഗുകൾ: 3. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [],
+    "told": []
+   },
+   "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസം ബുക്കിംഗുകൾ ഇല്ല. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസം ബുക്കിംഗുകൾ ഇല്ല. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ അടച്ചു. ആ ദിവസം ബുക്കിംഗുകൾ ഇല്ല. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ അടച്ചു. ആ ദിവസം ബുക്കിംഗുകൾ ഇല്ല. വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "say",
+   "go": {
+    "key": "reopened.n",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "n": 2
+   },
+   "text": "ബുധൻ, 25 നവംബർ വീണ്ടും തുറന്നു. ബുക്കിംഗ് നിലനിൽക്കുമെന്ന് ഉപഭോക്താക്കളോട് പറഞ്ഞു: 2.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ വീണ്ടും തുറന്നു. ബുക്കിംഗ് നിലനിൽക്കുമെന്ന് ഉപഭോക്താക്കളോട് പറഞ്ഞു: 2. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ വീണ്ടും തുറന്നു. ബുക്കിംഗ് നിലനിൽക്കുമെന്ന് ഉപഭോക്താക്കളോട് പറഞ്ഞു: 2. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ വീണ്ടും തുറന്നു. ബുക്കിംഗ് നിലനിൽക്കുമെന്ന് ഉപഭോക്താക്കളോട് പറഞ്ഞു: 2.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "limit",
+   "go": {
+    "what": "pending",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 500
+   },
+   "text": "കാത്തിരിക്കുന്നു: ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "കാത്തിരിക്കുന്നു: ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "കാത്തിരിക്കുന്നു: ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "കാത്തിരിക്കുന്നു: ₹5009-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 300
+   },
+   "text": "പ്രാബല്യത്തിൽ: ₹300-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "പ്രാബല്യത്തിൽ: ₹300-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "പ്രാബല്യത്തിൽ: ₹300-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "പ്രാബല്യത്തിൽ: ₹3009-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം.",
+     "problems": [
+      "The message says ₹3,009, but the record only has ₹300."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "limit",
+   "go": {
+    "what": "failed",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 1000
+   },
+   "text": "ഇത് നടന്നില്ല. മുമ്പത്തെ പരിധി തന്നെ ഇപ്പോഴും പ്രാബല്യത്തിൽ: ₹1,000-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. വീണ്ടും ശ്രമിക്കാം.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഇത് നടന്നില്ല. മുമ്പത്തെ പരിധി തന്നെ ഇപ്പോഴും പ്രാബല്യത്തിൽ: ₹1,000-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. വീണ്ടും ശ്രമിക്കാം. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഇത് നടന്നില്ല. മുമ്പത്തെ പരിധി തന്നെ ഇപ്പോഴും പ്രാബല്യത്തിൽ: ₹1,000-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. വീണ്ടും ശ്രമിക്കാം. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ഇത് നടന്നില്ല. മുമ്പത്തെ പരിധി തന്നെ ഇപ്പോഴും പ്രാബല്യത്തിൽ: ₹1,0009-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. വീണ്ടും ശ്രമിക്കാം.",
+     "problems": [
+      "The message says ₹10,009, but the record only has ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "perDay",
+    "unit": "count",
+    "value": 12
+   },
+   "text": "പ്രാബല്യത്തിൽ: ഒരു ദിവസം പരമാവധി 12 ഓർഡറുകൾ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "പ്രാബല്യത്തിൽ: ഒരു ദിവസം പരമാവധി 12 ഓർഡറുകൾ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "പ്രാബല്യത്തിൽ: ഒരു ദിവസം പരമാവധി 12 ഓർഡറുകൾ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "bigOrder",
+    "unit": "inr",
+    "zeroIsOff": true,
+    "value": 0
+   },
+   "text": "പ്രാബല്യത്തിൽ: ഒരിക്കലും ഇല്ല-ന് മുകളിലുള്ള ഓർഡറുകൾക്ക് പണം ചോദിക്കുന്നതിന് മുമ്പ് നിങ്ങളുടെ അനുമതി വേണം.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "പ്രാബല്യത്തിൽ: ഒരിക്കലും ഇല്ല-ന് മുകളിലുള്ള ഓർഡറുകൾക്ക് പണം ചോദിക്കുന്നതിന് മുമ്പ് നിങ്ങളുടെ അനുമതി വേണം. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "പ്രാബല്യത്തിൽ: ഒരിക്കലും ഇല്ല-ന് മുകളിലുള്ള ഓർഡറുകൾക്ക് പണം ചോദിക്കുന്നതിന് മുമ്പ് നിങ്ങളുടെ അനുമതി വേണം. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "not_tighter",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 500,
+    "to": 800
+   },
+   "text": "നിങ്ങളുടെ റീഫണ്ട് പരിധി ഇപ്പോൾ ₹500 ആണ്, അതിനാൽ ₹800 അത് കർശനമാക്കുകയല്ല, അയവുള്ളതാക്കുകയാണ്. ഞാൻ ഇവിടെ നിന്ന് കർശനമാക്കാൻ മാത്രമേ ചെയ്യൂ; അയവ് വരുത്താൻ നിങ്ങളുടെ ആപ്പ് തുറന്ന് പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "നിങ്ങളുടെ റീഫണ്ട് പരിധി ഇപ്പോൾ ₹500 ആണ്, അതിനാൽ ₹800 അത് കർശനമാക്കുകയല്ല, അയവുള്ളതാക്കുകയാണ്. ഞാൻ ഇവിടെ നിന്ന് കർശനമാക്കാൻ മാത്രമേ ചെയ്യൂ; അയവ് വരുത്താൻ നിങ്ങളുടെ ആപ്പ് തുറന്ന് പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "നിങ്ങളുടെ റീഫണ്ട് പരിധി ഇപ്പോൾ ₹500 ആണ്, അതിനാൽ ₹800 അത് കർശനമാക്കുകയല്ല, അയവുള്ളതാക്കുകയാണ്. ഞാൻ ഇവിടെ നിന്ന് കർശനമാക്കാൻ മാത്രമേ ചെയ്യൂ; അയവ് വരുത്താൻ നിങ്ങളുടെ ആപ്പ് തുറന്ന് പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "നിങ്ങളുടെ റീഫണ്ട് പരിധി ഇപ്പോൾ ₹5009 ആണ്, അതിനാൽ ₹800 അത് കർശനമാക്കുകയല്ല, അയവുള്ളതാക്കുകയാണ്. ഞാൻ ഇവിടെ നിന്ന് കർശനമാക്കാൻ മാത്രമേ ചെയ്യൂ; അയവ് വരുത്താൻ നിങ്ങളുടെ ആപ്പ് തുറന്ന് പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "which",
+   "go": {
+    "kinds": [
+     "refund",
+     "perDay"
+    ]
+   },
+   "text": "ഏത് പരിധിയാണ് ഉദ്ദേശിക്കുന്നത്? എനിക്ക് ഇവ കർശനമാക്കാം: റീഫണ്ട് പരിധി, ദിവസത്തെ ഓർഡറുകൾ. മറ്റെന്തിനും ഞാൻ അത് ഒരു കുറിപ്പായി സൂക്ഷിക്കാം.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏത് പരിധിയാണ് ഉദ്ദേശിക്കുന്നത്? എനിക്ക് ഇവ കർശനമാക്കാം: റീഫണ്ട് പരിധി, ദിവസത്തെ ഓർഡറുകൾ. മറ്റെന്തിനും ഞാൻ അത് ഒരു കുറിപ്പായി സൂക്ഷിക്കാം. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏത് പരിധിയാണ് ഉദ്ദേശിക്കുന്നത്? എനിക്ക് ഇവ കർശനമാക്കാം: റീഫണ്ട് പരിധി, ദിവസത്തെ ഓർഡറുകൾ. മറ്റെന്തിനും ഞാൻ അത് ഒരു കുറിപ്പായി സൂക്ഷിക്കാം. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card_limit",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 1000,
+    "to": 500,
+    "code": "K7M2QX"
+   },
+   "text": "₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇപ്പോൾ: ₹1,000.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇപ്പോൾ: ₹1,000.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇപ്പോൾ: ₹1,000.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "₹5009-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇപ്പോൾ: ₹1,000.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "b-12",
+    "who": "Room 4 Ravi",
+    "what": "Beard trim",
+    "amountPaise": 50000,
+    "code": "K7M2QX",
+    "hasNo": true
+   },
+   "text": "b-12 (Room 4 Ravi, Beard trim) റദ്ദാക്കി ₹500 ഡെപ്പോസിറ്റ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) റദ്ദാക്കി ₹500 ഡെപ്പോസിറ്റ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) റദ്ദാക്കി ₹500 ഡെപ്പോസിറ്റ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) റദ്ദാക്കി ₹5009 ഡെപ്പോസിറ്റ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "say",
+   "go": {
+    "key": "refusal.no_window",
+    "ref": "b-12",
+    "who": "Room 4 Ravi"
+   },
+   "text": "Room 4 Ravi കഴിഞ്ഞ 24 മണിക്കൂറിൽ സന്ദേശം അയച്ചിട്ടില്ല, അതിനാൽ അംഗീകരിച്ച സന്ദേശങ്ങൾ മാത്രമേ WhatsApp അനുവദിക്കൂ. ദയവായി അവരെ വിളിക്കുക.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Room 4 Ravi കഴിഞ്ഞ 24 മണിക്കൂറിൽ സന്ദേശം അയച്ചിട്ടില്ല, അതിനാൽ അംഗീകരിച്ച സന്ദേശങ്ങൾ മാത്രമേ WhatsApp അനുവദിക്കൂ. ദയവായി അവരെ വിളിക്കുക. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Room 4 Ravi കഴിഞ്ഞ 24 മണിക്കൂറിൽ സന്ദേശം അയച്ചിട്ടില്ല, അതിനാൽ അംഗീകരിച്ച സന്ദേശങ്ങൾ മാത്രമേ WhatsApp അനുവദിക്കൂ. ദയവായി അവരെ വിളിക്കുക. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "say",
+   "go": {
+    "key": "money_in.some",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "paise": 150050,
+    "n": 3
+   },
+   "text": "ബുധൻ, 25 നവംബർ-ന് രേഖപ്പെടുത്തിയത്: ₹1,500.5, പേയ്മെന്റുകൾ: 3.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ബുധൻ, 25 നവംബർ-ന് രേഖപ്പെടുത്തിയത്: ₹1,500.5, പേയ്മെന്റുകൾ: 3. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ-ന് രേഖപ്പെടുത്തിയത്: ₹1,500.5, പേയ്മെന്റുകൾ: 3. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ബുധൻ, 25 നവംബർ-ന് രേഖപ്പെടുത്തിയത്: ₹1,5009.5, പേയ്മെന്റുകൾ: 3.",
+     "problems": [
+      "The message says ₹15,009.5, but the record only has ₹1,500.5."
+     ]
+    },
+    {
+     "text": "വ്യാഴം, 26 നവംബർ-ന് രേഖപ്പെടുത്തിയത്: ₹1,500.5, പേയ്മെന്റുകൾ: 3.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@bookings",
+    "shop": "Sharma Salon 2"
+   },
+   "text": "ഞാൻ Sharma Salon 2-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• നാളെ\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• ഞായറാഴ്ച അടച്ചിടുക\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• b-14 വൈകുന്നേരം 5-ലേക്ക് മാറ്റുക\n• പഴയപടി",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഞാൻ Sharma Salon 2-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• നാളെ\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• ഞായറാഴ്ച അടച്ചിടുക\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• b-14 വൈകുന്നേരം 5-ലേക്ക് മാറ്റുക\n• പഴയപടി 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഞാൻ Sharma Salon 2-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• നാളെ\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• ഞായറാഴ്ച അടച്ചിടുക\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• b-14 വൈകുന്നേരം 5-ലേക്ക് മാറ്റുക\n• പഴയപടി https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ]
+   },
+   "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel b-14.\nബുധൻ, 25 നവംബർ, രാവിലെ 10:30: Haircut, Asha (b-7)\nബുധൻ, 25 നവംബർ, വൈകുന്നേരം 4:05: Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel b-14.\nബുധൻ, 25 നവംബർ, രാവിലെ 10:30: Haircut, Asha (b-7)\nബുധൻ, 25 നവംബർ, വൈകുന്നേരം 4:05: Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel b-14.\nബുധൻ, 25 നവംബർ, രാവിലെ 10:30: Haircut, Asha (b-7)\nബുധൻ, 25 നവംബർ, വൈകുന്നേരം 4:05: Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel b-14.\nവ്യാഴം, 26 നവംബർ, രാവിലെ 10:30: Haircut, Asha (b-7)\nബുധൻ, 25 നവംബർ, വൈകുന്നേരം 4:05: Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "tmpl",
+   "go": {
+    "id": "day_closed",
+    "shop": "Sharma Salon 2",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "startMs": 1795602900000
+   },
+   "text": "ക്ഷമിക്കണം: Sharma Salon 2 ബുധൻ, 25 നവംബർ-ന് അടച്ചിരിക്കും, അതിനാൽ വൈകുന്നേരം 4:05-നുള്ള നിങ്ങളുടെ ബുക്കിംഗ് ആ ദിവസം നടക്കില്ല. മാറ്റാൻ മറ്റൊരു ദിവസവും സമയവും മറുപടി നൽകുക, അല്ലെങ്കിൽ റദ്ദാക്കാൻ CANCEL എന്ന് അയയ്ക്കുക.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ക്ഷമിക്കണം: Sharma Salon 2 ബുധൻ, 25 നവംബർ-ന് അടച്ചിരിക്കും, അതിനാൽ വൈകുന്നേരം 4:05-നുള്ള നിങ്ങളുടെ ബുക്കിംഗ് ആ ദിവസം നടക്കില്ല. മാറ്റാൻ മറ്റൊരു ദിവസവും സമയവും മറുപടി നൽകുക, അല്ലെങ്കിൽ റദ്ദാക്കാൻ CANCEL എന്ന് അയയ്ക്കുക. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ക്ഷമിക്കണം: Sharma Salon 2 ബുധൻ, 25 നവംബർ-ന് അടച്ചിരിക്കും, അതിനാൽ വൈകുന്നേരം 4:05-നുള്ള നിങ്ങളുടെ ബുക്കിംഗ് ആ ദിവസം നടക്കില്ല. മാറ്റാൻ മറ്റൊരു ദിവസവും സമയവും മറുപടി നൽകുക, അല്ലെങ്കിൽ റദ്ദാക്കാൻ CANCEL എന്ന് അയയ്ക്കുക. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ക്ഷമിക്കണം: Sharma Salon 2 വ്യാഴം, 26 നവംബർ-ന് അടച്ചിരിക്കും, അതിനാൽ വൈകുന്നേരം 4:05-നുള്ള നിങ്ങളുടെ ബുക്കിംഗ് ആ ദിവസം നടക്കില്ല. മാറ്റാൻ മറ്റൊരു ദിവസവും സമയവും മറുപടി നൽകുക, അല്ലെങ്കിൽ റദ്ദാക്കാൻ CANCEL എന്ന് അയയ്ക്കുക.",
+     "problems": [
+      "The message says the date \"വ്യാഴം, 26 നവംബർ\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ],
+    "closed": false
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 2\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Asha (b-7)\nಸಂಜೆ 4:05 Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 2\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Asha (b-7)\nಸಂಜೆ 4:05 Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 2\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Asha (b-7)\nಸಂಜೆ 4:05 Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 2\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Asha (b-7)\nಸಂಜೆ 4:05 Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [
+     {
+      "case": "b-1",
+      "startMs": 1795577400000,
+      "what": "Haircut",
+      "who": "Guest 1",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-2",
+      "startMs": 1795579200000,
+      "what": "Haircut",
+      "who": "Guest 2",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-3",
+      "startMs": 1795581000000,
+      "what": "Haircut",
+      "who": "Guest 3",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-4",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Guest 4",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-5",
+      "startMs": 1795584600000,
+      "what": "Haircut",
+      "who": "Guest 5",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-6",
+      "startMs": 1795586400000,
+      "what": "Haircut",
+      "who": "Guest 6",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-7",
+      "startMs": 1795588200000,
+      "what": "Haircut",
+      "who": "Guest 7",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-8",
+      "startMs": 1795590000000,
+      "what": "Haircut",
+      "who": "Guest 8",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-9",
+      "startMs": 1795591800000,
+      "what": "Haircut",
+      "who": "Guest 9",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-10",
+      "startMs": 1795593600000,
+      "what": "Haircut",
+      "who": "Guest 10",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-11",
+      "startMs": 1795595400000,
+      "what": "Haircut",
+      "who": "Guest 11",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795597200000,
+      "what": "Haircut",
+      "who": "Guest 12",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-13",
+      "startMs": 1795599000000,
+      "what": "Haircut",
+      "who": "Guest 13",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-14",
+      "startMs": 1795600800000,
+      "what": "Haircut",
+      "who": "Guest 14",
+      "state": "confirmed"
+     }
+    ],
+    "closed": true
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 14\nಬೆಳಿಗ್ಗೆ 9:00 Haircut, Guest 1 (b-1)\nಬೆಳಿಗ್ಗೆ 9:30 Haircut, Guest 2 (b-2)\nಬೆಳಿಗ್ಗೆ 10:00 Haircut, Guest 3 (b-3)\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Guest 4 (b-4)\nಬೆಳಿಗ್ಗೆ 11:00 Haircut, Guest 5 (b-5)\nಬೆಳಿಗ್ಗೆ 11:30 Haircut, Guest 6 (b-6)\nಮಧ್ಯಾಹ್ನ 12:00 Haircut, Guest 7 (b-7)\nಮಧ್ಯಾಹ್ನ 12:30 Haircut, Guest 8 (b-8)\nಮಧ್ಯಾಹ್ನ 1:00 Haircut, Guest 9 (b-9)\nಮಧ್ಯಾಹ್ನ 1:30 Haircut, Guest 10 (b-10)\nಮಧ್ಯಾಹ್ನ 2:00 Haircut, Guest 11 (b-11)\nಮಧ್ಯಾಹ್ನ 2:30 Haircut, Guest 12 (b-12)\nಇನ್ನೂ 2\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 14\nಬೆಳಿಗ್ಗೆ 9:00 Haircut, Guest 1 (b-1)\nಬೆಳಿಗ್ಗೆ 9:30 Haircut, Guest 2 (b-2)\nಬೆಳಿಗ್ಗೆ 10:00 Haircut, Guest 3 (b-3)\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Guest 4 (b-4)\nಬೆಳಿಗ್ಗೆ 11:00 Haircut, Guest 5 (b-5)\nಬೆಳಿಗ್ಗೆ 11:30 Haircut, Guest 6 (b-6)\nಮಧ್ಯಾಹ್ನ 12:00 Haircut, Guest 7 (b-7)\nಮಧ್ಯಾಹ್ನ 12:30 Haircut, Guest 8 (b-8)\nಮಧ್ಯಾಹ್ನ 1:00 Haircut, Guest 9 (b-9)\nಮಧ್ಯಾಹ್ನ 1:30 Haircut, Guest 10 (b-10)\nಮಧ್ಯಾಹ್ನ 2:00 Haircut, Guest 11 (b-11)\nಮಧ್ಯಾಹ್ನ 2:30 Haircut, Guest 12 (b-12)\nಇನ್ನೂ 2\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 14\nಬೆಳಿಗ್ಗೆ 9:00 Haircut, Guest 1 (b-1)\nಬೆಳಿಗ್ಗೆ 9:30 Haircut, Guest 2 (b-2)\nಬೆಳಿಗ್ಗೆ 10:00 Haircut, Guest 3 (b-3)\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Guest 4 (b-4)\nಬೆಳಿಗ್ಗೆ 11:00 Haircut, Guest 5 (b-5)\nಬೆಳಿಗ್ಗೆ 11:30 Haircut, Guest 6 (b-6)\nಮಧ್ಯಾಹ್ನ 12:00 Haircut, Guest 7 (b-7)\nಮಧ್ಯಾಹ್ನ 12:30 Haircut, Guest 8 (b-8)\nಮಧ್ಯಾಹ್ನ 1:00 Haircut, Guest 9 (b-9)\nಮಧ್ಯಾಹ್ನ 1:30 Haircut, Guest 10 (b-10)\nಮಧ್ಯಾಹ್ನ 2:00 Haircut, Guest 11 (b-11)\nಮಧ್ಯಾಹ್ನ 2:30 Haircut, Guest 12 (b-12)\nಇನ್ನೂ 2\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್, ಬುಕಿಂಗ್‌ಗಳು: 14\nಬೆಳಿಗ್ಗೆ 9:00 Haircut, Guest 1 (b-1)\nಬೆಳಿಗ್ಗೆ 9:30 Haircut, Guest 2 (b-2)\nಬೆಳಿಗ್ಗೆ 10:00 Haircut, Guest 3 (b-3)\nಬೆಳಿಗ್ಗೆ 10:30 Haircut, Guest 4 (b-4)\nಬೆಳಿಗ್ಗೆ 11:00 Haircut, Guest 5 (b-5)\nಬೆಳಿಗ್ಗೆ 11:30 Haircut, Guest 6 (b-6)\nಮಧ್ಯಾಹ್ನ 12:00 Haircut, Guest 7 (b-7)\nಮಧ್ಯಾಹ್ನ 12:30 Haircut, Guest 8 (b-8)\nಮಧ್ಯಾಹ್ನ 1:00 Haircut, Guest 9 (b-9)\nಮಧ್ಯಾಹ್ನ 1:30 Haircut, Guest 10 (b-10)\nಮಧ್ಯಾಹ್ನ 2:00 Haircut, Guest 11 (b-11)\nಮಧ್ಯಾಹ್ನ 2:30 Haircut, Guest 12 (b-12)\nಇನ್ನೂ 2\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "day_list",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "rows": [],
+    "closed": true
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ.\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ.\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ.\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್ ರಂದು ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ.\nಆ ದಿನ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-2"
+    ]
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಇವರನ್ನು ತಲುಪಲಾಗಲಿಲ್ಲ, ದಯವಿಟ್ಟು ಕರೆ ಮಾಡಿ: b-1 (Asha), b-3 (Meena 2). ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಇವರನ್ನು ತಲುಪಲಾಗಲಿಲ್ಲ, ದಯವಿಟ್ಟು ಕರೆ ಮಾಡಿ: b-1 (Asha), b-3 (Meena 2). ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಇವರನ್ನು ತಲುಪಲಾಗಲಿಲ್ಲ, ದಯವಿಟ್ಟು ಕರೆ ಮಾಡಿ: b-1 (Asha), b-3 (Meena 2). ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಇವರನ್ನು ತಲುಪಲಾಗಲಿಲ್ಲ, ದಯವಿಟ್ಟು ಕರೆ ಮಾಡಿ: b-1 (Asha), b-3 (Meena 2). ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [
+     {
+      "case": "b-1",
+      "who": "Asha"
+     },
+     {
+      "case": "b-2",
+      "who": "Ravi"
+     },
+     {
+      "case": "b-3",
+      "who": "Meena 2"
+     }
+    ],
+    "told": [
+     "b-1",
+     "b-2",
+     "b-3"
+    ]
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: 3. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "closed",
+   "go": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "booked": [],
+    "told": []
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್ ಮುಚ್ಚಲಾಗಿದೆ. ಆ ದಿನ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ. ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "say",
+   "go": {
+    "key": "reopened.n",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "n": 2
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮತ್ತೆ ತೆರೆದಿದೆ. ಬುಕಿಂಗ್ ಉಳಿದಿದೆ ಎಂದು ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ: 2.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮತ್ತೆ ತೆರೆದಿದೆ. ಬುಕಿಂಗ್ ಉಳಿದಿದೆ ಎಂದು ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ: 2. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ಮತ್ತೆ ತೆರೆದಿದೆ. ಬುಕಿಂಗ್ ಉಳಿದಿದೆ ಎಂದು ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ: 2. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್ ಮತ್ತೆ ತೆರೆದಿದೆ. ಬುಕಿಂಗ್ ಉಳಿದಿದೆ ಎಂದು ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ: 2.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "limit",
+   "go": {
+    "what": "pending",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 500
+   },
+   "text": "ಬಾಕಿ ಇದೆ: ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಇದು ಇಲ್ಲಿ ಈಗಲೇ ಅನ್ವಯಿಸುತ್ತದೆ, ಜಾರಿಗೆ ಬಂದಾಗ ನಾನು ತಿಳಿಸುತ್ತೇನೆ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬಾಕಿ ಇದೆ: ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಇದು ಇಲ್ಲಿ ಈಗಲೇ ಅನ್ವಯಿಸುತ್ತದೆ, ಜಾರಿಗೆ ಬಂದಾಗ ನಾನು ತಿಳಿಸುತ್ತೇನೆ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬಾಕಿ ಇದೆ: ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಇದು ಇಲ್ಲಿ ಈಗಲೇ ಅನ್ವಯಿಸುತ್ತದೆ, ಜಾರಿಗೆ ಬಂದಾಗ ನಾನು ತಿಳಿಸುತ್ತೇನೆ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಬಾಕಿ ಇದೆ: ₹5009 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಇದು ಇಲ್ಲಿ ಈಗಲೇ ಅನ್ವಯಿಸುತ್ತದೆ, ಜಾರಿಗೆ ಬಂದಾಗ ನಾನು ತಿಳಿಸುತ್ತೇನೆ.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 300
+   },
+   "text": "ಜಾರಿಯಲ್ಲಿದೆ: ₹300 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಜಾರಿಯಲ್ಲಿದೆ: ₹300 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಜಾರಿಯಲ್ಲಿದೆ: ₹300 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಜಾರಿಯಲ್ಲಿದೆ: ₹3009 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು.",
+     "problems": [
+      "The message says ₹3,009, but the record only has ₹300."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "limit",
+   "go": {
+    "what": "failed",
+    "kind": "refund",
+    "unit": "inr",
+    "value": 1000
+   },
+   "text": "ಇದು ಆಗಲಿಲ್ಲ. ಹಿಂದಿನ ಮಿತಿಯೇ ಈಗಲೂ ಜಾರಿಯಲ್ಲಿದೆ: ₹1,000 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಇದು ಆಗಲಿಲ್ಲ. ಹಿಂದಿನ ಮಿತಿಯೇ ಈಗಲೂ ಜಾರಿಯಲ್ಲಿದೆ: ₹1,000 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಇದು ಆಗಲಿಲ್ಲ. ಹಿಂದಿನ ಮಿತಿಯೇ ಈಗಲೂ ಜಾರಿಯಲ್ಲಿದೆ: ₹1,000 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಇದು ಆಗಲಿಲ್ಲ. ಹಿಂದಿನ ಮಿತಿಯೇ ಈಗಲೂ ಜಾರಿಯಲ್ಲಿದೆ: ₹1,0009 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು.",
+     "problems": [
+      "The message says ₹10,009, but the record only has ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "perDay",
+    "unit": "count",
+    "value": 12
+   },
+   "text": "ಜಾರಿಯಲ್ಲಿದೆ: ದಿನಕ್ಕೆ ಗರಿಷ್ಠ 12 ಆರ್ಡರ್‌ಗಳು.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಜಾರಿಯಲ್ಲಿದೆ: ದಿನಕ್ಕೆ ಗರಿಷ್ಠ 12 ಆರ್ಡರ್‌ಗಳು. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಜಾರಿಯಲ್ಲಿದೆ: ದಿನಕ್ಕೆ ಗರಿಷ್ಠ 12 ಆರ್ಡರ್‌ಗಳು. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "limit",
+   "go": {
+    "what": "active",
+    "kind": "bigOrder",
+    "unit": "inr",
+    "zeroIsOff": true,
+    "value": 0
+   },
+   "text": "ಜಾರಿಯಲ್ಲಿದೆ: ಎಂದಿಗೂ ಇಲ್ಲ ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳಿಗೆ ಪಾವತಿ ಕೇಳುವ ಮೊದಲು ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಜಾರಿಯಲ್ಲಿದೆ: ಎಂದಿಗೂ ಇಲ್ಲ ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳಿಗೆ ಪಾವತಿ ಕೇಳುವ ಮೊದಲು ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಜಾರಿಯಲ್ಲಿದೆ: ಎಂದಿಗೂ ಇಲ್ಲ ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳಿಗೆ ಪಾವತಿ ಕೇಳುವ ಮೊದಲು ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "not_tighter",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 500,
+    "to": 800
+   },
+   "text": "ನಿಮ್ಮ ರೀಫಂಡ್ ಮಿತಿ ಈಗ ₹500 ಇದೆ, ಆದ್ದರಿಂದ ₹800 ಅದನ್ನು ಬಿಗಿಗೊಳಿಸುವುದಿಲ್ಲ, ಸಡಿಲಗೊಳಿಸುತ್ತದೆ. ನಾನು ಇಲ್ಲಿಂದ ಬಿಗಿಗೊಳಿಸುವುದನ್ನು ಮಾತ್ರ ಮಾಡುತ್ತೇನೆ; ಸಡಿಲಗೊಳಿಸಲು ನಿಮ್ಮ ಆ್ಯಪ್ ತೆರೆದು ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ನಿಮ್ಮ ರೀಫಂಡ್ ಮಿತಿ ಈಗ ₹500 ಇದೆ, ಆದ್ದರಿಂದ ₹800 ಅದನ್ನು ಬಿಗಿಗೊಳಿಸುವುದಿಲ್ಲ, ಸಡಿಲಗೊಳಿಸುತ್ತದೆ. ನಾನು ಇಲ್ಲಿಂದ ಬಿಗಿಗೊಳಿಸುವುದನ್ನು ಮಾತ್ರ ಮಾಡುತ್ತೇನೆ; ಸಡಿಲಗೊಳಿಸಲು ನಿಮ್ಮ ಆ್ಯಪ್ ತೆರೆದು ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ನಿಮ್ಮ ರೀಫಂಡ್ ಮಿತಿ ಈಗ ₹500 ಇದೆ, ಆದ್ದರಿಂದ ₹800 ಅದನ್ನು ಬಿಗಿಗೊಳಿಸುವುದಿಲ್ಲ, ಸಡಿಲಗೊಳಿಸುತ್ತದೆ. ನಾನು ಇಲ್ಲಿಂದ ಬಿಗಿಗೊಳಿಸುವುದನ್ನು ಮಾತ್ರ ಮಾಡುತ್ತೇನೆ; ಸಡಿಲಗೊಳಿಸಲು ನಿಮ್ಮ ಆ್ಯಪ್ ತೆರೆದು ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ನಿಮ್ಮ ರೀಫಂಡ್ ಮಿತಿ ಈಗ ₹5009 ಇದೆ, ಆದ್ದರಿಂದ ₹800 ಅದನ್ನು ಬಿಗಿಗೊಳಿಸುವುದಿಲ್ಲ, ಸಡಿಲಗೊಳಿಸುತ್ತದೆ. ನಾನು ಇಲ್ಲಿಂದ ಬಿಗಿಗೊಳಿಸುವುದನ್ನು ಮಾತ್ರ ಮಾಡುತ್ತೇನೆ; ಸಡಿಲಗೊಳಿಸಲು ನಿಮ್ಮ ಆ್ಯಪ್ ತೆರೆದು ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "which",
+   "go": {
+    "kinds": [
+     "refund",
+     "perDay"
+    ]
+   },
+   "text": "ಯಾವ ಮಿತಿಯನ್ನು ಹೇಳುತ್ತಿದ್ದೀರಿ? ನಾನು ಇವನ್ನು ಬಿಗಿಗೊಳಿಸಬಲ್ಲೆ: ರೀಫಂಡ್ ಮಿತಿ, ದಿನದ ಆರ್ಡರ್‌ಗಳು. ಉಳಿದದ್ದಕ್ಕೆ ಅದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತೇನೆ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವ ಮಿತಿಯನ್ನು ಹೇಳುತ್ತಿದ್ದೀರಿ? ನಾನು ಇವನ್ನು ಬಿಗಿಗೊಳಿಸಬಲ್ಲೆ: ರೀಫಂಡ್ ಮಿತಿ, ದಿನದ ಆರ್ಡರ್‌ಗಳು. ಉಳಿದದ್ದಕ್ಕೆ ಅದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತೇನೆ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವ ಮಿತಿಯನ್ನು ಹೇಳುತ್ತಿದ್ದೀರಿ? ನಾನು ಇವನ್ನು ಬಿಗಿಗೊಳಿಸಬಲ್ಲೆ: ರೀಫಂಡ್ ಮಿತಿ, ದಿನದ ಆರ್ಡರ್‌ಗಳು. ಉಳಿದದ್ದಕ್ಕೆ ಅದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತೇನೆ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card_limit",
+   "go": {
+    "kind": "refund",
+    "unit": "inr",
+    "now": 1000,
+    "to": 500,
+    "code": "K7M2QX"
+   },
+   "text": "₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಈಗ: ₹1,000.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಈಗ: ₹1,000.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಈಗ: ₹1,000.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "₹5009 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಈಗ: ₹1,000.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500, ₹1,000."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "b-12",
+    "who": "Room 4 Ravi",
+    "what": "Beard trim",
+    "amountPaise": 50000,
+    "code": "K7M2QX",
+    "hasNo": true
+   },
+   "text": "b-12 (Room 4 Ravi, Beard trim) ರದ್ದು ಮಾಡಿ ₹500 ಠೇವಣಿ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) ರದ್ದು ಮಾಡಿ ₹500 ಠೇವಣಿ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) ರದ್ದು ಮಾಡಿ ₹500 ಠೇವಣಿ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "b-12 (Room 4 Ravi, Beard trim) ರದ್ದು ಮಾಡಿ ₹5009 ಠೇವಣಿ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "say",
+   "go": {
+    "key": "refusal.no_window",
+    "ref": "b-12",
+    "who": "Room 4 Ravi"
+   },
+   "text": "Room 4 Ravi ಕಳೆದ 24 ಗಂಟೆಗಳಲ್ಲಿ ಸಂದೇಶ ಕಳುಹಿಸಿಲ್ಲ, ಹಾಗಾಗಿ WhatsApp ಅನುಮೋದಿತ ಸಂದೇಶಗಳನ್ನು ಮಾತ್ರ ಬಿಡುತ್ತದೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಕರೆ ಮಾಡಿ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Room 4 Ravi ಕಳೆದ 24 ಗಂಟೆಗಳಲ್ಲಿ ಸಂದೇಶ ಕಳುಹಿಸಿಲ್ಲ, ಹಾಗಾಗಿ WhatsApp ಅನುಮೋದಿತ ಸಂದೇಶಗಳನ್ನು ಮಾತ್ರ ಬಿಡುತ್ತದೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಕರೆ ಮಾಡಿ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Room 4 Ravi ಕಳೆದ 24 ಗಂಟೆಗಳಲ್ಲಿ ಸಂದೇಶ ಕಳುಹಿಸಿಲ್ಲ, ಹಾಗಾಗಿ WhatsApp ಅನುಮೋದಿತ ಸಂದೇಶಗಳನ್ನು ಮಾತ್ರ ಬಿಡುತ್ತದೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಕರೆ ಮಾಡಿ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "say",
+   "go": {
+    "key": "money_in.some",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "paise": 150050,
+    "n": 3
+   },
+   "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ದಾಖಲಾದದ್ದು: ₹1,500.5, ಪಾವತಿಗಳು: 3.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ದಾಖಲಾದದ್ದು: ₹1,500.5, ಪಾವತಿಗಳು: 3. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ದಾಖಲಾದದ್ದು: ₹1,500.5, ಪಾವತಿಗಳು: 3. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ದಾಖಲಾದದ್ದು: ₹1,5009.5, ಪಾವತಿಗಳು: 3.",
+     "problems": [
+      "The message says ₹15,009.5, but the record only has ₹1,500.5."
+     ]
+    },
+    {
+     "text": "ಗುರುವಾರ, 26 ನವೆಂಬರ್ ರಂದು ದಾಖಲಾದದ್ದು: ₹1,500.5, ಪಾವತಿಗಳು: 3.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@bookings",
+    "shop": "Sharma Salon 2"
+   },
+   "text": "ನಾನು Sharma Salon 2 ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನಾಳೆ\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• ಭಾನುವಾರ ಮುಚ್ಚಿ\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• b-14 ಸಂಜೆ 5 ಕ್ಕೆ ಶಿಫ್ಟ್\n• ಹಿಂದಿನಂತೆ",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ನಾನು Sharma Salon 2 ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನಾಳೆ\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• ಭಾನುವಾರ ಮುಚ್ಚಿ\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• b-14 ಸಂಜೆ 5 ಕ್ಕೆ ಶಿಫ್ಟ್\n• ಹಿಂದಿನಂತೆ 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ನಾನು Sharma Salon 2 ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನಾಳೆ\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• ಭಾನುವಾರ ಮುಚ್ಚಿ\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• b-14 ಸಂಜೆ 5 ಕ್ಕೆ ಶಿಫ್ಟ್\n• ಹಿಂದಿನಂತೆ https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [
+     {
+      "case": "b-7",
+      "startMs": 1795582800000,
+      "what": "Haircut",
+      "who": "Asha",
+      "state": "confirmed"
+     },
+     {
+      "case": "b-12",
+      "startMs": 1795602900000,
+      "what": "Beard trim",
+      "who": "Room 4 Ravi",
+      "state": "confirmed"
+     }
+    ]
+   },
+   "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel b-14.\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬೆಳಿಗ್ಗೆ 10:30: Haircut, Asha (b-7)\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಸಂಜೆ 4:05: Beard trim, Room 4 Ravi (b-12)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel b-14.\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬೆಳಿಗ್ಗೆ 10:30: Haircut, Asha (b-7)\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಸಂಜೆ 4:05: Beard trim, Room 4 Ravi (b-12) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel b-14.\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಬೆಳಿಗ್ಗೆ 10:30: Haircut, Asha (b-7)\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಸಂಜೆ 4:05: Beard trim, Room 4 Ravi (b-12) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel b-14.\nಗುರುವಾರ, 26 ನವೆಂಬರ್, ಬೆಳಿಗ್ಗೆ 10:30: Haircut, Asha (b-7)\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಸಂಜೆ 4:05: Beard trim, Room 4 Ravi (b-12)",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "tmpl",
+   "go": {
+    "id": "day_closed",
+    "shop": "Sharma Salon 2",
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 25
+    },
+    "startMs": 1795602900000
+   },
+   "text": "ಕ್ಷಮಿಸಿ: Sharma Salon 2 ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ಮುಚ್ಚಿರುತ್ತದೆ, ಹಾಗಾಗಿ ಸಂಜೆ 4:05 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ಆ ದಿನ ನಡೆಯುವುದಿಲ್ಲ. ಬದಲಾಯಿಸಲು ಬೇರೆ ದಿನ ಮತ್ತು ಸಮಯ ಉತ್ತರಿಸಿ, ಅಥವಾ ರದ್ದು ಮಾಡಲು CANCEL ಎಂದು ಕಳುಹಿಸಿ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಕ್ಷಮಿಸಿ: Sharma Salon 2 ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ಮುಚ್ಚಿರುತ್ತದೆ, ಹಾಗಾಗಿ ಸಂಜೆ 4:05 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ಆ ದಿನ ನಡೆಯುವುದಿಲ್ಲ. ಬದಲಾಯಿಸಲು ಬೇರೆ ದಿನ ಮತ್ತು ಸಮಯ ಉತ್ತರಿಸಿ, ಅಥವಾ ರದ್ದು ಮಾಡಲು CANCEL ಎಂದು ಕಳುಹಿಸಿ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಕ್ಷಮಿಸಿ: Sharma Salon 2 ಬುಧವಾರ, 25 ನವೆಂಬರ್ ರಂದು ಮುಚ್ಚಿರುತ್ತದೆ, ಹಾಗಾಗಿ ಸಂಜೆ 4:05 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ಆ ದಿನ ನಡೆಯುವುದಿಲ್ಲ. ಬದಲಾಯಿಸಲು ಬೇರೆ ದಿನ ಮತ್ತು ಸಮಯ ಉತ್ತರಿಸಿ, ಅಥವಾ ರದ್ದು ಮಾಡಲು CANCEL ಎಂದು ಕಳುಹಿಸಿ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಕ್ಷಮಿಸಿ: Sharma Salon 2 ಗುರುವಾರ, 26 ನವೆಂಬರ್ ರಂದು ಮುಚ್ಚಿರುತ್ತದೆ, ಹಾಗಾಗಿ ಸಂಜೆ 4:05 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ಆ ದಿನ ನಡೆಯುವುದಿಲ್ಲ. ಬದಲಾಯಿಸಲು ಬೇರೆ ದಿನ ಮತ್ತು ಸಮಯ ಉತ್ತರಿಸಿ, ಅಥವಾ ರದ್ದು ಮಾಡಲು CANCEL ಎಂದು ಕಳುಹಿಸಿ.",
+     "problems": [
+      "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  }
+ ]
+}

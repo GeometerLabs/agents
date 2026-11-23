@@ -6,9 +6,9 @@
 // payment, a cash or bank payment, a refund marked sent) are summed only for a shop whose payments module cannot confirm by itself: a report passes ownerMarks false for any other shop. `booksOnly`
 // is what the books count and the figures above leave out, so a report can say why its "Money this month" block differs from its own rows.
 //
-// Where Go differs: ISO times compare as text (as the TypeScript's string comparison does); a refund line's amount borrowed from an earlier line of the same payment
-// (`refundAmountFromPayment`) is the TypeScript's `Number(amountPaise)`, and only a whole number of paise can be added here: one that is not (a fractional or enormous text) is read as
-// "no amount to borrow", where the TypeScript would add the fraction to a figure that is meant to be whole paise. That is recorded in Deferred.md.
+// Where Go differs: ISO times compare as text (as the TypeScript's string comparison does). A refund line's amount borrowed from an earlier line of the same payment
+// (`refundAmountFromPayment`) is a whole number of paise written as the journal writes one (paiseText), on both sides since 22 Nov (the TypeScript's bare Number() took "1e3" or "12.5");
+// a later line whose amount is not one makes the payment's amount unknown.
 package accounting
 
 // Amount is figures.ts Amount.
@@ -122,11 +122,10 @@ func FiguresOf(j *Journal, entries []Entry, legacy LegacyMap, fromIso, toIso str
 	if opt.RefundAmountFromPayment {
 		for _, e := range entries {
 			if e.Time < toIso && e.Action == "refund" && e.Refs["paymentId"] != "" && e.Refs["amountPaise"] != "" {
-				f := JSNumber(e.Refs["amountPaise"])
-				if IsSafeInteger(f) {
-					amountOfPayment[e.Refs["paymentId"]] = int64(f)
+				if n, err := paiseText(e.Refs["amountPaise"], true); err == nil {
+					amountOfPayment[e.Refs["paymentId"]] = n
 				} else {
-					delete(amountOfPayment, e.Refs["paymentId"]) // the TypeScript keeps a number that is not whole paise; here the later line wins by being unusable
+					delete(amountOfPayment, e.Refs["paymentId"]) // figures.ts: a later line whose amount is not whole paise makes the amount unknown
 				}
 			}
 		}

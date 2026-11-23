@@ -402,10 +402,10 @@ func (s *Say) deliver(ctx context.Context, a *SayArgs, toNumber string, toCustom
 		if err == nil {
 			asButtons = true
 		} else {
-			// Refused outright (a 4xx): nothing went out, so the same words go out as plain text. A lost reply or a 5xx may have gone out and is not sent again. Guard's licence
-			// refusal is not tried again in another form: it would be refused the same way. (Everything below 500 that is not one of those falls back to text: that includes a held
-			// call (202), a conflict (409) and a Guard refusal (403), exactly as the TypeScript does.)
-			if guard.MayHaveHappened(err) || isWindowClosed(err) || isSuspended(err) {
+			// Refused outright by the provider (a 4xx): nothing went out, so the same words go out as plain text. A lost reply or a 5xx may have gone out and is not sent again. Any
+			// answer of the shop's Guard (a hold, a refusal, a conflict, unauthenticated, the licence stop) is not tried again as text: say.ts since 22 Nov (a held call may still
+			// send the buttons, and a refusal is Guard's no to this message).
+			if _, isGuard := guard.AsGuard(err); isGuard || guard.MayHaveHappened(err) || isWindowClosed(err) {
 				return
 			}
 			if st, isAPI := guard.IsAPI(err); !isAPI || st >= 500 {
@@ -445,8 +445,3 @@ func (s *Say) deliver(ctx context.Context, a *SayArgs, toNumber string, toCustom
 }
 
 func isWindowClosed(err error) bool { var w *guard.WindowClosedError; return errors.As(err, &w) }
-
-func isSuspended(err error) bool {
-	g, ok := guard.AsGuard(err)
-	return ok && g.Kind == guard.KindSuspended
-}

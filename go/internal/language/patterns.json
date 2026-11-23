@@ -415,7 +415,7 @@
    "flags": "iu"
   },
   "notes.goal": {
-   "source": "^\\s*(?:my goal|goal|lakshya|लक्ष्य|ലക്ഷ്യം|ಗುರಿ)\\b",
+   "source": "^\\s*(?:my goal|goal|lakshya|लक्ष्य|ലക്ഷ്യം|ಗುರಿ)(?![\\p{L}\\p{M}\\p{N}_])",
    "flags": "iu"
   },
   "notes.instruction": {

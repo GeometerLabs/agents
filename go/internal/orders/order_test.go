@@ -13,6 +13,7 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/stock"
 	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
@@ -250,7 +251,7 @@ func TestDerivedReadsMatchTypeScript(t *testing.T) {
 					t.Errorf("%s: latest of %s %q %q, want %v %v", c.Name, *l[0], idOf(live), idOf(done), str(l[1]), str(l[2]))
 				}
 			}
-			if got := jsonOf(st.OrderFacts(now)); !sameJSON(nullToEmpty(got), nullToEmpty(r.Facts)) {
+			if got := jsonOf(factsJSON(st.OrderFacts(now))); !sameJSON(nullToEmpty(got), nullToEmpty(r.Facts)) {
 				t.Errorf("%s @%d: orderFacts\n got %s\nwant %s", c.Name, now, got, r.Facts)
 			}
 			for _, w := range r.ChatWork {
@@ -425,4 +426,17 @@ const PageHandleForTest = "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a
 func mustMembers(t *testing.T, text string) []runtime.Member {
 	kit, _ := splitSnapshot(t, text)
 	return kit
+}
+
+// factsJSON writes stock.OrderFact as the TypeScript's OrderFact (stream W5's struct has no JSON tags; endedMs is left out when it is 0, "not said").
+func factsJSON(fs []stock.OrderFact) []map[string]any {
+	out := []map[string]any{}
+	for _, f := range fs {
+		m := map[string]any{"key": f.Key, "id": f.ID, "qty": f.Qty, "standing": f.Standing, "cancelled": f.Cancelled, "holding": f.Holding}
+		if f.EndedMs != 0 {
+			m["endedMs"] = f.EndedMs
+		}
+		out = append(out, m)
+	}
+	return out
 }

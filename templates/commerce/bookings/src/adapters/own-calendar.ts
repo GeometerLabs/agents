@@ -14,7 +14,9 @@ import type { Store } from "../booking.ts";
 const KEEP_AFTER_END_MS = 2 * 24 * 3_600_000;
 
 export function createOwnCalendar(store: Store, now: () => number): Calendar {
-  const list = (): Record<string, CalendarEvent> => (store.ownCalendar ??= { events: {}, next: 1 }).events;
+  // A read never makes the list: only insert does (fixed 22 Nov; every read used to write `ownCalendar` into the saved state of a shop that had booked nothing). Before the
+  // first insert the list is empty, so prune, update and delete find nothing to change.
+  const list = (): Record<string, CalendarEvent> => store.ownCalendar?.events ?? {};
   const overlaps = (e: { start: number; end: number }, start: number, end: number) => e.start < end && start < e.end;
   // why: an event whose time is long past is of no use to the double-booking rule; dropping it keeps the saved state small
   const prune = () => { for (const [id, e] of Object.entries(list())) if (e.end + KEEP_AFTER_END_MS < now()) delete list()[id]; };

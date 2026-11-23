@@ -83,7 +83,8 @@ export function booksFaults(entries: readonly RecordEntry[], legacy: LegacyMap, 
   const secrets = (o.privateText ?? []).filter((t) => t.trim().length >= 3);
   const phones = phonesOf(entries);
   for (const e of entries) {
-    for (const [k, v] of Object.entries(e.refs)) {
+    // in key order, so the faults do not depend on the order the refs were written in (22 Nov; a Go map has no order, and the two runtimes list the same faults)
+    for (const [k, v] of Object.entries(e.refs).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
       if (phones.some((p) => v.includes(p))) faults.push(`entry ${e.seq}: refs.${k} carries a customer's phone number`);
       for (const t of secrets) if (v.includes(t)) faults.push(`entry ${e.seq}: refs.${k} carries a private name`);
     }

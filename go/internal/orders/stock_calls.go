@@ -1,7 +1,6 @@
 package orders
 
-// Every call of the shop's stock count (internal/stock, the Go twin of modules/stock) in ONE file, so the stock package can be switched for another (stream W5's, whose calls are
-// methods on *stock.Stock) by changing these lines only: the facts the count reads from the orders (order.ts orderFacts), what is left of a counted item for a new order (order.ts
+// Every call of the shop's stock count (internal/stock, the Go twin of modules/stock: stream W5's package, whose calls are methods on *stock.Stock) in ONE file: the facts the count reads from the orders (order.ts orderFacts), what is left of a counted item for a new order (order.ts
 // countedLeft) and the agent's reconcileStock (agent.ts: the sales booked once, the cancelled ones given back, the low mark's line to the owner). Nothing else in this package
 // imports internal/stock.
 
@@ -10,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
-	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/stock"
 )
 
@@ -34,11 +32,10 @@ func (st *Store) OrderFacts(nowMs int64) []stock.OrderFact {
 			qty[l.ItemID] += l.Qty
 		}
 		for _, id := range items {
-			f := stock.OrderFact{Key: "sale:" + o.ID + ":" + id, ID: stock.MenuStockID(id), Qty: qty[id], Standing: o.State == Confirmed || o.State == Completed,
+			f := stock.OrderFact{Key: "sale:" + o.ID + ":" + id, ID: stock.MenuID(id), Qty: qty[id], Standing: o.State == Confirmed || o.State == Completed,
 				Cancelled: o.State == Cancelled, Holding: HoldsStock(o, nowMs)}
 			if o.SlotEndMs != nil {
-				end := *o.SlotEndMs
-				f.EndedMs = &end
+				f.EndedMs = *o.SlotEndMs // W5's OrderFact: 0 is "not said"
 			}
 			out = append(out, f)
 		}
@@ -48,9 +45,9 @@ func (st *Store) OrderFacts(nowMs int64) []stock.OrderFact {
 
 // CountedLeft is order.ts countedLeft: what is left of a COUNTED menu item for a new order (the count less what other orders hold that is not yet in it); ok false for an item
 // nobody counts. `count` is the shop's stock count (the assistant's state, runtime.Snap.Stock; nil: none). exceptID is the order being checked.
-func (st *Store) CountedLeft(count *listings.Stock, itemID string, nowMs int64, exceptID string) (int64, bool) {
-	id := stock.MenuStockID(itemID)
-	if count == nil || !stock.IsCounted(count, id) {
+func (st *Store) CountedLeft(count *stock.Stock, itemID string, nowMs int64, exceptID string) (int64, bool) {
+	id := stock.MenuID(itemID)
+	if count == nil || count.LineOf(id) == nil {
 		return 0, false
 	}
 	var facts []stock.OrderFact
@@ -59,11 +56,11 @@ func (st *Store) CountedLeft(count *listings.Stock, itemID string, nowMs int64, 
 			facts = append(facts, f)
 		}
 	}
-	return stock.LeftFor(count, id, stock.UnbookedHolds(count, id, facts, ""))
+	return count.LeftFor(id, count.UnbookedHolds(id, facts, ""))
 }
 
 // stockCount is `store.assistant?.stock`: the shop's one stock count in this step's state (nil: nothing is counted).
-func (a *Agent) stockCount() *listings.Stock {
+func (a *Agent) stockCount() *stock.Stock {
 	if a.c == nil || a.c.Snap == nil {
 		return nil
 	}
@@ -87,15 +84,15 @@ func (a *Agent) reconcileStock() {
 		return strings.Join(parts, ",")
 	}
 	before := countsOf()
-	if changed := stock.ReconcileSales(st, stock.ShopRecord("orders"), a.store.OrderFacts(now), now); changed > 0 && countsOf() != before {
-		a.log(nil, a.owner(), stock.Action, "confirmed", map[string]any{"changed": changed}, logMore{refs: stock.StockRefs("menu:*", "booked_sale", "shop"),
+	if changed := st.ReconcileSales(stock.ShopRecord(), a.store.OrderFacts(now), now); changed > 0 && countsOf() != before {
+		a.log(nil, a.owner(), stock.Action, "confirmed", map[string]any{"changed": changed}, logMore{refs: stock.Refs("menu:*", "booked_sale", "shop"),
 			notes: "the shop's stock count was brought in line with the orders that stand and the ones cancelled (each order is booked once)"})
 	}
-	for _, al := range stock.PendingAlerts(st, "") {
-		if stock.KindOf(al.Line) == stock.KindSupply {
+	for _, al := range st.PendingAlerts("") {
+		if stock.KindOf(al.Line) == "supply" {
 			continue // a supply item belongs to Stock orders, which turns its alert into a reorder
 		}
-		stock.AckAlert(st, al.Line, al.Crossing)
+		st.AckAlert(al.Line, al.Crossing)
 		// `item ? itemName(item, ownerLanguage) : st.lines.find((l) => l.id === a.line)?.name ?? a.line`
 		name := al.Line
 		var item *MenuItem
@@ -117,7 +114,7 @@ func (a *Agent) reconcileStock() {
 		if a.c.Snap.A != nil {
 			a.c.Snap.A.Talk = append(a.c.Snap.A.Talk, assistant.TalkLine{AtMs: now, From: "assistant", Text: stock.Words(a.settings.Owner.Language).RunningLow(name, al.Count)})
 		}
-		a.log(nil, a.owner(), stock.Action, "confirmed", map[string]any{"item": al.Line, "count": al.Count, "crossing": al.Crossing}, logMore{refs: stock.StockRefs(al.Line, "low", "shop"),
+		a.log(nil, a.owner(), stock.Action, "confirmed", map[string]any{"item": al.Line, "count": al.Count, "crossing": al.Crossing}, logMore{refs: stock.Refs(al.Line, "low", "shop"),
 			notes: "a counted item fell to its low mark; the owner was told once for this crossing"})
 	}
 }

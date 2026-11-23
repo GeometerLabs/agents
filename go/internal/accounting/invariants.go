@@ -3,8 +3,8 @@
 // word, and each check fails exactly where the TypeScript's does.
 //
 // Where Go differs: a Map's insertion order (the entries' sides, the document runs) is kept in order slices, because the faults are listed in that order; a record entry's refs are a Go map,
-// which has no insertion order, so the privacy check visits an entry's refs in the alphabetical order of their keys, where the TypeScript visits them in the order they were written. The
-// two agree whenever an entry has at most one ref that carries a phone number or a private name (the only case a crash test makes); with two they may list the pair the other way round.
+// which has no insertion order, so the privacy check visits an entry's refs in the order of their keys, as the TypeScript does since 22 Nov (it visited them in the order they were
+// written; the keys are ASCII, so sort.Strings and JavaScript's code-unit comparison agree).
 // `.trim().length` is JavaScript's (language.TrimJS and UTF16Len), `\D` is any character but 0-9.
 package accounting
 
