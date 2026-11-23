@@ -403,6 +403,23 @@ func (s *Store) DropUnbound(now int64) (int, error) {
 	return len(ids), err
 }
 
+// Forget is W2's "delete my chat" (store.ts forget): every live phone of `who` ends with the reason "forgotten" and its waiting pushes go (the same end as an unsubscribe).
+// Returns how many.
+func (s *Store) Forget(who string, now int64) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	rows, err := s.live(who)
+	if err != nil {
+		return 0, err
+	}
+	for _, r := range rows {
+		if err := s.drop(r.id, "forgotten", now); err != nil {
+			return 0, err
+		}
+	}
+	return len(rows), nil
+}
+
 // Phones is how many phones get `who`'s alerts now.
 func (s *Store) Phones(who string) (int, error) {
 	s.mu.Lock()

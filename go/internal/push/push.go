@@ -1,7 +1,8 @@
 package push
 
-// A shop's web push as the rest of the runtime sees it (modules/push/push.ts): alerts to the owner by the owner's choice of WhatsApp, push or both. Made once per runtime. Off (no push
-// Guard named in runtime.json) nothing is queued and the routes say so.
+// A shop's web push as the rest of the runtime sees it (modules/push/push.ts): alerts to the owner by the owner's choice of WhatsApp, push or both, and (24 Nov 2026) the optional
+// alerts to a customer who allowed them on their booking's, order's or chat's page, or to a Fees parent on their private page. Made once per runtime. Off (no push Guard named in
+// runtime.json) nothing is queued and the routes say so.
 
 import "strings"
 
@@ -58,6 +59,30 @@ func (p *Push) Owner(text, tag string) ([]string, error) {
 	}
 	return ids, err
 }
+
+// Customer queues the words a page's conversation was given (`conversation`: "web:...", "mcp:...", "chat:..." or a Fees parent's "parent:p-...") to the phones that allowed
+// alerts on that page (push.ts `customer`: the tag "update", the shop's name as the title, the words fitted as every notification is). None queued: no phone allowed alerts. The
+// words are the page's own checked words, nothing more; the sender encrypts them for each phone and hands them to the shop's push Guard.
+func (p *Push) Customer(conversation, text string) ([]string, error) {
+	if !p.On {
+		return nil, nil
+	}
+	title := p.shop
+	if title == "" {
+		title = "Shop"
+	}
+	ids, err := p.store.Enqueue(conversation, "customer", title, FitNotification(text, 300), "update", p.now())
+	if len(ids) > 0 && p.sender != nil {
+		p.sender.Kick()
+	}
+	return ids, err
+}
+
+// Phones is how many phones get `who`'s alerts now (the customer route's answer).
+func (p *Push) Phones(who string) (int, error) { return p.store.Phones(who) }
+
+// Forget is W2's "delete my chat": every phone of `who` stops getting alerts, and its waiting pushes go. Returns how many.
+func (p *Push) Forget(who string) (int, error) { return p.store.Forget(who, p.now()) }
 
 // OwnerPhones is how many phones get the owner's alerts now.
 func (p *Push) OwnerPhones() int { n, _ := p.store.Phones("owner"); return n }
