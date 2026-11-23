@@ -136,7 +136,7 @@ function keepOldVersion(w: ReturnType<typeof world>, version: string, edit?: (co
   // the shared code a template imports sits beside the templates folder (<server>/modules): a kept checkout finds it there
   if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
   const pkg = join(dir, "package.json");
-  writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', `"version": "${version}"`));
+  writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.2.0"', `"version": "${version}"`));
   // What a version "from before the report" knows is read by its runtime config check, which since the shared server moved into modules/ is modules/runtime/config.ts (the copy
   // beside the server): the default edit takes "report" out of the settings that file knows. A test that wants the pathway's own file to fail gives its own edit.
   const config = edit ? join(dir, "server", "config.ts") : join(w.root, "modules", "runtime", "config.ts");
@@ -167,7 +167,7 @@ test("a client held back on a version from before the report is judged by THAT v
     assert.equal(old.ai, "buttons", "while a setting that version does know is still written");
     assert.equal(loadState(w.root).shops["glow-salon"].applied!.pathway, "bookings@0.0.9");
     // the same client, moved to today's version
-    writeFileSync(join(w.paths.shop("glow-salon"), "pathway.lock"), "bookings@0.1.0\n");
+    writeFileSync(join(w.paths.shop("glow-salon"), "pathway.lock"), "bookings@0.2.0\n");
     await deploy(w.ctx);
     assert.equal((generatedRuntime(w).report as Record<string, unknown>).innovator, true);
   } finally { w.done(); }

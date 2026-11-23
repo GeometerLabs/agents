@@ -4,5 +4,7 @@
   "setup": "stock-orders",
   "steps": ["business", "deposit", "languages", "accounts", "character", "checks"],
   "accounts": ["whatsapp"],
-  "settingsExample": "settings/glow-salon.example.json"
+  "settingsExample": "settings/glow-salon.example.json",
+  "runtime": "go",
+  "program": "stock-orders"
 }

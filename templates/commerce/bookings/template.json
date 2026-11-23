@@ -4,5 +4,7 @@
   "setup": "bookings",
   "steps": ["business", "deposit", "languages", "accounts", "character", "checks"],
   "accounts": ["whatsapp", "calendar", "payment"],
-  "settingsExample": "settings/glow-salon-upi.example.json"
+  "settingsExample": "settings/glow-salon-upi.example.json",
+  "runtime": "go",
+  "program": "bookings"
 }

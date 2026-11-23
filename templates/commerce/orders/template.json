@@ -4,5 +4,7 @@
   "setup": "orders",
   "steps": ["business", "deposit", "languages", "accounts", "character", "checks"],
   "accounts": ["whatsapp", "payment"],
-  "settingsExample": "settings/annapurna-tiffins.example.json"
+  "settingsExample": "settings/annapurna-tiffins.example.json",
+  "runtime": "go",
+  "program": "orders"
 }

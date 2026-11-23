@@ -23,7 +23,7 @@ import { join, relative } from "node:path";
 import type { Runner } from "./runner.ts";
 
 /** The programs in the image: cmd/<name> of the agents repository's go/ folder. One line per program; each is built and copied to /<name>. */
-export const GO_PROGRAMS = ["listings", "listings-shared", "directory"] as const;
+export const GO_PROGRAMS = ["listings", "listings-shared", "directory", "bookings", "orders", "fees", "stock-orders"] as const;
 /** The image's name; the tag is the checkout's commit (`goSourceTag`). */
 export const GO_IMAGE_REPO = "geo-go";
 /** The named volume that keeps Go's module and build cache between builds. Mounted at /go in the builder: the image's own /go is open to every user, so the empty volume starts open too. */

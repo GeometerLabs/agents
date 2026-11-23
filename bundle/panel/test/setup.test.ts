@@ -41,7 +41,7 @@ test("six steps write the client folder a builder would: valid settings, the run
     assert.ok(s.services[0].names.en!.includes("hair cut") && s.services[0].names.ml!.includes("Haircut"));
     const runtime = JSON.parse(readFileSync(join(folder, "runtime.json"), "utf8"));
     assert.deepEqual(runtime, { mode: "live", tickSeconds: 30, services: { payments: {}, calendar: { calendarId: CALENDAR_ID }, messaging: { phoneNumberId: PHONE_ID }, timeoutMs: 20000 } });
-    assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "bookings@0.1.0");
+    assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "bookings@0.2.0");
     const owner = JSON.parse(readFileSync(join(folder, "owner.json"), "utf8"));
     assert.deepEqual([owner.accountName, owner.role, owner.template], ["DIVYA", "partner", "bookings"]);
     // The pathway's own loader accepts the folder once the bundle has added the Guard addresses it owns.

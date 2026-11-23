@@ -1,8 +1,7 @@
 {
   "name": "geometer-pathway-bookings",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "version": "0.1.0",
   "type": "module",
   "description": "Bookings with a deposit and cancellation: v0 core, run against stand-in services. No dependencies.",
   "scripts": {

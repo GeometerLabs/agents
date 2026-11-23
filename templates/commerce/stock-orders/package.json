@@ -1,6 +1,6 @@
 {
   "name": "geometer-pathway-stock-orders",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Stock orders for a salon, small retailer or input dealer: the owner asks for a reorder on WhatsApp, the agent builds the exact order from the approved supplier list and catalogue, the owner approves it with a card bound to those fields, a monthly budget is reserved with the approval, the order goes to the supplier as a template message, the supplier's reply and the delivery are recorded separately. Checked against stand-in services. No dependencies.",

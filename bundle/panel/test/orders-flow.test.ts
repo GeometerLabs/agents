@@ -87,7 +87,7 @@ test("the Something else page offers Orders with a button, and the six steps wri
     assert.deepEqual(s.payment, { module: "upi", upi: { id: "sunrise@okicici", payee: "Sunrise Tiffins" } });
     assert.deepEqual(s.delivery?.slots.map((x) => x.id), ["lunch-2", "dinner-2"]);
     assert.deepEqual(JSON.parse(readFileSync(join(folder, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { messaging: { phoneNumberId: PHONE_ID }, timeoutMs: 20000 } }, "a UPI shop names no payments service (B71)");
-    assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "orders@0.1.0");
+    assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "orders@0.2.0");
     assert.equal(JSON.parse(readFileSync(join(folder, "owner.json"), "utf8")).template, "orders");
   } finally { await b.close(); }
 });
@@ -193,7 +193,7 @@ test("changing an Orders shop's settings is the same steps from what it has, and
     const settings = JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8"));
     assert.equal(settings.menu[0].priceInr, 130);
     assert.equal(settings.menu[0].id, "veg-thali");
-    assert.equal(readFileSync(join(b.dir, "shops", shop, "pathway.lock"), "utf8").trim(), "orders@0.1.0");
+    assert.equal(readFileSync(join(b.dir, "shops", shop, "pathway.lock"), "utf8").trim(), "orders@0.2.0");
   } finally { await b.close(); }
 });
 

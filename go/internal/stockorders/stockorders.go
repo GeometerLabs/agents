@@ -18,7 +18,7 @@ import (
 // Pathway and Version are what a Stock orders folder's pathway.lock must name (templates/commerce/stock-orders/package.json).
 const (
 	Pathway = "stock-orders"
-	Version = "0.1.0"
+	Version = "0.2.0"
 )
 
 // Kit is the Stock orders template (runtime.Kit). The command line hands in the settings, the clock and the shop's WhatsApp once the folder is read.

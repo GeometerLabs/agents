@@ -51,7 +51,7 @@ test("a shop's settings are judged by the template its pathway.lock names; a loc
     addFees(w);
     const shop = readShop(w.root, "bright");
     assert.deepEqual(shop.problems, []);
-    assert.deepEqual(shop.lock, { pathway: "fees", version: "0.1.0" });
+    assert.deepEqual(shop.lock, { pathway: "fees", version: "0.2.0" });
     assert.equal(shop.settings.batches.length, 3, "Fees' own settings, with batches and students");
     assert.equal(shop.settings.owner.language, "en");
 
@@ -155,7 +155,7 @@ test("the compose file: the centre's runtime waits for its two Guards, runs the 
 
 // ---- deploy, on a fake machine -------------------------------------------------------------------------------------------------
 
-test("check and deploy a Fees centre: no Google key is asked for, even on a server that holds one; two Guards are proven; the status says fees@0.1.0; the runtime config on disk is Fees'", async () => {
+test("check and deploy a Fees centre: no Google key is asked for, even on a server that holds one; two Guards are proven; the status says fees@0.2.0; the runtime config on disk is Fees'", async () => {
   const w = world({}); try {
     addFees(w);
     w.handIn("bright", feesSecrets("bright"));
@@ -167,7 +167,7 @@ test("check and deploy a Fees centre: no Google key is asked for, even on a serv
     assert.equal(r.proven.line, "12 of 12 limits proven to bite (3 cannot be tested without writing, and are not counted)"); // item 11h: with the push Guard
     assert.deepEqual(Object.keys(r.guards), ["razorpay", "whatsapp", "push"]);
     const status = readStatus(w.root, "bright")!;
-    assert.deepEqual([status.deploy.state, status.versions?.pathway], ["applied", "fees@0.1.0"]);
+    assert.deepEqual([status.deploy.state, status.versions?.pathway], ["applied", "fees@0.2.0"]);
     assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1, push: 1 });
     const onDisk = JSON.parse(readFileSync(join(w.paths.generated, "shops", "bright", "client", "runtime.json"), "utf8"));
     assert.ok(validateRuntimeConfig(onDisk, "/").ok);
@@ -179,7 +179,7 @@ test("check and deploy a Fees centre: no Google key is asked for, even on a serv
     const ops = JSON.parse(readFileSync(join(w.paths.generated, "ops", "ops.json"), "utf8"));
     assert.equal(ops.shops.bright.pathway, "fees");
     const state = loadState(w.root);
-    assert.equal(state.shops.bright.applied?.pathway, "fees@0.1.0");
+    assert.equal(state.shops.bright.applied?.pathway, "fees@0.2.0");
   } finally { w.done(); }
 });
 
@@ -237,7 +237,7 @@ test("shop add --template fees starts a centre from the template: the example se
     assert.equal(r.result, 0, r.err);
     assert.match(r.out, /somebody else's made-up centre/);
     const dir = w.paths.shop("bright");
-    assert.equal(readFileSync(join(dir, "pathway.lock"), "utf8"), "fees@0.1.0\n");
+    assert.equal(readFileSync(join(dir, "pathway.lock"), "utf8"), "fees@0.2.0\n");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 } });
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "settings.json"), "utf8")), { ...JSON.parse(readFileSync(new URL("../../templates/education/fees/settings/bright-tuition-upi.example.json", import.meta.url), "utf8")), payment: { module: "razorpay" } }, "the example, with the gateway the person chose");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local Operator" });
@@ -261,7 +261,7 @@ test("shop add --template fees starts a centre from the template: the example se
     const salon = await add("glow", "--template", "bookings", "--payment", "razorpay", "--whatsapp-number-id", PHONE_NUMBER_ID, "--calendar-id", "glow@group.calendar.google.com");
     assert.equal(salon.result, 0, salon.err);
     assert.equal(JSON.parse(readFileSync(join(w.paths.shop("glow"), "runtime.json"), "utf8")).services.calendar.calendarId, "glow@group.calendar.google.com");
-    assert.equal(readFileSync(join(w.paths.shop("glow"), "pathway.lock"), "utf8"), "bookings@0.1.0\n");
+    assert.equal(readFileSync(join(w.paths.shop("glow"), "pathway.lock"), "utf8"), "bookings@0.2.0\n");
 
     // the refusals, each in a sentence
     assert.match((await add("a1", "--template", "fees", "--payment", "razorpay", "--calendar-id", "x@y")).err, /no calendar/);
@@ -324,17 +324,17 @@ test("geometer update moves a Fees centre: the real Fees hand check runs at both
     addFees(w);
     w.handIn("bright", feesSecrets("bright"));
     await deploy(w.ctx);
-    // version 0.2.0 on the server: a copy of the template, as a checkout of a tag would give, with the modules it imports beside it
-    const kept = join(w.root, "templates", "education", "fees@0.2.0");
+    // version 0.3.0 on the server: a copy of the template, as a checkout of a tag would give, with the modules it imports beside it
+    const kept = join(w.root, "templates", "education", "fees@0.3.0");
     cpSync(join(w.ctx.appDir, "templates", "education", "fees"), kept, { recursive: true });
     if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
     const pkg = join(kept, "package.json");
-    writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', '"version": "0.2.0"'));
+    writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.2.0"', '"version": "0.3.0"'));
     const next = w.ctx.runner.run.bind(w.ctx.runner);
     w.ctx.runner.run = (command, args, options) => (command === process.execPath ? realRunner.run(command, args, options) : next(command, args, options));
-    const r = await quiet(() => main(["update", "--to", "0.2.0", "--server", w.root], w.ctx));
+    const r = await quiet(() => main(["update", "--to", "0.3.0", "--server", w.root], w.ctx));
     assert.equal(r.result, 0, r.out + r.err);
-    assert.equal(readFileSync(join(w.paths.shop("bright"), "pathway.lock"), "utf8").trim(), "fees@0.2.0");
+    assert.equal(readFileSync(join(w.paths.shop("bright"), "pathway.lock"), "utf8").trim(), "fees@0.3.0");
     const step = loadState(w.root).update!.steps.bright;
     assert.ok(step.after && step.after.held === step.after.of && step.after.of >= 20, JSON.stringify(step));
     assert.ok(step.layout && step.layout.from > 0 && step.layout.from === step.layout.to, "the Fees runtime's saved-data layout was asked of both versions");

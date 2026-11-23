@@ -78,7 +78,7 @@ test("the Something else page offers Fees with a button, and the six steps write
     assert.deepEqual(s.languages, ["ml", "en"]);
     const runtime = JSON.parse(readFileSync(join(folder, "runtime.json"), "utf8"));
     assert.deepEqual(runtime, { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_ID }, timeoutMs: 20000 } });
-    assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "fees@0.1.0");
+    assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "fees@0.2.0");
     assert.equal(JSON.parse(readFileSync(join(folder, "owner.json"), "utf8")).template, "fees");
   } finally { await b.close(); }
 });
@@ -187,7 +187,7 @@ test("changing a Fees centre's settings is the same steps from what it has, and 
     assert.equal((await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/6`)).status, 303);
     const settings = JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8"));
     assert.equal(settings.batches[0].monthlyFeeInr, 1300);
-    assert.equal(readFileSync(join(b.dir, "shops", shop, "pathway.lock"), "utf8").trim(), "fees@0.1.0");
+    assert.equal(readFileSync(join(b.dir, "shops", shop, "pathway.lock"), "utf8").trim(), "fees@0.2.0");
   } finally { await b.close(); }
 });
 
