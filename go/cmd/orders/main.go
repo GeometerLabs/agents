@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -141,7 +142,7 @@ func run(folder string) error {
 	}
 	kit.Ports = ports
 	// the monthly report (report/monthly-job.ts) from runtime.json's `report` block; a UPI shop's QR pictures go into the folder its pages are served from (start.ts folderQrImages)
-	if setup, err := orders.ReportSetupOf(client.Config, client.Folder, kit.Settings, log); err != nil {
+	if setup, err := reportwire.ReadSetup(client.Config, client.Folder, log); err != nil {
 		return err
 	} else if setup != nil {
 		kit.Report = orders.NewMonthlyReport(*setup, ports.WhatsApp)

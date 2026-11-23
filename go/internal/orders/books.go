@@ -11,7 +11,7 @@ package orders
 import (
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/ordersreport"
-	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
@@ -24,36 +24,11 @@ func OrdersJournal(entries []store.Entry) *accounting.Journal {
 	return accounting.BuildJournal(entries, Legacy())
 }
 
-// RecordSource is the shop's record as the books use it: the whole of it, and a way to append a line. *runtime.Recorder is one.
-type RecordSource interface {
-	Entries() []store.Entry
-	Append(runtime.NewLine) store.Entry
-}
-
-var _ RecordSource = (*runtime.Recorder)(nil)
-
-// recordAdapter is accounting.Record over the shop's record: Append is a runtime.NewLine, so the line gets its keyed digest and its number exactly as the agent's own lines do.
-type recordAdapter struct{ r RecordSource }
-
-func (a recordAdapter) Entries() []accounting.Entry { return a.r.Entries() }
-
-// Append is record.ts append: a line without a case is written with a null `booking`.
-func (a recordAdapter) Append(n accounting.NewEntry) accounting.Entry {
-	booking := ""
-	if n.Booking != nil {
-		booking = *n.Booking
-	}
-	return a.r.Append(runtime.NewLine{Conversation: n.Conversation, Booking: booking, Action: n.Action, Outcome: n.Outcome, Inputs: n.Inputs, Language: n.Language, Notes: n.Notes, Refs: n.Refs})
-}
-
-// Record is accounting.Record over the shop's record.
-func Record(rec RecordSource) accounting.Record { return recordAdapter{rec} }
-
 type clockFunc func() int64
 
 func (f clockFunc) Now() int64 { return f() }
 
 // OrdersAccounting is accounting.ts ordersAccounting: the shop's accounting over the very record the agent's log appends to (an unregistered shop: no tax status is given).
-func OrdersAccounting(rec RecordSource, timezone string, now func() int64) (accounting.Accounting, error) {
-	return accounting.CreateAccounting(recordAdapter{rec}, accounting.Shop{Timezone: timezone}, Legacy(), clockFunc(now))
+func OrdersAccounting(rec reportwire.RecordSource, timezone string, now func() int64) (accounting.Accounting, error) {
+	return accounting.CreateAccounting(reportwire.Record(rec), accounting.Shop{Timezone: timezone}, Legacy(), clockFunc(now))
 }

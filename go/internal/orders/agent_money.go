@@ -9,6 +9,7 @@ package orders
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"math"
 	"strconv"
 
@@ -689,7 +690,7 @@ func (a *Agent) readSettlements(now int64) {
 	if a.acct == nil {
 		return
 	}
-	accounting.ReadSettlementsOnce(accounting.SettlementsInput{Payments: settlementPayments{a, sr}, Accounting: a.acct, Record: Record(a.c.Rec), Conversation: a.owner(),
+	accounting.ReadSettlementsOnce(accounting.SettlementsInput{Payments: settlementPayments{a, sr}, Accounting: a.acct, Record: reportwire.Record(a.c.Rec), Conversation: a.owner(),
 		Language: a.settings.Languages[0], NowMs: now, TimeZone: a.settings.Timezone})
 }
 

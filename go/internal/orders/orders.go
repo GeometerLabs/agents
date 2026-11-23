@@ -56,11 +56,9 @@ type Kit struct {
 	// QRImage makes and hosts the QR picture of a UPI request's link (an owner-marked shop with a `report` block: start.ts folderQrImages into its pages folder); nil: the words
 	// carry the link, the UPI ID and the amount.
 	QRImage ownermarked.ImageMaker
-	// Report is the monthly report job (agent_after.go), made once per process from runtime.json's `report` block; nil: the shop has none. reportErr and reportErrAt are core.ts
-	// lastReportError: a report that cannot be made is said once, and again each hour it goes on.
-	Report      *MonthlyReport
-	reportErr   string
-	reportErrAt int64
+	// Report is the monthly report job (agent_after.go), made once per process from runtime.json's `report` block; nil: the shop has none. A report that cannot be made is said once,
+	// and again each hour it goes on (Report.Failed, core.ts lastReportError).
+	Report *MonthlyReport
 	// shared is the part of the settings every shop has (the assistant's character), kept for the assistant's views
 	shared *runtime.Settings
 	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.

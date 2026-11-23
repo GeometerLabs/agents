@@ -11,12 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
 	"github.com/GeometerLabs/agents/go/internal/guard"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
-	"github.com/GeometerLabs/agents/go/internal/report"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
 	"github.com/GeometerLabs/agents/go/internal/zone"
@@ -42,19 +41,6 @@ func (m *memRecord) Append(l runtime.NewLine) store.Entry {
 	e := store.Entry{Seq: len(m.lines) + 1, Time: "2026-12-01T05:00:00.000Z", Conversation: l.Conversation, Booking: booking, Action: l.Action, InputsDigest: "d", Outcome: l.Outcome, Decisions: nil, Language: l.Language, Notes: l.Notes, Refs: refs}
 	m.lines = append(m.lines, e)
 	return e
-}
-
-func TestRecordAdapterWritesALineWithNoCaseAsNull(t *testing.T) {
-	rec := &memRecord{}
-	b := NewBooks(BooksPorts{})
-	r := b.Record(rec)
-	r.Append(accounting.NewEntry{Conversation: "+911", Action: "settlements_read", Outcome: "confirmed", Language: "en", Refs: map[string]string{"day": "2026-11-30"}})
-	c := "b-1"
-	r.Append(accounting.NewEntry{Conversation: "+911", Booking: &c, Action: "x", Outcome: "confirmed", Language: "en"})
-	got := r.Entries()
-	if len(got) != 2 || got[0].Booking != nil || got[1].Booking == nil || *got[1].Booking != "b-1" || got[0].Refs["day"] != "2026-11-30" {
-		t.Fatalf("lines: %+v", got)
-	}
 }
 
 func TestAccountingReadsBookingsActionNames(t *testing.T) {
@@ -113,36 +99,6 @@ func TestSettlementPayments(t *testing.T) {
 	}
 }
 
-func TestReportFaults(t *testing.T) {
-	cases := []struct {
-		name     string
-		err      error
-		nothing  bool // report.NothingWasSent: it may be tried again
-		isWindow bool
-	}{
-		{"window closed", &guard.WindowClosedError{}, true, true},
-		{"refused connection", &guard.NotSentError{Message: "refused", Code: "ECONNREFUSED"}, true, false},
-		{"a 404", &guard.ApiError{Status: 404, Message: "no"}, true, false},
-		{"a 500", &guard.ApiError{Status: 500, Message: "no"}, false, false},
-		{"a timeout", &guard.TimeoutError{What: "send"}, false, false},
-		{"guard busy", &guard.GuardError{Kind: guard.KindUnavailable, Status: 503, Message: "busy"}, true, false},
-		{"another error", errors.New("boom"), false, false},
-	}
-	for _, c := range cases {
-		got := reportFault(c.err)
-		var w *report.WindowClosedError
-		if report.NothingWasSent(got) != c.nothing || errors.As(got, &w) != c.isWindow {
-			t.Errorf("%s: nothingWasSent %v window %v", c.name, report.NothingWasSent(got), errors.As(got, &w))
-		}
-		if got.Error() != c.err.Error() {
-			t.Errorf("%s: words changed: %q", c.name, got.Error())
-		}
-	}
-	if reportFault(nil) != nil {
-		t.Error("no error stays none")
-	}
-}
-
 // double is a messaging.Messaging with an open window that remembers what it sent; withDocs adds the optional file send.
 type double struct {
 	open  bool
@@ -176,32 +132,6 @@ func (w *withDocs) SendDocument(_ context.Context, to string, d messaging.Docume
 	return messaging.OutboundMessage{ID: "wamid.3"}, nil
 }
 
-func TestReportMessagingIsADocumentSenderOnlyWhenTheClientCanSendAFile(t *testing.T) {
-	if NewBooks(BooksPorts{}).ReportMessaging() != nil {
-		t.Error("no WhatsApp: no report messaging")
-	}
-	plain := NewBooks(BooksPorts{Messaging: &double{}}).ReportMessaging()
-	if _, ok := plain.(report.DocumentSender); ok {
-		t.Error("a client without files is not asked to send one")
-	}
-	w := &withDocs{double: &double{}}
-	m := NewBooks(BooksPorts{Messaging: w}).ReportMessaging()
-	ds, ok := m.(report.DocumentSender)
-	if !ok {
-		t.Fatal("a client with files is a DocumentSender")
-	}
-	if _, err := ds.SendDocument("+91", report.Document{Link: "https://x/y.txt", Filename: "y.txt", Caption: "c"}); err != nil || len(w.docs) != 1 || *w.docs[0].Caption != "c" {
-		t.Errorf("document %+v err %v", w.docs, err)
-	}
-	// a template with no header image carries none; a closed window is the report's own fault
-	if _, err := m.SendTemplate("+91", report.Template{Name: "n", Language: "en", Text: "t", Parameters: []string{"a"}}); err != nil || w.tmpl[0].HeaderImage != nil || w.tmpl[0].Parameters[0] != "a" {
-		t.Errorf("template %+v err %v", w.tmpl, err)
-	}
-	if _, err := m.SendText("+91", "hi"); !errors.As(err, new(*report.WindowClosedError)) {
-		t.Errorf("a closed window should be report's fault, got %v", err)
-	}
-}
-
 func TestBookingsOf(t *testing.T) {
 	st := NewStore()
 	a, b := &Booking{ID: "b-1", State: Confirmed}, &Booking{ID: "b-2", State: NeedsOwner, Pending: []payments.Pending{rawPending(map[string]string{"kind": "calendar"}), rawPending(OwnerRefund{Kind: "refund"})}}
@@ -223,7 +153,7 @@ func TestMonthlyReportIsMadeAndSentOnce(t *testing.T) {
 	}
 	m := &withDocs{double: &double{open: true}}
 	dir := t.TempDir()
-	job := NewBooks(BooksPorts{Messaging: m}).NewMonthlyReport(MonthlyReportSetup{Source: "stand-in", PagesDir: dir, PagesBaseURL: "https://reports.example/r", Options: func() bookingsreport.Options { return bookingsreport.Options{PreparedBy: "Divya"} },
+	job := NewBooks(BooksPorts{Messaging: m}).NewMonthlyReport(reportwire.Setup{Source: "stand-in", PagesDir: dir, PagesBaseURL: "https://reports.example/r", Options: func() reportwire.Options { return reportwire.Options{PreparedBy: "Divya"} },
 		Token: func() string { return "tok" }})
 	saves := 0
 	tk := ReportTick{Settings: s, Store: NewStore(), Rec: rec, Now: func() int64 { return tick }, Save: func() { saves++ }}
@@ -255,7 +185,7 @@ func TestMonthlyReportIsMadeAndSentOnce(t *testing.T) {
 	if r, _ := job.Run(ReportTick{Settings: s, Store: NewStore(), Rec: rec, Now: func() int64 { return tick }, Licence: "stopped"}); r.Why != "stopped" {
 		t.Errorf("licence stopped: %+v", r)
 	}
-	if r, _ := NewBooks(BooksPorts{}).NewMonthlyReport(MonthlyReportSetup{}).Run(tk); r.Done || r.Why != "no-messaging" {
+	if r, _ := NewBooks(BooksPorts{}).NewMonthlyReport(reportwire.Setup{}).Run(tk); r.Done || r.Why != "no-messaging" {
 		t.Errorf("no messaging: %+v", r)
 	}
 }

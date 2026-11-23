@@ -42,11 +42,9 @@ type Kit struct {
 	// PageBase is where a WhatsApp booking's own page lives (item 11h; start.ts pageBase: the deployer's pages.json, read fresh on every use: its `url` on the pages domain,
 	// else `base`, this server's). nil or "": the shop has no page, and no page link is sent.
 	PageBase func() string
-	// Report is the monthly report job (books.go), made once per process from runtime.json's `report` block; nil: the shop has none, and nothing is sent. reportErr and
-	// reportErrAt are core.ts lastReportError: a report that cannot be made is said once, and again each hour it goes on.
-	Report      *MonthlyReport
-	reportErr   string
-	reportErrAt int64
+	// Report is the monthly report job (books.go), made once per process from runtime.json's `report` block; nil: the shop has none, and nothing is sent. A report that cannot
+	// be made is said once, and again each hour it goes on (Report.Failed, core.ts lastReportError).
+	Report *MonthlyReport
 	// Terms is the shop terms now (B72: client/terms.json, read again when it changes, terms.NewReader); nil, or a nil answer: the feature is off
 	Terms func() *terms.File
 	// QRImage makes a UPI request's QR picture and hosts it (start.ts: folderQrImages into the report's pages folder, for a UPI shop with a `report` block); nil: the words

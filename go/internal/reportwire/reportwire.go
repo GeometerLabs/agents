@@ -3,8 +3,9 @@
 // server/start.ts monthlyReportSetup: every problem said at once in the TypeScript's words), the report's name and badge read again whenever runtime.json changes (reportOptionsReader),
 // and the once-an-hour telling of a report that could not be made (core.ts's catch around the monthly report).
 //
-// Why a package of its own: internal/orders (agent_after.go) and internal/bookings carry private copies of the same code, written before there was a third template. Fees uses this one;
-// the other two can move onto it (their Deferred.md rows say so) and delete their copies. It depends on messaging, guard and runtime, so it cannot live in internal/report.
+// Why a package of its own, and the one copy: Bookings, Orders, Fees and Stock orders each carried a private copy of this wiring (23 Nov: Stream CL folded them onto this one, the
+// best of the four because it also holds the beat's runner and the failure log, which the runtime's copy lacked; that copy, internal/runtime/reportwiring.go, is deleted). It depends
+// on messaging, guard and runtime, so it cannot live in internal/report. The record adapter (accounting.Record over the shop's record) lives here too: the books use it as well.
 package reportwire
 
 import (
@@ -46,6 +47,7 @@ type Setup struct {
 	Key                    ed25519.PrivateKey
 	GoLiveFile             string
 	Tenant                 string
+	Token                  func() string // the test seam: the random part of a report folder's name (nil: a random one)
 }
 
 func contains(l []string, s string) bool {

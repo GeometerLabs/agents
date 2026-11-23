@@ -4,15 +4,13 @@ package stockorders
 // runs the job on a tick AFTER the agent's own work, saving for itself (a claim in the record before it sends, the ending after), so a restart between the two finds the claim and never
 // sends twice. It runs from runtime.AfterTicker, never from Agent.Tick, whose step is saved whole or not at all. In the licence's final stop the shop sends nothing more, so no report goes.
 //
-// The report itself is internal/stockordersreport (the TypeScript's report/ folder); the `report` block of runtime.json and the shop's messaging are read by the shared runtime
-// (runtime.ReadReportConfig, runtime.ReportMessagingOf), so this file holds only what is Stock orders': the settings tree and the orders the job reads, and the beat.
+// The report itself is internal/stockordersreport (the TypeScript's report/ folder); the `report` block of runtime.json, the shop's messaging and the beat's runner are the one shared
+// copy in internal/reportwire, so this file holds only what is Stock orders': the settings tree and the orders the job reads, and the beat.
 
 import (
-	"regexp"
-	"sync"
-
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/report"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/stockordersreport"
 )
@@ -30,13 +28,10 @@ func OrdersOf(st *Store) []stockordersreport.Order {
 
 // MonthlyReport is the monthly job for Stock orders, made once per process: it remembers which month it found sent, so a tick that comes every few seconds does not read the record.
 type MonthlyReport struct {
-	mu  sync.Mutex
-	job *report.MonthlyJob
+	*reportwire.Runner
 	cur ReportTick
-	msg report.Messaging
-	// the last failure said in the log, said once and again each hour it goes on (core.ts lastReportError)
-	failed   string
-	failedAt int64
+	// Failed says a report that could not be made once an hour (core.ts lastReportError).
+	Failed reportwire.FailureLog
 }
 
 // ReportTick is what the monthly job is given on the clock's beat (core.ts: `monthly.run({settings, clock, messaging, record, store, log, save})`).
@@ -49,54 +44,30 @@ type ReportTick struct {
 }
 
 // NewMonthlyReport is createMonthlyReport(setup) over this shop's settings and messaging. A shop with no WhatsApp has none: Run says "no-messaging" and does nothing.
-func NewMonthlyReport(cfg *runtime.ReportConfig, s *Settings, m messaging.Messaging) *MonthlyReport {
-	r := &MonthlyReport{msg: runtime.ReportMessagingOf(m)}
+func NewMonthlyReport(setup reportwire.Setup, s *Settings, m messaging.Messaging) *MonthlyReport {
+	r := &MonthlyReport{}
 	tree := s.Tree() // the file's settings as validated, which is what the TypeScript's job digests (the owner's tightened limits are not in it)
-	setup := stockordersreport.Setup{
-		Source: cfg.Source, PagesDir: cfg.PagesDir, PagesBaseURL: cfg.PagesBaseURL, Key: cfg.Key, Tenant: cfg.Tenant,
+	rs := stockordersreport.Setup{
+		Source: setup.Source, PagesDir: setup.PagesDir, PagesBaseURL: setup.PagesBaseURL, Key: setup.Key, Tenant: setup.Tenant, Token: setup.Token,
 		Options: func() stockordersreport.Options {
-			name, badge := cfg.Options()
-			return stockordersreport.Options{PreparedBy: name, Innovator: badge}
+			o := setup.Options()
+			return stockordersreport.Options{PreparedBy: o.PreparedBy, Innovator: o.Innovator}
 		},
 		Shop: func() stockordersreport.Shop {
 			return stockordersreport.Shop{Settings: tree, Entries: r.cur.Rec.Entries(), Orders: OrdersOf(r.cur.Store)}
 		},
 	}
-	if cfg.GoLiveFile != "" {
-		file := cfg.GoLiveFile
-		setup.GoLive = func() report.GoLiveFinding { return stockordersreport.ReadGoLive(file, tree).Finding }
+	if file := setup.GoLiveFile; file != "" {
+		rs.GoLive = func() report.GoLiveFinding { return stockordersreport.ReadGoLive(file, tree).Finding }
 	}
-	r.job = stockordersreport.NewMonthlyJob(setup)
+	r.Runner = reportwire.NewRunner(stockordersreport.NewMonthlyJob(rs), m)
 	return r
 }
 
 // Run is the job's `run(ctx)`: one look at whether last month's report is due and, if so, make it, claim it, send it and write the ending.
 func (m *MonthlyReport) Run(t ReportTick, s *Settings) (report.MonthlyResult, error) {
-	if m.msg == nil {
-		return report.MonthlyResult{Why: "no-messaging"}, nil
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.cur = t
-	defer func() { m.cur = ReportTick{} }()
-	save := t.Save
-	if save == nil {
-		save = func() {}
-	}
-	return m.job.Run(report.JobContext{Timezone: s.Timezone, OwnerWhatsapp: s.Owner.WhatsApp, OwnerLanguage: s.Owner.Language, Now: t.Now, Messaging: m.msg,
-		Record: runtime.ReportRecordOf(t.Rec), Save: save, Log: t.Log})
-}
-
-// pathLike is a word with a path in it: the paths in a failure's message (a new random folder each time) are left out of the comparison.
-var pathLike = regexp.MustCompile(`\S*[\\/]\S*`)
-
-// failedOnce is core.ts's catch around the monthly report: said once, and again each hour it goes on.
-func (m *MonthlyReport) failedOnce(err error, now int64, log func(string)) {
-	same := pathLike.ReplaceAllString(err.Error(), "…")
-	if same != m.failed || now-m.failedAt >= hour {
-		log("The monthly report could not be made: " + err.Error())
-		m.failed, m.failedAt = same, now
-	}
+	return m.Runner.Run(reportwire.Tick{Timezone: s.Timezone, OwnerWhatsapp: s.Owner.WhatsApp, OwnerLanguage: s.Owner.Language, Now: t.Now, Rec: t.Rec, Save: t.Save, Log: t.Log},
+		func() func() { m.cur = t; return func() { m.cur = ReportTick{} } })
 }
 
 // AfterTick is core.ts's monthly report on a beat, after the agent's own work, then (item 11e) the owner's morning line over this template's skill, read-only, with the same save so its
@@ -112,7 +83,7 @@ func (a *Agent) AfterTick(save func() error) {
 			}
 		}
 		if _, err := a.kit.Report.Run(ReportTick{Store: a.st, Rec: a.c.Rec, Now: a.now, Save: saveLogged, Log: a.c.Log}, a.kit.Settings); err != nil {
-			a.kit.Report.failedOnce(err, a.now(), a.c.Log)
+			a.kit.Report.Failed.Failed(err, a.now(), a.c.Log)
 		}
 	}
 	if a.msg == nil {

@@ -268,38 +268,14 @@ func rawNum(v json.RawMessage) int64 {
 
 func jnum(n int64) json.RawMessage { return json.RawMessage(strconv.FormatInt(n, 10)) }
 
-// prepareGuestMessage is wire.ts prepareGuestMessage: "tell chat guest 3 we open at ten" is the proposal `message g-3`. A guest has no order, so no case; the words go into the
-// guest's thread through the same message card and checks (STOP; an amount, which a guest's record never has). Anything else asked of a guest is "not here".
-func (k *ordersSkill) prepareGuestMessage(kind, ref, number, words string) (runtime.Prepared, string) {
-	if kind != "message" {
-		return runtime.Prepared{}, "not_here"
-	}
-	n, _ := strconv.ParseInt(number, 10, 64)
-	cs := k.a.store.channelRead()
-	conversation := ""
-	if cs != nil {
-		conversation = runtime.ConversationOfGuest(cs, n)
-	}
-	if conversation == "" {
-		return runtime.Prepared{}, "no_case"
-	}
-	if c := k.a.store.FindCustomer(conversation); c != nil && c.OptedOut {
-		return runtime.Prepared{}, "opted_out"
-	}
-	if assistant.AmountOf(words) > 0 { // amountOf: undefined (0 here) when there is none
-		return runtime.Prepared{}, "amount_not_on_record"
-	}
-	who := runtime.GuestLabel(cs, conversation, k.a.settings.Owner.Language)
-	act := assistant.Action{Kind: "message", Skill: "orders", Case: ref, Fields: assistant.Raw{"who": jsonOf(who), "phone": jsonOf(conversation), "words": jsonOf(words)}}
-	return runtime.Prepared{Action: act, Shown: runtime.Shown{Who: who, Words: words, HasWords: true}}, ""
-}
-
 // Prepare is assistant.ts prepare: the EXACT action from the store, or why it cannot be done.
 func (k *ordersSkill) Prepare(p assistant.Raw) (runtime.Prepared, string) {
 	a := k.a
 	kind, cs := rawStr(p["kind"]), rawStr(p["case"])
-	if m := runtime.GuestRef.FindStringSubmatch(cs); m != nil {
-		return k.prepareGuestMessage(kind, cs, m[1], rawStr(p["words"]))
+	// a chat guest ("g-3") has no order: only a message to them (the one shared runtime.PrepareGuestMessage)
+	optedOut := func(phone string) bool { c := a.store.FindCustomer(phone); return c != nil && c.OptedOut }
+	if prep, why, ok := runtime.PrepareGuestMessage(a.store.channelRead(), "orders", kind, cs, rawStr(p["words"]), a.settings.Owner.Language, optedOut); ok {
+		return prep, why
 	}
 	o := a.store.Order(cs)
 	if o == nil {

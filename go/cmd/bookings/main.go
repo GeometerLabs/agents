@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -135,7 +136,7 @@ func run(folder string) error {
 	// the books (go-bk-books-19nov's adapters): the money lines' accounting and the settlement read; the monthly report runs after the beat's step (agent_after.go)
 	sr, _ := ports.Payments.(payments.SettlementReader)
 	ports.Books = bookings.NewBooks(bookings.BooksPorts{Messaging: ports.WhatsApp, Settlements: sr, Capabilities: ports.Capabilities})
-	if setup, err := bookings.ReportSetupOf(client.Config, client.Folder, kit.Settings, log); err != nil {
+	if setup, err := reportwire.ReadSetup(client.Config, client.Folder, log); err != nil {
 		return err
 	} else if setup != nil {
 		kit.Report = ports.Books.NewMonthlyReport(*setup)
