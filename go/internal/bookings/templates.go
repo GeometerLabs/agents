@@ -146,6 +146,9 @@ type MessageFacts struct {
 	PriceInr, DepositInr, RefundInr, MarkedInr, LeftInr                                                  *int64
 	SlotMs                                                                                               *int64
 	HoldMinutes, WindowHours, ApprovalHours, ApprovalsLeft, UpcomingCount                                *int64
+	// OfferedInr and DiscountCode are E1's (the discount authority, 24 Nov 2026): the price of one the customer asked for (PriceInr stays the list price) and the owner's card's code.
+	OfferedInr   *int64
+	DiscountCode *string
 	// SlotChoices are the free times a list message offers (each date and time in the message must be one of these, or the booking's own).
 	SlotChoices []int64
 	// Day is "today" or "tomorrow" ("" is today), with DayBookings the owner's day list.
@@ -249,6 +252,10 @@ func (f *MessageFacts) value(name string) (string, error) {
 		return needS(f.UpiCode, name)
 	case "partner":
 		return needS(f.Partner, name)
+	case "offeredInr":
+		return rupees(f.OfferedInr, name)
+	case "discountCode":
+		return needS(f.DiscountCode, name)
 	case "menuList":
 		// templates.ts menuList: each service and its price, joined with ", "
 		names := make([]string, len(f.Services))
@@ -318,7 +325,7 @@ func CheckMessage(text string, f *MessageFacts) []string {
 // number are literals.
 func checkFactsOf(f *MessageFacts) language.Facts {
 	var out language.Facts
-	for _, v := range []*int64{f.PriceInr, f.DepositInr, f.RefundInr, f.MarkedInr, f.LeftInr} {
+	for _, v := range []*int64{f.PriceInr, f.DepositInr, f.RefundInr, f.MarkedInr, f.LeftInr, f.OfferedInr} {
 		if v != nil {
 			out.AmountsInr = append(out.AmountsInr, float64(*v))
 		}
@@ -342,7 +349,7 @@ func checkFactsOf(f *MessageFacts) language.Facts {
 			out.Links = append(out.Links, *l)
 		}
 	}
-	lits := []*string{&f.BusinessName, f.ServiceName, f.BookingRef, f.CustomerPhone, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner}
+	lits := []*string{&f.BusinessName, f.ServiceName, f.BookingRef, f.CustomerPhone, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.DiscountCode}
 	for _, l := range lits {
 		if l != nil {
 			out.Literals = append(out.Literals, *l)
@@ -373,5 +380,6 @@ func ExampleFacts(s *Settings, lang string) *MessageFacts {
 	f.BookingRef, f.CustomerPhone, f.ApprovalCode, f.ApprovalHours, f.ApprovalsLeft = S("b-3"), S("+919811111111"), S("K7M2QX"), N(24), N(1)
 	f.UpiID, f.Payee, f.UpiCode, f.MarkedInr, f.LeftInr = S("glowsalon@okicici"), S(s.Name), S("P4XR9T"), N(s.Deposit.AmountInr), N(s.Deposit.AmountInr)
 	f.Partner, f.UpcomingCount = S("Divya, Sri Sai Digital"), N(3)
+	f.OfferedInr, f.DiscountCode = N(s.Services[0].PriceInr-50), S("Q7RM2X") // E1: meta-templates.ts exampleFacts' price asked and card code
 	return f
 }

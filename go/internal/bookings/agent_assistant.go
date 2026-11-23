@@ -265,6 +265,9 @@ func (k *bookingsSkill) Prepare(p assistant.Raw) (runtime.Prepared, string) {
 			if sv := a.settings.ServiceByID(b.ServiceID); sv != nil {
 				ok = ok || amount == sv.PriceInr*100
 			}
+			if price, has := a.agreedPriceInr(b); has {
+				ok = ok || amount == price*100 // E1: a price the agent or the owner agreed is this booking's own
+			}
 			if !ok {
 				return runtime.Prepared{}, "amount_not_on_record"
 			}

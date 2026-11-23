@@ -10,6 +10,8 @@
 //    from the orders as they are when the report is made (orders.json), for the orders whose day falls in the month and that are confirmed or completed.
 //  - A limit "stopped" something at ONE entry: a blocked entry is counted under the rule that blocked it, once. A check that stops an order and the message that tells the
 //    customer carry the same decision; they are one stop (see stopsIn).
+import { discountsOfMonth } from "../../../../modules/limits/discounts.ts";
+import type { DiscountCounts } from "../../../../modules/limits/discounts.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { booksOnlyOf, figuresOf } from "../../../../modules/accounting/figures.ts";
@@ -141,6 +143,11 @@ export interface OrdersReport {
    * from the evidence pack alone. Left out when the whole record has no money lines, which keeps the bytes of every report made without money.
    */
   accounting?: { summary: AccountingSummary; legacy: LegacyMap };
+  /**
+   * E1, the discount authority (24 Nov 2026; modules/limits/discounts.ts discountsOfMonth): the month's discounts given (with the rupees taken off), asked of the owner and
+   * refused. Left out when the month's record has no discount line, which keeps the bytes of every report of a shop without the authority.
+   */
+  discounts?: DiscountCounts;
   /** Monthly plans (17 Nov 2026): counted from the record (src/plans/report.ts). Made only for a shop with plans, so every other shop's report bytes are as they were. */
   plans?: PlansReport;
   /** The head of the shop's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
@@ -271,7 +278,8 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   const asked = new Set(month.filter((e) => e.outcome === "held_for_owner" && (e.action === "ask_owner" || e.action === "refund"))
     .map((e) => `${e.action}|${e.booking}|${e.refs.paymentId ?? e.seq}`)).size;
   const owner = { asked, approved: 0, denied: 0 };
-  for (const e of month.filter((x) => x.action === "owner_decision" && x.outcome === "confirmed")) {
+  // E1: an answer to a price card is counted in the `discounts` block (given or refused), not here, so "asked" and "approved" stay about the same things
+  for (const e of month.filter((x) => x.action === "owner_decision" && x.outcome === "confirmed" && x.refs.kind !== "discount")) {
     if (e.refs.command === "approve") owner.approved++;
     else if (e.refs.command === "deny") owner.denied++;
   }
@@ -304,6 +312,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   const lastDay: LocalDate = { year: last.year, month: last.month, day: last.day };
   const nextMonth: LocalDate = firstDay.month === 12 ? { year: firstDay.year + 1, month: 1, day: 1 } : { year: firstDay.year, month: firstDay.month + 1, day: 1 };
   const wholeMonth = zonedToMs({ ...firstDay, day: 1 }, midnight, settings.timezone) === from && zonedToMs(nextMonth, midnight, settings.timezone) === to;
+  const discountCounts = discountsOfMonth(month); // E1: undefined (left out) unless the month has a discount line
   return {
     format: "geometer-orders-report/1",
     pathway: PATHWAY,
@@ -326,6 +335,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     notTested: notTestedForReport(goLive, settings),
     goLive,
     ...(accounting ? { accounting } : {}),
+    ...(discountCounts ? { discounts: discountCounts } : {}),
     ...(settings.plans ? { plans: plansReportOf(all, month) } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };

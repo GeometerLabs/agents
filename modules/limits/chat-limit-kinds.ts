@@ -70,6 +70,27 @@ export const LIMIT_WORDS = {
     },
     words: ["monthly budget", "month budget", "budget for the month", "stock budget", "महीने का बजट", "मासिक बजट", "മാസ ബജറ്റ്", "ತಿಂಗಳ ಬಜೆಟ್"],
   },
+  // E1, the discount authority (24 Nov 2026; modules/limits/discounts.ts): the cap the agent may take off a price alone, as a percentage and in rupees (the lower wins)
+  discountPercent: {
+    name: { en: "discount cap (percent)", hi: "छूट की सीमा (प्रतिशत)", ml: "ഇളവ് പരിധി (ശതമാനം)", kn: "ರಿಯಾಯಿತಿ ಮಿತಿ (ಶೇಕಡಾ)" },
+    rule: {
+      en: "The agent may take at most {v}% off a price without asking you",
+      hi: "एजेंट आपसे पूछे बिना किसी कीमत में से ज़्यादा से ज़्यादा {v}% कम कर सकता है",
+      ml: "നിങ്ങളോട് ചോദിക്കാതെ ഏജന്റിന് ഒരു വിലയിൽ നിന്ന് പരമാവധി {v}% കുറയ്ക്കാം",
+      kn: "ನಿಮ್ಮನ್ನು ಕೇಳದೆ ಏಜೆಂಟ್ ಒಂದು ಬೆಲೆಯಿಂದ ಗರಿಷ್ಠ {v}% ಕಡಿಮೆ ಮಾಡಬಹುದು",
+    },
+    words: ["discount percent", "discount cap percent", "cap percent", "discount %", "छूट प्रतिशत", "ഇളവ് ശതമാനം", "ರಿಯಾಯಿತಿ ಶೇಕಡಾ"],
+  },
+  discountInr: {
+    name: { en: "discount cap (rupees)", hi: "छूट की सीमा (रुपये)", ml: "ഇളവ് പരിധി (രൂപ)", kn: "ರಿಯಾಯಿತಿ ಮಿತಿ (ರೂಪಾಯಿ)" },
+    rule: {
+      en: "The agent may take at most {v} off a price without asking you",
+      hi: "एजेंट आपसे पूछे बिना किसी कीमत में से ज़्यादा से ज़्यादा {v} कम कर सकता है",
+      ml: "നിങ്ങളോട് ചോദിക്കാതെ ഏജന്റിന് ഒരു വിലയിൽ നിന്ന് പരമാവധി {v} കുറയ്ക്കാം",
+      kn: "ನಿಮ್ಮನ್ನು ಕೇಳದೆ ಏಜೆಂಟ್ ಒಂದು ಬೆಲೆಯಿಂದ ಗರಿಷ್ಠ {v} ಕಡಿಮೆ ಮಾಡಬಹುದು",
+    },
+    words: ["discount cap", "discount limit", "discount rupees", "छूट की सीमा", "ഇളവ് പരിധി", "ರಿಯಾಯಿತಿ ಮಿತಿ"],
+  },
 } as const;
 
 /** A limit made from one kind's words, a settings path and its bounds. */
@@ -91,3 +112,8 @@ export const ordersPerDayLimit = (path: string, bounds: Bounds): ChatLimit => ma
 export const orderCapLimit = (path: string, bounds: Bounds): ChatLimit => make("orderCap", { id: "order_cap", path, unit: "inr", tighter: "lower", bounds });
 /** Stock orders: the month's approved orders may add up to at most this many rupees (lower is tighter). */
 export const monthlyBudgetLimit = (path: string, bounds: Bounds): ChatLimit => make("monthlyBudget", { id: "monthly_budget", path, unit: "inr", tighter: "lower", bounds });
+
+/** E1: the most percent the agent may take off a price alone (lower is tighter; a count, said with a % sign by its words). */
+export const discountPercentLimit = (path: string, bounds: Bounds): ChatLimit => make("discountPercent", { id: "discount_cap_percent", path, unit: "count", tighter: "lower", bounds });
+/** E1: the most rupees the agent may take off one ask alone (lower is tighter). */
+export const discountInrLimit = (path: string, bounds: Bounds): ChatLimit => make("discountInr", { id: "discount_cap_inr", path, unit: "inr", tighter: "lower", bounds });

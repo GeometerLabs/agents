@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/orders/words"
 	"github.com/GeometerLabs/agents/go/internal/payments"
@@ -124,6 +125,9 @@ type Settings struct {
 	Approvers map[string]any
 	Assistant map[string]any
 	Plans     *PlansSettings // nil: no plans
+	// Discounts is E1's discount authority (internal/discounts, the shared package): nil when the file has no "discounts" block, and then every price below the menu is
+	// refused exactly as before.
+	Discounts *discounts.Settings
 }
 
 // ---- the readers' small parts -------------------------------------------------------------------------------------------------------------------------------------------------
@@ -393,7 +397,7 @@ func keyOrder(raw []byte) map[string][]string {
 
 // ---- validateSettings -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-var topKeys = []string{"name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "reminder", "cancellation", "refund", "payment", "owner", "approvers", "assistant", "plans"}
+var topKeys = []string{"name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "reminder", "cancellation", "refund", "payment", "owner", "approvers", "assistant", "plans", "discounts"}
 
 // ReadSettings is validateSettings over settings.json as decoded; raw is the file's bytes (for the keys' order), nil when not known. The settings, or every problem.
 func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
@@ -462,6 +466,12 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 	}
 	r.assistant(in["assistant"], has(in, "assistant"), s)
 	s.Plans = r.plans(in, s, cutoff, cutoffOK)
+	// E1 (settings.ts readDiscounts, last)
+	priced := make([]discounts.Priced, len(s.Menu))
+	for i, it := range s.Menu {
+		priced[i] = discounts.Priced{ID: it.ID, PriceInr: it.PriceInr}
+	}
+	s.Discounts = discounts.Read(in["discounts"], has(in, "discounts"), func(path string) []string { return r.order[path] }, priced, "item", nil, func(p string) { r.errs = append(r.errs, p) })
 	if len(r.errs) > 0 {
 		return nil, r.errs
 	}

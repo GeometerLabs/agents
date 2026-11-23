@@ -298,5 +298,14 @@ func (s *Settings) FactsFor(o *Order, lang string, x FactsExtra) *words.MessageF
 		f.UpiCode = words.S(x.UpiCode)
 	}
 	f.MarkedInr, f.LeftInr = x.MarkedInr, x.LeftInr
+	// E1: the price the customer asked and the owner's card's code, from the order's deal (only a shop with a "discounts" block has one), with its item when no other is named
+	if o != nil {
+		if d := o.deal(); d != nil && d.Code != "" {
+			f.OfferedInr, f.DiscountCode = words.N(d.OfferedInr), words.S(d.Code)
+			if it := s.ItemOf(d.Item); it != nil && f.ItemName == nil {
+				f.ItemName, f.PriceInr = words.S(ItemName(it, lang)), words.N(it.PriceInr)
+			}
+		}
+	}
 	return f
 }

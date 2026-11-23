@@ -134,3 +134,26 @@ test("the payment module (B33, B71): a UPI shop names its own UPI ID and payee, 
   assert.match(errorsFor((s) => { s.payment = { module: "upi" }; }).join("\n"), /needs its UPI ID and the payee name/);
   assert.match(errorsFor((s) => { s.payment = { module: "cash" }; }).join("\n"), /not one I know/);
 });
+
+// E1, the discount authority (24 Nov 2026, modules/limits/discounts.ts): off by default; a floor per service and a cap; a floor is never below the deposit
+test("discounts: left out, the settings carry no block (every discount refused, as before); a good block reads back after payment", () => {
+  assert.equal(parseSettings(example).discounts, undefined);
+  const s = copy();
+  s.discounts = { capPercent: 10, capInr: 100, floors: { haircut: 350 } };
+  const r = parseSettings(s);
+  assert.deepEqual(r.discounts, { capPercent: 10, capInr: 100, floors: { haircut: 350 } });
+  assert.deepEqual(Object.keys(r).slice(-2), ["payment", "discounts"]);
+});
+
+test("discounts: a floor above the list price, below the deposit, or for a service the shop does not have is refused in plain words", () => {
+  assert.deepEqual(errorsFor((s) => { s.discounts = { capPercent: 10, capInr: 100, floors: { haircut: 451, "beard-trim": 199, tractor: 5 } }; }), [
+    'The lowest price for "haircut" (₹451) is above its list price (₹450). It must be at or below the list price.',
+    'The lowest price for "beard-trim" (₹199) is below the deposit (₹200). Raise it to at least the deposit.',
+    '"discounts.floors" names "tractor", which is not one of the services.',
+  ]);
+  assert.deepEqual(errorsFor((s) => { s.discounts = { capPercent: 91, capInr: -1, floors: { haircut: 400 } }; }), [
+    'The most the agent may take off alone, as a percentage ("discounts.capPercent"), must be a whole number from 0 to 90.',
+    'The most the agent may take off alone, in rupees ("discounts.capInr"), must be a whole number from 0 to 100000.',
+  ]);
+  assert.match(errorsFor((s) => { s.discounts = "on"; })[0], /^"discounts" must be an object/u);
+});

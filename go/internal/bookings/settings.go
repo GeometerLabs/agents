@@ -18,6 +18,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 )
@@ -78,6 +79,9 @@ type Settings struct {
 	// readAssistantSettings: defaults filled, unknown keys refused), as JSON values; nil when left out. Tree writes them into the validated tree as they are.
 	Approvers map[string]any
 	Assistant map[string]any
+	// Discounts is E1's discount authority (internal/discounts, the shared package): nil when the file has no "discounts" block, and then every price below the list is
+	// refused exactly as before.
+	Discounts *discounts.Settings
 	// calendarGiven: the file had a "calendar" block (a validated tree has one only then); refundLimitOK: the cancellation block was read (approvers' two-above check needs it).
 	calendarGiven, refundLimitOK bool
 	// HoursJSON is `openingHours` as the page shows it (shopInfo `hours`): every weekday key, null for a closed day, in WEEKDAY_KEYS order.
@@ -278,7 +282,7 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 	}
 	keys := func(path string) []string { return order[path] }
 	s := &Settings{}
-	r.unknownKeys(in, keys(""), []string{"name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "resources", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar", "assistant"}, "the settings")
+	r.unknownKeys(in, keys(""), []string{"name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "resources", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar", "assistant", "discounts"}, "the settings")
 	name, ok := in["name"].(string)
 	if !ok || language.TrimJS(name) == "" {
 		r.add(`Add the business's name ("name").`)
@@ -327,6 +331,16 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 		}
 	}
 	r.assistant(in["assistant"], hasKey(in, "assistant"), keys, s)
+	// E1 (settings.ts readDiscounts, last): a floor is never below the deposit, since Guard holds the deposit link to exactly the deposit
+	priced := make([]discounts.Priced, len(s.Services))
+	for i, sv := range s.Services {
+		priced[i] = discounts.Priced{ID: sv.ID, PriceInr: sv.PriceInr}
+	}
+	var least *discounts.Least
+	if s.Deposit.AmountInr > 0 {
+		least = &discounts.Least{Inr: s.Deposit.AmountInr, Name: "the deposit"}
+	}
+	s.Discounts = discounts.Read(in["discounts"], hasKey(in, "discounts"), keys, priced, "service", least, func(p string) { r.errs = append(r.errs, p) })
 	return s, r.errs
 }
 

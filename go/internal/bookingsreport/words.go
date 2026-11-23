@@ -31,7 +31,9 @@ type Strings struct {
 	MonthlyCert       string            `json:"monthlyCertificate"`
 	FullReport        string            `json:"fullReport"`
 	LanguageName      map[string]string `json:"languageName"`
-	Label             struct {
+	// Discounts are E1's labels (modules/limits/discounts.ts DISCOUNT_REPORT_WORDS, carried in strings.ts)
+	Discounts struct{ Given, Asked, Refused string } `json:"discounts"`
+	Label     struct {
 		BookingsMade, Cancelled, Moved, DepositsCollected, GivenBack, WasAsked, Approved, SaidNo, NotConfirmed, StoppedByLimits, NotChecked string
 	} `json:"label"`
 	Stop       map[string]string                    `json:"stop"`

@@ -47,23 +47,24 @@ function probe(language: Language): MessageFacts {
     link: "https://qzlink.example/pay", pageLink: "https://qzpage.example/b/qz", holdMinutes: 8801, windowHours: 8802, bookingRef: "qzref",
     customerPhone: "+919000000001", approvalCode: "QZCODE", approvalHours: 8803, approvalsLeft: 8804, upiId: "qzupi@bank", payee: "qzpayee",
     upiCode: "QZUPICODE", markedInr: 7770004, leftInr: 7770005, partner: "qzpartner", upcomingCount: 8805,
+    offeredInr: 7770006, discountCode: "QZDISCODE",
   };
 }
 
 /** Every fact `need()` can ask for. */
-const NEEDED: Fact[] = ["serviceName", "priceInr", "depositInr", "refundInr", "slotMs", "link", "pageLink", "holdMinutes", "windowHours", "bookingRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiId", "payee", "upiCode", "markedInr", "leftInr", "partner", "upcomingCount"];
+const NEEDED: Fact[] = ["serviceName", "priceInr", "depositInr", "refundInr", "slotMs", "link", "pageLink", "holdMinutes", "windowHours", "bookingRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiId", "payee", "upiCode", "markedInr", "leftInr", "partner", "upcomingCount", "offeredInr", "discountCode"];
 
 /** The slots, in the order they are looked for: [the probe's text, the slot's name]. The fact a slot reads (and so what a refusal names) is in `FACT`. */
 function slotTable(f: MessageFacts): [string, string][] {
-  const rupees = (k: "priceInr" | "depositInr" | "refundInr" | "markedInr" | "leftInr"): [string, string] => [formatInr(f[k] as number), k];
+  const rupees = (k: "priceInr" | "depositInr" | "refundInr" | "markedInr" | "leftInr" | "offeredInr"): [string, string] => [formatInr(f[k] as number), k];
   const t: [string, string][] = [
     [`${f.services[0].name} ${formatInr(f.services[0].priceInr)}, ${f.services[1].name} ${formatInr(f.services[1].priceInr)}`, "menuList"],
     [formatSlot(SLOT_MS, TZ, f.language), "slot"],
     [f.link!, "link"], [f.pageLink!, "pageLink"],
-    rupees("priceInr"), rupees("depositInr"), rupees("refundInr"), rupees("markedInr"), rupees("leftInr"),
+    rupees("priceInr"), rupees("depositInr"), rupees("refundInr"), rupees("markedInr"), rupees("leftInr"), rupees("offeredInr"),
     [String(f.holdMinutes), "holdMinutes"], [String(f.windowHours), "windowHours"], [String(f.approvalHours), "approvalHours"], [String(f.approvalsLeft), "approvalsLeft"], [String(f.upcomingCount), "upcomingCount"],
     [groupPhone(f.customerPhone!), "customerPhone"], [f.customerPhone!, "customerPhoneRaw"],
-    [f.upiCode!, "upiCode"], [f.approvalCode!, "approvalCode"], [f.upiId!, "upiId"], [f.payee!, "payee"], [f.partner!, "partner"], [f.bookingRef!, "bookingRef"], [f.businessName, "businessName"],
+    [f.upiCode!, "upiCode"], [f.approvalCode!, "approvalCode"], [f.discountCode!, "discountCode"], [f.upiId!, "upiId"], [f.payee!, "payee"], [f.partner!, "partner"], [f.bookingRef!, "bookingRef"], [f.businessName, "businessName"],
     ["Qzservice", "Service"], [f.serviceName!, "serviceName"],
   ];
   return t.sort((a, b) => b[0].length - a[0].length);
@@ -73,7 +74,7 @@ function slotTable(f: MessageFacts): [string, string][] {
 const FACT: Record<string, Fact | null> = {
   menuList: null, slot: "slotMs", link: "link", pageLink: "pageLink", priceInr: "priceInr", depositInr: "depositInr", refundInr: "refundInr", markedInr: "markedInr", leftInr: "leftInr",
   holdMinutes: "holdMinutes", windowHours: "windowHours", approvalHours: "approvalHours", approvalsLeft: "approvalsLeft", upcomingCount: "upcomingCount", customerPhone: "customerPhone",
-  customerPhoneRaw: "customerPhone", upiCode: "upiCode", approvalCode: "approvalCode", upiId: "upiId", payee: "payee", partner: "partner", bookingRef: "bookingRef", businessName: null,
+  customerPhoneRaw: "customerPhone", upiCode: "upiCode", offeredInr: "offeredInr", discountCode: "discountCode", approvalCode: "approvalCode", upiId: "upiId", payee: "payee", partner: "partner", bookingRef: "bookingRef", businessName: null,
   Service: "serviceName", serviceName: "serviceName", dayList: null,
 };
 

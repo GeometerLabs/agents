@@ -87,7 +87,12 @@ func OwnerText(r *Report, lang string) string {
 		dot = "।"
 	}
 	notChecked := pair(s.Label.NotChecked, NotCheckedList(r, lang)) + dot + " " + s.HandRun
-	return strings.Join([]string{title, moneyLine, doneLine, stoppedLine, notChecked}, "\n")
+	// E1, the discount authority: one line, only when the month has a discount
+	lines := []string{title, moneyLine, doneLine, stoppedLine}
+	if d := r.Discounts; d != nil {
+		lines = append(lines, strings.Join([]string{pair(s.Discounts.Given, fmt.Sprintf("%s (%d)", report.Rupees(d.Given.Paise), d.Given.Count)), pair(s.Discounts.Asked, int(d.Asked)), pair(s.Discounts.Refused, int(d.Refused))}, " · "))
+	}
+	return strings.Join(append(lines, notChecked), "\n")
 }
 
 // OwnerTexts is ownerTexts: the owner's messages for a language choice: one, or two for "both".

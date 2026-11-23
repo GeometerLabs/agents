@@ -117,7 +117,7 @@ func (a *Agent) sendMarkedRequest(b *Booking, prefix []string, shown []Decision)
 	}
 	page := a.pageLinkFor(b)
 	quote := "upi_quote_and_link"
-	if contains(prefix, "price_floor") {
+	if priceSaid(prefix) {
 		quote = "upi_slot_and_link"
 	}
 	templates := append(append([]string{}, prefix...), quote)

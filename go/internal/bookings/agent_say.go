@@ -199,6 +199,10 @@ func (a *Agent) factsFor(sa *messaging.SayArgs, lang string) *MessageFacts {
 		f.UpiCode = S(x.upiCode)
 	}
 	f.MarkedInr, f.LeftInr = x.markedInr, x.leftInr
+	// E1: the price the customer asked and the owner's card's code, from the booking's deal (only a shop with a "discounts" block has one)
+	if d := b.deal(); d != nil {
+		f.OfferedInr, f.DiscountCode = N(d.OfferedInr), S(d.Code)
+	}
 	return f
 }
 

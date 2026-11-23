@@ -10,6 +10,7 @@
 import type { ChatLimit } from "../../modules/limits/chat-limits.ts";
 import { CHAT_LIMITS as bookingsChatLimits } from "../../templates/commerce/bookings/src/chat-limits.ts";
 import { CHAT_LIMITS as ordersChatLimits } from "../../templates/commerce/orders/src/chat-limits.ts";
+import { DISCOUNT_CHAT_LIMITS } from "../../modules/limits/discounts.ts"; // E1: the discount caps, a limit only of a shop with a "discounts" block
 import { CHAT_LIMITS as feesChatLimits } from "../../templates/education/fees/src/chat-limits.ts";
 import { CHAT_LIMITS as stockChatLimits } from "../../templates/commerce/stock-orders/src/chat-limits.ts";
 import { runOn as stockRunOn } from "../../templates/commerce/stock-orders/crash-test/situations.ts";
@@ -143,7 +144,7 @@ export const KINDS: Record<string, Kind> = {
     casesFile: "bookings.json", casesName: "bookings",
     guards: ["razorpay", "whatsapp", "calendar"],
     validateSettings: bookingsSettings,
-    chatLimits: bookingsChatLimits,
+    chatLimits: [...bookingsChatLimits, ...DISCOUNT_CHAT_LIMITS],
     storeWith: carry(bookingsStore, bookingsSerialize),
     validateRuntimeConfig: bookingsRuntime,
     gatewaySpec: bookingsSpec,
@@ -165,7 +166,7 @@ export const KINDS: Record<string, Kind> = {
     casesFile: "orders.json", casesName: "orders",
     guards: ["razorpay", "whatsapp"],
     validateSettings: ordersSettings,
-    chatLimits: ordersChatLimits,
+    chatLimits: [...ordersChatLimits, ...DISCOUNT_CHAT_LIMITS],
     storeWith: carry(ordersStore, ordersSerialize),
     validateRuntimeConfig: ordersRuntime,
     gatewaySpec: ordersSpec,

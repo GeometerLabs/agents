@@ -54,6 +54,8 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
     [esc(s.label.approved), fig(r.owner.approved), ""],
     [esc(s.label.saidNo), fig(r.owner.denied), ""],
     [esc(p.stoppedCustomers), fig(r.customers.stopped), ""],
+    // E1, the discount authority: three rows, only when the month has a discount
+    ...(r.discounts ? [[esc(s.discounts.given), ...amount(r.discounts.given)], [esc(s.discounts.asked), fig(r.discounts.asked), ""], [esc(s.discounts.refused), fig(r.discounts.refused), ""]] : []),
   ]);
   const sold = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
     [esc(p.soldOrders), fig(r.sold.orders), ""],

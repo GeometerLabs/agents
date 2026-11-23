@@ -73,6 +73,16 @@ const MUTATIONS: Mut[] = [
   ["the assistant: a character that is not an object", (s) => { s.assistant = { character: "clay" }; }],
   ["the assistant: null character", (s) => { s.assistant = { character: null }; }],
   ["the assistant: a talk that is not an object", (s) => { s.assistant = { talk: false }; }],
+  // E1, the discount authority (24 Nov 2026): the block is read last and only a shop that has it reads back any different
+  ["discounts: a floor and a cap", (s) => { s.discounts = { capPercent: 10, capInr: 100, floors: { haircut: 350, facial: 700 } }; }],
+  ["discounts: a cap of nothing (every discount asks the owner)", (s) => { s.discounts = { capPercent: 0, capInr: 0, floors: { haircut: 450 } }; }],
+  ["discounts: a floor exactly the deposit", (s) => { s.discounts = { capPercent: 90, capInr: 100000, floors: { "beard-trim": s.deposit.amountInr } }; }],
+  ["discounts: every mistake", (s) => { s.discounts = { capPercent: 91, capInr: 10.5, floors: { haircut: 500, tractor: 10, facial: 0, "beard-trim": s.deposit.amountInr - 1 }, extra: 1 }; }],
+  ["discounts: no floors", (s) => { s.discounts = { capPercent: 10, capInr: 100, floors: {} }; }],
+  ["discounts: floors not an object, caps left out", (s) => { s.discounts = { floors: [1] }; }],
+  ["discounts: not an object", (s) => { s.discounts = true; }],
+  ["discounts: null", (s) => { s.discounts = null; }],
+  ["discounts: with a bad deposit, the floor is not checked against it", (s) => { s.deposit = { amountInr: 0 }; s.discounts = { capPercent: 10, capInr: 100, floors: { haircut: 1 } }; }],
   ["problems in several places come in the TypeScript's order", (s) => { s.slotMinutes = 0; s.approvers = { people: [] }; s.payment = { module: "bitcoin" }; s.assistant = { morning: true }; s.calendar = 5; }],
 ];
 

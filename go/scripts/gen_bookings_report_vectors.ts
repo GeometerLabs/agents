@@ -287,7 +287,22 @@ const fyendEntries = fyendWorld();
 const windDownEntries = windDownWorld();
 const quietEntries = quietWorld();
 /** The shop records the vectors share, written once (a case or a ledger set names one). */
-const RECORDS: Record<string, readonly RecordEntry[]> = { busy: busyEntries, rules: rules.entries, upi: upiEntries, fyend: fyendEntries, winddown: windDownEntries, quiet: quietEntries, empty: [] };
+/** E1, the discount authority (24 Nov 2026): a month with every kind of discount line (given by the agent, asked of the owner and approved, refused by the rule and by the owner). */
+function discountWorld(): RecordEntry[] {
+  const w = world(gateway);
+  const refs = (offered: number, discount: number, code: string, by?: string) => ({ refs: { rule: "discount-authority", item: "haircut", qty: "1", listInr: "450", offeredInr: String(offered), discountInr: String(discount), totalInr: String(offered), code, ...(by ? { by } : {}) } });
+  w.add("2026-11-03T05:00:00Z", "discount", "confirmed", "b-1", refs(440, 10, "ABCDEF", "agent"));
+  w.add("2026-11-04T05:00:00Z", "discount", "held_for_owner", "b-2", refs(420, 30, "GHJKMN"));
+  w.add("2026-11-04T06:00:00Z", "owner_decision", "confirmed", null, { refs: { command: "approve", kind: "discount" } }); // counted in the discounts block, not the owner's
+  w.add("2026-11-04T06:00:00Z", "discount", "confirmed", "b-2", refs(420, 30, "GHJKMN", "owner"));
+  w.add("2026-11-05T05:00:00Z", "discount", "blocked", "b-3", refs(1, 449, "PQRSTU", "rule"));
+  w.add("2026-11-06T05:00:00Z", "discount", "held_for_owner", "b-4", refs(410, 40, "VWXYZ2"));
+  w.add("2026-11-06T06:00:00Z", "discount", "blocked", "b-4", refs(410, 40, "VWXYZ2", "owner"));
+  w.add("2026-10-30T05:00:00Z", "discount", "confirmed", "b-9", refs(445, 5, "ABCDE2", "agent")); // October: not this month's
+  return w.entries();
+}
+const discountEntries = discountWorld();
+const RECORDS: Record<string, readonly RecordEntry[]> = { busy: busyEntries, rules: rules.entries, upi: upiEntries, fyend: fyendEntries, winddown: windDownEntries, quiet: quietEntries, discounts: discountEntries, empty: [] };
 const recordRef = (entries: readonly RecordEntry[]): string | RecordEntry[] => Object.entries(RECORDS).find(([, v]) => v === entries)?.[0] ?? asJson(entries);
 
 // ---- the cases ----
@@ -320,6 +335,7 @@ const CASES: Case[] = [
   { ...base, name: "fyend-march", settings: gateway, entries: fyendEntries, bookings: [], month: "2027-03", preparedBy: "Meena", tenant: "fy-end", pages: ["en", "hi"], madeAt: at(4, 1, 9, 30, 2027), certAt: at(4, 1, 9, 31, 2027) },
   { ...base, name: "fyend-april", settings: gateway, entries: fyendEntries, bookings: [], month: "2027-04", preparedBy: "Meena", tenant: "fy-end", pages: ["en"], madeAt: at(5, 1, 9, 30, 2027), certAt: at(5, 1, 9, 31, 2027) },
   { ...base, name: "wind-down", settings: gateway, entries: windDownEntries, bookings: [], month: "2026-11", preparedBy: "Divya", pages: ["en", "kn"] },
+  { ...base, name: "discounts", settings: gateway, entries: discountEntries, bookings: [], month: "2026-11", preparedBy: "Divya", tenant: "discounts", pages: ["en", "hi", "ml", "kn"] },
   { ...base, name: "quiet", settings: gateway, entries: quietEntries, bookings: [], month: "2026-11", preparedBy: "Divya", tenant: "quiet", pages: ["en"] },
   { ...base, name: "empty-record", settings: gateway, entries: RECORDS.empty, bookings: [], month: "2026-11", preparedBy: "Divya", tenant: "empty", pages: ["en", "hi"], innovator: true },
   { ...base, name: "no-prepared-by", settings: gateway, entries: quietEntries, bookings: [], month: "2026-11", preparedBy: null, pages: ["en"] },

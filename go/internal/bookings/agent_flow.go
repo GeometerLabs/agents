@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
@@ -323,6 +324,19 @@ func (a *Agent) toEnquiry(b *Booking) {
 // proceedToHold is agent.ts proceedToHold: hold the slot, create the deposit link, and send the quote.
 func (a *Agent) proceedToHold(b *Booking, prefix []string, shown []Decision) error {
 	phone := b.Customer
+	if a.settings.Discounts != nil && a.dealStands(b) {
+		// E1: the owner's card for this booking's price is out; nothing is held until they answer (a "yes" to the details does not go round the card)
+		a.tellCustomer(b, phone, []string{"discount_asked"}, sayOpts{})
+		return nil
+	}
+	if d := b.deal(); d.Live() && !priceSaid(prefix) {
+		// E1: a price agreed in an earlier message is said again before the quote, which then does not state the list price
+		word := "discount_agreed"
+		if d.State == discounts.Approved {
+			word = "discount_approved"
+		}
+		prefix = append(append([]string{}, prefix...), word)
+	}
 	if !a.takesNewWork() {
 		a.toEnquiry(b) // nothing held, nothing kept for later
 		a.pausedReply(phone, "hold", nil)
@@ -395,7 +409,7 @@ func (a *Agent) proceedToHold(b *Booking, prefix []string, shown []Decision) err
 		return nil
 	}
 	quote := "quote_and_link"
-	if contains(prefix, "price_floor") {
+	if priceSaid(prefix) {
 		quote = "slot_and_link"
 	}
 	a.tellCustomer(b, phone, append(append([]string{}, prefix...), quote), sayOpts{shown: append(append([]Decision{}, shown...), held.decisions...), offer: cancelOrOwner})
@@ -442,17 +456,42 @@ func (a *Agent) onBook(phone string, in *Intent) error {
 		return nil
 	}
 	a.settle(b)
-	// the customer's price is only ever compared with the list; the quote is always the list price
+	// the customer's price is only ever compared with the list; the quote is always the list price. E1: with a "discounts" block, a price below the list goes to the
+	// discount authority instead (agent_discounts.go); without one, this is exactly as before.
 	sv := a.settings.ServiceByID(b.ServiceID)
 	var shown []Decision
 	var prefix []string
+	disc := a.settings.Discounts != nil
+	if disc && a.dealStands(b) && (in.OfferInr == nil || (sv != nil && *in.OfferInr < sv.PriceInr && b.deal().OfferedInr == *in.OfferInr)) {
+		// the owner's card for this very ask is out: the customer hears that again, and no second card goes
+		a.tellCustomer(b, phone, []string{"discount_asked"}, sayOpts{})
+		return nil
+	}
 	if sv != nil && in.OfferInr != nil {
-		d := CheckPriceAtOrAboveList(ServiceName(sv, "en"), sv.PriceInr, *in.OfferInr)
-		shown = append(shown, d)
-		if d.Blocked() {
-			prefix = append(prefix, "price_floor")
+		if disc && *in.OfferInr < sv.PriceInr {
+			p, sh, stop := a.decideOffer(b, sv, *in.OfferInr)
+			if stop {
+				return nil
+			}
+			prefix, shown = p, sh
+		} else {
+			d := CheckPriceAtOrAboveList(ServiceName(sv, "en"), sv.PriceInr, *in.OfferInr)
+			shown = append(shown, d)
+			if d.Blocked() {
+				prefix = append(prefix, "price_floor")
+			}
+			if disc && !d.Blocked() {
+				b.setDeal(nil) // the customer takes the list price: whatever was asked before is void
+			}
 		}
 	}
+	return a.afterPrice(b, sv, prefix, shown)
+}
+
+// afterPrice is the rest of onBook once the price is settled: the menu when no service is known, then the time, then the details to confirm, then the hold. The owner's answer
+// to a price card (agent_discounts.go) goes on from here too, with its words first.
+func (a *Agent) afterPrice(b *Booking, sv *Service, prefix []string, shown []Decision) error {
+	phone := b.Customer
 	with := func(ids ...string) []string { return append(append([]string{}, prefix...), ids...) }
 	if sv == nil {
 		a.tellCustomer(b, phone, []string{"menu"}, sayOpts{shown: shown, offer: servicesOffer("pick_service")})
@@ -835,6 +874,12 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 		return nil
 	}
 	// item 11e: the shop's assistant reads what no fixed phrase is (this command is one); a shop without an "assistant" block: exactly as before
+	// E1: the owner's answer to a price card names the booking and the card's code (agent_discounts.go); a shop with no "discounts" block reads it as before
+	if a.settings.Discounts != nil {
+		if m := discountCommand.FindStringSubmatch(msg.Text); m != nil {
+			return a.onDiscountAnswer(strings.ToLower(m[1]), m[2], strings.ToUpper(m[3]))
+		}
+	}
 	if a.settings.Assistant != nil && !ownerCommand.MatchString(msg.Text) {
 		if as := a.assistantOf(); as != nil {
 			taken, err := as.OnOwnerMessage(msg)
@@ -863,6 +908,14 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 	var commandIn, refIn any
 	if command != "" {
 		commandIn, refIn = command, ref
+	}
+	if b != nil && command != "" && command != "retry" && a.settings.Discounts != nil && len(b.Pending) == 0 {
+		if d := askedDeal(b); d != nil {
+			// E1: a price card waits on this booking and its answer needs the card's code: the owner is told the exact words, and nothing is done
+			a.log(b, a.owner(), "owner_decision", "blocked", map[string]any{"command": commandIn}, logMore{refs: said, notes: "a price card waits on this booking: its answer names the card's code"})
+			a.tellOwner(b, b.Customer, "owner_discount_use_code", sayOpts{})
+			return nil
+		}
 	}
 	a.log(b, a.owner(), "owner_decision", "attempted", map[string]any{"command": commandIn, "ref": refIn}, logMore{refs: said})
 	if b == nil || command == "" || len(b.Pending) == 0 {

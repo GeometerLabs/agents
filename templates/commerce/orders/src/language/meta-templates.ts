@@ -22,7 +22,7 @@ import { cutAt, day, how, inr, need, render, when } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "link";
+export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "link" | "item" | "price" | "offered" | "dcode";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   items: (f) => need(f, "itemsText"),
@@ -46,11 +46,16 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   partner: (f) => need(f, "partner"),
   upcoming: (f) => String(need(f, "upcomingCount")),
   link: (f) => need(f, "link"),
+  // E1, the discount authority: the item, its menu price, the price asked and the owner's card's code
+  item: (f) => need(f, "itemName"),
+  price: (f) => inr(f, "priceInr"),
+  offered: (f) => inr(f, "offeredInr"),
+  dcode: (f) => need(f, "discountCode"),
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
-const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", items: "§items§", address: "§address§", ref: "§ref§", phone: "§phone§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", link: "§link§" };
-const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { total: 7_000_001, advance: 7_000_002, balance: 7_000_003, refund: 7_000_004, marked: 7_000_005, left: 7_000_006 };
+const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", items: "§items§", address: "§address§", ref: "§ref§", phone: "§phone§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", link: "§link§", item: "§item§", dcode: "§dcode§" };
+const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { total: 7_000_001, advance: 7_000_002, balance: 7_000_003, refund: 7_000_004, marked: 7_000_005, left: 7_000_006, price: 7_000_007, offered: 7_000_008 };
 const STAND_IN_DAY_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of ours would state (Fri 14 Jun 2030)
 const STAND_IN_FROM_MS = Date.UTC(2030, 5, 14, 10, 17);
 const STAND_IN_TO_MS = Date.UTC(2030, 5, 14, 11, 43);
@@ -65,6 +70,7 @@ function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageF
     dateMs: STAND_IN_DAY_MS, slotFromMs: STAND_IN_FROM_MS, slotToMs: STAND_IN_TO_MS, cutoffMs: STAND_IN_CUTOFF_MS,
     mode, area: "§area§",
     approvalHours: STAND_IN_COUNT.hours, windowHours: STAND_IN_COUNT.window, upcomingCount: STAND_IN_COUNT.upcoming,
+    itemName: STAND_IN_TEXT.item, priceInr: STAND_IN_AMOUNT.price, offeredInr: STAND_IN_AMOUNT.offered, discountCode: STAND_IN_TEXT.dcode,
   };
 }
 
@@ -98,6 +104,7 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_new_order", "owner_order_confirmed", "owner"),
   template("owner_new_delivery_order", "owner_delivery_confirmed", "owner", "delivery"),
   template("owner_big_order_asks", "owner_big_order", "owner"),
+  template("owner_discount_ask", "owner_discount_ask", "owner"), // E1 (24 Nov 2026): the price card, answered with the order AND the card's code
   template("owner_order_cancelled", "owner_order_cancelled", "owner"),
   template("owner_late_cancel_asks", "owner_late_cancellation", "owner"),
   template("owner_order_duplicate_paid", "owner_duplicate_payment", "owner"),
@@ -153,7 +160,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     dateMs: at("00:00"), slotFromMs: at(slot.from), slotToMs: at(slot.to), cutoffMs: at(settings.cutoff.time, { year: 2026, month: 11, day: 11 }),
     mode: "pickup", area: settings.delivery?.area[0] ?? "Kakkanad", address: "Flat 4, Lake View Apartments, Kakkanad",
     link: "https://rzp.io/i/example", orderRef: "o-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name, windowHours: settings.cancellation.windowHours,
-    partner: "Divya, Sri Sai Digital", upcomingCount: 4,
+    partner: "Divya, Sri Sai Digital", upcomingCount: 4, itemName: itemName(item, language), priceInr: item.priceInr, offeredInr: item.priceInr - 20, discountCode: "Q7RM2X",
     plan: { meals: 22, fromMs: at("00:00"), toMs: at("00:00", { year: 2026, month: 12, day: 11 }) },
   };
 }

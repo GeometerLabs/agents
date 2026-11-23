@@ -21,6 +21,7 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/report"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
@@ -125,8 +126,10 @@ type Report struct {
 	GoLive      report.GoLiveFinding
 	Accounting  *accounting.ReportAccountingData
 	// Plans is nil for a shop without plans (the block is then left out of the tree and the page).
-	Plans  *PlansReport
-	Anchor *bookingsreport.LedgerHead
+	Plans *PlansReport
+	// Discounts is E1's block (internal/discounts Count): nil, and left out of the tree and the page, when the month has no discount line.
+	Discounts *discounts.Counts
+	Anchor    *bookingsreport.LedgerHead
 }
 
 // UPI says whether the money is the owner's marks (paidBy).
@@ -307,7 +310,8 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	}
 	r.Owner.Asked = len(asked)
 	for _, e := range month {
-		if e.Action == "owner_decision" && e.Outcome == "confirmed" {
+		// E1: an answer to a price card is counted in the `discounts` block (given or refused), not here
+		if e.Action == "owner_decision" && e.Outcome == "confirmed" && e.Refs["kind"] != "discount" {
 			switch e.Refs["command"] {
 			case "approve":
 				r.Owner.Approved++
@@ -414,6 +418,7 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	}
 	r.NotTested = NotTestedForReport(goLive, shop)
 	r.GoLive = goLive
+	r.Discounts = discounts.Count(month)
 	if hasPlans(in.Settings) {
 		p := plansReportOf(all, month)
 		r.Plans = &p

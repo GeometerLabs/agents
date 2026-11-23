@@ -2,6 +2,8 @@
 // Validation is written by hand and says what is wrong in plain words, so a builder can fix it without a manual.
 import { readAssistantSettings } from "../../../../modules/assistant/settings.ts";
 import type { AssistantSettings } from "../../../../modules/assistant/settings.ts";
+import { readDiscounts } from "../../../../modules/limits/discounts.ts";
+import type { DiscountSettings } from "../../../../modules/limits/discounts.ts";
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { readApprovers } from "../../../../modules/approvals/people.ts";
@@ -98,6 +100,11 @@ export interface Settings {
    * the agent is exactly as it was.
    */
   plans?: PlansSettings;
+  /**
+   * E1, the discount authority (24 Nov 2026, modules/limits/discounts.ts): a floor per item and the cap the agent may take off alone (a percentage and rupees, the lower
+   * wins, on the whole line); above the cap the owner approves the exact total. Left out: every price below the menu is refused, as before.
+   */
+  discounts?: DiscountSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -112,7 +119,7 @@ const PHONE = /^\+\d{10,15}$/;
 export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the shop's name, menu, slots and so on."] };
-  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "reminder", "cancellation", "refund", "payment", "owner", "approvers", "assistant", "plans"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "reminder", "cancellation", "refund", "payment", "owner", "approvers", "assistant", "plans", "discounts"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the shop's name (\"name\").");
@@ -140,6 +147,7 @@ export function validateSettings(input: unknown): SettingsResult {
   }
   const assistant = readAssistantSettings(input.assistant, errors);
   const plans = readPlans(input.plans, { languages, slots: new Map([...pickup.map((s) => [s.id, "pickup"] as const), ...(delivery?.slots ?? []).map((s) => [s.id, "delivery"] as const)]), readCutoff, shopCutoff: cutoff as Cutoff, dailyRefundInr: DEFAULT_CAPS.refundPaisePerDay / 100 }, errors);
+  const discounts = readDiscounts(input.discounts, menu, "item", errors);
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, menu, orders: orders as Settings["orders"], cutoff: cutoff as Cutoff, pickup: { slots: pickup },
@@ -150,6 +158,7 @@ export function validateSettings(input: unknown): SettingsResult {
   if (assistant) settings.assistant = assistant;
   if (plans) settings.plans = plans;
   if (typeof address === "string") settings.address = address;
+  if (discounts) settings.discounts = discounts; // last: only a shop that has the block reads back any different
   return { ok: true, settings };
 }
 

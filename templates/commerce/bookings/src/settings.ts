@@ -9,6 +9,8 @@ import { readPaymentSettings } from "../../../../modules/payments/providers/inde
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 import { readAssistantSettings } from "../../../../modules/assistant/settings.ts";
 import type { AssistantSettings } from "../../../../modules/assistant/settings.ts";
+import { readDiscounts } from "../../../../modules/limits/discounts.ts";
+import type { DiscountSettings } from "../../../../modules/limits/discounts.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -71,6 +73,12 @@ export interface Settings {
   calendar?: { module: "own" | "google" };
   /** Item 11e: the shop's assistant (the owner's conversation, the morning line, the character; modules/assistant/settings.ts). Left out: no assistant, as before. */
   assistant?: AssistantSettings;
+  /**
+   * E1, the discount authority (24 Nov 2026, modules/limits/discounts.ts): a floor per service and the cap the agent may take off alone (a percentage and rupees, the lower
+   * wins); above the cap the owner approves the exact price. Left out: every price below the list is refused, as before. A floor is never below the deposit (Guard holds
+   * the deposit link to exactly the deposit). Written after `payment`, so a file without it reads back as before.
+   */
+  discounts?: DiscountSettings;
 }
 
 /** Which calendar this shop uses. A file with no "calendar" key is a Google Calendar shop, as it always was; only an explicit "own" drops the calendar. */
@@ -89,7 +97,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "resources", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar", "assistant"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "resources", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar", "assistant", "discounts"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the business's name (\"name\").");
@@ -121,6 +129,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   }
 
   const assistant = readAssistantSettings(input.assistant, errors);
+  const discounts = readDiscounts(input.discounts, services, "service", errors, deposit ? { inr: deposit.amountInr, name: "the deposit" } : undefined);
 
   if (errors.length > 0) return { ok: false, errors };
   const settings = {
@@ -142,6 +151,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   if (calendar) settings.calendar = calendar;
   if (assistant) settings.assistant = assistant;
   settings.payment = payment as PaymentSettings; // last, as before: the order of keys is what an older settings file read back has
+  if (discounts) settings.discounts = discounts; // after it: only a shop that has the block reads back any different
   return { ok: true, settings };
 }
 

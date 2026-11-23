@@ -24,7 +24,7 @@ import { formatInr } from "../../../../../modules/language/format.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "service" | "Service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left" | "partner" | "upcoming";
+export type Slot = "business" | "service" | "Service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left" | "partner" | "upcoming" | "offered" | "price" | "dcode";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   service: (f) => need(f, "serviceName"),
@@ -43,6 +43,10 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   left: (f) => formatInr(need(f, "leftInr")),
   partner: (f) => need(f, "partner"),
   upcoming: (f) => String(need(f, "upcomingCount")),
+  // E1, the discount authority: the price asked, the list price and the owner's card's code
+  offered: (f) => inr(f, "offeredInr"),
+  price: (f) => inr(f, "priceInr"),
+  dcode: (f) => need(f, "discountCode"),
 };
 
 
@@ -124,6 +128,16 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   // The other owner notices. The owner usually has not written to the number today, so each notice the agent sends on its own has a template here
   // (only the reply to the owner's own message does not). Two situations share one where a single sentence is true of both: owner_not_booked and
   // owner_payment_unused. Why not one generic owner template: Explanation.md, "Joining it up", 6.
+  // E1 (24 Nov 2026): the price card, answered with the booking AND the card's code; it goes on its own, usually outside the owner's window
+  {
+    name: "owner_discount_ask", usedFor: "owner_discount_ask", audience: "owner",
+    bodies: {
+      en: "A price needs your OK: {phone} asks {offered} for {service} (your price is {price}). Reply \"approve {ref} {dcode}\" to agree to exactly {offered}, or \"deny {ref} {dcode}\".",
+      hi: "कीमत पर आपकी मंज़ूरी चाहिए: {phone} {service} के लिए {offered} माँग रहे हैं (आपकी कीमत {price} है)। ठीक {offered} मानने के लिए \"approve {ref} {dcode}\" या मना करने के लिए \"deny {ref} {dcode}\" लिखें।",
+      ml: "ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: {phone} {service}-ന് {offered} ചോദിക്കുന്നു (നിങ്ങളുടെ വില {price}). കൃത്യം {offered} സമ്മതിക്കാൻ \"approve {ref} {dcode}\", അല്ലെങ്കിൽ \"deny {ref} {dcode}\" എന്ന് മറുപടി അയയ്ക്കുക.",
+      kn: 'ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: {phone} ಅವರು {service} ಗೆ {offered} ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ {price}). ಸರಿಯಾಗಿ {offered} ಗೆ ಒಪ್ಪಲು "approve {ref} {dcode}", ಇಲ್ಲವಾದರೆ "deny {ref} {dcode}" ಎಂದು ಉತ್ತರಿಸಿ.',
+    },
+  },
   {
     name: "owner_late_cancellation", usedFor: "owner_late_cancellation", audience: "owner",
     bodies: {
@@ -393,7 +407,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     link: "https://rzp.io/i/example", holdMinutes: settings.deposit.holdMinutes, windowHours: settings.cancellation.windowHours,
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
     upiId: "glowsalon@okicici", payee: settings.name, upiCode: "P4XR9T", markedInr: settings.deposit.amountInr, leftInr: settings.deposit.amountInr,
-    partner: "Divya, Sri Sai Digital", upcomingCount: 3,
+    partner: "Divya, Sri Sai Digital", upcomingCount: 3, offeredInr: settings.services[0].priceInr - 50, discountCode: "Q7RM2X",
   };
 }
 

@@ -8,6 +8,7 @@
 // Claim rules, kept in code: a document counts and states facts; it never grades. BANNED lists, per language, the words
 // no document may contain (safe, guaranteed, certified, earnings and their translations). A test runs every document in
 // every language through it. The confirm verbs the packs already use (पक्का, ഉറപ്പിക്കാൻ, ಖಚಿತಪಡಿಸಲು) are not on it.
+import { DISCOUNT_REPORT_WORDS } from "../../../../modules/limits/discounts.ts";
 import { MONEY_BLOCK_WORDS } from "../../../../modules/accounting/report-block.ts";
 import type { MoneyBlockWords } from "../../../../modules/accounting/report-block.ts";
 import { INNOVATOR, CHECK_GENUINE, SCAN_SUMMARY, SETTLED_BY_SOMEONE, SETTLED_BY_WORD } from "../../../../modules/report/text.ts";
@@ -31,6 +32,8 @@ export interface Strings {
   settledByWord: (who: string) => string;
   settledBySomeone: string;
   languageName: Record<Language, string>;
+  /** E1, the discount authority (modules/limits/discounts.ts DISCOUNT_REPORT_WORDS): the labels of the month's discounts, shown only when the month has any. */
+  discounts: { given: string; asked: string; refused: string };
   /** The owner's lines: "label: number". */
   label: {
     bookingsMade: string; cancelled: string; moved: string; depositsCollected: string; givenBack: string;
@@ -88,6 +91,7 @@ const en: Strings = {
   innovator: INNOVATOR.en,
   fullReport: "Full report", checkGenuine: CHECK_GENUINE.en, settledByWord: SETTLED_BY_WORD.en, settledBySomeone: SETTLED_BY_SOMEONE.en,
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
+  discounts: DISCOUNT_REPORT_WORDS.en,
   label: {
     bookingsMade: "Bookings made", cancelled: "Cancelled", moved: "Moved to a new time", depositsCollected: "Deposits collected", givenBack: "Given back",
     wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", notConfirmed: "Could not confirm", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked",
@@ -177,6 +181,7 @@ const hi: Strings = {
   innovator: INNOVATOR.hi,
   fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi, settledByWord: SETTLED_BY_WORD.hi, settledBySomeone: SETTLED_BY_SOMEONE.hi,
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
+  discounts: DISCOUNT_REPORT_WORDS.hi,
   label: {
     bookingsMade: "हुई बुकिंग", cancelled: "रद्द हुईं", moved: "समय बदला", depositsCollected: "जमा राशि मिली", givenBack: "वापस किया",
     wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", notConfirmed: "पक्का नहीं हो पाया", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया",
@@ -266,6 +271,7 @@ const ml: Strings = {
   innovator: INNOVATOR.ml,
   fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml, settledByWord: SETTLED_BY_WORD.ml, settledBySomeone: SETTLED_BY_SOMEONE.ml,
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
+  discounts: DISCOUNT_REPORT_WORDS.ml,
   label: {
     bookingsMade: "ബുക്ക് ആയവ", cancelled: "റദ്ദാക്കിയവ", moved: "സമയം മാറ്റിയവ", depositsCollected: "ലഭിച്ച അഡ്വാൻസ്", givenBack: "തിരികെ നൽകിയത്",
     wasAsked: "നിങ്ങളോട് ചോദിച്ചത്", approved: "നിങ്ങൾ അംഗീകരിച്ചത്", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്", notConfirmed: "ഉറപ്പിക്കാൻ കഴിയാത്തത്", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്",
@@ -355,6 +361,7 @@ const kn: Strings = {
   innovator: INNOVATOR.kn,
   fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn, settledByWord: SETTLED_BY_WORD.kn, settledBySomeone: SETTLED_BY_SOMEONE.kn,
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
+  discounts: DISCOUNT_REPORT_WORDS.kn,
   label: {
     bookingsMade: "ಆದ ಬುಕಿಂಗ್", cancelled: "ರದ್ದಾದವು", moved: "ಸಮಯ ಬದಲಾದವು", depositsCollected: "ಬಂದ ಮುಂಗಡ ಹಣ", givenBack: "ಹಿಂತಿರುಗಿಸಿದ್ದು",
     wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", notConfirmed: "ಖಚಿತಪಡಿಸಲು ಆಗದ್ದು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು",

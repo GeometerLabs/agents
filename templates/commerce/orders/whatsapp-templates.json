@@ -568,6 +568,122 @@
     ]
   },
   {
+    "name": "owner_discount_ask",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "कीमत पर आपकी मंज़ूरी चाहिए: {{1}} {{2}} के लिए एक का {{3}} माँग रहे हैं (आपकी कीमत {{4}} है), ऑर्डर {{5}}, कुल {{6}}। ठीक {{7}} मानने के लिए \"approve {{8}} {{9}}\" या मना करने के लिए \"deny {{10}} {{11}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "वेज थाली",
+              "₹100",
+              "₹120",
+              "2 × वेज थाली",
+              "₹240",
+              "₹240",
+              "o-3",
+              "Q7RM2X",
+              "o-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_ask",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "A price needs your OK: {{1}} asks {{2}} each for {{3}} (your price is {{4}}) in an order of {{5}}, {{6}} in all. Reply \"approve {{7}} {{8}}\" to agree to exactly {{9}}, or \"deny {{10}} {{11}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹100",
+              "veg thali",
+              "₹120",
+              "2 × veg thali",
+              "₹240",
+              "o-3",
+              "Q7RM2X",
+              "₹240",
+              "o-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_ask",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: {{1}} {{2}} ഒന്നിന് {{3}} ചോദിക്കുന്നു (നിങ്ങളുടെ വില {{4}}), ഓർഡർ {{5}}, ആകെ {{6}}. കൃത്യം {{7}} സമ്മതിക്കാൻ \"approve {{8}} {{9}}\", അല്ലെങ്കിൽ \"deny {{10}} {{11}}\" എന്ന് മറുപടി അയയ്ക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "veg thali",
+              "₹100",
+              "₹120",
+              "2 × veg thali",
+              "₹240",
+              "₹240",
+              "o-3",
+              "Q7RM2X",
+              "o-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_ask",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: {{1}} ಅವರು {{2}} ಒಂದಕ್ಕೆ {{3}} ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ {{4}}), ಆರ್ಡರ್ {{5}}, ಒಟ್ಟು {{6}}. ಸರಿಯಾಗಿ {{7}} ಗೆ ಒಪ್ಪಲು \"approve {{8}} {{9}}\", ಇಲ್ಲವಾದರೆ \"deny {{10}} {{11}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "veg thali",
+              "₹100",
+              "₹120",
+              "2 × veg thali",
+              "₹240",
+              "₹240",
+              "o-3",
+              "Q7RM2X",
+              "o-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_order_cancelled",
     "language": "hi",
     "category": "UTILITY",

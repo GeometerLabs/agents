@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/report"
 )
 
@@ -170,7 +171,9 @@ type MonthlyReport struct {
 	// PaidBy is "owner-marked" for a UPI shop (B33) and "" otherwise (left out of the tree).
 	PaidBy     string
 	Accounting *accounting.ReportAccountingData
-	Anchor     *LedgerHead
+	// Discounts is E1's block (internal/discounts Count): nil, and left out of the tree and the page, when the month has no discount line.
+	Discounts *discounts.Counts
+	Anchor    *LedgerHead
 }
 
 // UPI says whether the money is the owner's marks (paidBy).
@@ -323,7 +326,8 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 	}
 	r.Owner.Asked = len(asked)
 	for _, e := range month {
-		if e.Action == "owner_decision" && e.Outcome == "confirmed" {
+		// E1: an answer to a price card is counted in the `discounts` block (given or refused), not here
+		if e.Action == "owner_decision" && e.Outcome == "confirmed" && e.Refs["kind"] != "discount" {
 			switch e.Refs["command"] {
 			case "approve":
 				r.Owner.Approved++
@@ -477,6 +481,7 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 		r.PaidBy = "owner-marked"
 	}
 	r.Accounting = acct
+	r.Discounts = discounts.Count(month)
 	if in.LedgerTenant != nil {
 		if r.Anchor, err = HeadOf(in.Entries, *in.LedgerTenant); err != nil {
 			return nil, err

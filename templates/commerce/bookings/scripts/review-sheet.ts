@@ -42,6 +42,8 @@ export function sampleFacts(language: Language, id: TemplateId, dayList: DayList
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
     // a UPI shop's (B33) values: its UPI ID and name, the owner's code, and what the owner marked
     upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 150, leftInr: 50,
+    // E1: the price the customer asked and the owner's card's code
+    offeredInr: 400, discountCode: "Q7RM2X",
     // item 11h: a sample of a WhatsApp booking's own page link (a real one is 24 random bytes, made for one message)
     pageLink: "https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s",
     // the licence's notices (B13): who set the shop up, and the bookings still to come at the final stop
@@ -77,6 +79,14 @@ const WHEN: Record<TemplateId, string> = {
   ask_when: "Service known, day or time missing",
   ask_new_time: "Customer said no to the time read back",
   price_floor: "Customer asked for less than the list price (the price is stated here, once)",
+  // E1, the discount authority (only a shop with a "discounts" block)
+  discount_agreed: "The customer asked for less, within what the agent may take off alone: the price agreed (the quote follows)",
+  discount_asked: "The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet",
+  discount_approved: "The owner said yes to the price card: the agreed price (the quote and link follow)",
+  discount_refused: "The owner said no to the price card: the lowest price, which is the list price (the quote follows)",
+  owner_discount_ask: "To the owner: the price card, with the exact price, answered with the reference and the card's code",
+  owner_discount_use_code: "To the owner: they wrote \"approve\" or \"deny\" with the reference alone while a price card waits: the exact words to send",
+  owner_discount_stale: "To the owner: an answer to a price card that changed or was already answered: nothing was done",
   confirm_details: "A weekday or a time without am/pm was used: the full date is read back, nothing is held yet",
   quote_and_link: "Normal quote: the free slot, the price, the deposit, then the payment link on a line of its own",
   slot_and_link: "Straight after price_floor: the same, without the price again",

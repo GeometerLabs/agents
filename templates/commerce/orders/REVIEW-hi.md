@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (77)
+## 1. Messages to the customer (81)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -89,8 +89,12 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `plan_hold_expired` | The first payment of a plan did not come in time: the plan was not started | आपके 2 × वेज थाली प्लान की रोक खत्म हो गई क्योंकि भुगतान समय पर नहीं मिला। फिर शुरू करने के लिए "monthly plan" लिखें। | The hold on your 2 × veg thali plan has ended because the payment was not received in time. Write "monthly plan" to start again. |  |
 | `plan_credit_refund` | Days of a plan not taken (or unused when it ended) are refunded | आपके 2 × वेज थाली प्लान के अनुपयोगी ₹120 आपको वापस किए जा रहे हैं। | ₹120 of your 2 × veg thali plan that was not used is being refunded. |  |
 | `plan_credit_refund_pending` | The same refund is above the refund limit: waiting for the owner | आपके 2 × वेज थाली प्लान के ₹120 की वापसी की पुष्टि मालिक जल्द करेंगे। | The owner will confirm your ₹120 refund for your 2 × veg thali plan shortly. |  |
+| `discount_agreed` | The customer asked for less, within what the agent may take off alone: the price agreed (the quote follows) | ठीक है, वेज थाली एक का ₹100 में हो जाएगा। | Okay, I can do ₹100 each for the veg thali. |  |
+| `discount_asked` | The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet | हमारा वेज थाली ₹120 का है, इसलिए एक का ₹100 के लिए मैंने मालिक से पूछा है। जवाब आते ही यहीं बताऊँगा। | Our veg thali is ₹120, so I've asked the owner about ₹100 each. I'll message you here when they answer. |  |
+| `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | अच्छी खबर: मालिक ने वेज थाली के लिए एक का ₹100 मान लिया है। | Good news: the owner agreed to ₹100 each for the veg thali. |  |
+| `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | माफ़ कीजिए, मालिक ₹100 पर राज़ी नहीं हुए। वेज थाली की सबसे कम कीमत ₹120 है। | Sorry, the owner couldn't agree to ₹100. The lowest for the veg thali is ₹120. |  |
 
-## 2. Messages to the owner (41)
+## 2. Messages to the owner (44)
 
 Most owner messages are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -137,6 +141,9 @@ Most owner messages are also WhatsApp templates, because they are sent by the ag
 | `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, what is still open, and that hello@geometer.dev will connect the owner with another local partner | सूचना: Annapurna Tiffins के ऑनलाइन ऑर्डर बंद हो गए हैं, क्योंकि Divya, Sri Sai Digital की सेवा समाप्त हो गई है। आने वाले ऑर्डर: 4। इसे किसी दूसरे स्थानीय पार्टनर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा। | Notice: online ordering for Annapurna Tiffins has stopped, because the service from Divya, Sri Sai Digital has ended. Orders still to come: 4. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you. |  |
 | `owner_plan_started` | To the owner: a new monthly plan is paid, with its meals, month and way (pickup or delivery) | नया मासिक प्लान o-3: +919811111111, 2 × वेज थाली, गुरुवार, 12 नवंबर से शुक्रवार, 11 दिसंबर तक 22 भोजन, पिकअप। | New monthly plan o-3: +919811111111, 2 × veg thali, 22 meals from Thu 12 Nov to Fri 11 Dec, pickup. |  |
 | `owner_plan_cancelled` | To the owner: a plan was cancelled, so no meals are to be made for the days after it | प्लान o-3 (2 × वेज थाली, +919811111111) रद्द हो गया है। रद्द करने के बाद के दिनों के लिए भोजन न बनाएं। | Plan o-3 (2 × veg thali, +919811111111) is cancelled. Do not make meals for the days after the cancellation. |  |
+| `owner_discount_ask` | To the owner: the price card, with the exact price, answered with the reference and the card's code | कीमत पर आपकी मंज़ूरी चाहिए: +919811111111 वेज थाली के लिए एक का ₹100 माँग रहे हैं (आपकी कीमत ₹120 है), ऑर्डर 2 × वेज थाली, कुल ₹240। ठीक ₹240 मानने के लिए "approve o-3 Q7RM2X" या मना करने के लिए "deny o-3 Q7RM2X" लिखें। | A price needs your OK: +919811111111 asks ₹100 each for veg thali (your price is ₹120) in an order of 2 × veg thali, ₹240 in all. Reply "approve o-3 Q7RM2X" to agree to exactly ₹240, or "deny o-3 Q7RM2X". |  |
+| `owner_discount_use_code` | To the owner: they wrote "approve" or "deny" with the reference alone while a price card waits: the exact words to send | कीमत वाली माँग o-3 का जवाब देने के लिए "approve o-3 Q7RM2X" या "deny o-3 Q7RM2X" लिखें। | To answer the price ask on o-3, reply "approve o-3 Q7RM2X" or "deny o-3 Q7RM2X". |  |
+| `owner_discount_stale` | To the owner: an answer to a price card that changed or was already answered: nothing was done | यह जवाब ऐसी कीमत वाली माँग का है जो बदल गई है या जिसका जवाब पहले ही दिया जा चुका है, इसलिए कुछ नहीं किया गया। | That answer is for a price ask that has changed or was already answered, so nothing was done. |  |
 
 ### The words on the buttons and the lists
 
@@ -323,6 +330,9 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `languageName.en` | अंग्रेज़ी | English |  |
 | `languageName.ml` | मलयालम | Malayalam |  |
 | `languageName.kn` | कन्नड़ | Kannada |  |
+| `discounts.given` | दी गई छूट | Discounts given |  |
+| `discounts.asked` | आपसे पूछी गई छूट | Discounts asked of you |  |
+| `discounts.refused` | मना की गई छूट | Discounts refused |  |
 | `moneyBlock.heading` | इस महीने के पैसे | Money this month |  |
 | `moneyBlock.owedBack` | महीने के अंत में ग्राहकों को लौटाना बाकी | Still owed back at the end of the month |  |
 | `moneyBlock.toCome` | महीने के अंत में अभी आना बाकी | Still to come at the end of the month |  |
