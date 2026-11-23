@@ -1586,9 +1586,11 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
 - **Not done** (bundle/panel/Deferred.md): a polled job (not needed at these times); `update`'s "before" check of a Go version runs on the current programs; the contract
   harnesses still write their own shop folders; a "broken setting" test for each template (there is one for Fees: a fee above the day's refund cap; situations follow the
   settings by design, so a valid setting fails only where the program is wrong, as the Razorpay finding shows).
-- **Run of record** (24 Nov, on the branch from dd8a3f88): `go build/vet/test ./...` ok (40 packages); contracts Bookings 178/178, Orders 136/136, Fees 107 pass + 4 skipped
-  (the guards-mode visitor steps before 06:00 in India, as before), Stock orders 74/74, listings 210/210 after regenerating the Orders reading vectors (the new situations'
-  phrases; words-fresh 25/25); every generator's `--check` (41) fresh after that; template units Bookings 831 pass / 7 skipped, Orders 209 / 5 skipped / 1 todo, Fees 236 /
-  5 skipped / 1 todo (+ the two fixes after it), Stock orders 124/124; bundle 721 pass / 2 fail fixed after (update's programs, the Fees update test), 9 skipped (REAL_CADDY),
-  1 todo; panel 273/273. Hand checks on Go: Bookings Glow Salon 40/40 (UPI 9/9, with discounts 43/43), Orders Annapurna 17/17, Razorpay 17/18, Sweet Crumbs 15/16, plans
-  22/22, the hold 4/4, with discounts 20/20, Fees Bright Tuition 24/25 (1 not run), credit book 4/4, UPI 7/7, Classes 30/30, Stock orders 17/17.
+- **Run of record** (24 Nov, on the branch from dd8a3f88; two passes, the second at the head for what changed after the first): `go build/vet/test ./...` ok (40
+  packages); contracts Bookings 178/178, Orders 136/136, Fees 107 + 4 skipped (the guards-mode visitor steps before 06:00 in India, as before), Stock orders 74/74, listings
+  210/210 (words-fresh included, after regenerating the Orders reading vectors with the new situations' phrases); every generator's `--check` (41) fresh; template units
+  Bookings 838/838, Orders 209 + 5 skipped + 1 todo, Fees 243 + 1 todo, Stock orders 124/124; bundle 723 + 9 skipped (REAL_CADDY) + 1 todo; panel 273/273. The panel's
+  child also ran from a stripped app (`hand-check-go.js`, the hold example, 4/4). Hand checks on Go: Bookings Glow Salon 40/40 (UPI 9/9, with discounts 43/43; with an
+  `assistant` block one fails, above), Orders Annapurna 17/17, Razorpay 17/18, Sweet Crumbs 15/16, plans 22/22, the hold 4/4 (three times), with discounts 20/20, Fees Bright
+  Tuition 24/25 (1 not run), credit book 4/4, UPI 7/7, Classes 30/30, Stock orders 17/17 (three times). Seen once and not diagnosed: under two test files at once, the Fees
+  trick situation failed in one run and held three times alone (a failure can only refuse a shop, never pass one).
