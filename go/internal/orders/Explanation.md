@@ -154,20 +154,20 @@ same paths as before (each branch is one `NoAdvance()` test).
 * **The agreed pickup time.** The hold lasts until the END of the pickup slot the customer chose on their day (`HoldExpiresAt = SlotEndMs`), not `advance.holdMinutes`. The
   words state that slot (`{when}`), so "held for you" and the moment the tick releases it are one fact. A slot already over is not offered and holds nothing, whatever the
   cut-off says (`probeOpen`, `availability`).
-* **The owner decides the item.** A photo (`photoStartsHold`, the one predicate a bundle routes on) or words the reader cannot place start an enquiry: pending `hold_pick`, the
+* **The owner decides the item.** A photo (`photoStartsHold`) or words the reader cannot place that carry a model number (`wordsStartHold`: a digit, not a chat guest; the two predicates a bundle routes on) start an enquiry: pending `hold_pick`, the
   owner's card `owner_hold_enquiry`, answered `pick o-3 <item as listed>` (id or any of its names, or the one item the rule reader finds) or `deny o-3`. The listed item's price
-  is the price. The pick is the shop's yes for that item; the customer hears `hold_offer` ("in stock at ₹...") and is asked when. A customer who names a listed item gets
+  is the price. The pick is the shop's yes for that item and that many, for one reservation (more, or a try after a refusal, asks the shop again); the customer hears `hold_offer` ("in stock at ₹...") and is asked when. A customer who names a listed item gets
   pending `hold_ask`, the card `owner_hold_ask`, `approve o-3` / `deny o-3`. The owner's page shows the same cards (`hold_ask`, ONE `hold_pick` card with a button per listed item,
   each bound to its own digest, and `hold`), and a press becomes the owner's own words, so there is one decider.
 * **At most one active hold of the last unit.** `availability` counts every other active hold of the item on ANY day (`HeldAnyDay`) against its stock, and the shared count less
   its unbooked holds (`CountedLeft`); the shop's yes runs the checks again in the step that reserves, so a yes to the second person finds the unit gone and they hear
   `hold_usually` ("we usually carry it"). A retry answers with the hold as it is (`tellAlreadyWaiting`): no second card, no new time.
 * **Collected, expired, cancelled.** `collected o-3` (or the page's button) moves the hold to confirmed then completed in one step, and `reconcileStock` books it off the shared
-  count once (`sale:<order>:<item>`); a hold that ran out may still be collected late, recorded against the original hold (`late`). The tick's `endHold` and the customer's
-  cancel (`letGoHold`) release it by the order's one state change, and tell the owner.
+  count once (`sale:<order>:<item>`); a hold that ran out may still be collected late, recorded against the original hold (`late`). The tick's `endHold` and every cancel (`dropHold`: the customer's, a changed request, the owner's through the
+  assistant) release it by the order's one state change, and tell the owner. A late collection is refused when another customer's hold has the unit now.
 * **The record and the report.** One `pickup_hold` line per step (`refs.step`: enquiry once per order, held, collected, expired, cancelled, declined); the owner's asks and
   answers are the usual `ask_owner` / `owner_decision` lines with `refs.kind = pickup_hold`. The monthly report's `holds` block (ordersreport `holdsOf`, report/data.ts
   `holdsOf`) counts enquiries, collected, expired and collections per ten enquiries (a half rounds up, in integers).
 * **The order page, the API and MCP** refuse an order on such a shop with the reason `whatsapp_only`: the hold runs on WhatsApp, and the public page for counted items is
   Listings. A chat guest on the shop's page goes through the same flow as WhatsApp.
-* **Proof.** `templates/commerce/orders/contract/hold.contract.test.ts`, 15 cases on the Go program.
+* **Proof.** `templates/commerce/orders/contract/hold.contract.test.ts` on the Go program; the page's cards in `modules/channels/test/look.test.ts`.

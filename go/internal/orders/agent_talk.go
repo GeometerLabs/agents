@@ -57,8 +57,13 @@ func (a *Agent) publicContext(phone string) []assistant.TalkSource {
 	if s.Advance.Mode == "full" {
 		advance = "The whole order is paid in advance."
 	}
-	out = append(out, assistant.TalkSource{ID: "s:advance", Kind: "setting", Text: advance + " The advance is refundable if the order is cancelled at least " + i64(s.Cancellation.WindowHours) +
-		" hours before its slot; later, the owner decides."})
+	if s.NoAdvance() {
+		// the pickup hold (agent_hold.go): nothing is paid ahead, so the talk never states an advance or a refund
+		out = append(out, assistant.TalkSource{ID: "s:advance", Kind: "setting", Text: "Nothing is paid ahead. Once the shop says yes, an item is kept for the customer until the end of the pickup time they chose, and they pay at the counter when they collect it."})
+	} else {
+		out = append(out, assistant.TalkSource{ID: "s:advance", Kind: "setting", Text: advance + " The advance is refundable if the order is cancelled at least " + i64(s.Cancellation.WindowHours) +
+			" hours before its slot; later, the owner decides."})
+	}
 	// this customer's own live order (the latest; a plan's period payment counts, as `[...store.orders.values()].reverse().find(...)` finds it)
 	var mine *Order
 	for i := len(a.store.Orders) - 1; i >= 0; i-- {

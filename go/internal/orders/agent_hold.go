@@ -33,6 +33,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/orders/reading"
 	"github.com/GeometerLabs/agents/go/internal/payments"
+	"github.com/GeometerLabs/agents/go/internal/runtime"
 )
 
 // holdAction is the record's action for a step of a pickup hold; holdKind its refs' kind (also on the owner's ask and answers, so the report can tell them apart).
@@ -54,6 +55,7 @@ type pickupHold struct {
 	From          string `json:"from"`
 	AskedAtMs     int64  `json:"askedAtMs"`
 	Picked        string `json:"picked,omitempty"`
+	PickedQty     int64  `json:"pickedQty,omitempty"` // how many the owner's pick was a yes for; more needs the shop's yes again
 	AcceptedAtMs  *int64 `json:"acceptedAtMs,omitempty"`
 	CollectedAtMs *int64 `json:"collectedAtMs,omitempty"`
 }
@@ -151,6 +153,13 @@ func (a *Agent) photoStartsHold(phone string) bool {
 	return a.settings.NoAdvance() && !a.store.Customer(phone).OptedOut
 }
 
+// wordsStartHold is THE predicate for words on this shop that the reader could not place: they start an item enquiry only when they look like a model number (a digit
+// in them: "6205 bearing", "philips 9w led"), so "thanks" or "what time do you close" do not ping the owner or count as an enquiry; and never from a chat guest, whose
+// words the owner cannot see in their own WhatsApp. A bundle that runs other parts on the same number routes unplaced words here only when this says yes.
+func (a *Agent) wordsStartHold(phone, text string) bool {
+	return a.settings.NoAdvance() && !a.store.Customer(phone).OptedOut && !runtime.IsChatConversation(phone) && strings.ContainsAny(text, "0123456789")
+}
+
 // noteEnquiry gives the order its hold member the first time and records the enquiry once (the report's denominator).
 func (a *Agent) noteEnquiry(o *Order, from string) *pickupHold {
 	if h := o.hold(); h != nil {
@@ -211,8 +220,8 @@ func (a *Agent) holdWord(t string) string {
 // askToHold is proceed's last step on a pickup-hold shop: the shop's yes first, unless the owner already gave it by picking this very item for a photo or a model number.
 func (a *Agent) askToHold(o *Order, ctx *flowCtx, total int64) error {
 	h := a.noteEnquiry(o, "order")
-	if h.AcceptedAtMs != nil && h.Picked != "" && onlyItem(o.Lines, h.Picked) {
-		return a.proceedToHold(o, ctx)
+	if h.AcceptedAtMs != nil && h.Picked != "" && onlyItem(o.Lines, h.Picked) && CountOf(o.Lines) <= h.PickedQty {
+		return a.proceedToHold(o, ctx) // the owner's pick was the yes for this item and this many (one reservation: a blocked try clears it, holdBlocked)
 	}
 	now := a.now()
 	if o.State == Enquiry {
@@ -346,12 +355,12 @@ func (a *Agent) onHoldPick(ref, name string) error {
 	now := a.now()
 	o.Pending = withoutHoldKinds(o.Pending)
 	h := a.noteEnquiry(o, "photo")
-	h.Picked, h.AcceptedAtMs = item.ID, &now
-	o.setHold(h)
 	var qty int64 = 1
 	if onlyItem(o.Lines, item.ID) {
 		qty = CountOf(o.Lines)
 	}
+	h.Picked, h.PickedQty, h.AcceptedAtMs = item.ID, qty, &now
+	o.setHold(h)
 	o.Lines = []OrderLine{{ItemID: item.ID, Qty: qty}}
 	said["item"] = item.ID
 	a.log(o, a.owner(), "owner_decision", "confirmed", map[string]any{"command": "pick", "item": item.ID}, logMore{refs: said,
@@ -413,6 +422,15 @@ func (a *Agent) onCollected(ref string) error {
 	}
 	late := o.State == Expired
 	if late {
+		// the unit was released at the end of the pickup time: if another customer's hold has it now, a late mark would promise one unit twice, so it is refused
+		for _, l := range o.Lines {
+			if it := a.settings.ItemOf(l.ItemID); it != nil && a.keepableNow(it, o) < l.Qty {
+				a.log(o, a.owner(), holdAction, "blocked", map[string]any{"ref": ref, "late": true}, logMore{refs: holdRefs("collected", "late", "true"),
+					notes: "the pickup time had ended and another customer's hold has this unit now: the late collection is not recorded"})
+				a.tellOwner(nil, a.owner(), "owner_hold_none", sayOpts{})
+				return nil
+			}
+		}
 		_ = o.MoveTo(AwaitingAdvance)
 	}
 	_ = o.MoveTo(Confirmed)
@@ -452,14 +470,32 @@ func (a *Agent) endHold(o *Order) error {
 	return nil
 }
 
-// letGoHold is onCancel on a held item of a pickup-hold shop: it is free for others at once, and the owner is told so it goes back on the shelf.
+// letGoHold is onCancel on a held item of a pickup-hold shop: it is free for others at once, the customer hears so, and the owner is told so it goes back on the shelf.
 func (a *Agent) letGoHold(o *Order) error {
+	a.dropHold(o, "the customer let go of the hold before collecting it")
+	a.tellCustomer(o, o.Customer, []string{"hold_cancelled"}, sayOpts{})
+	return nil
+}
+
+// dropHold is cancelWaiting on a pickup-hold shop (the customer's cancel, a changed request, the owner's cancel through the assistant): the order ends at once, and a hold that
+// held a unit records its release and tells the owner the item is free. There is no link to close and no payment to look for.
+func (a *Agent) dropHold(o *Order, why string) {
+	held := o.State == AwaitingAdvance
+	state := o.State
 	o.HoldExpiresAt = nil
 	_ = o.MoveTo(Cancelled)
 	o.Pending = []payments.Pending{}
-	a.log(o, o.Customer, "cancel_order", "confirmed", map[string]any{"state": "awaiting_advance"}, logMore{notes: "the customer let go of the hold before collecting it"})
-	a.log(o, o.Customer, holdAction, "confirmed", map[string]any{"by": "customer"}, logMore{refs: holdRefs("cancelled")})
-	a.tellCustomer(o, o.Customer, []string{"hold_cancelled"}, sayOpts{})
-	a.tellOwner(o, o.Customer, "owner_hold_cancelled", sayOpts{})
-	return nil
+	a.log(o, o.Customer, "cancel_order", "confirmed", map[string]any{"state": state}, logMore{notes: why})
+	if held {
+		a.log(o, o.Customer, holdAction, "confirmed", map[string]any{"why": why}, logMore{refs: holdRefs("cancelled")})
+		a.tellOwner(o, o.Customer, "owner_hold_cancelled", sayOpts{})
+	}
+}
+
+// holdBlocked is proceedToHold's refusal on a pickup-hold shop: the shop's yes (or the owner's pick) was for ONE reservation, so a later try asks the shop again.
+func (a *Agent) holdBlocked(o *Order) {
+	if h := o.hold(); h != nil && h.AcceptedAtMs != nil {
+		h.AcceptedAtMs, h.PickedQty = nil, 0
+		o.setHold(h)
+	}
 }

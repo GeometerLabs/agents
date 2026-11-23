@@ -195,10 +195,56 @@ describe("the pickup hold: collected, expired, cancelled", () => {
     await say(s, RAJESH, "1 MCB 16A today evening");
     await say(s, OWNER_NUMBER, "approve o-2");
     assert.equal(s.templatesTo(RAJESH).at(-1), "hold_held", "the released unit is held for the next person");
-    // staff record a late collection against the original hold
+    // a late collection of the first hold would promise the one unit twice: refused, and the owner is told nothing was marked
+    await say(s, OWNER_NUMBER, "collected o-1");
+    assert.equal(holdLines(s, "collected").length, 0);
+    assert.equal(s.templatesTo(OWNER_NUMBER, "owner").at(-1), "owner_hold_none");
+    assert.equal((await items(s, "hold")).length, 1, "the second customer's hold stands");
+  });
+
+  contract("a late collection, when nobody else holds the unit, is recorded against the original hold", async () => {
+    const s = await boot({ tickSeconds: 1 });
+    await say(s, CUSTOMER, "1 MCB 16A today morning");
+    await say(s, OWNER_NUMBER, "approve o-1");
+    s.advance(3 * 60 * MIN + MIN); await beat();
+    assert.equal(s.templatesTo(CUSTOMER).at(-1), "hold_ended");
     await say(s, OWNER_NUMBER, "collected o-1");
     assert.equal(holdLines(s, "collected").length, 1);
-    assert.equal(s.record().filter((r) => r.action === "pickup_hold" && r.refs.late === "true").length, 1);
+    assert.equal(s.record().filter((r) => r.action === "pickup_hold" && r.outcome === "confirmed" && r.refs.late === "true").length, 1);
+  });
+
+  contract("a changed request while held lets the old hold go (the owner is told) and asks the shop again; a cancel before the owner's pick drops the card", async () => {
+    const s = await boot();
+    await say(s, CUSTOMER, "1 MCB 16A today evening");
+    await say(s, OWNER_NUMBER, "approve o-1");
+    await say(s, CUSTOMER, "1 extension board today evening");
+    assert.ok(s.templatesTo(CUSTOMER, "owner").includes("owner_hold_cancelled"), "the owner hears the MCB is free again");
+    assert.equal(holdLines(s, "cancelled").length, 1);
+    assert.equal(s.templatesTo(CUSTOMER).at(-1), "hold_asked_shop");
+    assert.equal((await items(s, "hold_ask")).length, 1);
+    await say(s, SUNITA, "", { image: true });
+    await say(s, SUNITA, "cancel");
+    assert.equal(s.templatesTo(SUNITA).at(-1), "cancelled_draft");
+    assert.deepEqual(await items(s, "hold_pick"), [], "the photo's card is gone");
+  });
+});
+
+describe("the pickup hold: what is NOT an enquiry, and what the owner's pick covers", () => {
+  contract("'thanks' or a question with no model number does not ping the owner or count as an enquiry", async () => {
+    const s = await boot();
+    await say(s, CUSTOMER, "thanks");
+    await say(s, CUSTOMER, "what time do you close");
+    assert.deepEqual(s.templatesTo(CUSTOMER, "owner"), []);
+    assert.equal(holdLines(s, "enquiry").length, 0);
+  });
+
+  contract("the owner's pick is a yes for one of the item: asking for more goes back to the shop", async () => {
+    const s = await boot();
+    await say(s, CUSTOMER, "", { image: true });
+    await say(s, OWNER_NUMBER, "pick o-1 LED bulb 9W");
+    await say(s, CUSTOMER, "3 LED bulb 9W today evening");
+    assert.equal(s.templatesTo(CUSTOMER).at(-1), "hold_asked_shop", "three were never picked: the shop is asked");
+    assert.deepEqual(s.templatesTo(CUSTOMER, "owner"), ["owner_hold_enquiry", "owner_hold_ask"]);
   });
 
   contract("the customer lets go of the hold: released at once, the owner is told, nothing to pay", async () => {

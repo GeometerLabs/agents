@@ -301,7 +301,7 @@ func (a *Agent) onMessage(msg messaging.InboundMessage, audio *runtime.PageAudio
 		return a.stepErr
 	}
 	// the pickup hold: words the reader cannot place (a model number, an item not listed by that name) go to the owner, who picks the listed item (agent_hold.go)
-	if a.settings.NoAdvance() && msg.Reply == nil {
+	if msg.Reply == nil && a.wordsStartHold(phone, msg.Text) {
 		return a.startHoldEnquiry(phone, "words")
 	}
 	a.tellCustomer(nil, phone, []string{"didnt_understand"}, sayOpts{offer: itemsOffer("didnt_understand")})
@@ -803,6 +803,7 @@ func (a *Agent) proceedToHold(o *Order, ctx *flowCtx) error {
 			o.SlotID = ""
 		}
 		o.Pending = []payments.Pending{}
+		a.holdBlocked(o)
 		a.tellCustomer(o, phone, cat(ctx.prefix, a.holdWord(av.blocked)), merged(sayOpts{shown: catD(ctx.shown, av.decisions...)}, av.more))
 		return nil
 	}

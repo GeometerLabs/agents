@@ -78,6 +78,10 @@ func (a *Agent) closeLink(o *Order, why string) {
 
 // cancelWaiting is agent.ts cancelWaiting: give up an order that is waiting for its advance: its stock is free again at once (it is no longer held), and the link is closed.
 func (a *Agent) cancelWaiting(o *Order, why string) error {
+	if a.settings.NoAdvance() {
+		a.dropHold(o, why) // the pickup hold: no link, no payment (agent_hold.go)
+		return nil
+	}
 	o.HoldExpiresAt = nil
 	a.closeLink(o, why)
 	_ = o.MoveTo(Cancelled)
@@ -164,6 +168,12 @@ func jsFloor(f float64) int64 {
 // onCancel is agent.ts onCancel.
 func (a *Agent) onCancel(phone string) error {
 	o := a.cancellable(phone)
+	if o != nil && len(o.Lines) == 0 && holdPickOn(o) != nil {
+		// the pickup hold: a photo or model number the owner has not answered yet is dropped, with its card (agent_hold.go)
+		a.dropHold(o, "the customer cancelled before the owner said which item it is")
+		a.tellCustomer(o, phone, []string{"cancelled_draft"}, sayOpts{})
+		return nil
+	}
 	if o == nil || len(o.Lines) == 0 {
 		a.tellCustomer(o, phone, []string{"no_order_found"}, sayOpts{offer: itemsOffer("no_order_found")})
 		return nil

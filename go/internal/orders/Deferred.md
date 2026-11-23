@@ -77,3 +77,10 @@ same way.
 * **The demo engine's hand check** runs no situation on a hold shop (the TypeScript demo has no hold); the go-live certificate says every situation was not run, with why.
 * **E4, a credit limit per customer, is not built (not approved).** Where it would fit if approved: a hold shop has no money owed, so E4 belongs to the credit book.
 * **One customer, one live hold.** A second item while one is held or asked is answered with the first; several items at once are one order with several lines.
+* **The panel's go-live gate refuses a hold shop** (`bundle/panel/golive.ts` `unmet`: a hand check of 0 situations is "hand-check" unmet). The demo engine's situations cannot run
+  a hold, and changing what the gate accepts is the owner's call, not this stream's: either port the hold's situations to run against the Go program (as the contract does),
+  or let the gate accept the Go contract run for a hold shop. Until then a hold shop is set up in one sitting but not certified for go-live by the panel.
+* **An enquiry nobody answers never ends** (no timeout; the customer can cancel it). **The owner is not told** when their "approve" finds the unit gone (the customer is, with
+  "we usually carry it"; the record says why).
+* **Words that start an enquiry** need a digit (a model number: `wordsStartHold`); "do you have havells wire" with no number gets the usual "tell me what you would like".
+* **The panel's stock box** still says "the most you make in a day"; on a hold shop it is the units on the shelf that can be held at once, across days.
