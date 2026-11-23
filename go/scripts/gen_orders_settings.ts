@@ -191,10 +191,16 @@ const MUTATIONS: Mut[] = [
   ["discounts: every mistake", (s) => { s.discounts = { capPercent: -1, capInr: 100001, floors: { "veg-thali": 121, pizza: 10, curd: 0.5 }, also: true }; }],
   ["discounts: no floors", (s) => { s.discounts = { capPercent: 10, capInr: 100 }; }],
   ["discounts: not an object", (s) => { s.discounts = [1]; }],
+  // the pickup hold (advance "none", 24 Nov 2026): percent 0, the hold minutes kept but not used; no delivery and no plans with it
+  ["the pickup hold: no advance, no delivery", (s) => { s.advance = { mode: "none" }; delete s.delivery; }],
+  ["the pickup hold with a percent and hold minutes", (s) => { s.advance = { mode: "none", percent: 40, holdMinutes: 10 }; delete s.delivery; }],
+  ["the pickup hold with delivery", (s) => { s.advance = { mode: "none" }; }],
+  ["the pickup hold with plans and delivery", (s) => { s.advance = { mode: "none" }; s.plans = { types: [PLAN] }; }],
+  ["the pickup hold with a broken delivery block", (s) => { s.advance = { mode: "none" }; s.delivery = { slots: [] }; }],
   ["problems in several places come in the TypeScript's order", (s) => { s.orders.maxPerDay = 0; s.approvers = { people: [] }; s.payment = { module: "bitcoin" }; s.assistant = { morning: true }; s.plans = { types: [] }; s.menu[0].priceInr = 0; }],
 ];
 
-const PLAIN = ["discounts: a floor and a cap", "as it is", "a name with spaces round it", "no address", "the defaults left out", "the assistant on with its defaults", "a gateway shop", "plans: one plan", "a slot with a limit of its own", "a reminder two hours before"];
+const PLAIN = ["the pickup hold: no advance, no delivery", "discounts: a floor and a cap", "as it is", "a name with spaces round it", "no address", "the defaults left out", "the assistant on with its defaults", "a gateway shop", "plans: one plan", "a slot with a limit of its own", "a reminder two hours before"];
 
 /** What the helpers answer for one accepted shop. */
 function helpers(s: any): unknown {
@@ -212,7 +218,7 @@ function helpers(s: any): unknown {
 
 function settingsCases(): unknown[] {
   const out: unknown[] = [];
-  for (const file of ["annapurna-tiffins.example.json", "annapurna-tiffins-razorpay.example.json", "annapurna-tiffins-plans.example.json", "sweet-crumbs.example.json"]) {
+  for (const file of ["annapurna-tiffins.example.json", "annapurna-tiffins-razorpay.example.json", "annapurna-tiffins-plans.example.json", "sweet-crumbs.example.json", "ganesh-electricals-hold.example.json"]) {
     for (const [name, change] of MUTATIONS) {
       if (file !== "annapurna-tiffins.example.json" && !PLAIN.includes(name)) continue;
       const input = clone(example(file));
