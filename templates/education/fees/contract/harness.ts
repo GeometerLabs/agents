@@ -5,10 +5,9 @@
 // deployer's own), and the shared contract pieces of modules/test/contract (the process tracker, the test-clock file, the process starter, the HTTP caller, the fake model).
 //
 // It is the model of the Bookings contract's harness (templates/commerce/bookings/contract/harness.ts), cut to what a Fees centre has: no calendar, no booking, and a parent's
-// private link instead of a booking page. Which implementation runs is chosen by the environment:
-//   FEES_IMPL=ts   (default)  node templates/education/fees/server/main.ts --client <folder>
-//   FEES_IMPL=go              the built binary named by FEES_GO_BIN (default <repo>/go/bin/fees) with the same arguments
-// An unknown value stops the run. On `go` without the binary EVERY test is skipped with the reason below (`contract()` is the one wrapper, so no test is forgotten).
+// private link instead of a booking page. The centre runs on the Go program fees (go/cmd/fees), built to go/bin/fees or named by FEES_GO_BIN, as a separate process with
+// `--client <folder>`. The TypeScript runtime it was held to was deleted on 24 Nov 2026 (decision 61; go/TRIAL.md), so FEES_IMPL=ts is gone; FEES_IMPL may still say go.
+// Without the binary EVERY test is skipped with the reason below (`contract()` is the one wrapper, so no test is forgotten).
 //
 // Two kinds of centre:
 //   mode "fakes"   runtime.json "fakes": payments and WhatsApp are the runtime's own in-memory stand-ins, on the TEST clock (GEOMETER_TEST=1, GEOMETER_TEST_CLOCK_FILE; honoured
@@ -44,13 +43,13 @@ export type { Answer, FeesGuards };
 const here = dirname(fileURLToPath(import.meta.url));
 /** The repository root, found from this file's own address. */
 export const REPO = join(here, "..", "..", "..", "..");
-const KNOWN = ["ts", "go"] as const;
-export const IMPL = (process.env.FEES_IMPL ?? "ts") as (typeof KNOWN)[number];
-if (!KNOWN.includes(IMPL)) throw new Error(`FEES_IMPL is "${process.env.FEES_IMPL}": say ts or go.`);
+/** Which runtime the tests start: the Go program, the only one since 24 Nov 2026. */
+export const IMPL = "go" as const;
+if (process.env.FEES_IMPL !== undefined && process.env.FEES_IMPL !== "go") throw new Error(`FEES_IMPL is "${process.env.FEES_IMPL}": the TypeScript runtime was deleted on 24 Nov 2026, so only go is left.`);
 const GO_BIN = process.env.FEES_GO_BIN ?? join(REPO, "go", "bin", "fees");
 
 /** Why every test is skipped (undefined: they run). */
-export const SKIP: string | undefined = IMPL === "go" && !existsSync(GO_BIN) ? "no Go Fees runtime yet (wave 3)" : undefined;
+export const SKIP: string | undefined = !existsSync(GO_BIN) ? "the Go Fees program is not built (go build -o go/bin/ ./cmd/fees, or set FEES_GO_BIN)" : undefined;
 
 /** The ONE wrapper every contract test goes through: a test is skipped only when what it needs is not there, and says so. */
 export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, fn); };
@@ -126,7 +125,7 @@ export interface Centre {
   guards: FeesGuards | undefined;
   settings: Record<string, any>;
   call(path: string, o?: Omit<CallOptions, "token"> & { token?: string | null }): Promise<Answer>;
-  start(impl?: "ts" | "go"): Promise<void>;
+  start(impl?: "go"): Promise<void>;
   stop(): Promise<void>;
   settle(): Promise<any>;
   log(): string;
@@ -229,8 +228,8 @@ export async function makeCentre(o: CentreOptions = {}): Promise<Centre> {
   let running: RuntimeProcess | undefined;
   const printed = { text: "" };
   const url = `http://127.0.0.1:${port}`;
-  const command = (impl: "ts" | "go"): { cmd: string; args: string[] } =>
-    impl === "go" ? { cmd: GO_BIN, args: ["--client", client] } : { cmd: process.execPath, args: [join(REPO, "templates", "education", "fees", "server", "main.ts"), "--client", client] };
+  // the Go program only (the TypeScript runtime it once could start went on 24 Nov 2026); `impl` stays in the signature for the tests that name it
+  const command = (_impl: "go"): { cmd: string; args: string[] } => ({ cmd: GO_BIN, args: ["--client", client] });
   let ids = 0;
   const uid = (p: string): string => `${p}-${Date.now().toString(36)}-${++ids}`;
   const readDb = <T>(f: (db: DatabaseSync) => T): T => { const db = new DatabaseSync(join(dataDir, "agent.db"), { readOnly: true }); try { return f(db); } finally { db.close(); } };

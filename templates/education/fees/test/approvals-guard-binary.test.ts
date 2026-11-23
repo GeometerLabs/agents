@@ -3,7 +3,8 @@
 // owner's words, the owner's "approve <code>" reaches Guard as a signed notification, the agent sends the identical call again, and the refund is recorded once.
 //
 // It needs the built binary (monorepo target/debug/geo-guard, macOS). Without it every test here is skipped, and says so. Set GEO_GUARD_BIN to use another.
-// Nothing is written inside the monorepo: the binary is run on a temp folder.
+// Nothing is written inside the monorepo: the binary is run on a temp folder. The runtime here is the Fees agent driven in process (modules/test/agent-runtime.ts): the
+// TypeScript server runtime was deleted on 24 Nov 2026, and what this holds is Guard, the relay and the agent's identical call again.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -17,9 +18,9 @@ import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts"
 import { createRazorpayPayments } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { systemClock } from "../../../../modules/core/clock.ts";
-import { createGuardClient, createRuntimeClient } from "../../../../modules/approvals/clients.ts";
+import { createGuardClient } from "../../../../modules/approvals/clients.ts";
+import type { RefundContext } from "../../../../modules/approvals/clients.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
-import { startServer } from "../../../../modules/runtime/http.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -27,7 +28,48 @@ import { HARNESS_GUARD, ROHAN_PARENT, brightTuition } from "../src/harness.ts";
 import { highestPaise, gatewayLimitsSpec, refundThresholdPaise } from "../src/guard-limits.ts";
 import { createRelay } from "../approvals/relay.ts";
 import { startStandins } from "../standins/server.ts";
-import { createKit } from "./runtime-kit.ts";
+import { createAgent } from "../src/agent.ts";
+import { createRuleParser } from "../src/adapters/rule-parser.ts";
+import { createStore, monthLabel } from "../src/due.ts";
+import type { Store } from "../src/due.ts";
+import { batchName } from "../src/settings.ts";
+import type { Settings } from "../src/settings.ts";
+import { createRecord } from "../../../../modules/record/record.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
+import type { Payments } from "../../../../modules/payments/payments.ts";
+import { agentRuntime, countRefunds, inProcessRuntimeClient } from "../../../../modules/test/agent-runtime.ts";
+
+/** What the Fees runtime's /internal/refund-context answered for a held refund (the Go runtime's answer is held by contract/razorpay.contract.test.ts): the fee behind it. */
+function feesRefundContext(settings: Settings, store: Store, receipt: string): RefundContext | null {
+  const match = /^(f-\d+):/u.exec(receipt);
+  const due = match ? store.dues.get(match[1]) : undefined;
+  const hold = due?.pending.find((p) => p.kind === "guard_hold" && p.receipt === receipt);
+  if (!due || !hold || hold.kind !== "guard_hold") return null;
+  const language = settings.owner.language;
+  const batch = settings.batches.find((b) => b.id === due.batchId);
+  return {
+    booking: due.id, customerPhone: due.customer, businessName: settings.name, timeZone: settings.timezone, ownerLanguage: language,
+    studentName: due.studentName, batchName: batch ? batchName(batch, language) : due.batchId, monthLabel: monthLabel(due, language),
+    paymentId: hold.paymentId, amountPaise: hold.amountInr * 100, approval: hold.approval, expiresAtMs: hold.expiresAtMs, ...(hold.requestedBy ? { requestedBy: hold.requestedBy } : {}),
+  };
+}
+
+/**
+ * The Fees agent on its own fake days (Mon 2 Nov 2026, 09:00) with `payments` (Razorpay through the real Guard), behind the runtime's queue (modules/test/agent-runtime.ts:
+ * the TypeScript server runtime went on 24 Nov 2026, the centres run the Go program), with the runtime's /status counts and the relay's two calls answered in process.
+ */
+function feesAgent(settings: Settings, payments: Payments) {
+  const clock = fakeClock(zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 9, minute: 0 }, settings.timezone));
+  const messaging = createFakeMessaging(clock);
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
+  const store = createStore();
+  const agent = createAgent({ settings, clock, payments, messaging, parser: createRuleParser(), record: createRecord(clock), store });
+  const queue = agentRuntime(agent);
+  const byState = (): Record<string, number> => { const n: Record<string, number> = {}; for (const d of store.dues.values()) n[d.state] = (n[d.state] ?? 0) + 1; return n; };
+  const runtime = { ...queue, status: () => ({ fees: byState(), refunds: countRefunds(store.dues.values()) }) };
+  const say = async (_r: unknown, text: string, o: { from?: string } = {}) => { runtime.submit([{ kind: "message", message: messaging.receive(o.from ?? ROHAN_PARENT, text) }]); runtime.kick(); await runtime.idle(); };
+  return { clock, messaging, runtime, say, client: inProcessRuntimeClient(runtime, (receipt) => feesRefundContext(settings, store, receipt)) };
+}
 import { zonedToMs } from "../../../../modules/core/time.ts";
 
 const BINARY = process.env.GEO_GUARD_BIN ?? "../monorepo/target/debug/geo-guard";
@@ -175,18 +217,16 @@ test("the longest approval time Guard accepts is 7 days; one second more is refu
 });
 
 /** A runtime on the real Guard, a relay beside it, and a parent who has paid ₹1,800: everything up to the refund request. */
-async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<ReturnType<typeof startStandins>>; kit: ReturnType<typeof createKit>; runtime: any; relay: ReturnType<typeof createRelay>; whatsapp: ReturnType<typeof createFakeMessaging>; owner: string; lines: string[]; stage: () => Promise<void> }) => Promise<void>): Promise<void> {
+async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<ReturnType<typeof startStandins>>; kit: ReturnType<typeof feesAgent>; runtime: any; relay: ReturnType<typeof createRelay>; whatsapp: ReturnType<typeof createFakeMessaging>; owner: string; lines: string[]; stage: () => Promise<void> }) => Promise<void>): Promise<void> {
   const settings = brightTuition();
   const { standins, guard } = await standinsAndGuard(settings);
-  const kit = createKit();
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-fees-"));
-  const whatsapp = createFakeMessaging(kit.clock);
+  const whatsapp = createFakeMessaging(systemClock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) whatsapp.approve(name, language);
   const lines: string[] = [];
   const payments = createRazorpayPayments({ baseUrl: guard.agentUrl, agentToken: guard.agentToken });
-  const { runtime } = kit.open({ settings, services: { payments, messaging: kit.messaging }, log: (l) => lines.push(l) });
-  const INTERNAL = "internal-token-0123456789abcdef";
-  const runtimeServer = await startServer(runtime, { token: INTERNAL, port: 0 });
+  const kit = feesAgent(settings, payments);
+  const { runtime } = kit;
   const store = openRelayStore(dir);
   try {
     // the relay's reading credential: an approver credential Guard issues from its admin port, which expires; the relay never holds the admin token
@@ -196,7 +236,7 @@ async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<R
     const relay = createRelay({
       clock: systemClock, store, ownerWhatsapp: settings.owner.whatsapp, messaging: whatsapp, expectedAgent: "runtime-bright-tuition", log: (l) => lines.push(`relay: ${l}`),
       guard: createGuardClient({ adminUrl: guard.adminUrl, readToken: issued.token, approverId: "owner-bright-tuition", approverSecret: guard.ownerSecret, now: () => Date.now() }),
-      runtime: createRuntimeClient({ url: runtimeServer.url, token: INTERNAL }),
+      runtime: kit.client,
     });
     // the month opens through the real Guard (every payment link must be inside the range the generator wrote), and Rohan's parent pays his ₹1,800 fee
     const stage = async () => {
@@ -212,7 +252,7 @@ async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<R
     };
     await run({ guard, standins, kit, runtime, relay, whatsapp, owner: settings.owner.whatsapp, lines, stage });
   } finally {
-    store.close(); await runtimeServer.close(); await runtime.close(); kit.cleanup(); rmSync(dir, { recursive: true, force: true });
+    store.close(); rmSync(dir, { recursive: true, force: true });
     await guard.stop(); await standins.close();
   }
 }

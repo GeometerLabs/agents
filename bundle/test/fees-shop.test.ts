@@ -21,8 +21,6 @@ import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { buildHeartbeat } from "../services/heartbeat.ts";
 import { validateRuntimeConfig } from "../../templates/education/fees/server/config.ts";
-import { createKit } from "../../templates/education/fees/test/runtime-kit.ts";
-import { PARENT } from "../../templates/education/fees/test/runtime-kit.ts";
 import { zonedToMs } from "../../modules/core/time.ts";
 import { PHONE_NUMBER_ID, serverConfig, writePersonKey } from "./helpers.ts";
 import { secretsFor, world } from "./world.ts";
@@ -275,37 +273,6 @@ test("shop add --template fees starts a centre from the template: the example se
 });
 
 // ---- the export for the monthly report ---------------------------------------------------------------------------------------------
-
-test("the export for a Fees centre is dues.json: the parent's number and the child's name are hashed, in the fees and in the record's notes, and Bookings still gets bookings.json", async () => {
-  const kit = createKit();
-  const out = mkdtempSync(join(tmpdir(), "geo-export-"));
-  try {
-    const { runtime, db } = kit.open();
-    await runtime.tick();
-    kit.clock.set(zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 10, minute: 5 }, "Asia/Kolkata"));
-    await runtime.tick();
-    const names = ["Aarav Sharma", "Anaya Sharma", "Meera Nair", "Kiran Gowda", "Rohan Mehta"];
-    const wrote = db.loadState().record.map((e) => e.notes).join("\n");
-    assert.ok(names.some((n) => wrote.includes(n)), "the record's own notes do name a student (that is what the export has to hide)");
-
-    const result = exportShop({ name: "bright", db: db.file, out, personKeyFile: writePersonKey(mkdtempSync(join(tmpdir(), "geo-key-"))) });
-    assert.equal(result.ok, true);
-    assert.deepEqual([result.dues, result.bookings], [5, undefined]);
-    assert.deepEqual(readdirSync(out).sort(), ["dues.json", "ledger.json", "person-form.json", "record.json"]);
-    const exported = readFileSync(join(out, "dues.json"), "utf8") + readFileSync(join(out, "record.json"), "utf8") + readFileSync(join(out, "ledger.json"), "utf8");
-    // B28: the ledger is chained from the centre's OWN record (names in its notes), and its head is the head of the exported record (names hashed): one fingerprint for both
-    const own = headOf(db.loadState().record, "bright")!;
-    assert.equal(headOf(JSON.parse(readFileSync(join(out, "record.json"), "utf8")), "bright")!.head, own.head);
-    assert.equal((JSON.parse(readFileSync(join(out, "ledger.json"), "utf8")) as { hash: string }[]).at(-1)!.hash, own.head);
-    assert.deepEqual(result.ledger, { seq: own.seq, head: own.head });
-    for (const name of names) assert.ok(!exported.includes(name), `${name} left the volume`);
-    assert.ok(!exported.includes(PARENT) && !exported.includes("+9198"), "no parent's number left the volume");
-    const dues = JSON.parse(readFileSync(join(out, "dues.json"), "utf8")) as { studentName: string; customer: string; feeInr: number }[];
-    assert.ok(dues.every((d) => /^s-[0-9a-f]{12}$/.test(d.studentName) && /^p-[0-9a-f]{12}$/.test(d.customer) && d.feeInr > 0), "the amounts stay: the report counts them");
-    // the same student is the same hash, so two fees of one child can still be told apart from two children
-    assert.equal(new Set(dues.map((d) => d.studentName)).size, 5);
-  } finally { kit.cleanup(); rmSync(out, { recursive: true, force: true }); }
-});
 
 // ---- the heartbeat -------------------------------------------------------------------------------------------------------------------
 

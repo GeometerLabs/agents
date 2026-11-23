@@ -13,7 +13,6 @@ import { parseSettings, validateSettings } from "../src/settings.ts";
 import { checkClassAccess, checkNoteAfterMark, nextClass, occurrencesBetween } from "../src/classes/rules.ts";
 import { isClassLink, readContactWords, readTeacherCommand } from "../src/classes/parse.ts";
 import { materialView, ownerClassesView } from "../src/classes/view.ts";
-import { createMaterials } from "../server/materials.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { buildFeesReport } from "../report/data.ts";
 import { ownerText } from "../report/text.ts";
@@ -318,25 +317,6 @@ test("the reading-material page opens only for a student in the batch, who agree
   assert.equal(materialView({ ...s, students: s.students.filter((x) => x.name !== "Aarav Sharma") }, w.store, AARAV, "class-10", day(3, 9)), null, "removed from the batch");
   assert.equal(materialView(s, w.store, AARAV, "class-10", day(12, 9)), null, "past the grace days with the fee unpaid");
   assert.equal(materialView(brightTuition(), w.store, AARAV, "class-10", day(3, 9)), null, "a centre without Classes");
-});
-
-test("the materials folder hands out only listed kinds within the size limit, never a link or a path", () => {
-  const dir = mkdtempSync(join(tmpdir(), "classes-materials-"));
-  mkdirSync(join(dir, "class-10"));
-  writeFileSync(join(dir, "class-10", "notes.pdf"), "pdf bytes");
-  writeFileSync(join(dir, "class-10", "big.pdf"), "x".repeat(2000));
-  writeFileSync(join(dir, "class-10", "run.sh"), "echo");
-  writeFileSync(join(dir, "class-10", ".hidden.pdf"), "x");
-  writeFileSync(join(dir, "secret.pdf"), "outside");
-  symlinkSync(join(dir, "secret.pdf"), join(dir, "class-10", "linked.pdf"));
-  const m = createMaterials(dir, 1000);
-  const { files, left } = m.list("class-10");
-  assert.deepEqual(files.map((f) => f.name), ["notes.pdf"]);
-  assert.equal(left, 2, "the too-large file and the kind that is not handed out");
-  assert.equal(m.read("class-10", files[0].id)!.bytes.toString(), "pdf bytes");
-  assert.equal(m.read("class-10", "000000000000"), undefined);
-  assert.deepEqual(m.list("../etc"), { files: [], left: 0 });
-  assert.deepEqual(m.list("class-9"), { files: [], left: 0 });
 });
 
 test("the owner's page lists the class waiting for attendance and the doubt, and a press is bound to its digest", async () => {

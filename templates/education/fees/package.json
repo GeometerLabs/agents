@@ -10,10 +10,8 @@
     "walkthrough": "node scripts/walkthrough.ts",
     "report-example": "node scripts/report-example.ts",
     "whatsapp-templates": "node scripts/whatsapp-templates.ts",
-    "serve": "node server/main.ts",
     "inbox": "node inbox/main.ts",
     "approvals": "node approvals/main.ts",
-    "stack": "node scripts/local-stack.ts",
     "go-live-certificate": "node scripts/go-live-certificate.ts",
     "client-report": "node scripts/client-report.ts"
   }
