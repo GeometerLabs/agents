@@ -19,6 +19,7 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/bookings"
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/orders/reading"
@@ -44,7 +45,7 @@ type Agent struct {
 	store    *Store
 	settings *Settings
 	ctx      context.Context
-	watch    *watch
+	watch    *bookings.Watch // the step's watch over its Guards: internal/bookings' (guard-wait.ts watchStep), shared by every template since 23 Nov 2026
 	// pay is the gateway behind its Guard, watched; on a UPI shop the owner-marked ledger seen as payments (ownermarked.View, never watched: it is the store)
 	pay payments.Payments
 	// ownerConfirms: the module cannot confirm a payment by itself (UPI), so the owner's marks are its payment record; ownerRefunds: it cannot refund by itself, so the owner owes
@@ -70,7 +71,7 @@ type Agent struct {
 func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 	st := c.State.(*Store)
 	a := &Agent{c: c, kit: k, store: st, settings: SettingsOf(c.Settings), ctx: context.Background(), can: k.Ports.Capabilities}
-	a.watch = newWatch(c.Task != "" && !c.LastTry, k.givenUp())
+	a.watch = bookings.NewWatch(c.Task != "" && !c.LastTry, k.givenUp())
 	a.ownerConfirms, a.ownerRefunds = !a.can.ConfirmsAutomatically, !a.can.RefundsAutomatically
 	if a.ownerConfirms || a.ownerRefunds {
 		// agent.ts `store.upi ??= emptyMarkState()`: the ledger is the store's, so it is saved with the step
@@ -83,13 +84,14 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 		// agent.ts `markedPayments(markState, marked.payLink, clock)`: made inside the agent, so it is not watched (nothing in it can be down)
 		a.pay = ownermarked.View{State: a.marks, PayLink: a.settings.UpiPayLink(), Now: a.now, Codes: assistant.NewCode}
 	case k.Ports.Payments != nil:
-		a.pay = wPayments{a.watch, k.Ports.Payments}
+		a.pay = a.watch.Payments(k.Ports.Payments)
 	}
 	// runtime-limits.ts apply: a limit the owner tightened or changed is in force for this step, so the agent's own checks use it; a copy, so the file's value (the base the
 	// changes are judged from, Kit.Limits) is never touched
 	a.settings = a.inForce(a.settings)
 	a.parse = parseContextOf(a.settings)
-	a.msg = a.channelMessaging(watchedMessaging(a.watch, a.ownerMessaging(k.Ports.WhatsApp)))
+	// outbox.ts channelMessaging over the watched owner route (the order Bookings wraps them in): a page conversation's message is kept for its page
+	a.msg = runtime.ChannelMessaging(a.watch.Messaging(a.ownerMessaging(k.Ports.WhatsApp)), st.ChannelState, a.now)
 	a.say = messaging.NewSay(a.sayDeps())
 	a.refunds = payments.NewRefunds(a.refundDeps())
 	return a
@@ -242,6 +244,17 @@ func (a *Agent) Tick() error {
 	a.noteLicence()
 	a.reconcileStock()
 	return a.finish(nil, a.onTick())
+}
+
+// finish is core.ts step's decision after the agent returned (thrown is what it returned): keep waiting, end the task, give up quietly, or go on and save. The watch and the
+// decision are internal/bookings' (bookings.Watch, the twin of guard-wait.ts watchStep), shared with every template since 23 Nov 2026; Orders' own copy is gone. A Guard given
+// up on: the agent got through on its own "could not confirm" path and the customer has heard what they can, so only the owner's item is left to write, saved with the step.
+func (a *Agent) finish(ev map[string]any, thrown error) error {
+	err, giveUp := a.watch.Decide(a.c.Task, a.c.LastTry, a.kit.givenUp(), thrown, a.store)
+	if giveUp != "" {
+		return a.GiveUp(ev, giveUp, false)
+	}
+	return err
 }
 
 // GiveUp is agent.ts giveUp (`wait_over`): the wait for a Guard is over and this event's work is not done. With tell, the customer also gets the shop's words for it, and the to-do
