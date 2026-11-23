@@ -114,7 +114,8 @@ describe("the shop's assistant on a Fees centre", () => {
 
 describe("the panel's to-do list", () => {
   contract("ask_owner_again tells the owner again about a waiver waiting; recheck_payment reads the record again and changes nothing that is not there", async () => {
-    const c = await guardsCentre();
+    // a Razorpay centre: on a UPI centre an open request is asked about first (agent.ts markAskAgain), and whether the first beat made one depends on the hour
+    const c = await guardsCentre({ example: "razorpay" });
     await c.inbound(ROHAN, "please waive ₹500");
     const asked = () => c.sent(OWNER_NUMBER).filter((m) => m.text.startsWith("Approval needed")).length;
     const before = asked();

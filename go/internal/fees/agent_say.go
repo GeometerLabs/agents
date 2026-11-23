@@ -224,7 +224,10 @@ func (voice) GenericNames() messaging.GenericNames {
 	return messaging.GenericNames{Customer: g.Customer, Reminder: g.Reminder, Owner: g.Owner}
 }
 func (voice) Matches(text string, facts any) messaging.Decision {
-	return matches(text, facts.(*MessageFacts))
+	if d, ok := matchTalk(text, facts); ok {
+		return d
+	}
+	return matches(text, factsOf(facts))
 }
 
 func (a *Agent) sayDeps() messaging.SayDeps {
