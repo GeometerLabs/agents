@@ -1415,3 +1415,14 @@ The first enhancement after the switch to Go, built once in `internal/discounts`
   - Bundle: 722 pass, 9 skipped (REAL_CADDY). Panel: 259/259.
   - TypeScript: Bookings 829 pass, 7 skipped; Orders 210 pass, 5 skipped; modules/limits 16/16.
   - `--check` of every generator touched: fresh.
+
+### e1-finish-24nov: the four items before the pilot (24 Nov 2026)
+
+What was built is in `internal/discounts/Explanation.md` § Before the pilot, and what is left is in its `Deferred.md`.
+
+- **The panel's boxes** (`bundle/panel/discounts.ts`). They sit in the Bookings deposit step and the Orders rules step: a switch (off by default), the two caps and a floor per item. They are checked by `readDiscounts`, so the Operator reads its sentences, and the panel now owns the `discounts` key.
+- **The card on the owner's page and in "what needs me".** A press becomes the owner's own `approve b-3 <code>`, so there is one decider. A stale press or a second answer does nothing.
+- **"Any discount?" without a number.** The intent's `askDiscount` is read by the rules in four languages, and the model may read it too. With the block, the agent offers `discounts.CapPrice` through `decideOffer`, recorded as agreed. With no item in the conversation, it asks which one. Off: today's answer.
+- **The order's page.** A deal's line is shown at the agreed price, with the menu price beside it, so the lines add up to the total.
+- **`gen_orders_reading.ts`.** The sample is now stable: a phrase is in a share by its own hash, so a new phrase only adds itself. The move to it was one regeneration in its own commit.
+- **TypeScript findings: none changed.** One note: the owner page's words have no review sheet, so the card's hi, ml and kn words wait there (Deferred.md).
