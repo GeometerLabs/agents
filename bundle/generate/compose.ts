@@ -166,6 +166,11 @@ export interface Dirs {
    * (a bind-mounted symlink is resolved once, at start, so a switched build would not show). Optional: only the Operator server's pages domain uses it.
    */
   home?: string;
+  /**
+   * The copy of the shop programs the panel's go-live hand check runs (serverPaths().programs; lib/go-build.ts copyGoPrograms). Mounted read-only into the panel at /programs when
+   * the server has the programs' image. Left out: the panel has no programs, and its hand check says so (it never runs anything else).
+   */
+  programs?: string;
 }
 
 export interface Addressing {
@@ -228,6 +233,8 @@ type Service = Record<string, Y | undefined>;
  */
 export const NODE_SEMI_SPACE_MB = 1;
 export const NODE_OLD_SPACE_MB: Readonly<Record<"inbox" | "relay" | "refresher" | "push" | "ops" | "door" | "panel", number>> = { inbox: 96, relay: 96, refresher: 64, push: 64, ops: 96, door: 96, panel: 160 };
+/** Where the panel finds the shop programs its go-live hand check runs (Dirs.programs, read-only). */
+export const PANEL_PROGRAMS = "/programs";
 const hardened = { restart: "unless-stopped", read_only: true, cap_drop: ["ALL"], security_opt: ["no-new-privileges:true"], tmpfs: ["/tmp"] };
 /** Follow-up 2: the volume the refresher writes renewed Gupshup app tokens into (one sub-folder per shop), and where it is inside the refresher. */
 export const GUPSHUP_AUTH_VOLUME = "gupshup-auth";
@@ -453,8 +460,10 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
         PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_TEMPLATES_DIR: "/app/templates", PANEL_PERSON_KEYS_DIR: "/run/secrets/person-keys",
         PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: `/run/secrets/${names.panelGuardToken}`, PANEL_WEBHOOK_URL: `${publicUrl(server)}/c/{shop}/webhooks/{kind}`,
         ...(features.panel.shareAddress ? { PANEL_CALENDAR_SHARE_ADDRESS: features.panel.shareAddress } : {}),
+        // 24 Nov 2026: the go-live hand check runs each situation on the shop's own Go program, copied out of the programs' image the shops run (read-only, no secret in it)
+        ...(features.goImage && dirs.programs ? { GEOMETER_GO_PROGRAMS: PANEL_PROGRAMS } : {}),
       },
-      volumes: [appVolume, `${secretDir("panel")}:/run/secrets:ro`, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.requests}:/server/requests`, `${dirs.status}:/server/status:ro`, `${dirs.fleet}:/server/fleet:ro`, `${dirs.exports}:/server/exports:ro`, `${dirs.panelData}:/server/panel`, `${dirs.config}:/server/geometer.json:ro`],
+      volumes: [appVolume, ...(features.goImage && dirs.programs ? [`${dirs.programs}:${PANEL_PROGRAMS}:ro`] : []), `${secretDir("panel")}:/run/secrets:ro`, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.requests}:/server/requests`, `${dirs.status}:/server/status:ro`, `${dirs.fleet}:/server/fleet:ro`, `${dirs.exports}:/server/exports:ro`, `${dirs.panelData}:/server/panel`, `${dirs.config}:/server/geometer.json:ro`],
       networks: { front: {}, panel: {} },
       healthcheck: healthWget(PANEL_PORT, "/healthz"),
     });

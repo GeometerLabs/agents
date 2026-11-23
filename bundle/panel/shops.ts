@@ -110,6 +110,8 @@ export function createShops(config: PanelConfig, store: Store) {
     },
 
     /** The shop's settings, judged by the template its lock names (Bookings when there is no lock yet), in that template's own shape. */
+    /** Where a shop's settings.json is: the hand check runs the shop's program on this very file. */
+    settingsFile: (id: string): string => join(paths.shop(safe(id)), "settings.json"),
     settings(id: string): any | undefined {
       const text = readText(join(paths.shop(safe(id)), "settings.json"));
       if (text === undefined) return undefined;

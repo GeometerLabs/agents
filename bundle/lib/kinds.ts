@@ -89,7 +89,8 @@ export const runtimeHasWhatsApp = (runtime: unknown): boolean => {
 export const hasCalendar = (kind: { guards: readonly ServiceKind[] }, settings: unknown): boolean => guardsOf(kind, settings).includes("calendar");
 
 /** What the panel needs of a hand check's summary and of a go-live certificate, whichever template made them. */
-export interface HandCheckSummaryLike { held: number; total: number; checks: number; failedTitles: string[]; ranOn?: string; notRun?: string[] }
+/** A hand check's summary, as every template's report/certificate.ts summariseRun makes it; `program` is the shop's own Go program it ran on (left out by a run from before 24 Nov 2026). */
+export interface HandCheckSummaryLike { held: number; total: number; checks: number; failedTitles: string[]; ranOn?: string; notRun?: string[]; program?: import("../../modules/report/go-live.ts").ProgramRan }
 export interface GoLiveCertificateLike { checks: { failed: number }; notTested: unknown[] }
 
 /** What a listings-only shop's store holds that another template's store can take over: the assistant's part (the listings, cards, memory) and the month's AI counts. */

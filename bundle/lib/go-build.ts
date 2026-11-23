@@ -17,7 +17,7 @@
 // (every version before the Go one, kept beside the server) runs on Node exactly as it always did.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import type { Runner } from "./runner.ts";
@@ -152,6 +152,46 @@ export async function ensureGoRuntimes(ctx: GoBuildContext): Promise<GoBuild> {
     return { ok: false, reason: `The Go shop programs could not be built (${(e as Error).message}). Nothing was changed.` };
   } finally {
     rmSync(work, { recursive: true, force: true });
+  }
+}
+
+// ---- the programs for the panel's hand check -----------------------------------------------------------------------------------------------------------------
+
+/** The programs the panel's go-live hand check runs (each template's own; bundle/lib/hand-check-go.ts). The directory and the listings programs have no hand check. */
+export const HAND_CHECK_PROGRAMS = ["bookings", "orders", "fees", "stock-orders"] as const satisfies readonly (typeof GO_PROGRAMS)[number][];
+/** The file in the programs' folder that names the image they were copied from. */
+const PROGRAMS_FROM = "image.txt";
+
+/**
+ * Copy the hand check's programs out of the image the shops run into `dir` (serverPaths().programs), so the panel, which has no Docker, runs the go-live hand check on the very
+ * programs the shops run. A folder that already holds this image's programs is left as it is. The copy is made beside the folder and renamed over it, so the panel never sees half
+ * a set. Never throws: a failure says why, and the panel's hand check then says the programs are not there (it never runs anything else).
+ */
+export async function copyGoPrograms(ctx: GoBuildContext, image: string, dir: string): Promise<{ ok: true; copied: boolean } | { ok: false; reason: string }> {
+  try {
+    if (readFileSync(join(dir, PROGRAMS_FROM), "utf8").trim() === image && HAND_CHECK_PROGRAMS.every((p) => existsSync(join(dir, p)))) return { ok: true, copied: false };
+  } catch { /* no copy yet */ }
+  const name = `geo-go-copy-${createHash("sha256").update(`${image}:${Date.now()}:${Math.random()}`).digest("hex").slice(0, 12)}`;
+  const made = await ctx.runner.run(ctx.docker, ["create", "--name", name, image, `/${HAND_CHECK_PROGRAMS[0]}`]);
+  if (made.code !== 0) return { ok: false, reason: `The shop programs could not be copied for the panel's hand check (${lastLines(made)}).` };
+  const next = `${dir}.next`;
+  try {
+    rmSync(next, { recursive: true, force: true });
+    mkdirSync(next, { recursive: true });
+    for (const p of HAND_CHECK_PROGRAMS) {
+      const r = await ctx.runner.run(ctx.docker, ["cp", `${name}:/${p}`, join(next, p)]);
+      if (r.code !== 0) return { ok: false, reason: `The shop program ${p} could not be copied for the panel's hand check (${lastLines(r)}).` };
+    }
+    writeFileSync(join(next, PROGRAMS_FROM), `${image}\n`);
+    rmSync(dir, { recursive: true, force: true });
+    renameSync(next, dir);
+    ctx.log(`The panel's hand check runs on the shop programs of ${image}.`);
+    return { ok: true, copied: true };
+  } catch (e) {
+    return { ok: false, reason: `The shop programs could not be copied for the panel's hand check (${(e as Error).message}).` };
+  } finally {
+    await ctx.runner.run(ctx.docker, ["rm", "-f", name]);
+    rmSync(next, { recursive: true, force: true });
   }
 }
 
