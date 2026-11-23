@@ -154,7 +154,7 @@ export function readSaved(dataDir: string): any {
   } finally { db.close(); }
 }
 
-/** The one-use code in a card's words: the order card quotes it ("yes K7M2QX"), the assistant's limit card does not (reply yes K7M2QX). */
+/** The one-use code in a card's words: the order card and the assistant's limit card both say it plainly (reply yes K7M2QX); the order card used to quote it, until 23 Nov. */
 const CODE = /(?:^|[\s"“])yes ([A-Z0-9]{4,8})(?=["”\s.]|$)/u;
 
 export async function makeShop(o: ShopOptions = {}): Promise<Shop> {

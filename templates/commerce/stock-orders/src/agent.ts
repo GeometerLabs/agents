@@ -823,9 +823,10 @@ export function createAgent(deps: AgentDeps): Agent {
       // asked a few times and the owner did not answer: stop, so a shop is not nagged (the crossing stays on the Stock page as low)
       if ((a.asked ?? 0) >= MAX_LOW_ASKS) { ackAlert(st, a.line, a.crossing); continue; }
       const lines = approvedLines().filter((l) => l.item === itemId);
-      if (noteAsked(st, a.line, a.crossing) === 1) log(null, owner, STOCK_ACTION, "confirmed", { item: a.line, count: a.count, crossing: a.crossing }, { refs: stockRefs(a.line, "low", "shop"), notes: "a counted item fell to its low mark; the reorder flow was started (nothing is approved by this)" });
+      const asked = noteAsked(st, a.line, a.crossing); // how many questions this crossing has had, counting this one (`a` is a copy: never read `a.asked` after this)
+      if (asked === 1) log(null, owner, STOCK_ACTION, "confirmed", { item: a.line, count: a.count, crossing: a.crossing }, { refs: stockRefs(a.line, "low", "shop"), notes: "a counted item fell to its low mark; the reorder flow was started (nothing is approved by this)" });
       if (lines.length === 0) { talkToOwner(STOCK_LINE_WORDS[ownerLanguage].runningLow(itemNameOf(itemId), a.count)); ackAlert(st, a.line, a.crossing); continue; }
-      if ((a.asked ?? 0) === 1) talkToOwner(STOCK_LINE_WORDS[ownerLanguage].reorderAsk(itemNameOf(itemId), a.count, supplierOf(settings, lines[0].supplier).name));
+      if (asked === 1) talkToOwner(STOCK_LINE_WORDS[ownerLanguage].reorderAsk(itemNameOf(itemId), a.count, supplierOf(settings, lines[0].supplier).name));
       if (lines.length === 1) await settle({ requestId, lowStock: true, line: lines[0], phone: owner });
       else await askWhich({ requestId, lowStock: true, item: itemId, lines });
             if (!store.asking) ackAlert(st, a.line, a.crossing); // an order was made, or a limit stopped it and the owner was told: this crossing is done (only an open question keeps it queued)

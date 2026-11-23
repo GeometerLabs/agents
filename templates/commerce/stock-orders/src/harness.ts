@@ -105,8 +105,8 @@ export function createWorld(options: WorldOptions = {}): World {
     lastTextTo: (number) => messaging.sentTo(number).at(-1)?.text ?? "",
     cardCode() {
       const texts = messaging.sentTo(world.owner).map((m) => m.text).reverse();
-      // the agent's own card quotes the words ("yes K7X2"); the assistant's card line (modules/assistant/words.ts) says them plainly (reply yes K7X2), and either is the newest card
-      for (const t of texts) { const m = /"yes ([A-Z0-9]{4,6})"/u.exec(t) ?? /“yes ([A-Z0-9]{4,6})”/u.exec(t) ?? /\byes ([A-Z0-9]{4,6})\b/u.exec(t); if (m) return m[1]; }
+      // the agent's own card and the assistant's card line (modules/assistant/words.ts) both say the words plainly (reply yes K7X2, no quotes since 23 Nov), and either is the newest card
+      for (const t of texts) { const m = /\byes ([A-Z0-9]{4,6})\b/u.exec(t); if (m) return m[1]; }
       throw new Error("No approval card has been sent to the owner.");
     },
     approveText: () => `yes ${world.cardCode()}`,

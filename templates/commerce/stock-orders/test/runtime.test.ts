@@ -43,7 +43,7 @@ test("an approval, a restart and a supplier's answer end exactly as they do in t
     first.db.close(); // the process is gone with the card open
 
     const second = k.open();
-    const code = /"yes ([A-Z0-9]{4,6})"|“yes ([A-Z0-9]{4,6})”/u.exec(k.messaging.sentTo(settings.owner.whatsapp).map((m) => m.text).join("\n"));
+    const code = /\byes ([A-Z0-9]{4,6})\b/u.exec(k.messaging.sentTo(settings.owner.whatsapp).map((m) => m.text).join("\n"));
     await k.say(second.runtime, `yes ${code?.[1] ?? code?.[2]}`);
     assert.deepEqual(second.runtime.status().orders, { sent: 1 });
     second.db.close();
@@ -92,7 +92,7 @@ test("a step that fails before the order message is sent runs again and sends it
     const { runtime } = k.open();
     await k.say(runtime, "order 10 boxes of hair colour from Ravi Traders");
     const text = k.messaging.sentTo(settings.owner.whatsapp).map((m) => m.text).join("\n");
-    const code = /"yes ([A-Z0-9]{4,6})"|“yes ([A-Z0-9]{4,6})”/u.exec(text);
+    const code = /\byes ([A-Z0-9]{4,6})\b/u.exec(text);
     let failed = false;
     const second = k.open({ aroundStep: async (_event, run) => { if (!failed) { failed = true; throw new Error("the process died before the step ran"); } await run(); } });
     await k.say(second.runtime, `yes ${code?.[1] ?? code?.[2]}`);
