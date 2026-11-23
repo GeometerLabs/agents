@@ -968,6 +968,98 @@
     ]
   },
   {
+    "name": "owner_order_payment_unused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} का {{2}} का भुगतान ऑर्डर {{3}} ({{4}}) के लिए आया, पर वह ऑर्डर अब चालू नहीं था (रोक खत्म हो चुकी थी और दोबारा नहीं लिया जा सका, या रद्द था)। {{5}} वापस कर दिया गया।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120",
+              "o-3",
+              "गुरुवार, 12 नवंबर",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_payment_unused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "A {{1}} payment from {{2}} arrived for order {{3}} ({{4}}), but it was no longer active (its hold had ended and it could not be taken again, or it was cancelled). {{5}} was refunded.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "+919811111111",
+              "o-3",
+              "Thu 12 Nov",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_payment_unused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: ഓർഡർ {{2}} ({{3}}) ന് {{4}} പേയ്മെന്റ് വന്നു, പക്ഷേ ആ ഓർഡർ അപ്പോൾ നിലവിലില്ലായിരുന്നു (മാറ്റിവച്ച സമയം കഴിഞ്ഞിരുന്നു, വീണ്ടും എടുക്കാനും കഴിഞ്ഞില്ല, അല്ലെങ്കിൽ റദ്ദാക്കിയിരുന്നു). {{5}} തിരികെ നൽകി.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "വ്യാഴം, 12 നവംബർ",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_payment_unused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: ಆರ್ಡರ್ {{2}} ({{3}}) ಗಾಗಿ {{4}} ಪಾವತಿ ಬಂದಿದೆ, ಆದರೆ ಆ ಆರ್ಡರ್ ಆಗ ಚಾಲ್ತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ (ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು ಮತ್ತು ಮತ್ತೆ ತೆಗೆದುಕೊಳ್ಳಲು ಆಗಲಿಲ್ಲ, ಅಥವಾ ರದ್ದಾಗಿತ್ತು). {{5}} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_order_link_failed",
     "language": "hi",
     "category": "UTILITY",

@@ -52,6 +52,8 @@ export interface GoShopOptions {
   files?: Record<string, unknown>;
   /** The page's slug (pages.json). */
   slug: string;
+  /** pages.json `character.version` (16 hex digits): the shop's character pictures are drawn, as the deployer's loop does within a minute for a shop with the assistant. */
+  character?: string;
   /** Give the shop the monthly report's block (runtime.json `report`), its pages in a folder of the shop's own: the report and a UPI shop's QR pictures are written there. */
   report?: boolean;
   /** How long a call to a stand-in may take before the shop calls it lost (runtime.json services.timeoutMs). Default 1500: a lost reply is a cut connection, so this only bounds a hang. */
@@ -132,7 +134,7 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   writeFileSync(join(client, "runtime.json"), JSON.stringify({ mode: "fakes", standins: "http", host: "127.0.0.1", port, dataDir, tickSeconds: BEAT_SECONDS, services, ...report, ...(o.runtime ?? {}) }));
   writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));
   const page = `https://pages.example/${o.slug}`;
-  writeFileSync(join(client, "pages.json"), JSON.stringify({ schema: 1, base: page, ownerBase: "https://pages.example/owner", slug: o.slug, url: page }));
+  writeFileSync(join(client, "pages.json"), JSON.stringify({ schema: 1, base: page, ownerBase: "https://pages.example/owner", slug: o.slug, url: page, ...(o.character ? { character: { version: o.character } } : {}) }));
   for (const [name, value] of Object.entries(o.files ?? {})) writeFileSync(join(client, name), JSON.stringify(value));
   let version = o.version;
   writeFileSync(join(client, "pathway.lock"), `${o.pathway}@${version}\n`); // written last, as the deployer does

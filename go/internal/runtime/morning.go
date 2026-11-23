@@ -212,7 +212,14 @@ func (c *StepContext) Morning(m MorningContext) error {
 			}
 			if sent == nil && err == nil {
 				var s messaging.OutboundMessage
-				if s, err = m.Messaging.SendTemplate(ctx, number, messaging.TemplateMessage{Name: plan.template, Language: lang, Text: plan.text, Parameters: plan.params}); err == nil {
+				tm := messaging.TemplateMessage{Name: plan.template, Language: lang, Text: plan.text, Parameters: plan.params}
+				// item 11i (morning.ts): the morning templates were made with an image header, the shop's mood picture; WhatsApp refuses one sent without it (132012), so the
+				// picture goes whenever the shop's pictures are drawn (pages.json `character`). Found by the hand check on Go, 24 Nov 2026: the port had left it out
+				if p := r.pages(); p != nil && p.CharacterVersion != "" {
+					u := p.Base + "/character/" + plan.refs["face"] + ".png?v=" + p.CharacterVersion
+					tm.HeaderImage = &u
+				}
+				if s, err = m.Messaging.SendTemplate(ctx, number, tm); err == nil {
 					sent = &s
 				}
 			}

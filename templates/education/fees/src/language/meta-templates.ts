@@ -136,6 +136,14 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("fee_upi_refund_marked_sent", "fee_upi_refund_sent", "customer"),
   // 12 Nov 2026: the promise fee_refund_checking makes ("as soon as it is confirmed"), kept when the payments service's list settles the refund, often days later
   template("fee_refund_confirmed", "fee_refund_confirmed", "customer"),
+  // 24 Nov 2026 (the hand check on Go): a fee paid twice is refunded at once and the parent is told unasked, so often outside their window; it had no template, so it went
+  // under the generic name, which WhatsApp refuses outside the window, and the parent was never told
+  template("fee_refund_done", "fee_refund_done", "customer"),
+  // and the rest of a refund's word to the parent, which also comes unasked: held for the owner, then the owner's yes, no, or no answer in time (24 Nov 2026, same finding)
+  template("fee_refund_pending", "fee_refund_pending", "customer"),
+  template("fee_refund_approved", "fee_refund_approved", "customer"),
+  template("fee_refund_denied", "fee_refund_denied", "customer"),
+  template("fee_refund_expired", "fee_refund_expired", "customer"),
   // the licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop
   template("owner_fee_service_paused", "owner_licence_paused", "owner"),
   template("owner_fee_service_stopped", "owner_licence_stopped", "owner"),

@@ -108,6 +108,9 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_order_cancelled", "owner_order_cancelled", "owner"),
   template("owner_late_cancel_asks", "owner_late_cancellation", "owner"),
   template("owner_order_duplicate_paid", "owner_duplicate_payment", "owner"),
+  // 24 Nov 2026 (the hand check on Go): a late payment for an order no longer active is refunded and the owner is told unasked, so usually outside their window; it had no
+  // template, so it went under the generic name, which WhatsApp refuses outside the window, and the owner was never told
+  template("owner_order_payment_unused", "owner_payment_unused", "owner"),
   template("owner_order_link_failed", "owner_link_failed", "owner"),
   template("owner_customer_wants_you", "owner_wants_to_talk", "owner"),
   template("owner_customer_stopped", "owner_opted_out", "owner"),

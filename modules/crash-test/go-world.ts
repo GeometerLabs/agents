@@ -236,6 +236,8 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
       ...(o.runtime ?? {}),
     },
     ...(o.licence !== undefined ? { files: { "licence.json": o.licence } } : {}),
+    // a shop with the assistant has its character pictures drawn by the deployer's loop (bundle/apply.ts runCharacters) and named in pages.json; the morning line's picture links to them
+    ...((o.settings as { assistant?: unknown }).assistant ? { character: "0123456789abcdef" } : {}),
     report: true, // the monthly report's block: a report situation needs it, and a UPI shop writes its QR pictures into the same pages folder
   });
   clock = shop.clock;
