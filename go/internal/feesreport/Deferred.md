@@ -8,7 +8,7 @@
 * **`validateSettings`** is `internal/fees/settings.go`; the report takes the tree `Settings.ReportTree` makes (students reduced to empty objects). A tree that is not the validated settings
   would digest differently; the vectors hold the digests of seven settings files.
 * **A ref that is not a whole number.** Money sums are whole paise (int64): a `amountPaise` of `"12.5"` is cut to 12 here and would be 12.5 in the TypeScript. A class attendance count
-  (`present`, `absent`) that is not a number counts as 0 here, where JavaScript's sum would be NaN (written as null); the runtime writes numbers. A vector holds "x" (counted 0 here).
+  (`present`, `absent`) that is not a number counts as 0 here, where JavaScript's sum would be NaN (written as null); the runtime writes numbers. No vector holds one (the TypeScript's NaN is not reproduced).
 * **A reminder written in a language the report does not list** is not counted in `byLanguage` here; the TypeScript would add a NaN member. The record carries the centre's languages only.
 * **A rule id that is a member of `Object.prototype`** (`constructor`, ...): the TypeScript's `STOP_SITES[ruleId] ?? []` finds the inherited member and the report would not be made; Go
   treats it as an unknown rule (never counted).

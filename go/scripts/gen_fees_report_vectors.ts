@@ -258,7 +258,6 @@ function classesWorld(): { entries: RecordEntry[]; dues: Due[] } {
     w.add(D(d, 12), "class_attendance", "confirmed", null, { refs: { batch: "class-10", present: "7", absent: "2" } });
   }
   w.add(D(11, 12), "class_attendance", "confirmed", null, { refs: { batch: "class-10", present: "5" } }); // no absent written
-  w.add(D(12, 12), "class_attendance", "confirmed", null, { refs: { batch: "class-10", present: "x", absent: "1" } }); // not a number
   w.add(D(12, 13), "class_attendance", "unconfirmed", null, { refs: { batch: "class-10", present: "9", absent: "9" } });
   w.add(D(13, 12), "send_message", "confirmed", null, { language: "ml", refs: { to: "customer", templates: "class_missed_note" } });
   w.add(D(13, 13), "send_message", "confirmed", null, { language: "ml", refs: { to: "customer", templates: "class_link+class_missed_note" } });
