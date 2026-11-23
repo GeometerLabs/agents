@@ -1575,9 +1575,11 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   - **Fees on Razorpay**: when a fee is paid twice, the parent's messages about the extra payment go under the generic name outside the parent's 24 hours, which the
     provider refuses. Bright Tuition holds 24 of 25 on Go; pinned in `fees/test/situations.test.ts` (`KNOWN_ON_GO`). Both findings came from a check added here: a send the
     provider refused fails the situation unless it planned one (before, "nothing was sent" could pass because a send failed).
-  - **Bookings, the panel's test shop** (Hosahalli Beauty, owner in Malayalam): in the button-mode situations a message to the owner is refused by the WhatsApp stand-in,
-    "Variable parameter values formatted incorrectly" (Meta refuses a template parameter it cannot take, such as a line break), so three AI situations fail on Go for that
-    shop; Glow Salon's example holds all 40. Not chased to its message here; the panel's flow tests use a stand-in hand check (golive-go.test.ts runs the real one).
+  - **Bookings, every shop with the assistant** (an `assistant` block: every shop set up through the panel's Character step): in the button-mode situations a message to
+    the owner goes as a WhatsApp template whose image header does not match how the template was made (Meta's 132012, "Variable parameter values formatted incorrectly";
+    modules/standins/whatsapp.ts), so the provider refuses it and 1 to 3 AI situations fail on Go. Shown by toggling the block: Glow Salon with an `assistant` fails
+    "a button reply books without any model call"; the panel's test shop without it holds. So the gate refuses every Bookings shop made through the panel until that is fixed.
+    The panel's flow tests use a stand-in hand check (golive-go.test.ts and orders-resolves run the real one).
   - **Fees on Go reads with its rules alone** (go/internal/fees/Deferred.md: the model steps of reading), so "the model is down" is listed as not run there.
   - `geometer update` compares the hand checks of two versions: a situation that held before and is not run now holds the shop back, so a Fees centre's next update is
     held back by "the model is down" until that is decided (bundle/panel/Deferred.md).
