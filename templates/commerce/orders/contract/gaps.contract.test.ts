@@ -2,12 +2,14 @@
 // test/ checked. Those unit tests go when the TypeScript runtime is deleted (decision 61), so each behaviour is held here on both runtimes, over HTTP and the files only. Where
 // each came from: test/agent (the same order again, a part of the UPI money marked), test/reminder-balance (the balance), test/late-advance-card (the 48-hour and 14-day
 // windows), test/slot-capacity (a slot's place given back), test/licence (Guard's own licence refusal), test/assistant-acts (the owner's cancel and refund from the chat).
-// go/TRIAL.md's section "go-orders-gaps-23nov" lists every such behaviour and what holds it now.
+// go/TRIAL.md's section "go-orders-gaps-23nov" lists every such behaviour and what holds it now. The last describe holds two TypeScript findings fixed on both sides.
 //
 // Fakes shops run on the TEST clock at Mon 9 Nov 2026, 10:00 in India (tomorrow is Tue 10 Nov); guards shops on the real clock order two days ahead (`orderDay`), and a
 // cancellation window of 96 hours makes their cancellation a late one, as in money.contract.test.ts.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { CUSTOMER, MIN, OWNER_NUMBER, RAJESH, beat, contract, makeShop } from "./harness.ts";
 import { fixture } from "./guards.ts";
 import type { Shop } from "./harness.ts";
@@ -212,5 +214,38 @@ describe("the owner's cancel and refund from the chat (the assistant's Orders sk
     assert.deepEqual((await s.status()).orders, { cancelled: 1 });
     assert.deepEqual((await items(s, "refund_owed")).map((i) => [i.case, i.amountPaise]), [["o-1", 12000]]);
     assert.match(s.sent(CUSTOMER).at(-1)!.text, /will send/u);
+  });
+});
+
+// Two of stream W4's TypeScript findings (go/TRIAL.md), fixed on 23 Nov 2026 in the TypeScript and in Go the same way; before the fix the TypeScript failed these.
+describe("findings fixed on both runtimes", () => {
+  contract("an item taken off the menu while an order for it is open: the owner's page names it by its id, and the owner's mark still confirms the order", async () => {
+    const s = await boot();
+    const { hash } = await s.order({ lines: [{ itemId: "veg-thali", qty: 2 }, { itemId: "chicken-meal", qty: 1 }] });
+    await s.stop();
+    const file = join(s.client, "settings.json");
+    const settings = JSON.parse(readFileSync(file, "utf8")) as { menu: { id: string }[] };
+    writeFileSync(file, JSON.stringify({ ...settings, menu: settings.menu.filter((i) => i.id !== "chicken-meal") }));
+    await s.start();
+    const [deposit] = (await s.ownerView()).body.items as { what: string }[];
+    assert.equal(deposit.what, "2 × veg thali, 1 × chicken-meal");
+    await s.ownerPress("deposit", "received");
+    const v = (await s.request(hash)).body;
+    assert.equal(v.status, "confirmed");
+    assert.match(v.messages.at(-1).text, /2 × veg thali, 1 × chicken-meal/u, "the confirmation names the item it no longer has by its id");
+  });
+
+  contract("the owner's cancel of a plan's waiting payment gives the plan up at the next beat: it is not left waiting for ever, and the customer can start again", async () => {
+    const plans = (JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins-plans.example.json", import.meta.url), "utf8")) as { plans: unknown }).plans;
+    const s = await boot({ mode: "guards", tickSeconds: 1, settings: { ...ASSISTANT, plans } });
+    await s.inbound(CUSTOMER, "I want the monthly lunch plan");
+    assert.deepEqual(links(s).map((l) => l.amount), [240000]);
+    await s.inbound(OWNER_NUMBER, "cancel o-1");
+    await s.tap(lastCard(s).yes, { from: OWNER_NUMBER });
+    assert.equal(links(s)[0].status, "cancelled");
+    await beat();
+    assert.ok(s.record().some((r) => r.action === "plan_lapse" && r.refs.period === "0"), "the plan is given up, not left waiting");
+    await s.inbound(CUSTOMER, "I want the monthly lunch plan");
+    assert.equal(links(s).length, 2, "the customer has no plan now, so asking again starts a new one with its own link (before: the stuck plan's unpaid month was shown)");
   });
 });

@@ -28,6 +28,21 @@ export type DatePhrase =
 /** A time as written. `hour` is 1-12 when `period` is given, otherwise as typed (0-23). */
 export interface TimePhrase { hour: number; minute: number; period?: "am" | "pm" }
 
+// The shapes above, checked on a value that came from outside (a language model's answer is untrusted): every template's coerceIntent asks these, so a date or a time of
+// any other shape is refused, never copied (23 Nov 2026: Bookings' checks, moved here so Orders asks the same ones; go/internal/language/phrase_shape.go is their twin).
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const wholeIn = (v: unknown, lo: number, hi: number): boolean => Number.isInteger(v) && (v as number) >= lo && (v as number) <= hi;
+
+/** Is `v` a DatePhrase: relative 0 to 2 days, a weekday 0 to 6 with "next", "this" or "plain", or a calendar day 1 to 31 of a month 1 to 12? */
+export const isDatePhrase = (v: unknown): v is DatePhrase => isRecord(v) && (
+  (v.kind === "relative" && (v.offsetDays === 0 || v.offsetDays === 1 || v.offsetDays === 2))
+  || (v.kind === "weekday" && wholeIn(v.weekday, 0, 6) && ["next", "this", "plain"].includes(v.which as string))
+  || (v.kind === "calendar" && wholeIn(v.day, 1, 31) && wholeIn(v.month, 1, 12)));
+
+/** Is `v` a TimePhrase: hour 0 to 23 and minute 0 to 59, and with a period, "am" or "pm" and an hour 1 to 12 ("18:00 pm" would be hour 30)? */
+export const isTimePhrase = (v: unknown): v is TimePhrase => isRecord(v) && wholeIn(v.hour, 0, 23) && wholeIn(v.minute, 0, 59)
+  && (v.period === undefined || ((v.period === "am" || v.period === "pm") && wholeIn(v.hour, 1, 12)));
+
 // ---- word matching ---------------------------------------------------------------------------------------------
 
 const NOT_LETTER_BEFORE = "(?<![\\p{L}\\p{M}\\p{N}])";

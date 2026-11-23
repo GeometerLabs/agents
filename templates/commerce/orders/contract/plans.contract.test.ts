@@ -5,7 +5,7 @@
 // test/plans. Observed through the record's sent templates, /status, the owner's page and the page's offer.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOMER, at, beat, contract, makeShop } from "./harness.ts";
+import { CUSTOMER, RAJESH, at, beat, contract, makeShop } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -51,6 +51,18 @@ describe("a monthly plan", () => {
     const v = (await s.request(hash)).body;
     assert.equal(v.status, "not_held");
     assert.match(v.messages.at(-1).text, /is full/u);
+  });
+
+  contract("a slot full of plan meals starts no second plan, and a day the plan skips gives its place back to a one-off order", async () => {
+    const s = await subscribed({ settings: { pickup: { slots: [{ id: "lunch", from: "12:00", to: "13:00", names: { en: ["lunch"] }, cutoff: { daysBefore: 0, time: "09:00" }, maxOrders: 1 }, { id: "dinner", from: "19:00", to: "20:00", names: { en: ["dinner"] }, cutoff: { daysBefore: 0, time: "15:00" } }] } } });
+    await s.inbound(RAJESH, "I want the monthly lunch plan");
+    assert.equal(s.templatesTo(RAJESH).at(-1), "plan_full", "a day of the month has no place left");
+    assert.ok(s.record().some((r) => r.action === "plan_start" && r.outcome === "blocked"));
+    await s.inbound(CUSTOMER, "skip tomorrow");
+    const lunch = (await s.call("/internal/channel/offer")).body.days[1].slots.find((x: { id: string }) => x.id === "lunch");
+    assert.equal(lunch.open, true, "Tuesday's place is free again");
+    const { hash } = await s.order();
+    assert.equal((await s.request(hash)).body.status, "held");
   });
 
   // 23 Nov 2026 (stream OG): the plan paths no contract test reached, so the TypeScript unit tests (test/plans) were their only check. Expected values: creditInr(2400, 22,

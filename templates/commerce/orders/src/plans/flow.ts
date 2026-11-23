@@ -290,22 +290,29 @@ export function createPlans(env: PlansEnv) {
     }
   }
 
-  /** A period waiting for its payment: look at the record, send the one reminder when it is due, and give it up when its time is out. */
+  /**
+   * A period waiting for its payment: look at the record, send the one reminder when it is due, and give it up when its time is out. 23 Nov 2026: a period whose payment
+   * order already ended outside the plan (the owner cancelled it from the chat, acts.cancelWaiting) is given up the same way at once: it used to stay awaiting_payment for
+   * ever, never lapsing and never renewing. The customer was told by that cancel, so nothing more is said, but a renewal's carried credit still goes back.
+   */
   async function watch(plan: Plan, period: PlanPeriod, now: number): Promise<void> {
     const o = orderOf(period);
-    if (!o || o.state !== "awaiting_advance") return;
-    const out = period.index === 0 ? (period.holdUntilMs ?? 0) <= now : (period.payByMs ?? Infinity) <= now;
-    if (period.reminders && !out && plan.state === "active" && takeDue(period.reminders, now).due) await env.tell(o, plan.customer, "plan_renewal", { facts: facts(plan, period, { dateMs: momentOf(period.from), cutoffMs: period.payByMs }) });
-    if (!out) return;
-    await env.reconcile(o);
-    if (period.state !== "awaiting_payment" as PlanPeriod["state"] || o.state !== "awaiting_advance") return;
+    const ended = o?.state === "cancelled" || o?.state === "expired";
+    if (!o || (o.state !== "awaiting_advance" && !ended)) return;
+    if (!ended) {
+      const out = period.index === 0 ? (period.holdUntilMs ?? 0) <= now : (period.payByMs ?? Infinity) <= now;
+      if (period.reminders && !out && plan.state === "active" && takeDue(period.reminders, now).due) await env.tell(o, plan.customer, "plan_renewal", { facts: facts(plan, period, { dateMs: momentOf(period.from), cutoffMs: period.payByMs }) });
+      if (!out) return;
+      await env.reconcile(o);
+      if (period.state !== "awaiting_payment" as PlanPeriod["state"] || o.state !== "awaiting_advance") return;
+    }
     period.state = "lapsed";
     period.reminders = undefined;
     returnBalance(plan, period.taken);
-    await env.cancelWaiting(o, period.index === 0 ? "the hold on the plan's first payment ran out" : "the renewal was not paid before its first meal closed");
-    if (period.index === 0) { plan.state = "cancelled"; await env.tell(o, plan.customer, "plan_hold_expired", { facts: facts(plan) }); }
-    else { plan.state = "lapsed"; await env.tell(o, plan.customer, "plan_lapsed", { facts: facts(plan) }); await refundBalance(plan, "because the renewal lapsed"); }
-    logPlan(plan, "plan_lapse", "confirmed", { period: period.index }, { refs: { period: String(period.index) }, notes: "the payment did not come in time: no meal is owed and nothing is charged for this period" });
+    if (!ended) await env.cancelWaiting(o, period.index === 0 ? "the hold on the plan's first payment ran out" : "the renewal was not paid before its first meal closed");
+    if (period.index === 0) { plan.state = "cancelled"; if (!ended) await env.tell(o, plan.customer, "plan_hold_expired", { facts: facts(plan) }); }
+    else { plan.state = "lapsed"; if (!ended) await env.tell(o, plan.customer, "plan_lapsed", { facts: facts(plan) }); await refundBalance(plan, "because the renewal lapsed"); }
+    logPlan(plan, "plan_lapse", "confirmed", { period: period.index }, { refs: { period: String(period.index) }, notes: ended ? "the period's payment was cancelled before it came: no meal is owed and nothing is charged for this period" : "the payment did not come in time: no meal is owed and nothing is charged for this period" });
   }
 
   /** One reminder, half way between now and the pay-by time (a renewal's window can be a day, so "a day before" would already be past); none when under six hours are left. */

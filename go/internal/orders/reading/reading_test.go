@@ -235,10 +235,12 @@ func TestReplyVectors(t *testing.T) {
 	}
 }
 
-// A date or time that is not an object is refused (the TypeScript would copy it); and a numbers-are-float64 check: a tapped intent has no int in a date or time.
+// A date or time that is not of the shapes dates.ts makes is refused (the coerce vectors hold the TypeScript's own answers to more); and a numbers-are-float64 check: a
+// tapped intent has no int in a date or time.
 func TestCoerceDateShape(t *testing.T) {
 	c := &ParseContext{Menu: []MenuItem{{ID: "a"}}}
-	for _, raw := range []any{map[string]any{"kind": "order", "date": "tomorrow"}, map[string]any{"kind": "order", "time": 5.0}, map[string]any{"kind": "order", "date": nil}} {
+	for _, raw := range []any{map[string]any{"kind": "order", "date": "tomorrow"}, map[string]any{"kind": "order", "time": 5.0}, map[string]any{"kind": "order", "date": nil},
+		map[string]any{"kind": "order", "date": map[string]any{"kind": "relative", "offsetDays": 9.0}}, map[string]any{"kind": "order", "time": map[string]any{"hour": 18.0, "minute": 0.0, "period": "pm"}}} {
 		if CoerceIntent(raw, c) != nil {
 			t.Errorf("accepted %v", raw)
 		}
