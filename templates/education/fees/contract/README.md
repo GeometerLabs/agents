@@ -41,6 +41,7 @@ attendance question, the missed-class notes, doubts waiting) and, after it, the 
 | `assistant.contract.test.ts` | the shop's assistant's money paths: a waiver card's Refuse, a cancel card void after a payment, refund cards on a Razorpay centre (held by Guard, released once) and a UPI centre (owed by the owner), a message card, the morning line's fees not paid |
 | `classes.contract.test.ts` | Classes: the class link and consent, the attendance and the missed-class note, a fee past its grace days, doubts, the reading material |
 | `chat.contract.test.ts` | the centre's public chat |
+| `push.contract.test.ts` | the parents' web push: a reminder pushed to the parent's page without its links (one for a family of two), kept under the parent's ref, STOP ends it |
 | `record.contract.test.ts` | the store file, the saved state's members, what never leaves the centre (numbers, words, students' names) |
 | `cross-restart.test.ts` | a Go-to-Go restart on one folder (the TypeScript and Go runtimes in turn until 24 Nov 2026) |
 | `differential.test.ts` | (fakes and guards) the public demo's TypeScript world and the Go shop on the demo's own paths, every WhatsApp message compared whole |

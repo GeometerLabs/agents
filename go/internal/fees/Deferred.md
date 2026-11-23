@@ -14,7 +14,6 @@ centre without the feature, and says so in the record. The contract tests that w
 | The button-mode notices (reader.ts announceButtonMode: the AI allowance used up, the outside switch, a model fault) | the owner is not told; Fees reads by the rules on Go anyway | none (they tell the owner the model steps stopped: they wait for the model steps above) |
 | The retention of confirmation pages and of the chat (runtime.ts compactStore: a settled fee's page kept 90 days after its press, the chat threads with the conversations) | confirmation pages and chat threads are kept | none (the shared Go runtime has no daily compaction hook for a template yet: core.ts calls kit.compactStore once a day; internal/orders CompactStore waits for the same hook) |
 | A chat guest's label in the owner's message (chat-guest.ts guestLabel) | the owner reads the chat's conversation id; not ported for any template yet | none |
-| The parents' web push of the centre's messages (push.ts alsoPushTo), a customer's push of a page's message | not sent | none |
 
 ## Shared code opened, not rewritten (to be joined when the TypeScript is deleted)
 

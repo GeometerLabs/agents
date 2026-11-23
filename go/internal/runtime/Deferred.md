@@ -7,7 +7,6 @@
 * **Hold-to-talk** (`chat-voice`, `PageAudio`, `OnHeard`): the route and the turn are written; a template without a speech service (every Go template today) gets the 404 "Voice is not on for this shop" and
   no `listen` in the thread read. A template that adds a speech service offers `ChatVoiceKit`.
 * **A parent's chat** (Fees): `openEvent` and `openRead` refuse a `parent` (no Fees centre in this runtime). Orders and Fees add `ParentKit` when they come.
-* **A guest's alerts** (web push for a chat guest: the push route's `customer_*` ops on a chat conversation) are not on for a template; `forget` therefore does not end alert subscriptions.
 * **`chat_link`** (the WhatsApp message with a guest's one-use link, `chat-link-send.ts`): the route makes the same answers and saves the event; its step ends failed as not ported. See `internal/chatid/Deferred.md`.
 * **The free times and the customer's own case in a customer's prompt** are the template's `publicContext` (`CustomerTalkInput.Sources`); Bookings' is the agent core's.
 * `(?i)` in the shared claim and banned word lists is Go's, which also folds U+017F and U+212A (the report package's `Deferred.md` says the same).
