@@ -341,8 +341,7 @@ test("geometer update moves a Fees centre: the real Fees hand check runs at both
     assert.equal(r.result, 0, r.out + r.err);
     assert.equal(readFileSync(join(w.paths.shop("bright"), "pathway.lock"), "utf8").trim(), "fees@0.3.0");
     const step = loadState(w.root).update!.steps.bright;
-    // on Go one situation fails at both versions (templates/education/fees/test/situations.test.ts KNOWN_ON_GO): the centre is no worse off, so it moves
-    assert.ok(step.after && step.before && step.after.held === step.after.of - 1 && step.after.held === step.before.held && step.after.of >= 20, JSON.stringify(step));
+    assert.ok(step.after && step.after.held === step.after.of && step.after.of >= 20, JSON.stringify(step));
     assert.ok(step.layout && step.layout.from > 0 && step.layout.from === step.layout.to, "the Fees runtime's saved-data layout was asked of both versions");
   } finally { w.done(); }
 });

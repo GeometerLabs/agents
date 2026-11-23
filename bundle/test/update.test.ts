@@ -117,7 +117,7 @@ test("the real hand check's answer is read as it is printed: the count agrees wi
   assert.ok(r.ok, r.ok ? "" : r.reason);
   assert.ok(r.read.total > 20 && r.read.held === r.read.total && r.read.situations.length === r.read.total, `${r.read.held} of ${r.read.total}`);
   assert.ok(r.read.situations.every((s) => s.title.length > 3 && s.why === ""));
-  assert.deepEqual(compare(r.read, r.read), { failing: [], notChecked: [] });
+  assert.deepEqual(compare(r.read, r.read), { failing: [], notChecked: [], notRunNow: [] });
   // the stand-in prints what the reader reads back, so the tests below are about the same lines
   assert.deepEqual(readHandCheck(handCheckText("X", r.read.situations.map((s) => ({ title: s.title, held: s.held })))), { ...r.read, situations: r.read.situations.map((s) => ({ ...s, why: "" })) });
   const layout = await savedDataLayout(ctx, pathway);
