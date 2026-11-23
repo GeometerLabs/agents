@@ -1,5 +1,9 @@
 # Orders: why it is built this way
 
+**24 November 2026: the runtime is the Go program.** From 0.2.0 this template's shops run on `go/cmd/orders`, and its TypeScript server runtime (`server/` main, start,
+runtime and services, the live adapters' glue, the local stack and the runtime kit of the tests) is deleted (decision 61; go/TRIAL.md, "The switch"). Where the dated
+sections below describe those files they are this template's history; `src/` (the demo's engine), `server/config.ts`, `store.ts` and `snapshot.ts` stay.
+
 Plan item B55: pre-orders with an advance payment, a pickup or delivery slot, "paid" judged from the payment record, stock and per-day limits, and refunds that ask the owner. This note is the reasoning; the facts are in [README.md](README.md).
 
 ## Which template it copies

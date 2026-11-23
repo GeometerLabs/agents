@@ -1,5 +1,9 @@
 # Stock orders: what was built, and why
 
+**24 November 2026: the runtime is the Go program.** From 0.2.0 this template's shops run on `go/cmd/stock-orders`, and its TypeScript server runtime (`server/` main, start,
+runtime and services, the live adapters' glue, the local stack and the runtime kit of the tests) is deleted (decision 61; go/TRIAL.md, "The switch"). Where the dated
+sections below describe those files they are this template's history; `src/` (the demo's engine), `server/config.ts`, `store.ts` and `snapshot.ts` stay.
+
 ## 17 November 2026: the first version (stream W3, branch `stock-orders-17nov`)
 
 **What it is.** T07 of the template catalogue (owner decisions 49/50): a salon, small retailer or input dealer reorders from approved suppliers on WhatsApp. It starts from the shape of the Purchasing example (one order per request even if the supplier's reply is lost; an order the buyer has not approved is not placed) but is written in TypeScript from the shared modules, like Orders.

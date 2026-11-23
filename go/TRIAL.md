@@ -1371,7 +1371,7 @@ tests use it now. The Orders reading vectors harvest strings from the tests; the
 **The contracts:** each harness drops `<TEMPLATE>_IMPL=ts` and the TypeScript start (the variable may still say go; without the binary every test is skipped and says so);
 each cross-restart test (TypeScript then Go, and back) is a Go-to-Go restart.
 
-**Found (reported, not changed):** `templates/commerce/bookings/test/chat.test.ts` hung on this machine on main as well (deleted with the runtime); the Orders contract's
+**Found (reported, not changed):** the Orders contract's
 "a bakery that takes the whole order up front" fails when run after 18:00 in India (its guards shop orders for a day whose cut-off has passed: a time-of-day dependence of
 the test, not of the shop); the three approvals-guard-binary tests name the monorepo's geo-guard by a home-folder path when GEO_GUARD_BIN is not set (as before).
 

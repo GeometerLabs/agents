@@ -1,5 +1,9 @@
 # Explanation: how the Bookings template v0 core was built, and why
 
+**24 November 2026: the runtime is the Go program.** From 0.2.0 this template's shops run on `go/cmd/bookings`, and its TypeScript server runtime (`server/` main, start,
+runtime and services, the live adapters' glue, the local stack and the runtime kit of the tests) is deleted (decision 61; go/TRIAL.md, "The switch"). Where the dated
+sections below describe those files they are this template's history; `src/` (the demo's engine), `server/config.ts`, `store.ts` and `snapshot.ts` stay.
+
 3 November 2026. This explains the choices in `templates/commerce/bookings/`. It builds the first template of the product decision "Geometer: the product" (section 3) as laid out in the implementation plan (sections 1, 4 and 7); both live in the Geometer monorepo's `docs/` folder, not in this repository. What is intentionally left open is in [Deferred.md](Deferred.md).
 
 > **5 November 2026: the shared code moved out (B30).** When the Fees template arrived, what both templates need moved into [`modules/`](../../../modules/README.md): language, understanding, payments (links, refunds, Guard's model), messaging, the record, report signing, the approvals relay, the shared limits, reminders, the crash-test frame and the stand-ins. This template imports them. Paths in this file that begin `src/adapters/live/`, `src/language/` and so on may now be under `modules/`; [`modules/Explanation.md`](../../../modules/Explanation.md) lists where each went and what stayed here. The hand check gives the same answers before and after (37 of 37 for Glow Salon, 32 of 32 for the rental).

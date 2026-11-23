@@ -633,3 +633,11 @@ The service is `bundle/services/speech/` (README there). It was written and test
   Done when a fakes shop lets a contract read what its in-memory WhatsApp sent (the Fees differential already reads the stand-in's printed lines), or a guards shop may take
   the test clock.
 
+- [ ] **A server whose Bookings, Orders, Fees or Stock orders shops stay on 0.1.0 needs a kept 0.1.0 checkout beside it, with that commit's modules.** The Node runtimes
+  are no longer in this checkout, so a shop pinned to 0.1.0 starts only from `<server>/templates/<domain>/<name>@0.1.0` (a checkout of 6a51bf7a or earlier) with
+  `<server>/modules` from the same commit; without it the deployer says the version is not installed. Done when `geometer update` (or the install) offers to make that
+  kept checkout, or every shop is on 0.2.0.
+- [ ] **A customer's web push from a Go shop.** The TypeScript runtimes pushed a page's message to a customer who allowed alerts (Bookings, Orders) and a centre's reminder
+  to a parent (Fees, `test/parent-push.test.ts`, deleted with the runtime); the Go programs do not yet (go/internal/bookings/Deferred.md "A page message's web push to the
+  customer", go/internal/fees/Deferred.md "The parents' web push"): the message is on the page and on WhatsApp, nothing is pushed. A shop with no WhatsApp therefore tells
+  its customers only on its page. Done when the Go runtime pushes them, with a contract case per template.
