@@ -1850,6 +1850,47 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `classes.problems.time` | ತರಗತಿ ಸಾಲು 2: ಆರಂಭದ ಸಮಯ 16:00 ನಂತೆ ಇರಬೇಕು (24 ಗಂಟೆಯ ಗಡಿಯಾರ). | Class line 2: the start time must look like 16:00 (24-hour clock). |  |
 | `classes.problems.minutes` | ತರಗತಿ ಸಾಲು 2: ಅವಧಿ 10 ರಿಂದ 240 ರವರೆಗಿನ ಪೂರ್ಣ ನಿಮಿಷಗಳಾಗಿರಬೇಕು. | Class line 2: the length must be a whole number of minutes from 10 to 240. |  |
 | `classes.problems.twice` | ತರಗತಿ ಸಾಲು 2: ಅದೇ ಬ್ಯಾಚ್, ದಿನ ಮತ್ತು ಸಮಯ ಎರಡು ಬಾರಿ ಬರೆಯಲಾಗಿದೆ. | Class line 2: the same batch, day and time is written twice. |  |
+| `credit.panel.steps.business` | ಅಂಗಡಿ ಮತ್ತು ಯಾರು ಎಷ್ಟು ಕೊಡಬೇಕು | The shop and who owes what |  |
+| `credit.panel.steps.rules` | ನೆನಪುಗಳು ಮತ್ತು ಮಿತಿಗಳು | Reminders and limits |  |
+| `credit.panel.business.name` | ಅಂಗಡಿಯ ಹೆಸರು | Shop name |  |
+| `credit.panel.business.address` | ವಿಳಾಸ (ಐಚ್ಛಿಕ) | Address (optional) |  |
+| `credit.panel.business.people` | ಇಂದು ಯಾರು ಎಷ್ಟು ಕೊಡಬೇಕು | Who owes what today |  |
+| `credit.panel.business.peopleHelp` | ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಬ್ಬರು: ಹೆಸರು, WhatsApp ಸಂಖ್ಯೆ, ಕೊಡಬೇಕಾದ ಮೊತ್ತ ರೂಪಾಯಿಯಲ್ಲಿ. ಉದಾಹರಣೆ: Ramesh, 98450 12345, 2400. ಯಾರೂ ಇಲ್ಲದೆ ಶುರು ಮಾಡಲು ಖಾಲಿ ಬಿಡಿ; ಮಾಲೀಕರು ನಂತರ WhatsApp-ನಲ್ಲಿ ಸೇರಿಸುತ್ತಾರೆ ("Ramesh owes 2400"). | One person on each line: their name, their WhatsApp number, what they owe in rupees. Example: Ramesh, 98450 12345, 2400. Leave it empty to start with nobody; the owner adds people later on WhatsApp ("Ramesh owes 2400"). |  |
+| `credit.panel.business.numbersNote` | ಸಂಖ್ಯೆಗಳು ಅಂಗಡಿಯ ಸರ್ವರ್‌ನಲ್ಲೇ ಇರುತ್ತವೆ. ಈಗ ಯಾರಿಗೂ ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ: ಮಾಲೀಕರು ಕೇಳಿ ಒತ್ತಿದಾಗ ಮಾತ್ರ ಪ್ರತಿಯೊಬ್ಬರಿಗೆ ಮೊದಲ ಸಂದೇಶ, ಅವರು ಒಪ್ಪಿದ ನಂತರವೇ ನೆನಪುಗಳು. | The numbers stay on the shop's server. Nothing is sent to anyone now: each person gets a first message only when the owner taps Ask, and reminders only after they say yes. |  |
+| `credit.panel.rules.every` | ನೆನಪು ಹೆಚ್ಚೆಂದರೆ ಪ್ರತಿ (ದಿನ) | A reminder at most every (days) |  |
+| `credit.panel.rules.everyHelp` | ಒಪ್ಪಿದವರಿಗೆ ಮಾತ್ರ, ಕೆಳಗಿನ ಗಂಟೆಗೆ, ಏನಾದರೂ ಬಾಕಿ ಇರುವವರೆಗೆ ನೆನಪುಗಳು ಹೋಗುತ್ತವೆ. | Reminders go only to people who said yes, at the hour below, while something is owed. |  |
+| `credit.panel.rules.hour` | ನೆನಪಿನ ಗಂಟೆ (6 ರಿಂದ 21) | Reminder hour (6 to 21) |  |
+| `credit.panel.rules.most` | ಒಬ್ಬರಿಗೆ ಒಂದು ತಿಂಗಳಲ್ಲಿ ಹೆಚ್ಚೆಂದರೆ ನೆನಪುಗಳು | Most reminders to one person in a month |  |
+| `credit.panel.rules.maxPerPerson` | ಒಂದು ಖಾತೆಯಲ್ಲಿ ಹೆಚ್ಚೆಂದರೆ (₹) | Most one account may show (₹) |  |
+| `credit.panel.rules.maxPerPersonHelp` | ಪಾವತಿ ಲಿಂಕ್ ಎಂದಿಗೂ ಇದಕ್ಕಿಂತ ಹೆಚ್ಚಿರುವುದಿಲ್ಲ. ಇದು ಸಾಲ ಬರೆಯುವುದನ್ನು ತಡೆಯುವುದಿಲ್ಲ; ತಪ್ಪಾಗಿ ಟೈಪ್ ಮಾಡಿದ ಮೊತ್ತವನ್ನು ತಡೆಯುತ್ತದೆ. | A payment link is never for more. It does not stop the owner writing credit; it stops a mistyped amount. |  |
+| `credit.panel.rules.partAllowed` | ಗ್ರಾಹಕರು ಭಾಗ ಪಾವತಿಸಬಹುದು | Customers may pay part |  |
+| `credit.panel.rules.partMin` | ಕನಿಷ್ಠ ಭಾಗ (₹) | Least part payment (₹) |  |
+| `credit.panel.rules.refund` | ಏಜೆಂಟ್ ತಾನೇ ಕೇಳಬಹುದಾದ ರೀಫಂಡ್ (₹) | Refund the agent may ask for on its own (₹) |  |
+| `credit.panel.rules.refundHelp` | ಇದಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಪ್ರತಿ ರೀಫಂಡ್‌ಗೆ ಮಾಲೀಕರ ಒಪ್ಪಿಗೆ ಬೇಕು. | Above this, the owner approves each refund. |  |
+| `credit.panel.rules.firstNote` | ಕೌಂಟರ್‌ನಲ್ಲಿ ಕೊಟ್ಟ ನಗದು ಮಾಲೀಕರ ಗುರುತು ("Ramesh paid 1000"), ಖಚಿತ ಪಾವತಿ ಅಲ್ಲ. ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ಮಾತ್ರ UPI ಪಾವತಿ ಎಣಿಕೆಯಾಗುತ್ತದೆ. | Cash paid at the counter is the owner's mark ("Ramesh paid 1000"), never a confirmed payment. A UPI payment counts only when the owner marks it received. |  |
+| `credit.panel.summary` | ಲೆಕ್ಕದಲ್ಲಿ 3 ಜನ · ಹೊಂದಿಸುವಾಗ ₹10,850 ಬಾಕಿ | 3 people in the book · ₹10,850 owed at setup |  |
+| `credit.panel.problems.tooMany` | ಇಲ್ಲಿ ಹೆಚ್ಚೆಂದರೆ 300 ಜನ. ದೊಡ್ಡ ಲೆಕ್ಕವನ್ನು ಬಿಲ್ಡರ್ ಹೊಂದಿಸುತ್ತಾರೆ. | At most 300 people here. A bigger book is set up by a builder. |  |
+| `credit.panel.problems.lineBad` | ಸಾಲು 2: ಹೆಸರು, WhatsApp ಸಂಖ್ಯೆ ಮತ್ತು ಮೊತ್ತವನ್ನು ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ ಬರೆಯಿರಿ. | Line 2: write the name, the WhatsApp number and the amount, with commas between. |  |
+| `credit.panel.problems.number` | ಸಾಲು 2: WhatsApp ಸಂಖ್ಯೆ ಸರಿಯಾಗಿ ಕಾಣುತ್ತಿಲ್ಲ. ಹತ್ತು ಅಂಕೆಗಳು, ಅಥವಾ + ಮತ್ತು ದೇಶದ ಕೋಡ್ ಬರೆಯಿರಿ. | Line 2: the WhatsApp number does not look right. Write ten digits, or + and the country code. |  |
+| `credit.panel.problems.amount` | ಸಾಲು 2: ಕೊಡಬೇಕಾದ ಮೊತ್ತ 0 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಪೂರ್ಣ ರೂಪಾಯಿಯಲ್ಲಿ, ಒಂದು ಖಾತೆಯ ಮಿತಿಯವರೆಗೆ ಇರಬೇಕು. | Line 2: what they owe must be whole rupees above 0, at most the most one account may show. |  |
+| `credit.panel.problems.twice` | ಸಾಲು 2: ಈ ಹೆಸರು ಅಥವಾ ಸಂಖ್ಯೆ ಹಿಂದಿನ ಸಾಲಿನಲ್ಲಿದೆ. ಮಾಲೀಕರು ಗುರುತಿಸಬಹುದಾದ ಹೆಸರು ನೀಡಿ. | Line 2: this name or number is already on an earlier line. Give each person a name the owner can tell apart. |  |
+| `credit.panel.problems.everyBad` | ನೆನಪಿನ ಅಂತರ 1 ರಿಂದ 60 ದಿನ ಇರಬೇಕು. | How often a reminder may go must be from 1 to 60 days. |  |
+| `credit.panel.problems.hourBad` | ನೆನಪಿನ ಗಂಟೆ 6 ರಿಂದ 21 ಇರಬೇಕು. | The reminder hour must be from 6 to 21. |  |
+| `credit.panel.problems.mostBad` | ತಿಂಗಳ ಹೆಚ್ಚೆಂದರೆ ನೆನಪುಗಳು 1 ರಿಂದ 12 ಇರಬೇಕು. | The most reminders in a month must be from 1 to 12. |  |
+| `credit.panel.problems.maxBad` | ಒಂದು ಖಾತೆಯ ಮಿತಿ 1 ರಿಂದ 10,00,000 ಪೂರ್ಣ ರೂಪಾಯಿ ಇರಬೇಕು. | The most one account may show must be whole rupees from 1 to 10,00,000. |  |
+| `credit.panel.problems.partBad` | ಕನಿಷ್ಠ ಭಾಗ 0 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಪೂರ್ಣ ರೂಪಾಯಿ ಇರಬೇಕು. | The least part payment must be whole rupees above 0. |  |
+| `credit.panel.problems.refundBad` | ರೀಫಂಡ್ ಮಿತಿ ಪೂರ್ಣ ರೂಪಾಯಿಯಲ್ಲಿ ಇರಬೇಕು. | The refund limit must be whole rupees. |  |
+| `credit.owner.title` | ಸಾಲದ ಲೆಕ್ಕ | Credit book |  |
+| `credit.owner.note` | ಯಾರು ಎಷ್ಟು ಕೊಡಬೇಕು. ಈ ಪಟ್ಟಿಯನ್ನು ನೀವು ಮಾತ್ರ ನೋಡುತ್ತೀರಿ. ನೀವು ಕೇಳಿ ಒತ್ತುವವರೆಗೆ ಗ್ರಾಹಕರಿಗೆ ಏನೂ ಹೋಗುವುದಿಲ್ಲ, ಅವರು ಒಪ್ಪಿದ ನಂತರವೇ ನೆನಪುಗಳು ಶುರುವಾಗುತ್ತವೆ. | Who owes what. Only you see this list. Nothing goes to a customer until you tap Ask, and reminders start only after they say yes. |  |
+| `credit.owner.boxLabel` | ಲೆಕ್ಕದಲ್ಲಿ ಬರೆಯಿರಿ | Write in the book |  |
+| `credit.owner.boxExample` | Ramesh owes 2400, ಅಥವಾ Ramesh paid 1000 | Ramesh owes 2400, or Ramesh paid 1000 |  |
+| `credit.owner.write` | ಬರೆಯಿರಿ | Write |  |
+| `credit.owner.none` | ಲೆಕ್ಕದಲ್ಲಿ ಇನ್ನೂ ಯಾರೂ ಇಲ್ಲ. | Nobody is in the book yet. |  |
+| `credit.owner.ask` | ನೆನಪುಗಳ ಬಗ್ಗೆ ಕೇಳಿ | Ask about reminders |  |
+| `credit.owner.state.none` | ಇನ್ನೂ ಕೇಳಿಲ್ಲ | Not asked yet |  |
+| `credit.owner.state.asked` | ಕೇಳಲಾಗಿದೆ: ಅವರ ಒಪ್ಪಿಗೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ | Asked: waiting for their yes |  |
+| `credit.owner.state.yes` | ನೆನಪುಗಳು ಚಾಲೂ | Reminders on |  |
+| `credit.owner.state.stopped` | STOP ಕಳುಹಿಸಿದ್ದಾರೆ: ಸಂದೇಶಗಳಿಲ್ಲ | Sent STOP: no messages |  |
 | `preset.words.question` | ಅಂಗಡಿ ಏನು ಮಾಡುತ್ತದೆ? | What does the shop do? |  |
 | `preset.words.other` | ಬೇರೆ ಏನೋ | Something else |  |
 | `preset.words.typedLabel` | ನಿಮ್ಮ ಅಂಗಡಿ ಏನು ಮಾಡುತ್ತದೆ, ನಿಮ್ಮದೇ ಮಾತುಗಳಲ್ಲಿ? | What does the shop do, in your own words? |  |
@@ -1878,6 +1919,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.clinic.prefill.services.1.names` | ಸಮಾಲೋಚನೆ | Consultation |  |
 | `preset.clinic.prefill.services.2.names` | ಫಿಸಿಯೋಥೆರಪಿ ಸೆಷನ್ | Physiotherapy session |  |
 | `preset.clinic.prefill.services.3.names` | ಫಾಲೋ-ಅಪ್ ಭೇಟಿ | Follow-up visit |  |
+| `preset.hardware-credit.name` | ಹಾರ್ಡ್‌ವೇರ್ ಅಥವಾ ಎಲೆಕ್ಟ್ರಿಕಲ್ ಅಂಗಡಿ: ಸಾಲದ ಲೆಕ್ಕ | Hardware or electrical shop: credit book |  |
 | `preset.restock.name` | ಸರಬರಾಜುದಾರರಿಂದ ಅಂಗಡಿಗೆ ಸ್ಟಾಕ್ ಆರ್ಡರ್ | Shop restocking from suppliers |  |
 | `preset.restock.prefill.supplier` | ನನ್ನ ಸರಬರಾಜುದಾರ | My supplier |  |
 | `preset.restock.prefill.items.1.names` | ಅಕ್ಕಿ 25 ಕೆಜಿ | Rice 25 kg |  |

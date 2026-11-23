@@ -1479,8 +1479,16 @@ is in `internal/fees/Explanation.md` § The credit book and `templates/education
 - **The agent** (`credit.go`, `credit_read.go`, `credit_state.go`): one open fee per person (no second ledger); the owner's words by rules in four languages; the first message
   only after the owner's tap, reminders only after the customer's yes, held for every message by a gate in the say path; cash as the owner's mark (`recordCash`, shared with
   the page's cash press); reminders every `remindEveryDays`, capped per calendar month; the credit twins of every Fees message an account reaches.
+- **The owner's reader takes only what is its own** (decision 65): a name, "owes" and an amount; "paid", "ask" and the words that also mean "remaining" (बाकी, baki) only
+  for a name already in the book; "who owes"; and a number completing an entry that waits for it. Anything else is left to the assistant (or, one day, another part), except a
+  message with a phone number in it, which gets the book's help line so a customer's number never reaches a model.
+- **After a gap** (the server down, or a reminder held), the next reminder is a full interval from now: never a run of reminders on consecutive beats.
 - **The owner's page** (`modules/channels/owner-credit.ts`): who owes what (names, never numbers), the Ask button bound to the row's digest, a box posted to `/credit`.
-- **The report**: a `credit` block (owed at the month's start, paid after a reminder, credit reminders, reminders after a recorded payment), TypeScript and Go, three vectors.
+- **The report**: a `credit` block (owed at the month's start, paid after a reminder, credit reminders, reminders after a recorded payment), TypeScript and Go, three vectors;
+  on a credit shop "still to collect" is every open account, whatever month it opened in (a Fees centre's is the month's own fees, as before). The go-live limit lines of a
+  credit shop state its own limits (no due day, late fee or reminder days).
+- **The export** (`bundle/backup/export.ts`) carries the fees (`dues`), never the store's `credit` member: an account's name is scrubbed and its number fingerprinted as a
+  student's and a parent's are, so nothing changed there.
 - **The panel**: the preset "Hardware or electrical shop: credit book" and its two-step form in four languages; the review sheets.
 - **Found:** a gateway (Razorpay) credit shop whose `maxPerPersonInr` is above ₹5,000 is refused by the Guard spec generator (`paymentNumbers`: the default daily refund cap is
   smaller than the dearest link), so its deployer must raise the cap; a UPI shop (the example, the default) has no payments Guard. The contract's guards harness raises the cap
