@@ -287,7 +287,10 @@ func (c *conv) offerCard(skill OwnerSkill, proposal assistant.Raw, prep Prepared
 }
 
 // refusal is conversation.ts tell("refusal", ...): why a proposal cannot become a card, by the skill's words.
-func (c *conv) refusal(why, ref, who string) {
+func (c *conv) refusal(why, ref, who string) { c.refusalPaid(why, ref, who, 0) }
+
+// refusalPaid is refusal with the refusal's `paidPaise` (the "too_much" sentence's amount, words.ts `d.paidPaise ?? 0`).
+func (c *conv) refusalPaid(why, ref, who string, paidPaise int64) {
 	key := "refusal." + why
 	if !c.pack.Has(key) {
 		key = "refusal.not_here"
@@ -298,7 +301,7 @@ func (c *conv) refusal(why, ref, who string) {
 	if who == "" {
 		who = ref
 	}
-	c.sayAbout(ref, key, "ref", ref, "who", who, "inr", assistant.INR(0))
+	c.sayAbout(ref, key, "ref", ref, "who", who, "inr", assistant.INR(paidPaise))
 }
 
 // propose is conversation.ts `propose`: prepare and offer; a refusal is said in words. A message is offered only while the customer's window is open.
@@ -311,7 +314,7 @@ func (c *conv) propose(proposal assistant.Raw) {
 	}
 	prep, why := skill.Prepare(proposal)
 	if why != "" {
-		c.refusal(why, cs, "")
+		c.refusalPaid(why, cs, "", prep.RefusedPaidPaise)
 		return
 	}
 	if prep.Action.Kind == "message" && !c.windowOpen(rawString(prep.Action.Fields["phone"])) {

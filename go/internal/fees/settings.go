@@ -250,11 +250,11 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 	refund, refundOK := readLimit(r, in["refund"], hasKey(in, "refund"), "refund", `the refund limit ("refund.limitInr")`, 1_000_000, "", true)
 	s.RefundLimitInr = refund
 	// settings.ts readPayment: an empty block is read as no block (refused and asked for the UPI ID), never as the gateway (B71)
-	pv := in["payment"]
+	pv, given := in["payment"], hasKey(in, "payment")
 	if m, ok := isObj(pv); ok && len(m) == 0 {
-		pv = nil
+		pv, given = nil, false
 	}
-	s.Payment = r.Payment(pv, "/payment")
+	s.Payment = r.Payment(pv, given, "/payment")
 	s.Approvers = r.Approvers(in["approvers"], hasKey(in, "approvers"), "/approvers", s.Owner.Whatsapp, refund, refundOK)
 	if s.Approvers != nil {
 		people, _ := s.Approvers["people"].([]any)

@@ -94,7 +94,8 @@ export function generate(): string {
     for (const c of [
       { kind: "answer", itemKind: "waiver", ref: "f-2", who: "Rohan Mehta", what: "Sep 2026", amountPaise: 50000, hasNo: true },
       { kind: "answer", itemKind: "refund_request", ref: "f-2", who: "Rohan Mehta", what: "Sep 2026", amountPaise: 40000, hasNo: true },
-      { kind: "cancel", ref: "f-2", who: "Rohan Mehta", what: "Sep 2026", amountPaise: 0, hasNo: true },
+      // the cancel card shows the balance it waives (23 Nov 2026, go-fees-gaps-23nov: it showed 0 and read "Nothing is owed.")
+      { kind: "cancel", ref: "f-2", who: "Rohan Mehta", what: "Sep 2026", amountPaise: 180000, hasNo: true },
       { kind: "refund", ref: "f-2", who: "Rohan Mehta", what: "Sep 2026", amountPaise: 180000, hasNo: true },
     ]) cases.push(said(lang, "card", { ...c, skill: "fees", code: "K7M2QX" }, "card", { ...c, skill: "fees", code: "K7M2QX" }));
     // an Orders shop's and a Fees centre's examples name their own kind of case, and an order cancelled late is its advance (23 Nov 2026, go-orders-gaps-23nov's findings)

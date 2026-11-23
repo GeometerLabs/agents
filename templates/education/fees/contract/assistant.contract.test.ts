@@ -112,7 +112,7 @@ describe("the shop's assistant on a Fees centre: cancel and refund", () => {
     await c.inbound(OWNER_NUMBER, `received ${codeFor(c, "f-2")}`);
     assert.deepEqual((await c.status()).fees, { open: 1, paid: 1 });
     await c.inbound(OWNER_NUMBER, "refund f-2 ₹2,000");
-    assert.equal(last(c, OWNER_NUMBER), "That is more than was paid on f-2 (₹0).");
+    assert.equal(last(c, OWNER_NUMBER), "That is more than was paid on f-2 (₹1,800).", "the refusal names the payment (it said ₹0 before 23 Nov 2026)");
     await c.inbound(OWNER_NUMBER, "refund f-2 ₹500");
     const card = lastCard(c);
     assert.match(card.text, /^Refund ₹500 of the fee to Rohan Mehta \(f-2\)\?\nTap a button/u, "a UPI owner's own refund is never above their limit");

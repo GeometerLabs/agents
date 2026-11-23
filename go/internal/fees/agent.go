@@ -134,13 +134,20 @@ func (a *Agent) owner() string {
 	return n
 }
 
-// languageOf is agent.ts languageOf: the fee's language, else the customer's, else the centre's first.
+// languageOf is agent.ts languageOf: the fee's language, else the customer's, else the language the settings give this parent's students (the first of their students, in
+// the settings' order, that names one), else the centre's first. The students' step is the 23 Nov 2026 fix of wave 3's TypeScript finding (a): a parent who had never written
+// was answered in the centre's first language, not their student's.
 func (a *Agent) languageOf(phone string, d *Due) string {
 	if d != nil && d.Language != "" {
 		return d.Language
 	}
 	if c := a.store.FindCustomer(phone); c != nil && c.Language != "" {
 		return c.Language
+	}
+	for _, s := range a.settings.Students {
+		if s.Parent == phone && s.Language != "" {
+			return s.Language
+		}
 	}
 	return a.settings.Languages[0]
 }

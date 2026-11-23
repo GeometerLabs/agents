@@ -26,12 +26,15 @@ test("cancel: a card; nothing happens before the tap; the tap takes off exactly 
   const due = await opened(w);
   await owner(w, `cancel ${due.id}`);
   const buttons = lastCard(w);
+  // the card shows the balance it waives, and that no money moves (it read "Nothing is owed." before 23 Nov 2026)
+  assert.match(cards(w).at(-1)!.text, /and waive the ₹1,800 balance\? No money moves\./u);
   assert.equal(due.state, "open", "nothing changes before the tap");
   assert.equal(due.waivedInr, 0);
   await w.tap(buttons[0].id, { from: w.owner });
   assert.equal(due.state, "closed");
   assert.equal(due.waivedInr, 1800, "exactly the balance the card was bound to");
   assert.equal(w.payments.refunds().length, 0, "a cancel refunds nothing");
+  assert.ok(w.messaging.sentTo(w.owner).some((m) => m.text === `Cancelled ${due.id}.`), "and the owner is told it was cancelled, not that money is on its way back");
   assert.ok(w.record.entries().some((e) => e.action === "waive_fee" && e.refs.by === "owner"));
   const before = cards(w).length;
   await w.tap(buttons[0].id, { from: w.owner });
@@ -88,8 +91,9 @@ test("refund: whole rupees only, never above the payment, and never of money the
   await w.deliverPaymentEvents();
   const skill = feesSkill({ settings: w.settings, store: w.store, nowMs: () => w.clock.now(), optedOut: () => false, entries: () => w.record.entries(), acts: { owner: w.owner, ownerRefunds: false, cancelFee: async () => false, refund: async () => "denied" } });
   assert.equal(skill.prepare({ kind: "refund", case: due.id, amountPaise: 30_000 }).ok, true);
-  assert.deepEqual(skill.prepare({ kind: "refund", case: due.id, amountPaise: 30_050 }), { ok: false, why: "too_much" });
-  assert.deepEqual(skill.prepare({ kind: "refund", case: due.id, amountPaise: 200_000 }), { ok: false, why: "too_much" });
+  // the refusal carries the payment, for the owner's words ("more than was paid on f-2 (₹1,800)"; it said ₹0 before 23 Nov 2026)
+  assert.deepEqual(skill.prepare({ kind: "refund", case: due.id, amountPaise: 30_050 }), { ok: false, why: "too_much", paidPaise: 180_000 });
+  assert.deepEqual(skill.prepare({ kind: "refund", case: due.id, amountPaise: 200_000 }), { ok: false, why: "too_much", paidPaise: 180_000 });
   // a payment the owner marked by hand has no payments service behind it
   due.payments = [{ id: "cash-1", amountPaise: 180_000, linkId: "cash" }];
   assert.deepEqual(skill.prepare({ kind: "refund", case: due.id }), { ok: false, why: "nothing_paid" });

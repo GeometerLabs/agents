@@ -191,7 +191,10 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!c) { c = { phone, optedOut: false }; store.customers.set(phone, c); }
     return c;
   };
-  const languageOf = (phone: string, due?: Due | null): Language => due?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
+  // The fee's language, else the language the parent last wrote in, else the language the settings give this parent's students (the first of their students, in the
+  // settings' order, that names one), else the centre's first. Before 23 Nov 2026 a parent who had never written in a language of their own was answered in the centre's
+  // first language about a fee-less matter, though their student's fees went in English (wave 3's TypeScript finding (a)).
+  const languageOf = (phone: string, due?: Due | null): Language => due?.language ?? store.customers.get(phone)?.language ?? settings.students.find((s) => s.parent === phone && s.language !== undefined)?.language ?? settings.languages[0];
 
   function log(due: Due | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: due?.id || null, action, inputs, outcome, language: languageOf(phone, due), ...more });
