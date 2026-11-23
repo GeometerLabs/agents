@@ -1363,7 +1363,9 @@ generator, the inbox and relay (they run as the bundle's services), and in modul
 **Tests that kept running on another fixture:** the approvals relay's tests (Bookings approvals-relay, -card, -group, and approvals-guard-binary of Bookings, Orders and Fees
 against the real geo-guard, and bundle approvals-group) needed "a runtime" for the relay to call. Their runtime is now the template's own agent driven in process
 (`modules/test/agent-runtime.ts`: each event once by the runtime's event key, a beat on demand, the refund counts /status gave, and the relay's two calls answered from the
-agent's store); the Go runtime's side of those two calls is held by each contract (limits-approvals, money). All 42 relay tests and every real-Guard test pass. The
+agent's store). The relay's REAL client to a shop (`createRuntimeClient`, what bundle/services/relay.ts runs) is held against the Go shops by the contracts: Bookings
+limits-approvals (the context, a missing one, and every decision through it), Orders money and Fees razorpay (the context and the approval through it). All 42 relay
+tests and every real-Guard test pass. The
 live adapters' glue (Bookings `src/adapters/live/index.ts`) moved to `test/helpers/live-adapters.ts`: only the stand-in, dev-forwarder, inbox end-to-end and Guard-answer
 tests use it now. The Orders reading vectors harvest strings from the tests; the 693 phrases of the deleted tests are kept in
 `go/scripts/vectors/orders-reading-kept-phrases.json`, so the vectors are unchanged.
@@ -1371,12 +1373,15 @@ tests use it now. The Orders reading vectors harvest strings from the tests; the
 **The contracts:** each harness drops `<TEMPLATE>_IMPL=ts` and the TypeScript start (the variable may still say go; without the binary every test is skipped and says so);
 each cross-restart test (TypeScript then Go, and back) is a Go-to-Go restart.
 
-**Found (reported, not changed):** the Orders contract's
-"a bakery that takes the whole order up front" fails when run after 18:00 in India (its guards shop orders for a day whose cut-off has passed: a time-of-day dependence of
-the test, not of the shop); the three approvals-guard-binary tests name the monorepo's geo-guard by a home-folder path when GEO_GUARD_BIN is not set (as before).
+**Found:** the Orders contract's "a bakery that takes the whole order up front" failed when run after 18:00 in India (its guards shop ordered two days ahead, past the
+bakery's cut-off of 18:00 two days before: a time-of-day dependence of the test, not of the shop); it orders three days ahead now; the three approvals-guard-binary tests name the monorepo's geo-guard by a home-folder path when GEO_GUARD_BIN is not set (as before).
 
 **Not done:** the inbox end-to-end through a whole local stack (the deleted local-stack/full-chain ran stand-ins, inbox, runtime, stub Guard and relay in one process; their
 refund and restart cases are in the contracts' L and R, and e2e.test.ts still runs the inbox against the stand-ins), the chat identity front against the runtime's routes
-(chat-identity-front.test.ts; the runtime side is the contracts' C). bundle/Deferred.md has each with what would close it. The two tests of bundle self-hosted-model that
+(chat-identity-front.test.ts; the runtime side is the contracts' C), and a customer's web push (the Go programs do not push a page's message to a customer or a reminder
+to a parent: go/internal/bookings and fees Deferred.md, before this stream; the deleted Fees parent-push and Bookings without-whatsapp tests held it on the TypeScript).
+Four tests that the cut took by pattern are back on another fixture: bundle fees-shop's export of a Fees centre (now of the file a Go centre wrote: names and numbers
+hashed, the ledger the centre's own), bundle owner-file's deployer pass, bundle terms (the handed file read as JSON), and the Fees materials' confinement (a hidden
+file and a link out of the batch's folder are never handed out: classes.contract.test.ts). bundle/Deferred.md has each with what would close it. The two tests of bundle self-hosted-model that
 priced a self-hosted model's call on the TypeScript runtime are a Bookings contract case now (chat.contract.test.ts: priced at the builder's rate, 0 kept as 0, no rate
 no price), passing on Go.

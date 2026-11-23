@@ -22,6 +22,8 @@ import { readStatus } from "../lib/status.ts";
 import { buildHeartbeat } from "../services/heartbeat.ts";
 import { validateRuntimeConfig } from "../../templates/education/fees/server/config.ts";
 import { zonedToMs } from "../../modules/core/time.ts";
+import { openStore } from "../../modules/runtime/store.ts";
+import { SHARMA, SKIP as CENTRE_SKIP, makeCentre } from "../../templates/education/fees/contract/harness.ts";
 import { PHONE_NUMBER_ID, serverConfig, writePersonKey } from "./helpers.ts";
 import { secretsFor, world } from "./world.ts";
 import type { World } from "./world.ts";
@@ -273,6 +275,42 @@ test("shop add --template fees starts a centre from the template: the example se
 });
 
 // ---- the export for the monthly report ---------------------------------------------------------------------------------------------
+
+test("the export for a Fees centre is dues.json: the parent's number and the child's name are hashed, in the fees and in the record's notes, and the ledger is the centre's own", { skip: CENTRE_SKIP }, async () => {
+  // The centre is the Go program (go/bin/fees), as every Fees centre is since 0.2.0, started by its contract's harness on the test clock; the export reads the very file it
+  // wrote. (Until 24 Nov 2026 this ran the TypeScript runtime in process.)
+  const c = await makeCentre({ example: "razorpay" });
+  const out = mkdtempSync(join(tmpdir(), "geo-export-"));
+  try {
+    await c.start();
+    await c.started();
+    c.advance(zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 10, minute: 5 }, "Asia/Kolkata") - c.now());
+    await c.waitFor(() => c.record().filter((e) => e.action === "open_fee" && e.outcome === "confirmed").length === 5, "November's five fees opened");
+    await c.stop();
+    const names = ["Aarav Sharma", "Anaya Sharma", "Meera Nair", "Kiran Gowda", "Rohan Mehta"];
+    const own = openStore(c.dataDir);
+    const ownRecord = own.loadState().record;
+    own.close();
+    assert.ok(names.some((n) => ownRecord.map((e) => e.notes).join("\n").includes(n)), "the record's own notes do name a student (that is what the export has to hide)");
+
+    const result = exportShop({ name: "bright", db: join(c.dataDir, "agent.db"), out, personKeyFile: writePersonKey(mkdtempSync(join(tmpdir(), "geo-key-"))) });
+    assert.equal(result.ok, true);
+    assert.deepEqual([result.dues, result.bookings], [5, undefined]);
+    assert.deepEqual(readdirSync(out).sort(), ["dues.json", "ledger.json", "person-form.json", "record.json"]);
+    const exported = readFileSync(join(out, "dues.json"), "utf8") + readFileSync(join(out, "record.json"), "utf8") + readFileSync(join(out, "ledger.json"), "utf8");
+    // B28: the ledger is chained from the centre's OWN record (names in its notes), and its head is the head of the exported record (names hashed): one fingerprint for both
+    const head = headOf(ownRecord, "bright")!;
+    assert.equal(headOf(JSON.parse(readFileSync(join(out, "record.json"), "utf8")), "bright")!.head, head.head);
+    assert.equal((JSON.parse(readFileSync(join(out, "ledger.json"), "utf8")) as { hash: string }[]).at(-1)!.hash, head.head);
+    assert.deepEqual(result.ledger, { seq: head.seq, head: head.head });
+    for (const name of names) assert.ok(!exported.includes(name), `${name} left the volume`);
+    assert.ok(!exported.includes(SHARMA) && !exported.includes("+9198"), "no parent's number left the volume");
+    const dues = JSON.parse(readFileSync(join(out, "dues.json"), "utf8")) as { studentName: string; customer: string; feeInr: number }[];
+    assert.ok(dues.every((d) => /^s-[0-9a-f]{12}$/.test(d.studentName) && /^p-[0-9a-f]{12}$/.test(d.customer) && d.feeInr > 0), "the amounts stay: the report counts them");
+    // the same student is the same hash, so two fees of one child can still be told apart from two children
+    assert.equal(new Set(dues.map((d) => d.studentName)).size, 5);
+  } finally { await c.cleanup(); rmSync(out, { recursive: true, force: true }); }
+});
 
 // ---- the heartbeat -------------------------------------------------------------------------------------------------------------------
 

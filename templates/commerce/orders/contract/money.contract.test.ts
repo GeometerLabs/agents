@@ -6,7 +6,8 @@
 // money-clarity, guard-outage and the situations. The bodies are the WIRE a Go runtime must put out.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOMER, OWNER_NUMBER, contract, makeShop } from "./harness.ts";
+import { CUSTOMER, OWNER_NUMBER, contract, dayAhead, makeShop } from "./harness.ts";
+import { createRuntimeClient } from "../../../../modules/approvals/clients.ts";
 import type { Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -105,7 +106,8 @@ describe("the advance", () => {
 
   contract("a bakery that takes the whole order up front asks for all of it: the link is the total", async () => {
     const s = await boot({ example: "bakery" });
-    const day = s.orderDay();
+    // three days ahead: the bakery's cut-off is 18:00 two days before (sweet-crumbs.example.json), so the harness's usual day (two ahead) has closed after 18:00
+    const day = dayAhead(s.now(), 3);
     await s.inbound(CUSTOMER, `2 plum cake ${day.words} 10:00 am`);
     const links = s.guards!.of("payments", "POST", /^\/v1\/payment_links$/u);
     assert.equal(links.length, 1, JSON.stringify(s.sent(CUSTOMER).map((m) => m.text)));
@@ -144,11 +146,15 @@ describe("refunds", () => {
     assert.equal(ctx.status, 200);
     assert.deepEqual([ctx.body.booking, ctx.body.customerPhone, ctx.body.businessName, ctx.body.timeZone, ctx.body.ownerLanguage, ctx.body.paymentId, ctx.body.amountPaise, ctx.body.approval], ["o-1", "+919811111111", "Annapurna Tiffins", "Asia/Kolkata", "en", paymentId, 12000, review.id]);
     assert.equal((await s.call("/internal/refund-context?receipt=o-9:pay_x")).status, 404);
+    // the relay's own client (modules/approvals/clients.ts, what bundle/services/relay.ts runs) reads the same context, and its shape check passes on the shop's answer
+    const client = createRuntimeClient({ url: `http://127.0.0.1:${s.port}`, token: s.internal });
+    assert.deepEqual(await client.context(`o-1:${paymentId}`), { kind: "found", context: ctx.body });
+    assert.deepEqual(await client.context("o-9:pay_x"), { kind: "missing" });
     assert.equal((await s.call("/internal/refund-context")).status, 400);
     await s.events([{ kind: "approval_decision", approval: review.id, decision: "approve" }]); await s.settle();
     assert.equal(s.guards!.standins.fakes.payments.refunds().length, 0, "Guard has no yes on record: nothing goes");
     assert.equal(s.guards!.stub.model.decide(review.id, true, "owner-contract").status, 200);
-    await s.events([{ kind: "approval_decision", approval: review.id, decision: "approve", id: "d-2" }]); await s.settle();
+    assert.equal(await client.decided(review.id, "approve", "d-relay"), true, "the shop took the decision from the relay's own client"); await s.settle();
     assert.deepEqual(s.guards!.standins.fakes.payments.refunds().map((r) => [r.payment_id, r.amount]), [[paymentId, 12000]]);
     assert.equal((await s.status()).refunds.waitingForOwner, 0);
   });

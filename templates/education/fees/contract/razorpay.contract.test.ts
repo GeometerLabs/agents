@@ -8,6 +8,7 @@ import { after, describe } from "node:test";
 import assert from "node:assert/strict";
 import { OWNER_NUMBER, ROHAN, contract, lines, makeCentre } from "./harness.ts";
 import type { Centre, CentreOptions } from "./harness.ts";
+import { createRuntimeClient } from "../../../../modules/approvals/clients.ts";
 
 const centres: Centre[] = [];
 after(async () => { for (const c of centres) await c.cleanup(); });
@@ -149,11 +150,14 @@ describe("refunds", () => {
     const ctx = await c.call(`/internal/refund-context?receipt=${encodeURIComponent(`f-2:${paymentId}`)}`);
     assert.equal(ctx.status, 200);
     assert.deepEqual(ctx.body, { booking: "f-2", customerPhone: ROHAN, businessName: "Bright Tuition Centre", timeZone: "Asia/Kolkata", ownerLanguage: "en", studentName: "Rohan Mehta", batchName: "class 10", monthLabel: "Sep 2026", paymentId, amountPaise: 180000, approval: review.id, expiresAtMs: ctx.body.expiresAtMs });
+    // the relay's own client (modules/approvals/clients.ts, what bundle/services/relay.ts runs) reads the same context, and its shape check passes on the centre's answer
+    const client = createRuntimeClient({ url: `http://127.0.0.1:${c.port}`, token: c.internal });
+    assert.deepEqual(await client.context(`f-2:${paymentId}`), { kind: "found", context: ctx.body });
     // a forged "approve" (Guard has no approval) sends nothing that refunds
     await c.events([{ kind: "approval_decision", approval: review.id, decision: "approve", id: "d-0" }]); await c.settle();
     assert.equal(c.guards!.standins.fakes.payments.refunds().length, 0);
     assert.equal(c.guards!.stub.model.decide(review.id, true, "owner-contract").status, 200);
-    await c.events([{ kind: "approval_decision", approval: review.id, decision: "approve", id: "d-1" }]); await c.settle();
+    assert.equal(await client.decided(review.id, "approve", "d-1"), true, "the centre took the decision from the relay's own client"); await c.settle();
     assert.equal(c.guards!.standins.fakes.payments.refunds().length, 1, "released once");
     assert.deepEqual((await c.status()).refunds.waitingForOwner, 0);
     await c.events([{ kind: "approval_decision", approval: review.id, decision: "approve", id: "d-2" }]); await c.settle();

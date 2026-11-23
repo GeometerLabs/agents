@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { ALWAYS_OPEN, MIN, OWNER_BASE, contract, makeShop, soonStart, sleep } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 import { fixture } from "./guards.ts";
+import { createRuntimeClient } from "../../../../modules/approvals/clients.ts";
 import { ownerKit, qr } from "../../../../modules/test/contract/owner-kit.ts";
 
 const { register } = ownerKit(OWNER_BASE);
@@ -30,7 +31,13 @@ async function heldRefund(o: Parameters<typeof makeShop>[0] = {}): Promise<{ s: 
   return { s, hash, approval: review.id, paymentId: link(s).payments[0].id };
 }
 const decideAtGuard = (s: Shop, approval: string, yes: boolean) => assert.equal(s.guards!.stub.model.decide(approval, yes, "owner-contract").status, 200);
-const relay = async (s: Shop, approval: string, decision: "approve" | "deny", id: string) => { const a = await s.events([{ kind: "approval_decision", approval, decision, id }]); assert.equal(a.status, 200, JSON.stringify(a.body)); await s.settle(); };
+// The relay's own client to the shop (modules/approvals/clients.ts createRuntimeClient, what bundle/services/relay.ts runs), over HTTP with the inbox's token: the decision goes
+// in as the relay sends it, and the client's `true` is the shop's word that it is saved. (The relay's tests drive the agent in process; this is where its real client meets the Go shop.)
+const relay = async (s: Shop, approval: string, decision: "approve" | "deny", id: string) => {
+  const saved = await createRuntimeClient({ url: `http://127.0.0.1:${s.port}`, token: s.internal }).decided(approval, decision, id);
+  assert.equal(saved, true, "the shop took the relay's decision");
+  await s.settle();
+};
 
 describe("the refund limit and the hold", () => {
   contract("at the limit a refund goes straight through; one rupee above it is held by the Guard and nobody is refunded", async () => {
@@ -71,6 +78,10 @@ describe("the refund limit and the hold", () => {
     const ctx = (await s.call(`/internal/refund-context?receipt=${receipt}`)).body;
     assert.deepEqual(ctx, { booking: "b-1", customerPhone: "+919811111111", businessName: "Glow Salon", timeZone: "Asia/Kolkata", ownerLanguage: "en", serviceName: "haircut", slotMs: ctx.slotMs, paymentId, amountPaise: 20000, approval, expiresAtMs: ctx.expiresAtMs });
     assert.ok(ctx.expiresAtMs > s.now() + 23 * 60 * MIN, "the approval lasts 24 hours");
+    // the relay's own client reads the same context, and its shape check passes on the shop's answer
+    const client = createRuntimeClient({ url: `http://127.0.0.1:${s.port}`, token: s.internal });
+    assert.deepEqual(await client.context(`b-1:${paymentId}`), { kind: "found", context: ctx });
+    assert.deepEqual(await client.context("b-9:pay_nope"), { kind: "missing" });
   });
 
   contract("approved: the SAME bytes are sent again, once; the same answer again, an approval for something else, and time send nothing more", async () => {

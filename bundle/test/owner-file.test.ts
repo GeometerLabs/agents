@@ -1,5 +1,5 @@
 // "Get my shop's file", the deployer's part: the owner's ask in the exported record makes the owner's file and copies it into THAT shop's own client folder; the runtime's own
-// reader then gives it once; a taken or expired file is deleted at once; a failed build is told and tried again later; another shop's ask never makes this shop's file.
+// reader (the Go program) then gives it once; a taken or expired file is deleted at once; a failed build is told and tried again later; another shop's ask never makes this shop's file.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -61,6 +61,18 @@ test("another shop's ask never makes this shop's file, and no ask makes none", a
   await s.run();
   assert.equal(existsSync(join(s.client("glow"), OWNER_FILE_META)), false);
   assert.equal(existsSync(join(s.client("other"), OWNER_FILE_META)), true);
+});
+
+test("the deployer's file is in the shop's client folder, the package first and the meta naming it; a second pass of the deployer does not make another", async () => {
+  // (the runtime's own reader that gave it once was the TypeScript runtime's, deleted on 24 Nov 2026; the Go runtime's take-once is the listings contract's routes case)
+  const s = server(["glow"]);
+  s.record("glow", [asked()]);
+  await s.run();
+  const meta = readOwnerFileMeta(readFileSync(join(s.client("glow"), OWNER_FILE_META), "utf8"))!;
+  assert.ok(meta.id.length > 0);
+  assert.equal(readFileSync(join(s.client("glow"), OWNER_FILE_BODY), "utf8"), "the package of glow");
+  await s.run(hours(1));
+  assert.equal(s.builds(), 1, "the same ask is answered once");
 });
 
 test("once the record says the owner took it, the server's copy is deleted at once", async () => {

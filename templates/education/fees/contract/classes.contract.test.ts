@@ -6,7 +6,7 @@
 // before); the material is served from the centre's own folder (guards mode, for the private link). Expected values from test/classes and old-dues-report.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OWNER_NUMBER, ROHAN, SHARMA, at, contract, lines, makeCentre, sends, sleep } from "./harness.ts";
 import type { Centre, CentreOptions } from "./harness.ts";
@@ -108,6 +108,10 @@ describe("the reading material", () => {
     writeFileSync(join(folder, "algebra.pdf"), "%PDF-1.4 algebra");
     writeFileSync(join(folder, "graph.png"), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
     writeFileSync(join(folder, "run.sh"), "echo no");
+    // never handed out (the TypeScript materials test, deleted with the runtime, held these): a hidden file, and a link to a file outside the batch's folder
+    writeFileSync(join(folder, ".hidden.pdf"), "%PDF-1.4 hidden");
+    writeFileSync(join(c.client, "materials", "secret.pdf"), "%PDF-1.4 outside");
+    symlinkSync(join(c.client, "materials", "secret.pdf"), join(folder, "linked.pdf"));
     await c.start();
     await c.waitFor(() => lines(c, "open_fee", "confirmed").length === 2, "the two earlier months opened");
     await c.inbound(ROHAN, "hello");
