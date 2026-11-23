@@ -148,10 +148,31 @@ export interface OrdersReport {
    * refused. Left out when the month's record has no discount line, which keeps the bytes of every report of a shop without the authority.
    */
   discounts?: DiscountCounts;
+  /**
+   * "Keep one for me", the pickup hold (24 Nov 2026; go/internal/orders agent_hold.go): the month's item enquiries (every one, answered or not), holds collected, holds that
+   * ended uncollected, and collections per ten enquiries (rounded to a whole number). Counted from the `pickup_hold` lines, each order once per step. Left out when the month
+   * has no such line, which keeps the bytes of every other shop's report.
+   */
+  holds?: HoldCounts;
   /** Monthly plans (17 Nov 2026): counted from the record (src/plans/report.ts). Made only for a shop with plans, so every other shop's report bytes are as they were. */
   plans?: PlansReport;
   /** The head of the shop's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
   anchor: LedgerHead | null;
+}
+
+/** The pickup hold's one number and what it is made of (OrdersReport.holds). */
+export interface HoldCounts { enquiries: number; collected: number; expired: number; perTen: number }
+
+/**
+ * The pickup hold's counts from a month of the record: each order once per step (`refs.step` of a confirmed `pickup_hold` line). Collections per ten enquiries is
+ * Math.round(collected × 10 / enquiries), 0 with no enquiry; the Go report rounds the same way (a half goes up). Undefined when the month has no `pickup_hold` line.
+ */
+export function holdsOf(month: readonly RecordEntry[]): HoldCounts | undefined {
+  const lines = month.filter((e) => e.action === "pickup_hold" && e.outcome === "confirmed" && e.booking);
+  if (lines.length === 0) return undefined;
+  const of = (step: string) => new Set(lines.filter((e) => e.refs.step === step).map((e) => e.booking as string)).size;
+  const enquiries = of("enquiry"), collected = of("collected"), expired = of("expired");
+  return { enquiries, collected, expired, perTen: enquiries === 0 ? 0 : Math.round((collected * 10) / enquiries) };
 }
 
 export interface ReportInput {
@@ -313,6 +334,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   const nextMonth: LocalDate = firstDay.month === 12 ? { year: firstDay.year + 1, month: 1, day: 1 } : { year: firstDay.year, month: firstDay.month + 1, day: 1 };
   const wholeMonth = zonedToMs({ ...firstDay, day: 1 }, midnight, settings.timezone) === from && zonedToMs(nextMonth, midnight, settings.timezone) === to;
   const discountCounts = discountsOfMonth(month); // E1: undefined (left out) unless the month has a discount line
+  const holds = holdsOf(month); // the pickup hold: undefined (left out) unless the month has a pickup_hold line
   return {
     format: "geometer-orders-report/1",
     pathway: PATHWAY,
@@ -336,6 +358,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     goLive,
     ...(accounting ? { accounting } : {}),
     ...(discountCounts ? { discounts: discountCounts } : {}),
+    ...(holds ? { holds } : {}),
     ...(settings.plans ? { plans: plansReportOf(all, month) } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };

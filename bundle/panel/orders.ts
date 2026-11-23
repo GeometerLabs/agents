@@ -35,7 +35,8 @@ export interface OrdersForm {
   pickup: string; delivery: string;
   /** Places, separated by commas or lines. Empty: the shop does not deliver. */
   area: string;
-  advanceMode: "full" | "part"; advancePercent: string; holdMinutes: string;
+  /** "none" (24 Nov 2026): "keep one for me", the pickup hold: nothing paid ahead, the owner accepts each hold (go/internal/orders agent_hold.go). */
+  advanceMode: "full" | "part" | "none"; advancePercent: string; holdMinutes: string;
   maxPerDay: string; maxItems: string; daysAhead: string; windowHours: string; refund: string; approveOver: string;
   /**
    * Kept from a shop being changed, so its orders still find their items and slots: the id a name had ("i:veg thali", "p:lunch", "d:lunch"). Never typed. What the form has no box for
@@ -165,7 +166,7 @@ export function applyOrdersRules(draft: Draft, body: Body, w: Words): StepResult
   const next: OrdersForm = {
     ...ordersOf(draft),
     cutoffDays: text(body.cutoffDays, 2), cutoffTime: text(body.cutoffTime, 5), pickup: (body.pickup ?? "").slice(0, 2000), delivery: (body.delivery ?? "").slice(0, 2000), area: (body.area ?? "").slice(0, 2000),
-    advanceMode: body.advanceMode === "full" ? "full" : "part", advancePercent: text(body.advancePercent, 3), holdMinutes: text(body.holdMinutes, 4),
+    advanceMode: body.advanceMode === "full" ? "full" : body.advanceMode === "none" ? "none" : "part", advancePercent: text(body.advancePercent, 3), holdMinutes: text(body.holdMinutes, 4),
     maxPerDay: text(body.maxPerDay, 5), maxItems: text(body.maxItems, 3), daysAhead: text(body.daysAhead, 2), windowHours: text(body.windowHours, 3), refund: text(body.refund, 9), approveOver: text(body.approveOver, 9),
   };
   if (!whole(next.cutoffDays, 0, 7)) problems.push(o.cutoffDaysBad);
@@ -240,7 +241,7 @@ export function buildOrdersSettings(draft: Draft, example: Settings, saved?: unk
     cutoff: { daysBefore: n(f.cutoffDays), time: f.cutoffTime },
     pickup: { slots: pickup.map((m, i) => slotOf(m, i)) },
     ...(delivery.length > 0 || places.length > 0 ? { delivery: { slots: delivery.map((m, i) => slotOf(m, pickup.length + i)), area: places } } : {}),
-    advance: f.advanceMode === "full" ? { mode: "full", holdMinutes: n(f.holdMinutes) } : { mode: "part", percent: n(f.advancePercent), holdMinutes: n(f.holdMinutes) },
+    advance: f.advanceMode === "none" ? { mode: "none", holdMinutes: n(f.holdMinutes) } : f.advanceMode === "full" ? { mode: "full", holdMinutes: n(f.holdMinutes) } : { mode: "part", percent: n(f.advancePercent), holdMinutes: n(f.holdMinutes) },
     cancellation: { windowHours: n(f.windowHours) }, refund: { limitInr: n(f.refund) },
     payment,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage, approveOverInr: n(f.approveOver) },

@@ -67,8 +67,13 @@ export interface Settings {
   pickup: { slots: Slot[] };
   /** Left out: the shop does not deliver. `area` is a plain list of places; an address that names none of them is not delivered to. */
   delivery?: { slots: Slot[]; area: string[] };
-  /** The advance the customer pays to confirm: all of the order ("full") or a part of it ("part", `percent` of the total, rounded up to a whole rupee). */
-  advance: { mode: "full" | "part"; percent: number; holdMinutes: number };
+  /**
+   * The advance the customer pays to confirm: all of the order ("full") or a part of it ("part", `percent` of the total, rounded up to a whole rupee). "none" (24 Nov 2026) is
+   * the "keep one for me" pickup hold (catalogue job 3, decision 63): no payment link is sent and no money moves; the owner accepts each hold (or picks the listed item a
+   * customer's photo or model number shows), the unit is held until the end of the agreed pickup slot, and staff mark it collected. Its `percent` is 0 and `holdMinutes` is not
+   * used. A shop with "none" takes no deliveries and no monthly plans.
+   */
+  advance: { mode: "full" | "part" | "none"; percent: number; holdMinutes: number };
   /**
    * A reminder to the customer before the slot (17 Nov 2026): this many hours before it starts, to a customer with a confirmed order, once. Left out: no reminder, as before.
    * The reminders' timing is modules/reminders'; the words are the template `order_reminder`.
@@ -148,6 +153,9 @@ export function validateSettings(input: unknown): SettingsResult {
   const assistant = readAssistantSettings(input.assistant, errors);
   const plans = readPlans(input.plans, { languages, slots: new Map([...pickup.map((s) => [s.id, "pickup"] as const), ...(delivery?.slots ?? []).map((s) => [s.id, "delivery"] as const)]), readCutoff, shopCutoff: cutoff as Cutoff, dailyRefundInr: DEFAULT_CAPS.refundPaisePerDay / 100 }, errors);
   const discounts = readDiscounts(input.discounts, menu, "item", errors);
+  // the pickup hold (advance "none") is a pickup at the shop's counter with nothing paid ahead: a delivery or a monthly plan would need an advance or a payment of its own
+  if (advance?.mode === "none" && delivery) errors.push("A shop that keeps items for pickup with no advance (\"advance.mode\": \"none\") does not deliver. Remove \"delivery\", or choose an advance.");
+  if (advance?.mode === "none" && plans) errors.push("Monthly plans are paid in advance, so they cannot run with \"advance.mode\": \"none\". Remove \"plans\", or choose an advance.");
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, menu, orders: orders as Settings["orders"], cutoff: cutoff as Cutoff, pickup: { slots: pickup },
@@ -194,8 +202,9 @@ export const highestOrderInr = (settings: Settings): number => Math.max(settings
 /** The least any one payment link can be for, in rupees. */
 export const LOWEST_LINK_INR = 1;
 
-/** The advance for an order total, in whole rupees: all of it, or the percentage rounded up (never 0, never more than the total). */
+/** The advance for an order total, in whole rupees: all of it, or the percentage rounded up (never 0, never more than the total); 0 for a pickup hold (mode "none"). */
 export function advanceFor(settings: Settings, totalInr: number): number {
+  if (settings.advance.mode === "none") return 0;
   if (settings.advance.mode === "full") return totalInr;
   return Math.min(totalInr, Math.max(1, Math.ceil((totalInr * settings.advance.percent) / 100)));
 }
@@ -354,8 +363,9 @@ function readAdvance(v: unknown, errors: string[]): Settings["advance"] | undefi
   if (!isObj(v)) { errors.push("The advance (\"advance\") must look like {\"mode\": \"part\", \"percent\": 50, \"holdMinutes\": 30}, or {\"mode\": \"full\"}."); return undefined; }
   unknownKeys(v, ["mode", "percent", "holdMinutes"], "the advance", errors);
   const mode = v.mode ?? "part";
-  if (mode !== "full" && mode !== "part") { errors.push("The advance mode (\"advance.mode\") must be \"full\" (all of the order) or \"part\" (a percentage of it)."); return undefined; }
-  const percent = mode === "full" ? 100 : v.percent === undefined ? 50 : readWhole(v.percent, "the advance percentage (\"advance.percent\")", 1, 99, errors, "use mode \"full\" for all of it");
+  if (mode !== "full" && mode !== "part" && mode !== "none") { errors.push("The advance mode (\"advance.mode\") must be \"full\" (all of the order), \"part\" (a percentage of it) or \"none\" (keep it for pickup, nothing paid ahead)."); return undefined; }
+  // "none": the pickup hold; nothing is paid ahead, so the percentage is 0 whatever the file says (as "full" is 100)
+  const percent = mode === "none" ? 0 : mode === "full" ? 100 : v.percent === undefined ? 50 : readWhole(v.percent, "the advance percentage (\"advance.percent\")", 1, 99, errors, "use mode \"full\" for all of it");
   const holdMinutes = v.holdMinutes === undefined ? 30 : readWhole(v.holdMinutes, "how long an order is held for the advance (\"advance.holdMinutes\")", 5, 24 * 60, errors);
   return percent === undefined || holdMinutes === undefined ? undefined : { mode, percent, holdMinutes };
 }

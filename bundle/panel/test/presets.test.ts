@@ -38,12 +38,18 @@ test("the phone templates a preset may name are Bookings and every row of setups
   assert.deepEqual([...PHONE_TEMPLATES].sort(), ["bookings", ...Object.keys(SETUPS)].sort());
 });
 
-test("the first set is here: salon, clinic, tuition, music or dance or yoga, bakery, sweets, catering and restocking, and the free listings-only shop; each file is named by its id", () => {
-  assert.deepEqual(presets.map((p) => p.id), ["arts", "bakery", "catering", "clinic", "hardware-credit", "restock", "salon", "shows-only", "sweets", "tuition"]);
+test("the first set is here: salon, clinic, tuition, music or dance or yoga, bakery, sweets, catering, restocking, hardware (keep one for me), the hardware shop's credit book and the free listings-only shop; each file is named by its id", () => {
+  assert.deepEqual(presets.map((p) => p.id), ["arts", "bakery", "catering", "clinic", "hardware", "hardware-credit", "restock", "salon", "shows-only", "sweets", "tuition"]);
   assert.deepEqual(readdirSync(PRESETS_DIR).filter((f) => f.endsWith(".json")).sort(), presets.map((p) => `${p.id}.json`));
   assert.deepEqual(presets.filter((p) => p.variant === "classes").map((p) => p.id), ["arts", "tuition"], "the two class trades use the Classes part of the Fees form");
   assert.deepEqual(presets.filter((p) => p.variant === "creditBook").map((p) => p.id), ["hardware-credit"], "the shop starter's credit book (24 Nov 2026) is the Fees form's credit variant");
   assert.equal(presets.some((p) => p.id === "tiffin" || p.id === "hire"), false, "tiffin and equipment hire stay hidden until their form step exists");
+  // the pickup hold (24 Nov 2026): the variant "hold" is the advance "none", and one goes only with the other
+  assert.deepEqual(presets.filter((p) => p.variant === "hold").map((p) => p.id), ["hardware"]);
+  const hw = presets.find((p) => p.id === "hardware")!;
+  assert.deepEqual((hw.prefill as { advance: unknown }).advance, { mode: "none" });
+  const mismatched = readPreset({ ...JSON.parse(readFileSync(join(PRESETS_DIR, "hardware.json"), "utf8")), variant: undefined }, PHONE_TEMPLATES);
+  assert.equal(mismatched.ok, false, "an advance of none without the variant hold is refused");
 });
 
 /**

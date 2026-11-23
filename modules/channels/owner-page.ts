@@ -154,6 +154,15 @@ export function ownerPage(o: OwnerPageInput): string {
     if (i.kind === "big_order") return card("bigOrder", more.bigOrder(who(i.customer, i.channel), what(i), amount), [b("approve", more.accept), b("deny", more.refuse, true)]);
     // E1: a price card (Bookings or Orders): the item, how many, the price asked against the list, and the total; the answer is the owner's "approve"/"deny" with the card's code
     if (i.kind === "discount" && i.deal) return card("discount", more.discount(who(i.customer, i.channel), i.deal.name, i.deal.qty, formatInr(i.deal.offeredInr), formatInr(i.deal.listInr), formatInr(i.deal.totalInr)), [b("approve", more.agreePrice), b("deny", more.keepPrice, true)]);
+    // the pickup hold (24 Nov 2026): a hold to accept, a photo's item to pick (ONE card for the case: a button per listed item, each with its own digest), an item kept until collected
+    if (i.kind === "hold_ask") return card("holdAsk", more.holdAsk(who(i.customer, i.channel), what(i), amount), [b("approve", more.keepForThem), b("deny", more.cantKeep, true)]);
+    if (i.kind === "hold") return card("held", more.held(who(i.customer, i.channel), what(i)), [b("collected", more.collected)], "info");
+    if (i.kind === "hold_pick") {
+      const picks = v.items.filter((x) => x.kind === "hold_pick" && x.case === i.case);
+      const press = (x: OwnerItemView, label: string, quiet = false) => button(o.base, { source: "runtime", action: x.pick ? "approve" : "deny", case: x.case, digest: x.digest }, label, quiet, o.csrf);
+      const buttons = picks.map((x) => (x.pick ? press(x, `${x.what ?? x.pick} ${formatInr(x.amountPaise / 100)}`) : press(x, more.notHave, true)));
+      return waitingCard(o.language, { tag: "holdPick", amountPaise: 0, text: more.holdPick(who(i.customer, i.channel)), buttons });
+    }
     const student = i.customer.name ?? i.customer.phone;
     if (i.kind === "waiver") return card("waiver", more.waiver(student, what(i), amount), [b("approve", more.waiveIt), b("deny", more.dontWaive, true)]);
     if (i.kind === "refund_request") return card("refundAsked", more.refundRequest(student, what(i), amount), [b("approve", more.refundIt), b("deny", more.dontRefund, true)]);
@@ -189,7 +198,9 @@ ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li
   const saysPaid = v.items.filter(claimedPay);
   const waitingPay = v.items.filter((i) => i.kind === "deposit" && i.claimedAtMs === undefined);
   const lateOnly = v.items.filter((i) => i.kind === "late_deposit" && i.claimedAtMs === undefined);
-  const rest = v.items.filter((i) => !claimedPay(i) && i.kind !== "deposit" && i.kind !== "late_deposit");
+  // a pickup hold's photo card is one card for its case, however many items it offers: only its first entry is drawn (item() draws them all)
+  const firstPick = (i: OwnerItemView, n: number) => i.kind !== "hold_pick" || v.items.findIndex((x) => x.kind === "hold_pick" && x.case === i.case) === n;
+  const rest = v.items.filter((i, n) => !claimedPay(i) && i.kind !== "deposit" && i.kind !== "late_deposit" && firstPick(i, n));
   const waiting = [...o.relayAsks.map(ask), ...rest.map(item), ...(v.app?.cards ?? []).filter((c) => c.kind !== "answer").map(card)];
   const anything = saysPaid.length + waiting.length + waitingPay.length + lateOnly.length > 0;
   const machine = PAGE[o.language].machine;

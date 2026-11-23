@@ -331,6 +331,8 @@ type OwnerItem struct {
 	// "approve o-3 <code>" with ITS code (never Code above, which is a UPI mark's). DealName is the item's name in the owner's language.
 	Deal     *discounts.Deal
 	DealName string
+	// Pick is the listed item one button of a pickup hold's photo card names (kind "hold_pick", agent_hold.go): a press sends "pick o-3 <item id>". "" on every other item.
+	Pick string
 }
 
 // JSON is the item as the owner's page reads it, in the TypeScript's member order, never with its code.
@@ -343,6 +345,9 @@ func (it OwnerItem) JSON() json.RawMessage {
 	kv = append(kv, "claimedAtMs", numRaw(it.ClaimedAtMs), "upiRef", strRaw(it.UpiRef))
 	if d := it.Deal; d != nil { // only a price card has it, so every other item keeps its bytes; never the card's code
 		kv = append(kv, "deal", ordered("name", it.DealName, "qty", d.Qty, "listInr", d.ListInr, "offeredInr", d.OfferedInr, "totalInr", d.TotalInr))
+	}
+	if it.Pick != "" { // only a pickup hold's photo card has it
+		kv = append(kv, "pick", it.Pick)
 	}
 	return ordered(kv...)
 }
@@ -493,6 +498,17 @@ func (s *Settings) OwnerItems(st *Store, nowMs int64) ([]OwnerItem, []Upcoming) 
 			it = OwnerItem{Kind: "big_order", Case: o.ID, Digest: digestOf("big_order", o.ID, b.TotalInr, b.AskedAtMs), Actions: []string{"approve", "deny"}, AmountPaise: b.TotalInr * 100}
 		} else if r := OwnerRefundOf(o.Pending[0]); r != nil {
 			it = OwnerItem{Kind: "late_refund", Case: o.ID, Digest: digestOf("late_refund", o.ID, r.PaymentID, r.AmountInr*100), Actions: []string{"approve", "deny"}, AmountPaise: r.AmountInr * 100}
+		} else if h := HoldAskOf(o.Pending[0]); h != nil {
+			// the pickup hold (agent_hold.go): the shop's yes to keep this order's items for its pickup time
+			it = OwnerItem{Kind: "hold_ask", Case: o.ID, Digest: digestOf("hold_ask", o.ID, h.TotalInr, h.AskedAtMs), Actions: []string{"approve", "deny"}, AmountPaise: h.TotalInr * 100}
+		} else if h := HoldPickOf(o.Pending[0]); h != nil {
+			// a photo or a model number: one button per listed item (its price is the item's), and one to say the shop does not have it; each press is bound to its own digest
+			who, ch := s.customerOf(st, o, o.Customer), channelOf(o)
+			for _, m := range s.Menu {
+				items = append(items, OwnerItem{Kind: "hold_pick", Case: o.ID, Digest: digestOf("hold_pick", o.ID, m.ID, h.AskedAtMs), Actions: []string{"approve"}, AmountPaise: m.PriceInr * 100,
+					Customer: who, Channel: ch, What: ItemName(&m, s.Owner.Language), Pick: m.ID})
+			}
+			it = OwnerItem{Kind: "hold_pick", Case: o.ID, Digest: digestOf("hold_pick", o.ID, "", h.AskedAtMs), Actions: []string{"deny"}}
 		} else {
 			continue
 		}
@@ -513,6 +529,21 @@ func (s *Settings) OwnerItems(st *Store, nowMs int64) ([]OwnerItem, []Upcoming) 
 		}
 		it := OwnerItem{Kind: "discount", Case: o.ID, Digest: digestOf("discount", o.ID, d.Code), Actions: []string{"approve", "deny"}, AmountPaise: d.TotalInr * 100,
 			Customer: s.customerOf(st, o, o.Customer), Channel: channelOf(o), What: s.OrderWhat(o, ""), Deal: d, DealName: name}
+		at(o, &it)
+		items = append(items, it)
+	}
+	// the pickup hold: an item kept for a customer, waiting to be marked collected (agent_hold.go); its time is the end of the agreed pickup slot
+	for _, o := range st.Orders {
+		h := o.hold()
+		if h == nil || o.State != AwaitingAdvance || o.HoldExpiresAt == nil || *o.HoldExpiresAt <= nowMs {
+			continue
+		}
+		total := int64(0)
+		if o.TotalInr != nil {
+			total = *o.TotalInr
+		}
+		it := OwnerItem{Kind: "hold", Case: o.ID, Digest: digestOf("hold", o.ID, *o.HoldExpiresAt), Actions: []string{"collected"}, AmountPaise: total * 100,
+			Customer: s.customerOf(st, o, o.Customer), Channel: channelOf(o), What: s.OrderWhat(o, "")}
 		at(o, &it)
 		items = append(items, it)
 	}

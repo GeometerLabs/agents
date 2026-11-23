@@ -35,6 +35,26 @@ The hand check prints `Held N of M. K failed. J not tested.`, a line for each si
 - **Monthly plans (17 Nov 2026, a shop with a `plans` block in its settings).** "I want the monthly lunch plan": a month of meals paid in advance the shop's usual way; then skip a day, pause, resume or cancel before each day's cut-off, and a renewal link at month end (no automatic debit). The days not taken are carried to the next payment or refunded, by the shop's rule. See Explanation.md, "Monthly plans", and `settings/annapurna-tiffins-plans.example.json`.
 - **STOP** ends every message.
 
+## "Keep one for me": the pickup hold (24 Nov 2026)
+
+A variant for a hardware, electrical or spares shop (the shop starter's job 3): `"advance": {"mode": "none"}` in the settings, or the panel's "Hardware and electricals" preset
+([ganesh-electricals-hold.example.json](settings/ganesh-electricals-hold.example.json)). Off by default; no delivery and no monthly plans with it.
+
+- **No payment link and no money.** The customer pays at the counter when they collect.
+- **The owner, not the model, decides the item.** A regular sends a photo or a model number: the owner gets a card and answers `pick o-3 <the item as listed>` (or `deny o-3`);
+  the listed item's price is the price, and the customer hears "the shop has it in stock at ₹...". A customer who names a listed item ("1 MCB 16A today evening") waits for the
+  shop's `approve o-3`.
+- **Held until the agreed pickup time**: the end of the pickup slot the customer chose. "Held for you" is said only after the shop said yes and the unit is reserved; the words
+  keep "we usually carry it", "in stock" and "held for you" apart.
+- **Two people asking for the last unit get at most one active hold** (counted across days, and against the shop's stock count); a retry keeps the hold it has.
+- **Staff mark it collected** (`collected o-3` on WhatsApp, or the button on the owner's page): the hold stands and the shared stock count goes down once. The end of the pickup
+  time, or the customer's cancel, releases it once, and the owner is told.
+- **The monthly page** counts holds collected, holds that ended uncollected, item enquiries, and collections per ten enquiries.
+- The shop's order page and API take no hold (they say to ask on WhatsApp); the public page for the counted items is [Listings](../listings/README.md).
+
+How it works: [go/internal/orders/Explanation.md](../../../go/internal/orders/Explanation.md) (the pickup hold); what is left: its Deferred.md. Contract cases:
+`contract/hold.contract.test.ts`.
+
 ## What the owner sees
 
 A message for each thing that needs them: a new order (what to prepare, for when, the total, what to collect, the address), an order above their approval line ("approve o-3"), a cancellation, a late cancellation to decide, a UPI payment to look for (with a code and a Received button), a refund to send, a customer who asked to talk. The monthly report, on WhatsApp on the 1st, and a page behind a link.
@@ -88,7 +108,7 @@ A shop is a JSON file ([annapurna-tiffins.example.json](settings/annapurna-tiffi
 | `cutoff`, and a slot's own `cutoff` | `daysBefore` and `time` ("20:00"): when orders for a day close |
 | `pickup.slots`, `delivery.slots` | Windows ("12:00" to "13:00") with an id and names ("lunch") |
 | `delivery.area` | A plain list of places; an address naming none of them is not delivered to |
-| `advance` | `mode` full or part, `percent`, `holdMinutes` |
+| `advance` | `mode` full or part, `percent`, `holdMinutes`; or `{"mode": "none"}`, the pickup hold above (no delivery, no plans) |
 | `cancellation.windowHours` | Cancel at least this long before the slot and the advance goes back |
 | `refund.limitInr` | The refund the agent may ask for alone; above it Guard holds it for the owner (Guard's threshold is made from the same number) |
 | `payment` | `{"module": "upi", "upi": {"id", "payee"}}` (the default) or `{"module": "razorpay"}` |

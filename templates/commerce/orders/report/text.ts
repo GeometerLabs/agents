@@ -66,7 +66,10 @@ export function ownerText(report: OrdersReport, language: Language): string {
   // E1, the discount authority: one line, only when the month has a discount
   const d = report.discounts;
   const discountLine = d ? [pair(s.discounts.given, `${rupees(d.given.paise)} (${d.given.count})`), pair(s.discounts.asked, d.asked), pair(s.discounts.refused, d.refused)].join(" · ") : "";
-  return [title, moneyLine, doneLine, stoppedLine, ...(discountLine ? [discountLine] : []), notChecked].join("\n");
+  // the pickup hold: one line, only when the month has a hold line
+  const h = report.holds;
+  const holdLine = h ? [pair(s.holds.collected, h.collected), pair(s.holds.expired, h.expired), pair(s.holds.enquiries, h.enquiries), pair(s.holds.perTen, h.perTen)].join(" · ") : "";
+  return [title, moneyLine, doneLine, stoppedLine, ...(discountLine ? [discountLine] : []), ...(holdLine ? [holdLine] : []), notChecked].join("\n");
 }
 
 /** The owner's messages for a language choice: one, or two for "both". */

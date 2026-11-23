@@ -591,6 +591,9 @@ func (o *Order) setReminders(rs []reminder) {
 
 // expireHold is agent.ts expireHold: the hold ran out; before giving the stock up, look at the payments record (the event may have been lost).
 func (a *Agent) expireHold(o *Order) error {
+	if a.settings.NoAdvance() {
+		return a.endHold(o) // the pickup hold: no payment to look for (agent_hold.go)
+	}
 	if _, err := a.reconcilePayments(o); err != nil {
 		return err
 	}

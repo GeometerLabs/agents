@@ -136,7 +136,7 @@ export interface Words {
       business: { name: string; address: string; menu: string; menuHelp: string };
       rules: {
         cutoffDays: string; cutoffTime: string; cutoffHelp: string; pickup: string; slotsHelp: string; delivery: string; deliveryHelp: string; area: string; areaHelp: string;
-        advance: string; advancePart: string; advanceFull: string; percent: string; hold: string; perDay: string; perOrder: string; daysAhead: string; window: string;
+        advance: string; advancePart: string; advanceFull: string; /** "Keep one for me" (24 Nov 2026): nothing paid ahead, pickup only. */ advanceNone: string; percent: string; hold: string; perDay: string; perOrder: string; daysAhead: string; window: string;
         refund: string; refundHelp: string; approveOver: string; approveHelp: string;
       };
       problems: {
@@ -476,7 +476,7 @@ export const en: Words = {
         pickup: "Pickup slots", slotsHelp: "One slot on each line: the times, then a name if you like. For example: 12:00-13:00, lunch",
         delivery: "Delivery slots (leave empty if you do not deliver)", deliveryHelp: "The same way, for example: 12:30-13:30, lunch",
         area: "Places you deliver to", areaHelp: "Separate them with commas. An address that names none of them is not delivered to.",
-        advance: "What the customer pays to confirm", advancePart: "A part of the order", advanceFull: "All of the order", percent: "Part to pay (%)", hold: "Minutes an order is held for the advance",
+        advance: "What the customer pays to confirm", advancePart: "A part of the order", advanceFull: "All of the order", advanceNone: "Nothing: keep it for pickup (the owner says yes to each hold; no delivery)", percent: "Part to pay (%)", hold: "Minutes an order is held for the advance",
         perDay: "Most orders for one day", perOrder: "Most items in one order", daysAhead: "How many days ahead an order may be (0 is today only)", window: "Cancel at least this many hours before the slot to get the advance back",
         refund: "Most the agent may refund by itself (₹)", refundHelp: "A refund above this waits for your OK on WhatsApp.",
         approveOver: "Orders above this total wait for your OK (₹, 0 for never)", approveHelp: "Such an order comes to you first, and the customer is asked to pay only after your OK.",

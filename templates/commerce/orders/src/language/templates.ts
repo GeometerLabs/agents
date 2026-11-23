@@ -95,7 +95,17 @@ export type TemplateId =
   | "owner_refund_needs_approval" | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed"
   // the relay again, when a refund needs several people (B37), and the agent when a person at the server settled a refund as made (Guard's already_done)
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused" | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PlanTemplateId | DiscountTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PlanTemplateId | DiscountTemplateId | HoldTemplateId;
+
+/**
+ * "Keep one for me" (24 Nov 2026), the pickup hold: a shop whose advance mode is "none" (go/internal/orders agent_hold.go). The words keep three things apart, as the pilot rules
+ * ask: "we usually carry it" (hold_usually: a listed item with none to hold now), "in stock" (hold_offer: the owner picked the listed item a photo or model number shows) and
+ * "held for you" (hold_held: only after the shop accepted and the unit is reserved, and its time is the agreed pickup slot's). No message asks for money: the customer pays at
+ * the counter when they collect. The owner's lines name the order ("o-3") and the fixed replies: "pick o-3 <item>", "approve o-3", "deny o-3", "collected o-3".
+ */
+export type HoldTemplateId =
+  | "hold_enquiry_asked" | "hold_still_asking" | "hold_offer" | "hold_usually" | "hold_only_left" | "hold_asked_shop" | "hold_held" | "hold_declined" | "hold_ended" | "hold_cancelled"
+  | "owner_hold_enquiry" | "owner_hold_ask" | "owner_hold_held" | "owner_hold_collected" | "owner_hold_ended" | "owner_hold_cancelled" | "owner_hold_none" | "owner_hold_pick_unclear";
 
 /**
  * E1, the discount authority (24 Nov 2026; go/internal/discounts): a price below the menu that the agent may give alone, one it asks the owner about, and the owner's answer.
@@ -129,8 +139,9 @@ export const TEMPLATE_NAMES = { customer: "order_update", owner: "order_owner_no
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PlanTemplateId | DiscountTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PlanTemplateId | DiscountTemplateId | HoldTemplateId>, Template>;
 type DiscountSet = Record<DiscountTemplateId, Template>;
+type HoldSet = Record<HoldTemplateId, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
 type LicenceSet = Record<LicenceTemplateId, Template>;
 type GuardWaitSet = Record<GuardWaitTemplateId, Template>;
@@ -711,7 +722,94 @@ const discountKn: DiscountSet = {
   owner_discount_stale: () => "ಈ ಉತ್ತರ ಬದಲಾದ ಅಥವಾ ಈಗಾಗಲೇ ಉತ್ತರಿಸಿದ ಬೆಲೆಯ ಕೋರಿಕೆಗೆ ಸಂಬಂಧಿಸಿದ್ದು, ಆದ್ದರಿಂದ ಏನೂ ಮಾಡಲಿಲ್ಲ.",
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...PLAN.en, ...discountEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...PLAN.hi, ...discountHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...PLAN.ml, ...discountMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...PLAN.kn, ...discountKn } };
+
+// "Keep one for me", the pickup hold (24 Nov 2026). Hindi, Malayalam and Kannada are machine-written like the rest and are on the review sheets.
+const holdEn: HoldSet = {
+  hold_enquiry_asked: () => "Thank you! I've asked the shop which item this is. They will tell you the item and its price here.",
+  hold_still_asking: () => "The shop is still checking. I'll message you here as soon as they answer.",
+  hold_offer: (f) => `The shop has ${need(f, "itemName")} in stock at ${inr(f, "priceInr")}.`,
+  hold_usually: (f) => `We usually carry ${need(f, "itemName")} (${inr(f, "priceInr")}), but none can be kept just now. Please ask again later, or talk to the owner.`,
+  hold_only_left: (f) => `Only ${need(f, "leftCount")} ${need(f, "itemName")} can be kept just now. Please ask for fewer.`,
+  hold_asked_shop: (f) => `I've asked the shop to keep ${items(f)} (${inr(f, "totalInr")}) for you, for pickup ${when(f)}. I'll message you as soon as they say yes.`,
+  hold_held: (f) => `Held for you: ${items(f)}, ${inr(f, "totalInr")}. Collect it ${when(f)}; it is kept for you until then. Nothing to pay now: you pay at the shop when you collect it.`,
+  hold_declined: () => "Sorry, the shop cannot keep this item for you just now. Nothing to pay.",
+  hold_ended: (f) => `Your pickup time (${when(f)}) has passed, so ${items(f)} is no longer kept for you. Message me if you would still like it.`,
+  hold_cancelled: (f) => `Okay, ${items(f)} is no longer kept for you. Nothing to pay.`,
+
+  owner_hold_enquiry: (f) => `Item enquiry ${need(f, "orderRef")}: ${need(f, "customerPhone")} sent a photo or a model number. See it in your chat with them, then reply "pick ${need(f, "orderRef")}" and the item's name as you list it, or "deny ${need(f, "orderRef")}" if you do not have it.`,
+  owner_hold_ask: (f) => `Keep one? ${need(f, "customerPhone")} asks you to keep ${items(f)} (${inr(f, "totalInr")}) for pickup ${when(f)}. Reply "approve ${need(f, "orderRef")}" to keep it for them, or "deny ${need(f, "orderRef")}".`,
+  owner_hold_held: (f) => `Held ${need(f, "orderRef")}: ${items(f)} for ${need(f, "customerPhone")}, for pickup ${when(f)}. When they collect it, reply "collected ${need(f, "orderRef")}".`,
+  owner_hold_collected: (f) => `Marked collected: ${need(f, "orderRef")}, ${items(f)}. Thank you.`,
+  owner_hold_ended: (f) => `Hold ${need(f, "orderRef")} ended: ${need(f, "customerPhone")} did not collect ${items(f)} by the end of ${when(f)}. It is free for others again.`,
+  owner_hold_cancelled: (f) => `Hold cancelled: ${need(f, "customerPhone")} no longer needs ${items(f)} (${need(f, "orderRef")}). It is free for others again.`,
+  owner_hold_none: () => "There is no hold with that number waiting to be collected, so nothing was marked.",
+  owner_hold_pick_unclear: (f) => `I could not tell which listed item you mean. Reply "pick ${need(f, "orderRef")}" and the item's name exactly as you list it.`,
+};
+const holdHi: HoldSet = {
+  hold_enquiry_asked: () => "धन्यवाद! मैंने दुकान से पूछा है कि यह कौन-सी चीज़ है। वे यहीं चीज़ और उसकी कीमत बताएँगे।",
+  hold_still_asking: () => "दुकान अभी देख रही है। जवाब आते ही मैं यहीं बताऊँगा।",
+  hold_offer: (f) => `दुकान में ${need(f, "itemName")} स्टॉक में है, कीमत ${inr(f, "priceInr")}।`,
+  hold_usually: (f) => `${need(f, "itemName")} (${inr(f, "priceInr")}) हम आम तौर पर रखते हैं, पर अभी एक भी रोका नहीं जा सकता। कृपया बाद में फिर पूछें, या मालिक से बात करें।`,
+  hold_only_left: (f) => `अभी सिर्फ़ ${need(f, "leftCount")} ${need(f, "itemName")} रोके जा सकते हैं। कृपया कम माँगें।`,
+  hold_asked_shop: (f) => `मैंने दुकान से कहा है कि ${items(f)} (${inr(f, "totalInr")}) आपके लिए रखें, पिकअप ${when(f)}। उनके हाँ कहते ही मैं बताऊँगा।`,
+  hold_held: (f) => `आपके लिए रखा गया: ${items(f)}, ${inr(f, "totalInr")}। इसे ${when(f)} ले जाइए; तब तक यह आपके लिए रखा है। अभी कुछ नहीं देना है: लेते समय दुकान पर दीजिए।`,
+  hold_declined: () => "माफ़ कीजिए, दुकान अभी यह चीज़ आपके लिए नहीं रख सकती। कुछ नहीं देना है।",
+  hold_ended: (f) => `आपका पिकअप समय (${when(f)}) निकल गया, इसलिए ${items(f)} अब आपके लिए नहीं रखा है। अगर अब भी चाहिए तो मुझे लिखिए।`,
+  hold_cancelled: (f) => `ठीक है, ${items(f)} अब आपके लिए नहीं रखा है। कुछ नहीं देना है।`,
+
+  owner_hold_enquiry: (f) => `चीज़ के बारे में पूछताछ ${need(f, "orderRef")}: ${need(f, "customerPhone")} ने फ़ोटो या मॉडल नंबर भेजा है। उनकी चैट में देखिए, फिर "pick ${need(f, "orderRef")}" और चीज़ का नाम वैसे ही लिखिए जैसे आपकी सूची में है, या अगर आपके पास नहीं है तो "deny ${need(f, "orderRef")}" लिखिए।`,
+  owner_hold_ask: (f) => `एक रख दें? ${need(f, "customerPhone")} चाहते हैं कि आप ${items(f)} (${inr(f, "totalInr")}) पिकअप ${when(f)} के लिए रखें। रखने के लिए "approve ${need(f, "orderRef")}" या मना करने के लिए "deny ${need(f, "orderRef")}" लिखिए।`,
+  owner_hold_held: (f) => `रखा गया ${need(f, "orderRef")}: ${items(f)}, ${need(f, "customerPhone")} के लिए, पिकअप ${when(f)}। जब वे ले जाएँ, तो "collected ${need(f, "orderRef")}" लिखिए।`,
+  owner_hold_collected: (f) => `ले जाना दर्ज हुआ: ${need(f, "orderRef")}, ${items(f)}। धन्यवाद।`,
+  owner_hold_ended: (f) => `रखा हुआ ${need(f, "orderRef")} ख़त्म: ${need(f, "customerPhone")} ${when(f)} के ख़त्म होने तक ${items(f)} नहीं ले गए। यह अब दूसरों के लिए फिर से खुला है।`,
+  owner_hold_cancelled: (f) => `रखना रद्द: ${need(f, "customerPhone")} को अब ${items(f)} (${need(f, "orderRef")}) नहीं चाहिए। यह अब दूसरों के लिए फिर से खुला है।`,
+  owner_hold_none: () => "उस नंबर का कोई रखा हुआ सामान ले जाने के लिए बाकी नहीं है, इसलिए कुछ दर्ज नहीं हुआ।",
+  owner_hold_pick_unclear: (f) => `समझ नहीं आया कि आप सूची की कौन-सी चीज़ कह रहे हैं। "pick ${need(f, "orderRef")}" और चीज़ का नाम ठीक वैसे ही लिखिए जैसे आपकी सूची में है।`,
+};
+const holdMl: HoldSet = {
+  hold_enquiry_asked: () => "നന്ദി! ഇത് ഏത് സാധനമാണെന്ന് ഞാൻ കടയോട് ചോദിച്ചിട്ടുണ്ട്. സാധനവും വിലയും അവർ ഇവിടെ അറിയിക്കും.",
+  hold_still_asking: () => "കട ഇപ്പോഴും നോക്കുകയാണ്. മറുപടി കിട്ടിയാലുടൻ ഞാൻ ഇവിടെ അറിയിക്കാം.",
+  hold_offer: (f) => `കടയിൽ ${need(f, "itemName")} സ്റ്റോക്കുണ്ട്, വില ${inr(f, "priceInr")}.`,
+  hold_usually: (f) => `${need(f, "itemName")} (${inr(f, "priceInr")}) ഞങ്ങൾ സാധാരണ വയ്ക്കാറുണ്ട്, പക്ഷേ ഇപ്പോൾ ഒന്നും മാറ്റിവയ്ക്കാൻ കഴിയില്ല. ദയവായി പിന്നീട് വീണ്ടും ചോദിക്കൂ, അല്ലെങ്കിൽ ഉടമയോട് സംസാരിക്കൂ.`,
+  hold_only_left: (f) => `ഇപ്പോൾ ${need(f, "leftCount")} ${need(f, "itemName")} മാത്രമേ മാറ്റിവയ്ക്കാൻ കഴിയൂ. ദയവായി കുറച്ച് ചോദിക്കൂ.`,
+  hold_asked_shop: (f) => `${items(f)} (${inr(f, "totalInr")}) നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാൻ ഞാൻ കടയോട് ചോദിച്ചിട്ടുണ്ട്, പിക്കപ്പ് ${when(f)}. അവർ സമ്മതിച്ചാലുടൻ ഞാൻ അറിയിക്കാം.`,
+  hold_held: (f) => `നിങ്ങൾക്കായി മാറ്റിവച്ചു: ${items(f)}, ${inr(f, "totalInr")}. ${when(f)} വന്ന് വാങ്ങൂ; അതുവരെ ഇത് നിങ്ങൾക്കായി വച്ചിരിക്കും. ഇപ്പോൾ ഒന്നും അടയ്ക്കേണ്ട: വാങ്ങുമ്പോൾ കടയിൽ അടച്ചാൽ മതി.`,
+  hold_declined: () => "ക്ഷമിക്കണം, ഈ സാധനം ഇപ്പോൾ നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാൻ കടയ്ക്ക് കഴിയില്ല. ഒന്നും അടയ്ക്കേണ്ട.",
+  hold_ended: (f) => `നിങ്ങളുടെ പിക്കപ്പ് സമയം (${when(f)}) കഴിഞ്ഞു, അതിനാൽ ${items(f)} ഇനി നിങ്ങൾക്കായി വച്ചിട്ടില്ല. ഇപ്പോഴും വേണമെങ്കിൽ എനിക്ക് എഴുതൂ.`,
+  hold_cancelled: (f) => `ശരി, ${items(f)} ഇനി നിങ്ങൾക്കായി വച്ചിട്ടില്ല. ഒന്നും അടയ്ക്കേണ്ട.`,
+
+  owner_hold_enquiry: (f) => `സാധനത്തെക്കുറിച്ചുള്ള ചോദ്യം ${need(f, "orderRef")}: ${need(f, "customerPhone")} ഒരു ഫോട്ടോയോ മോഡൽ നമ്പറോ അയച്ചു. അവരുമായുള്ള ചാറ്റിൽ നോക്കിയിട്ട് "pick ${need(f, "orderRef")}" എന്നും നിങ്ങളുടെ പട്ടികയിലുള്ളതുപോലെ സാധനത്തിന്റെ പേരും അയയ്ക്കൂ, ഇല്ലെങ്കിൽ "deny ${need(f, "orderRef")}" എന്ന് അയയ്ക്കൂ.`,
+  owner_hold_ask: (f) => `ഒന്ന് മാറ്റിവയ്ക്കണോ? ${need(f, "customerPhone")} ${items(f)} (${inr(f, "totalInr")}) പിക്കപ്പ് ${when(f)}-ന് മാറ്റിവയ്ക്കാൻ ചോദിക്കുന്നു. മാറ്റിവയ്ക്കാൻ "approve ${need(f, "orderRef")}", അല്ലെങ്കിൽ "deny ${need(f, "orderRef")}" എന്ന് അയയ്ക്കൂ.`,
+  owner_hold_held: (f) => `മാറ്റിവച്ചു ${need(f, "orderRef")}: ${items(f)}, ${need(f, "customerPhone")}-ന്, പിക്കപ്പ് ${when(f)}. അവർ വാങ്ങിക്കഴിഞ്ഞാൽ "collected ${need(f, "orderRef")}" എന്ന് അയയ്ക്കൂ.`,
+  owner_hold_collected: (f) => `വാങ്ങിയതായി രേഖപ്പെടുത്തി: ${need(f, "orderRef")}, ${items(f)}. നന്ദി.`,
+  owner_hold_ended: (f) => `മാറ്റിവച്ചത് ${need(f, "orderRef")} അവസാനിച്ചു: ${need(f, "customerPhone")} ${when(f)} കഴിയുന്നതുവരെ ${items(f)} വാങ്ങിയില്ല. ഇത് വീണ്ടും മറ്റുള്ളവർക്ക് ലഭ്യമാണ്.`,
+  owner_hold_cancelled: (f) => `മാറ്റിവയ്ക്കൽ റദ്ദാക്കി: ${need(f, "customerPhone")}-ന് ഇനി ${items(f)} (${need(f, "orderRef")}) വേണ്ട. ഇത് വീണ്ടും മറ്റുള്ളവർക്ക് ലഭ്യമാണ്.`,
+  owner_hold_none: () => "ആ നമ്പറിൽ വാങ്ങാൻ ബാക്കിയുള്ള മാറ്റിവച്ച സാധനമൊന്നുമില്ല, അതിനാൽ ഒന്നും രേഖപ്പെടുത്തിയില്ല.",
+  owner_hold_pick_unclear: (f) => `പട്ടികയിലെ ഏത് സാധനമാണ് ഉദ്ദേശിച്ചതെന്ന് മനസ്സിലായില്ല. "pick ${need(f, "orderRef")}" എന്നും പട്ടികയിലുള്ളതുപോലെ കൃത്യമായ പേരും അയയ്ക്കൂ.`,
+};
+const holdKn: HoldSet = {
+  hold_enquiry_asked: () => "ಧನ್ಯವಾದ! ಇದು ಯಾವ ವಸ್ತು ಎಂದು ನಾನು ಅಂಗಡಿಯನ್ನು ಕೇಳಿದ್ದೇನೆ. ವಸ್ತು ಮತ್ತು ಅದರ ಬೆಲೆಯನ್ನು ಅವರು ಇಲ್ಲೇ ತಿಳಿಸುತ್ತಾರೆ.",
+  hold_still_asking: () => "ಅಂಗಡಿ ಇನ್ನೂ ನೋಡುತ್ತಿದೆ. ಉತ್ತರ ಬಂದ ತಕ್ಷಣ ನಾನು ಇಲ್ಲೇ ತಿಳಿಸುತ್ತೇನೆ.",
+  hold_offer: (f) => `ಅಂಗಡಿಯಲ್ಲಿ ${need(f, "itemName")} ಸ್ಟಾಕ್‌ನಲ್ಲಿದೆ, ಬೆಲೆ ${inr(f, "priceInr")}.`,
+  hold_usually: (f) => `${need(f, "itemName")} (${inr(f, "priceInr")}) ನಾವು ಸಾಮಾನ್ಯವಾಗಿ ಇಡುತ್ತೇವೆ, ಆದರೆ ಈಗ ಒಂದನ್ನೂ ಕಾಯ್ದಿರಿಸಲು ಆಗುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಕೇಳಿ, ಅಥವಾ ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತನಾಡಿ.`,
+  hold_only_left: (f) => `ಈಗ ${need(f, "leftCount")} ${need(f, "itemName")} ಮಾತ್ರ ಕಾಯ್ದಿರಿಸಬಹುದು. ದಯವಿಟ್ಟು ಕಡಿಮೆ ಕೇಳಿ.`,
+  hold_asked_shop: (f) => `${items(f)} (${inr(f, "totalInr")}) ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲು ನಾನು ಅಂಗಡಿಯನ್ನು ಕೇಳಿದ್ದೇನೆ, ಪಿಕಪ್ ${when(f)}. ಅವರು ಒಪ್ಪಿದ ತಕ್ಷಣ ನಾನು ತಿಳಿಸುತ್ತೇನೆ.`,
+  hold_held: (f) => `ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ: ${items(f)}, ${inr(f, "totalInr")}. ${when(f)} ಬಂದು ತೆಗೆದುಕೊಳ್ಳಿ; ಅಲ್ಲಿಯವರೆಗೆ ಇದು ನಿಮಗಾಗಿ ಇರುತ್ತದೆ. ಈಗ ಏನೂ ಕೊಡಬೇಕಿಲ್ಲ: ತೆಗೆದುಕೊಳ್ಳುವಾಗ ಅಂಗಡಿಯಲ್ಲಿ ಪಾವತಿಸಿ.`,
+  hold_declined: () => "ಕ್ಷಮಿಸಿ, ಈ ವಸ್ತುವನ್ನು ಅಂಗಡಿ ಈಗ ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲು ಆಗುವುದಿಲ್ಲ. ಏನೂ ಕೊಡಬೇಕಿಲ್ಲ.",
+  hold_ended: (f) => `ನಿಮ್ಮ ಪಿಕಪ್ ಸಮಯ (${when(f)}) ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ${items(f)} ಇನ್ನು ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಿಲ್ಲ. ಇನ್ನೂ ಬೇಕಾದರೆ ನನಗೆ ಬರೆಯಿರಿ.`,
+  hold_cancelled: (f) => `ಸರಿ, ${items(f)} ಇನ್ನು ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಿಲ್ಲ. ಏನೂ ಕೊಡಬೇಕಿಲ್ಲ.`,
+
+  owner_hold_enquiry: (f) => `ವಸ್ತುವಿನ ವಿಚಾರಣೆ ${need(f, "orderRef")}: ${need(f, "customerPhone")} ಅವರು ಫೋಟೋ ಅಥವಾ ಮಾಡೆಲ್ ನಂಬರ್ ಕಳುಹಿಸಿದ್ದಾರೆ. ಅವರ ಚಾಟ್‌ನಲ್ಲಿ ನೋಡಿ, ನಂತರ "pick ${need(f, "orderRef")}" ಮತ್ತು ನಿಮ್ಮ ಪಟ್ಟಿಯಲ್ಲಿರುವಂತೆ ವಸ್ತುವಿನ ಹೆಸರನ್ನು ಕಳುಹಿಸಿ, ಇಲ್ಲದಿದ್ದರೆ "deny ${need(f, "orderRef")}" ಎಂದು ಕಳುಹಿಸಿ.`,
+  owner_hold_ask: (f) => `ಒಂದನ್ನು ಕಾಯ್ದಿರಿಸಬೇಕೇ? ${need(f, "customerPhone")} ಅವರು ${items(f)} (${inr(f, "totalInr")}) ಪಿಕಪ್ ${when(f)} ಗಾಗಿ ಕಾಯ್ದಿರಿಸಲು ಕೇಳುತ್ತಿದ್ದಾರೆ. ಕಾಯ್ದಿರಿಸಲು "approve ${need(f, "orderRef")}", ಇಲ್ಲವಾದರೆ "deny ${need(f, "orderRef")}" ಎಂದು ಕಳುಹಿಸಿ.`,
+  owner_hold_held: (f) => `ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ ${need(f, "orderRef")}: ${items(f)}, ${need(f, "customerPhone")} ಅವರಿಗೆ, ಪಿಕಪ್ ${when(f)}. ಅವರು ತೆಗೆದುಕೊಂಡಾಗ "collected ${need(f, "orderRef")}" ಎಂದು ಕಳುಹಿಸಿ.`,
+  owner_hold_collected: (f) => `ತೆಗೆದುಕೊಂಡಿದ್ದಾರೆ ಎಂದು ದಾಖಲಾಗಿದೆ: ${need(f, "orderRef")}, ${items(f)}. ಧನ್ಯವಾದ.`,
+  owner_hold_ended: (f) => `ಕಾಯ್ದಿರಿಸಿದ್ದು ${need(f, "orderRef")} ಮುಗಿದಿದೆ: ${need(f, "customerPhone")} ಅವರು ${when(f)} ಮುಗಿಯುವವರೆಗೆ ${items(f)} ತೆಗೆದುಕೊಳ್ಳಲಿಲ್ಲ. ಇದು ಮತ್ತೆ ಇತರರಿಗೆ ಲಭ್ಯವಿದೆ.`,
+  owner_hold_cancelled: (f) => `ಕಾಯ್ದಿರಿಸುವಿಕೆ ರದ್ದಾಗಿದೆ: ${need(f, "customerPhone")} ಅವರಿಗೆ ಇನ್ನು ${items(f)} (${need(f, "orderRef")}) ಬೇಕಿಲ್ಲ. ಇದು ಮತ್ತೆ ಇತರರಿಗೆ ಲಭ್ಯವಿದೆ.`,
+  owner_hold_none: () => "ಆ ನಂಬರಿನಲ್ಲಿ ತೆಗೆದುಕೊಳ್ಳಲು ಬಾಕಿ ಇರುವ ಕಾಯ್ದಿರಿಸಿದ ವಸ್ತು ಇಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ದಾಖಲಾಗಲಿಲ್ಲ.",
+  owner_hold_pick_unclear: (f) => `ಪಟ್ಟಿಯ ಯಾವ ವಸ್ತು ಎಂದು ತಿಳಿಯಲಿಲ್ಲ. "pick ${need(f, "orderRef")}" ಮತ್ತು ನಿಮ್ಮ ಪಟ್ಟಿಯಲ್ಲಿರುವಂತೆಯೇ ವಸ್ತುವಿನ ಹೆಸರನ್ನು ಕಳುಹಿಸಿ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...PLAN.en, ...discountEn, ...holdEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...PLAN.hi, ...discountHi, ...holdHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...PLAN.ml, ...discountMl, ...holdMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...PLAN.kn, ...discountKn, ...holdKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

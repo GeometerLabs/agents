@@ -1,0 +1,24 @@
+{
+  "name": "Ganesh Electricals",
+  "address": "12 Market Road, Tumakuru",
+  "timezone": "Asia/Kolkata",
+  "languages": ["en", "kn"],
+  "menu": [
+    { "id": "led-9w", "names": { "en": ["LED bulb 9W", "9W bulb"], "kn": ["ಎಲ್ಇಡಿ ಬಲ್ಬ್ 9W"] }, "priceInr": 120, "dailyStock": 5 },
+    { "id": "ext-board", "names": { "en": ["extension board", "spike guard"], "kn": ["ಎಕ್ಸ್‌ಟೆನ್ಶನ್ ಬೋರ್ಡ್"] }, "priceInr": 450, "dailyStock": 3 },
+    { "id": "mcb-16a", "names": { "en": ["MCB 16A", "16A MCB"], "kn": ["ಎಂಸಿಬಿ 16A"] }, "priceInr": 250, "dailyStock": 1 }
+  ],
+  "orders": { "maxPerDay": 50, "maxItemsPerOrder": 5, "daysAhead": 2 },
+  "cutoff": { "daysBefore": 0, "time": "18:00" },
+  "pickup": {
+    "slots": [
+      { "id": "morning", "from": "10:00", "to": "13:00", "names": { "en": ["morning"], "kn": ["ಬೆಳಿಗ್ಗೆ"] }, "cutoff": { "daysBefore": 0, "time": "12:00" } },
+      { "id": "evening", "from": "16:00", "to": "19:00", "names": { "en": ["evening"], "kn": ["ಸಂಜೆ"] } }
+    ]
+  },
+  "advance": { "mode": "none" },
+  "cancellation": { "windowHours": 0 },
+  "refund": { "limitInr": 0 },
+  "payment": { "module": "upi", "upi": { "id": "ganesh@okaxis", "payee": "Ganesh Electricals" } },
+  "owner": { "whatsapp": "+919800000001", "language": "en", "approveOverInr": 0 }
+}

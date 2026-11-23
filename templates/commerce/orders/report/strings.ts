@@ -38,6 +38,8 @@ export interface Strings {
   languageName: Record<Language, string>;
   /** E1, the discount authority (modules/limits/discounts.ts DISCOUNT_REPORT_WORDS): the labels of the month's discounts, shown only when the month has any. */
   discounts: { given: string; asked: string; refused: string };
+  /** "Keep one for me", the pickup hold (24 Nov 2026): the labels of the month's holds, shown only when the month has any. */
+  holds: { collected: string; expired: string; enquiries: string; perTen: string };
   /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
   upiLabel: { collected: string; givenBack: string; notChecked: string };
   /** The \"Money this month\" block (modules/accounting/report-block.ts), from the signed books summary. */
@@ -49,7 +51,9 @@ export interface Strings {
   cert: {
     date: string; held(held: number, total: number, failed: number, notTested: number): string; intro: string; yourLimits: string;
     paidRule: string; menu(items: string): string; orderLimits(perDay: number, items: number, daysAhead: number): string; cutoff(daysBefore: number, time: string): string;
-    advance(full: boolean, percent: number, minutes: number): string; delivery(areas: string): string; noDelivery: string; window(hours: number): string; refund(amount: string): string;
+    advance(full: boolean, percent: number, minutes: number): string;
+    /** The pickup hold (advance "none", 24 Nov 2026): nothing is paid ahead; the shop accepts each hold and keeps it until the end of the pickup time. */
+    noAdvance: string; delivery(areas: string): string; noDelivery: string; window(hours: number): string; refund(amount: string): string;
     approve(amount: string): string; noApprove: string; notAGrade: string; didNotHold: string; handRunLine: string; checkedOn: string;
   };
   /**
@@ -85,6 +89,7 @@ export const en: Strings = {
   notChecked: { cash: "balance paid in cash or UPI at pickup", upi: "payments outside Razorpay", whatsapp: "real WhatsApp", razorpay: "real Razorpay", review: "a native speaker's review of the wording" },
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
   discounts: DISCOUNT_REPORT_WORDS.en,
+  holds: { collected: "Holds collected", expired: "Holds that ended uncollected", enquiries: "Item enquiries", perTen: "Collections per ten enquiries" },
   moneyBlock: MONEY_BLOCK_WORDS.en,
   upiLabel: { collected: "Advance marked paid by owner", givenBack: "Refunds marked sent by owner", notChecked: "automatic payment checking (with UPI you mark each payment)" },
   notTested: {
@@ -125,6 +130,7 @@ export const en: Strings = {
     yourLimits: "Your limits", paidRule: "No order is confirmed until the payment record (or your UPI mark) shows the whole advance", menu: (items) => `Menu and the most made in a day: ${items}`,
     orderLimits: (perDay, items, ahead) => `At most ${perDay} orders a day, ${items} items in one order, up to ${ahead} days ahead`, cutoff: (days, time) => (days === 0 ? `The usual cut-off: orders close at ${time} on the same day` : `The usual cut-off: orders close at ${time}, ${days} ${days === 1 ? "day" : "days"} before`),
     advance: (full, percent, minutes) => (full ? `The whole price is paid as the advance; the order is held ${minutes} minutes for it` : `${percent}% of the price is paid as the advance; the order is held ${minutes} minutes for it`),
+    noAdvance: "Nothing is paid ahead: you accept each hold, and the item is kept until the end of the pickup time the customer chose",
     delivery: (areas) => `Delivery only to: ${areas}`, noDelivery: "Pickup only, no delivery",
     window: (hours) => `Cancel at least ${hours} hours before the slot and the advance is refunded; later, it is your call`,
     refund: (amount) => `Refunds above ${amount} only with your OK`,
@@ -167,6 +173,7 @@ export const hi: Strings = {
   notChecked: { cash: "पिकअप पर नकद या UPI से दी गई बाकी रकम", upi: "Razorpay के बाहर के भुगतान", whatsapp: "असली WhatsApp", razorpay: "असली Razorpay", review: "शब्दों की किसी मूल भाषी से जाँच" },
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
   discounts: DISCOUNT_REPORT_WORDS.hi,
+  holds: { collected: "रखा सामान जो ले जाया गया", expired: "रखा सामान जो नहीं ले जाया गया", enquiries: "सामान की पूछताछ", perTen: "हर दस पूछताछ पर ले जाया गया" },
   moneyBlock: MONEY_BLOCK_WORDS.hi,
   upiLabel: { collected: "मालिक द्वारा मिला हुआ दर्ज एडवांस", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड", notChecked: "भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं)" },
   notTested: {
@@ -206,6 +213,7 @@ export const hi: Strings = {
     yourLimits: "आपकी सीमाएँ", paidRule: "भुगतान का रिकॉर्ड (या UPI में आपका दर्ज करना) पूरा एडवांस न दिखाए तो ऑर्डर पक्का नहीं होता", menu: (items) => `मेन्यू और एक दिन में ज़्यादा से ज़्यादा बनने वाली मात्रा: ${items}`,
     orderLimits: (perDay, items, ahead) => `एक दिन में ज़्यादा से ज़्यादा ${perDay} ऑर्डर, एक ऑर्डर में ${items} चीज़ें, ${ahead} दिन आगे तक`, cutoff: (days, time) => (days === 0 ? `आम कट-ऑफ़: ऑर्डर उसी दिन ${time} पर बंद होते हैं` : `आम कट-ऑफ़: ऑर्डर ${days} दिन पहले ${time} पर बंद होते हैं`),
     advance: (full, percent, minutes) => (full ? `पूरी कीमत एडवांस में ली जाती है; इसके लिए ऑर्डर ${minutes} मिनट रोका जाता है` : `कीमत का ${percent}% एडवांस में लिया जाता है; इसके लिए ऑर्डर ${minutes} मिनट रोका जाता है`),
+    noAdvance: "पहले कुछ नहीं लिया जाता: हर रोक आप मंज़ूर करते हैं, और सामान ग्राहक के चुने पिकअप समय के अंत तक रखा जाता है",
     delivery: (areas) => `डिलीवरी सिर्फ़ यहाँ: ${areas}`, noDelivery: "सिर्फ़ पिकअप, डिलीवरी नहीं",
     window: (hours) => `स्लॉट से कम से कम ${hours} घंटे पहले रद्द करने पर एडवांस वापस होता है; उसके बाद का फ़ैसला आपका`,
     refund: (amount) => `${amount} से ऊपर का रिफंड आपसे पूछकर`,
@@ -248,6 +256,7 @@ export const ml: Strings = {
   notChecked: { cash: "പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക", upi: "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ", whatsapp: "യഥാർത്ഥ WhatsApp", razorpay: "യഥാർത്ഥ Razorpay", review: "വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
   discounts: DISCOUNT_REPORT_WORDS.ml,
+  holds: { collected: "മാറ്റിവച്ചത് വാങ്ങിയത്", expired: "മാറ്റിവച്ചത് വാങ്ങാതെ പോയത്", enquiries: "സാധനത്തെക്കുറിച്ചുള്ള ചോദ്യങ്ങൾ", perTen: "പത്ത് ചോദ്യങ്ങൾക്ക് വാങ്ങിയത്" },
   moneyBlock: MONEY_BLOCK_WORDS.ml,
   upiLabel: { collected: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്", notChecked: "പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു)" },
   notTested: {
@@ -287,6 +296,7 @@ export const ml: Strings = {
     yourLimits: "നിങ്ങളുടെ പരിധികൾ", paidRule: "പേയ്മെന്റ് രേഖ (അല്ലെങ്കിൽ UPI-യിൽ നിങ്ങളുടെ രേഖപ്പെടുത്തൽ) മുഴുവൻ അഡ്വാൻസും കാണിക്കുന്നതുവരെ ഒരു ഓർഡറും ഉറപ്പിക്കില്ല", menu: (items) => `മെനുവും ഒരു ദിവസം പരമാവധി ഉണ്ടാക്കുന്നതും: ${items}`,
     orderLimits: (perDay, items, ahead) => `ഒരു ദിവസം പരമാവധി ${perDay} ഓർഡറുകൾ, ഒരു ഓർഡറിൽ ${items} സാധനങ്ങൾ, ${ahead} ദിവസം മുൻകൂട്ടി വരെ`, cutoff: (days, time) => (days === 0 ? `സാധാരണ കട്ട്-ഓഫ്: അതേ ദിവസം ${time}-ന് ഓർഡറുകൾ അടയ്ക്കും` : `സാധാരണ കട്ട്-ഓഫ്: ${days} ദിവസം മുമ്പ് ${time}-ന് ഓർഡറുകൾ അടയ്ക്കും`),
     advance: (full, percent, minutes) => (full ? `മുഴുവൻ വിലയും അഡ്വാൻസായി വാങ്ങുന്നു; അതിനായി ഓർഡർ ${minutes} മിനിറ്റ് പിടിച്ചുവെക്കും` : `വിലയുടെ ${percent}% അഡ്വാൻസായി വാങ്ങുന്നു; അതിനായി ഓർഡർ ${minutes} മിനിറ്റ് പിടിച്ചുവെക്കും`),
+    noAdvance: "മുൻകൂറായി ഒന്നും വാങ്ങില്ല: ഓരോ മാറ്റിവയ്ക്കലും നിങ്ങൾ അംഗീകരിക്കുന്നു, ഉപഭോക്താവ് തിരഞ്ഞെടുത്ത പിക്കപ്പ് സമയം കഴിയുന്നതുവരെ സാധനം മാറ്റിവയ്ക്കും",
     delivery: (areas) => `ഡെലിവറി ഇവിടങ്ങളിൽ മാത്രം: ${areas}`, noDelivery: "പിക്കപ്പ് മാത്രം, ഡെലിവറി ഇല്ല",
     window: (hours) => `സ്ലോട്ടിന് കുറഞ്ഞത് ${hours} മണിക്കൂർ മുമ്പ് റദ്ദാക്കിയാൽ അഡ്വാൻസ് തിരികെ കിട്ടും; അതിനു ശേഷമുള്ളത് നിങ്ങളുടെ തീരുമാനം`,
     refund: (amount) => `${amount}-ന് മുകളിലുള്ള റീഫണ്ട് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം`,
@@ -329,6 +339,7 @@ export const kn: Strings = {
   notChecked: { cash: "ಪಿಕಪ್‌ನಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಟ್ಟ ಉಳಿದ ಮೊತ್ತ", upi: "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು", whatsapp: "ನಿಜವಾದ WhatsApp", razorpay: "ನಿಜವಾದ Razorpay", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
   discounts: DISCOUNT_REPORT_WORDS.kn,
+  holds: { collected: "ಕಾಯ್ದಿರಿಸಿದ್ದು ತೆಗೆದುಕೊಂಡಿದ್ದು", expired: "ಕಾಯ್ದಿರಿಸಿದ್ದು ತೆಗೆದುಕೊಳ್ಳದೆ ಮುಗಿದದ್ದು", enquiries: "ವಸ್ತುವಿನ ವಿಚಾರಣೆಗಳು", perTen: "ಹತ್ತು ವಿಚಾರಣೆಗೆ ತೆಗೆದುಕೊಂಡಿದ್ದು" },
   moneyBlock: MONEY_BLOCK_WORDS.kn,
   upiLabel: { collected: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್", notChecked: "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ)" },
   notTested: {
@@ -368,6 +379,7 @@ export const kn: Strings = {
     yourLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು", paidRule: "ಪಾವತಿ ದಾಖಲೆ (ಅಥವಾ UPI ಯಲ್ಲಿ ನಿಮ್ಮ ದಾಖಲಾತಿ) ಪೂರ್ತಿ ಮುಂಗಡ ತೋರಿಸುವವರೆಗೆ ಯಾವ ಆರ್ಡರ್ ಅನ್ನೂ ಖಚಿತಪಡಿಸುವುದಿಲ್ಲ", menu: (items) => `ಮೆನು ಮತ್ತು ಒಂದು ದಿನದಲ್ಲಿ ಗರಿಷ್ಠ ಮಾಡುವುದು: ${items}`,
     orderLimits: (perDay, items, ahead) => `ಒಂದು ದಿನಕ್ಕೆ ಗರಿಷ್ಠ ${perDay} ಆರ್ಡರ್, ಒಂದು ಆರ್ಡರ್‌ನಲ್ಲಿ ${items} ವಸ್ತುಗಳು, ${ahead} ದಿನ ಮುಂಚಿತವಾಗಿಯವರೆಗೆ`, cutoff: (days, time) => (days === 0 ? `ಸಾಮಾನ್ಯ ಕಟ್-ಆಫ್: ಅದೇ ದಿನ ${time} ಕ್ಕೆ ಆರ್ಡರ್‌ಗಳು ಮುಚ್ಚುತ್ತವೆ` : `ಸಾಮಾನ್ಯ ಕಟ್-ಆಫ್: ${days} ದಿನ ಮೊದಲು ${time} ಕ್ಕೆ ಆರ್ಡರ್‌ಗಳು ಮುಚ್ಚುತ್ತವೆ`),
     advance: (full, percent, minutes) => (full ? `ಪೂರ್ಣ ಬೆಲೆಯನ್ನು ಮುಂಗಡವಾಗಿ ಪಡೆಯಲಾಗುತ್ತದೆ; ಅದಕ್ಕಾಗಿ ಆರ್ಡರ್ ಅನ್ನು ${minutes} ನಿಮಿಷ ಹಿಡಿದಿಡಲಾಗುತ್ತದೆ` : `ಬೆಲೆಯ ${percent}% ಅನ್ನು ಮುಂಗಡವಾಗಿ ಪಡೆಯಲಾಗುತ್ತದೆ; ಅದಕ್ಕಾಗಿ ಆರ್ಡರ್ ಅನ್ನು ${minutes} ನಿಮಿಷ ಹಿಡಿದಿಡಲಾಗುತ್ತದೆ`),
+    noAdvance: "ಮೊದಲು ಏನನ್ನೂ ಪಡೆಯುವುದಿಲ್ಲ: ಪ್ರತಿ ಕಾಯ್ದಿರಿಸುವಿಕೆಯನ್ನು ನೀವು ಒಪ್ಪುತ್ತೀರಿ, ಗ್ರಾಹಕರು ಆರಿಸಿದ ಪಿಕಪ್ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ವಸ್ತುವನ್ನು ಕಾಯ್ದಿರಿಸಲಾಗುತ್ತದೆ",
     delivery: (areas) => `ಡೆಲಿವರಿ ಇಲ್ಲಿಗೆ ಮಾತ್ರ: ${areas}`, noDelivery: "ಪಿಕಪ್ ಮಾತ್ರ, ಡೆಲಿವರಿ ಇಲ್ಲ",
     window: (hours) => `ಸ್ಲಾಟ್‌ಗೆ ಕನಿಷ್ಠ ${hours} ಗಂಟೆ ಮೊದಲು ರದ್ದು ಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಮರಳಿಸಲಾಗುತ್ತದೆ; ನಂತರದ್ದು ನಿಮ್ಮ ತೀರ್ಮಾನ`,
     refund: (amount) => `${amount} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ`,

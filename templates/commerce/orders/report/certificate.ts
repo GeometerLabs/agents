@@ -149,7 +149,8 @@ export function limitLinesOf(l: Limits, language: Language): string[] {
     c.menu(l.menu.map((i) => `${i.name[language]} ${formatInr(i.priceInr)} (${i.dailyStock})`).join(" · ")),
     c.orderLimits(l.maxPerDay, l.maxItemsPerOrder, l.daysAhead),
     c.cutoff(l.cutoff.daysBefore, l.cutoff.time),
-    c.advance(l.advance.full, l.advance.percent, l.advance.holdMinutes),
+    // the pickup hold (advance "none") is the only shop with no advance: percent 0 and not full
+    !l.advance.full && l.advance.percent === 0 ? c.noAdvance : c.advance(l.advance.full, l.advance.percent, l.advance.holdMinutes),
     l.deliveryAreas ? c.delivery(l.deliveryAreas.join(", ")) : c.noDelivery,
     c.window(l.cancellationWindowHours),
     c.refund(formatInr(l.refundLimitInr)),

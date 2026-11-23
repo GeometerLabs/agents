@@ -372,7 +372,36 @@ function discountWorld(): RecordEntry[] {
   return w.entries();
 }
 const discountEntries = discountWorld();
-const RECORDS: Record<string, readonly RecordEntry[]> = { busy: busyEntries, rules: rules.entries, upi: upi.entries, plans: plans.entries, fyend: fyendEntries, winddown: windDownEntries, quiet: quietEntries, discounts: discountEntries, empty: [] };
+/**
+ * "Keep one for me", the pickup hold (24 Nov 2026): a month with every step of a hold (an enquiry each for o-1 to o-7, two of them counted twice by a retry's line, held,
+ * collected (one late, after it expired), expired, cancelled, a blocked collection that counts nothing, and an October enquiry that is not this month's). Seven enquiries and
+ * three collections make 30 / 7 = 4.29, so 4 per ten; the rounding of a half is exercised by holdHalf (one enquiry of two collected: 5).
+ */
+function holdWorld(): RecordEntry[] {
+  const w = world(upiSettings);
+  const step = (s: string, more: Record<string, string> = {}) => ({ refs: { kind: "pickup_hold", step: s, ...more } });
+  for (let i = 1; i <= 7; i++) w.add(`2026-11-0${i}T04:00:00Z`, "pickup_hold", "confirmed", `o-${i}`, step("enquiry", { from: i % 2 ? "photo" : "order" }));
+  w.add("2026-11-01T04:30:00Z", "pickup_hold", "blocked", "o-1", step("enquiry", { from: "photo" })); // a retry: no second card, counts nothing
+  for (const o of ["o-1", "o-2", "o-3", "o-4"]) w.add("2026-11-08T05:00:00Z", "pickup_hold", "confirmed", o, step("held", { until: "1794900000000" }));
+  w.add("2026-11-08T06:00:00Z", "pickup_hold", "confirmed", "o-1", step("collected"));
+  w.add("2026-11-08T07:00:00Z", "pickup_hold", "confirmed", "o-2", step("collected"));
+  w.add("2026-11-08T13:30:00Z", "pickup_hold", "confirmed", "o-3", step("expired"));
+  w.add("2026-11-08T14:00:00Z", "pickup_hold", "confirmed", "o-3", step("collected", { late: "true" }));
+  w.add("2026-11-08T14:30:00Z", "pickup_hold", "confirmed", "o-4", step("cancelled"));
+  w.add("2026-11-09T05:00:00Z", "pickup_hold", "blocked", null, step("collected")); // "collected o-9": no such hold
+  w.add("2026-10-30T05:00:00Z", "pickup_hold", "confirmed", "o-0", step("enquiry", { from: "words" }));
+  return w.entries();
+}
+const holdEntries = holdWorld();
+function holdHalf(): RecordEntry[] {
+  const w = world(upiSettings);
+  w.add("2026-11-02T04:00:00Z", "pickup_hold", "confirmed", "o-1", { refs: { kind: "pickup_hold", step: "enquiry", from: "photo" } });
+  w.add("2026-11-02T05:00:00Z", "pickup_hold", "confirmed", "o-2", { refs: { kind: "pickup_hold", step: "enquiry", from: "order" } });
+  w.add("2026-11-02T06:00:00Z", "pickup_hold", "confirmed", "o-2", { refs: { kind: "pickup_hold", step: "collected" } });
+  return w.entries();
+}
+const holdHalfEntries = holdHalf();
+const RECORDS: Record<string, readonly RecordEntry[]> = { busy: busyEntries, rules: rules.entries, upi: upi.entries, plans: plans.entries, fyend: fyendEntries, winddown: windDownEntries, quiet: quietEntries, discounts: discountEntries, holds: holdEntries, holdHalf: holdHalfEntries, empty: [] };
 const recordRef = (entries: readonly RecordEntry[]): string | RecordEntry[] => Object.entries(RECORDS).find(([, v]) => v === entries)?.[0] ?? asJson(entries);
 
 // ---- the cases ----
@@ -412,6 +441,9 @@ const CASES: Case[] = [
   { ...base, name: "fyend-april", settings: gateway, entries: fyendEntries, month: "2027-04", preparedBy: "Meena", tenant: "fy-end", pages: ["en"], madeAt: at(5, 1, 9, 30, 2027) },
   { ...base, name: "wind-down", settings: gateway, entries: windDownEntries, month: "2026-11", preparedBy: "Divya", pages: ["en", "kn"] },
   { ...base, name: "discounts", settings: gateway, entries: discountEntries, month: "2026-11", preparedBy: "Divya", tenant: "discounts", pages: ["en", "hi", "ml", "kn"] },
+  { ...base, name: "pickup-holds", settings: upiSettings, entries: holdEntries, month: "2026-11", preparedBy: "Divya", tenant: "holds", pages: ["en", "hi", "ml", "kn", "both"] },
+  { ...base, name: "pickup-holds-half", settings: upiSettings, entries: holdHalfEntries, month: "2026-11", preparedBy: "Divya", pages: ["en"] },
+  { ...base, name: "pickup-holds-october", settings: upiSettings, entries: holdEntries, month: "2026-10", preparedBy: "Divya", pages: ["kn"] },
   { ...base, name: "quiet", settings: gateway, entries: quietEntries, month: "2026-11", preparedBy: "Divya", tenant: "quiet", pages: ["en"] },
   { ...base, name: "empty-record", settings: gateway, entries: RECORDS.empty, month: "2026-11", preparedBy: "Divya", tenant: "empty", pages: ["en", "hi"], innovator: true },
   { ...base, name: "no-prepared-by", settings: gateway, entries: quietEntries, month: "2026-11", preparedBy: null, pages: ["en"] },

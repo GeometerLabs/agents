@@ -2476,6 +2476,618 @@
     ]
   },
   {
+    "name": "owner_hold_enquiry",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "चीज़ के बारे में पूछताछ {{1}}: {{2}} ने फ़ोटो या मॉडल नंबर भेजा है। उनकी चैट में देखिए, फिर \"pick {{3}}\" और चीज़ का नाम वैसे ही लिखिए जैसे आपकी सूची में है, या अगर आपके पास नहीं है तो \"deny {{4}}\" लिखिए।",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_enquiry",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Item enquiry {{1}}: {{2}} sent a photo or a model number. See it in your chat with them, then reply \"pick {{3}}\" and the item's name as you list it, or \"deny {{4}}\" if you do not have it.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_enquiry",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "സാധനത്തെക്കുറിച്ചുള്ള ചോദ്യം {{1}}: {{2}} ഒരു ഫോട്ടോയോ മോഡൽ നമ്പറോ അയച്ചു. അവരുമായുള്ള ചാറ്റിൽ നോക്കിയിട്ട് \"pick {{3}}\" എന്നും നിങ്ങളുടെ പട്ടികയിലുള്ളതുപോലെ സാധനത്തിന്റെ പേരും അയയ്ക്കൂ, ഇല്ലെങ്കിൽ \"deny {{4}}\" എന്ന് അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_enquiry",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ವಸ್ತುವಿನ ವಿಚಾರಣೆ {{1}}: {{2}} ಅವರು ಫೋಟೋ ಅಥವಾ ಮಾಡೆಲ್ ನಂಬರ್ ಕಳುಹಿಸಿದ್ದಾರೆ. ಅವರ ಚಾಟ್‌ನಲ್ಲಿ ನೋಡಿ, ನಂತರ \"pick {{3}}\" ಮತ್ತು ನಿಮ್ಮ ಪಟ್ಟಿಯಲ್ಲಿರುವಂತೆ ವಸ್ತುವಿನ ಹೆಸರನ್ನು ಕಳುಹಿಸಿ, ಇಲ್ಲದಿದ್ದರೆ \"deny {{4}}\" ಎಂದು ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_asks",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "एक रख दें? {{1}} चाहते हैं कि आप {{2}} ({{3}}) पिकअप {{4}} के लिए रखें। रखने के लिए \"approve {{5}}\" या मना करने के लिए \"deny {{6}}\" लिखिए।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × वेज थाली",
+              "₹240",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_asks",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Keep one? {{1}} asks you to keep {{2}} ({{3}}) for pickup {{4}}. Reply \"approve {{5}}\" to keep it for them, or \"deny {{6}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "₹240",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_asks",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഒന്ന് മാറ്റിവയ്ക്കണോ? {{1}} {{2}} ({{3}}) പിക്കപ്പ് {{4}}-ന് മാറ്റിവയ്ക്കാൻ ചോദിക്കുന്നു. മാറ്റിവയ്ക്കാൻ \"approve {{5}}\", അല്ലെങ്കിൽ \"deny {{6}}\" എന്ന് അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "₹240",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_asks",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಒಂದನ್ನು ಕಾಯ್ದಿರಿಸಬೇಕೇ? {{1}} ಅವರು {{2}} ({{3}}) ಪಿಕಪ್ {{4}} ಗಾಗಿ ಕಾಯ್ದಿರಿಸಲು ಕೇಳುತ್ತಿದ್ದಾರೆ. ಕಾಯ್ದಿರಿಸಲು \"approve {{5}}\", ಇಲ್ಲವಾದರೆ \"deny {{6}}\" ಎಂದು ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "₹240",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_held",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "रखा गया {{1}}: {{2}}, {{3}} के लिए, पिकअप {{4}}। जब वे ले जाएँ, तो \"collected {{5}}\" लिखिए।",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × वेज थाली",
+              "+919811111111",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_held",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Held {{1}}: {{2}} for {{3}}, for pickup {{4}}. When they collect it, reply \"collected {{5}}\".",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × veg thali",
+              "+919811111111",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_held",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "മാറ്റിവച്ചു {{1}}: {{2}}, {{3}}-ന്, പിക്കപ്പ് {{4}}. അവർ വാങ്ങിക്കഴിഞ്ഞാൽ \"collected {{5}}\" എന്ന് അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × veg thali",
+              "+919811111111",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_held",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ {{1}}: {{2}}, {{3}} ಅವರಿಗೆ, ಪಿಕಪ್ {{4}}. ಅವರು ತೆಗೆದುಕೊಂಡಾಗ \"collected {{5}}\" ಎಂದು ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × veg thali",
+              "+919811111111",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_ended",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "रखा हुआ {{1}} ख़त्म: {{2}} {{3}} के ख़त्म होने तक {{4}} नहीं ले गए। यह अब दूसरों के लिए फिर से खुला है।",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "2 × वेज थाली"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_ended",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Hold {{1}} ended: {{2}} did not collect {{3}} by the end of {{4}}. It is free for others again.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_ended",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "മാറ്റിവച്ചത് {{1}} അവസാനിച്ചു: {{2}} {{3}} കഴിയുന്നതുവരെ {{4}} വാങ്ങിയില്ല. ഇത് വീണ്ടും മറ്റുള്ളവർക്ക് ലഭ്യമാണ്.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_ended",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಕಾಯ್ದಿರಿಸಿದ್ದು {{1}} ಮುಗಿದಿದೆ: {{2}} ಅವರು {{3}} ಮುಗಿಯುವವರೆಗೆ {{4}} ತೆಗೆದುಕೊಳ್ಳಲಿಲ್ಲ. ಇದು ಮತ್ತೆ ಇತರರಿಗೆ ಲಭ್ಯವಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_cancelled",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "रखना रद्द: {{1}} को अब {{2}} ({{3}}) नहीं चाहिए। यह अब दूसरों के लिए फिर से खुला है।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × वेज थाली",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_cancelled",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Hold cancelled: {{1}} no longer needs {{2}} ({{3}}). It is free for others again.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_cancelled",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "മാറ്റിവയ്ക്കൽ റദ്ദാക്കി: {{1}}-ന് ഇനി {{2}} ({{3}}) വേണ്ട. ഇത് വീണ്ടും മറ്റുള്ളവർക്ക് ലഭ്യമാണ്.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_hold_cancelled",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಕಾಯ್ದಿರಿಸುವಿಕೆ ರದ್ದಾಗಿದೆ: {{1}} ಅವರಿಗೆ ಇನ್ನು {{2}} ({{3}}) ಬೇಕಿಲ್ಲ. ಇದು ಮತ್ತೆ ಇತರರಿಗೆ ಲಭ್ಯವಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_kept",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपके लिए रखा गया: {{1}}, {{2}}। इसे {{3}} ले जाइए; तब तक यह आपके लिए रखा है। अभी कुछ नहीं देना है: लेते समय दुकान पर दीजिए।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "₹240",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_kept",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Held for you: {{1}}, {{2}}. Collect it {{3}}; it is kept for you until then. Nothing to pay now: you pay at the shop when you collect it.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "₹240",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_kept",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങൾക്കായി മാറ്റിവച്ചു: {{1}}, {{2}}. {{3}} വന്ന് വാങ്ങൂ; അതുവരെ ഇത് നിങ്ങൾക്കായി വച്ചിരിക്കും. ഇപ്പോൾ ഒന്നും അടയ്ക്കേണ്ട: വാങ്ങുമ്പോൾ കടയിൽ അടച്ചാൽ മതി.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "₹240",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_kept",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ: {{1}}, {{2}}. {{3}} ಬಂದು ತೆಗೆದುಕೊಳ್ಳಿ; ಅಲ್ಲಿಯವರೆಗೆ ಇದು ನಿಮಗಾಗಿ ಇರುತ್ತದೆ. ಈಗ ಏನೂ ಕೊಡಬೇಕಿಲ್ಲ: ತೆಗೆದುಕೊಳ್ಳುವಾಗ ಅಂಗಡಿಯಲ್ಲಿ ಪಾವತಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "₹240",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_time_over",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका पिकअप समय ({{1}}) निकल गया, इसलिए {{2}} अब आपके लिए नहीं रखा है। अगर अब भी चाहिए तो मुझे लिखिए।",
+        "example": {
+          "body_text": [
+            [
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "2 × वेज थाली"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_time_over",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your pickup time ({{1}}) has passed, so {{2}} is no longer kept for you. Message me if you would still like it.",
+        "example": {
+          "body_text": [
+            [
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_time_over",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ പിക്കപ്പ് സമയം ({{1}}) കഴിഞ്ഞു, അതിനാൽ {{2}} ഇനി നിങ്ങൾക്കായി വച്ചിട്ടില്ല. ഇപ്പോഴും വേണമെങ്കിൽ എനിക്ക് എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_time_over",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ ಪಿಕಪ್ ಸಮಯ ({{1}}) ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ {{2}} ಇನ್ನು ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಿಲ್ಲ. ಇನ್ನೂ ಬೇಕಾದರೆ ನನಗೆ ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_order_service_paused",
     "language": "hi",
     "category": "UTILITY",
