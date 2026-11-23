@@ -1540,3 +1540,41 @@ What was built is in `internal/orders/Explanation.md` § "Keep one for me", and 
   - Panel: 266/269 in the pass. The 3 failures were the Bookings review sheets' section 7 (the panel's new words), which was regenerated. On the rerun it was 268 pass and 0 fail; the one test that did not run is the one that needs the monorepo path, which that command did not set.
   - Bundle: 722 pass, 9 skipped (REAL_CADDY).
   - TypeScript: Orders 215/215; modules/channels 219/219.
+
+## handcheck-go-24nov: the go-live hand check runs on the shop's Go program (24 Nov 2026, owner: "Run the hand check on Go")
+
+The certificate a shop gets for go-live now rests on a run of that shop's own settings on the Go program it will run. Before, the situations drove the TypeScript demo
+engine (src/harness.ts), which the shops no longer run and which has no pickup hold, no credit book and no E1 (a hold shop had 0 situations, so the gate refused it).
+
+- **The runner, shared by every template** (`modules/crash-test/`): `programs.ts` (where the programs are: `GEOMETER_GO_PROGRAMS`, else `go/bin`; Node modules only, so the
+  panel and the deployer read it without loading the runner), `go-shop.ts` (one shop: its folder written as the deployer writes it from its own settings, the program started
+  through the contract's shared process pieces, events, settle, a beat, the record and the saved state read from agent.db), `go-world.ts` (the stand-ins and the stub Guard
+  on the shop's clock, the steps the situations use, `live()` for a value read afresh, `samePicture` for a QR). Each template's `crash-test/go-world.ts` adds only its own.
+  The situations keep their words and judge from the same stand-in records; `runOnProgram` runs them on the named program and lists every situation as not run, with the
+  reason, when the program is not there. A send the provider refused fails the situation unless the situation planned one.
+- **Go**: runtime.json `"standins": "http"` (config.go `standInsProblems`, with a test): a "fakes" shop (so it may run on the test clock) whose services are stand-ins on
+  127.0.0.1 or localhost, reached through the live clients (each template's BuildPorts: `UsesClients`); refused for a live shop or a service elsewhere. Such a shop may beat
+  every 0.1 s or more (the hand check uses 0.2 s). The kit's /status counts the beats that ended (`ticks`). Nothing changes for a real shop.
+- **New situations**: the pickup hold (`orders/crash-test/hold.ts`: "held for you" only after the owner's yes and no money, one hold for the last unit, collected once,
+  let go once), the credit book (`fees/crash-test/credit.ts`: nothing before the owner's tap, the first question only, a reminder only after the yes at the reminder hour,
+  none after a marked payment), E1 where a shop turns discounts on (`bookings|orders/crash-test/discounts.ts`: within the cap the agent agrees, beyond it only the
+  owner's card with its code, below the floor the rule refuses).
+- **The panel** (bundle/panel/Explanation.md, "The hand check runs on the shop's Go program"): a child process with a ten-minute limit, within the request (a run takes
+  seconds to about a minute); the summary keeps its shape and names `program` (name, version, SHA-256 of the file); the gate refuses a stored check with no program or
+  from another program file; the confirm page keeps a check that still stands. On a server the deployer copies the hand check's programs out of the image the shops run into
+  `<server>/programs`, mounted read-only at `/programs` (the panel has no Docker); the stripped app keeps `modules/test` for the runner. The certificate and the script
+  name the program ("Go bookings 0.2.0 · sha256:…"). `geometer update` builds and copies the programs before a Go version's hand check.
+- **Deleted**: the demo world's `worldHook` (the accounting-figures tests read each Go world's record as it closes, `goWorldHook`), the hand check's in-process model
+  stand-ins (`aiStandins` over `systemOneFetch`, now stand-ins over HTTP), the monthly report situation's in-process job, and the hand check's imports of the demo engine.
+  The demo engine itself stays for the public demos (decision 61).
+- **Findings** (none is a change of TypeScript behaviour):
+  - **Orders on Razorpay**: the owner's message about a late payment that was refunded (`owner_payment_unused`) has no approved WhatsApp template, so outside the owner's
+    24 hours it goes under the generic name, which the provider refuses: the owner is not told. The demo engine approved every name, so it never showed. On Go the Razorpay
+    examples hold 17 of 18 (Annapurna Razorpay, Sweet Crumbs 15 of 16); the gate refuses such a shop until the template is registered. Pinned in
+    `orders/test/situations.test.ts`; the sell guide's Razorpay count is a todo.
+  - **Fees on Go reads with its rules alone** (go/internal/fees/Deferred.md: the model steps of reading), so "the model is down" is listed as not run there.
+  - `geometer update` compares the hand checks of two versions: a situation that held before and is not run now holds the shop back, so a Fees centre's next update is
+    held back by "the model is down" until that is decided (bundle/panel/Deferred.md).
+- **Not done** (bundle/panel/Deferred.md): a polled job (not needed at these times); `update`'s "before" check of a Go version runs on the current programs; the contract
+  harnesses still write their own shop folders; a "broken setting" test for each template (there is one for Fees: a fee above the day's refund cap; situations follow the
+  settings by design, so a valid setting fails only where the program is wrong, as the Razorpay finding shows).
