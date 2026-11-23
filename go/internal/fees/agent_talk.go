@@ -536,6 +536,9 @@ func (a *Agent) onOwnerMessage(m messaging.InboundMessage) error {
 	if m.Image || isRelayReply(m) {
 		return nil
 	}
+	if a.ownerFixedWords(m) { // "move K7M2QX" and the shop terms (agent_handover.go)
+		return nil
+	}
 	if a.settings.Classes != nil {
 		taken, err := a.classesTeacher(m)
 		if err != nil || taken {
@@ -770,7 +773,7 @@ func (a *Agent) onChatMessage(ev map[string]any) error {
 	return err
 }
 
-// onChatTurn is agent.ts onChatTurn: PUBLIC questions only. A parent's own chat (W2) is not ported (Deferred.md): a parent's thread gets the public line too.
+// onChatTurn is agent.ts onChatTurn: PUBLIC questions only on the centre's page; a parent's own chat on their private page (W2) is agent_parentchat.go's.
 func (a *Agent) onChatTurn(m messaging.InboundMessage) error {
 	phone := m.From
 	c := a.store.Customer(phone)
@@ -791,18 +794,30 @@ func (a *Agent) onChatTurn(m messaging.InboundMessage) error {
 	if m.Reply != nil {
 		inputs["reply"] = m.Reply.ID
 	}
-	a.log(nil, phone, "receive_message", "confirmed", inputs, logMore{notes: "a public question from the chat on the centre's page; no fee or student is read for it", refs: map[string]string{"messageId": m.ID, "channel": "chat"}})
+	parent := a.store.parentOfChat(phone)
+	notes := "a public question from the chat on the centre's page; no fee or student is read for it"
+	if parent != "" {
+		notes = "a message in a parent's own chat on their private fee page; only that parent's own open fees are read for it"
+	}
+	a.log(nil, phone, "receive_message", "confirmed", inputs, logMore{notes: notes, refs: map[string]string{"messageId": m.ID, "channel": "chat"}})
 	if in.Kind == "stop" {
 		return a.onStop(phone)
 	}
 	if c.OptedOut {
 		return nil
 	}
+	if parent != "" {
+		return a.onParentChat(parent, phone, m, in)
+	}
 	if in.Kind == "owner" {
 		return a.onTalkToOwner(phone, phone)
 	}
 	if !a.takesNewWork() {
 		return a.pausedReply(phone, "menu")
+	}
+	// the shop's talk may answer from what parents may be told (block M, every check); a centre without the assistant, or a talk that did not answer: the fixed line
+	if !m.NoModel && m.Reply == nil && m.Text != "" && a.talkToCustomer(phone, m.Text, in.OverrideAttempt, nil) {
+		return nil
 	}
 	a.tellCustomer(nil, phone, []string{"fee_chat_public"}, sayOpts{offer: &offer{buttons: []string{"owner"}}})
 	return nil

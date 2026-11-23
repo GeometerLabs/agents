@@ -21,6 +21,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/payments/razorpay"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/terms"
 )
 
 // Pathway and Version are what a Fees folder's pathway.lock must name: the number in templates/education/fees/package.json.
@@ -61,6 +62,8 @@ type Kit struct {
 	Licence func() string
 	// Report is the monthly report job (report.go), made once per process from runtime.json's `report` block; nil: the centre has none.
 	Report *MonthlyReport
+	// Terms is the shop terms now (B72: client/terms.json, read again when it changes, terms.NewReader); nil, or a nil answer: the feature is off.
+	Terms func() *terms.File
 	// links are the parents' links this process made (runtime.ts linkMemory, in memory only: the store keeps their hashes).
 	links map[string]string
 	given map[string]bool

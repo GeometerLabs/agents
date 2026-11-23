@@ -13,6 +13,11 @@ import { EXAMPLES, OWNER_NUMBER, REPO, ROHAN, SHARMA, at, contract, lease, lines
 import type { Centre, CentreOptions } from "./harness.ts";
 import { fixture } from "../../../commerce/bookings/contract/guards.ts";
 import { LICENCE_RULE } from "../../../../modules/licence/rules.ts";
+import { TERMS_AGREED_ACTION, TERMS_SENT_ACTION, termsDigest, termsText } from "../../../../modules/terms/terms.ts";
+import { handoverHash } from "../../../../modules/approvals/handover.ts";
+import { parentChatHash } from "../../../../modules/channels/handle.ts";
+import { chatConversationOf } from "../../../../modules/channels/conversation.ts";
+import { createHash } from "node:crypto";
 
 const centres: Centre[] = [];
 after(async () => { for (const c of centres) await c.cleanup(); });
@@ -304,5 +309,66 @@ describe("the class-access rule and the back dues (test/classes)", () => {
     await c.waitFor(() => sends(c, SHARMA).some((l) => l.refs.templates === "class_consent_ask"), "the class's messages to the others");
     await sleep(2200);
     assert.deepEqual(sends(c, ROHAN).filter((l) => l.outcome === "confirmed" && String(l.refs.templates).startsWith("class_")), [], "nothing of Classes to Rohan");
+  });
+});
+
+describe("the owner's fixed words: the handover code (test/recovery) and the shop terms (B72)", () => {
+  contract("'move CODE' from the owner's number is one record line with the code's hash and no reply; a parent's same words are only a parent's", async () => {
+    const c = await centre();
+    const before = c.sent(OWNER_NUMBER).length;
+    await c.inbound(OWNER_NUMBER, "MOVE K7M2QX");
+    const moved = lines(c, "handover_agreed");
+    assert.equal(moved.length, 1);
+    assert.deepEqual([moved[0].outcome, moved[0].conversation, moved[0].refs], ["confirmed", OWNER_NUMBER, { command: "handover", handover: handoverHash("K7M2QX") }]);
+    assert.ok(!moved[0].entry.includes("K7M2QX"), "the code itself is not kept");
+    assert.equal(c.sent(OWNER_NUMBER).length, before, "no reply");
+    assert.equal(lines(c, "owner_decision").length, 0);
+    await c.inbound(ROHAN, "move K7M2QX");
+    assert.equal(lines(c, "handover_agreed").length, 1, "a parent's message with the same words is only a parent's message");
+  });
+
+  const FILE = { schema: 1, partnerName: "Divya", partnerPhone: "+919800000000", monthlyInr: 700, setupInr: 1500 };
+  contract("with terms.json the owner's 'terms' sends the text and 'I agree' records the agreement once with its digest; before they were sent, no agreement; a parent's words are nothing", async () => {
+    const c = await centre({ terms: FILE });
+    await c.inbound(OWNER_NUMBER, "I agree");
+    assert.deepEqual(lines(c, TERMS_AGREED_ACTION).map((l) => l.outcome), ["blocked"], "not sent yet: no agreement");
+    await c.inbound(OWNER_NUMBER, "terms");
+    const text = termsText("en", "Bright Tuition Centre (UPI)", FILE as never);
+    assert.ok(c.sent(OWNER_NUMBER).some((m) => m.text === text), "the exact text went to the owner");
+    assert.equal(lines(c, TERMS_SENT_ACTION).length, 1);
+    await c.inbound(OWNER_NUMBER, "I agree");
+    await c.inbound(OWNER_NUMBER, "I agree");
+    const agreed = lines(c, TERMS_AGREED_ACTION, "confirmed");
+    assert.deepEqual([agreed.length, agreed[0].refs.termsDigest], [1, termsDigest(text)], "once, with the digest of what was sent");
+    await c.inbound(ROHAN, "terms");
+    assert.equal(lines(c, TERMS_SENT_ACTION).length, 1, "a parent's 'terms' is nothing");
+  });
+});
+
+describe("a parent's own chat on their private page (W2; test/chat-parent, ported to Go 23 Nov 2026)", () => {
+  /** channel.ts parentRef: how the owner's page and the chat name a parent without their number. */
+  const parentRef = (parent: string): string => `p-${createHash("sha256").update(`parent-ref:${parent}`).digest("hex").slice(0, 12)}`;
+  contract("the chat opened from a parent's link talks about that parent's own open fees only; nothing goes to WhatsApp and no payment request is made; a public guest still gets the public line", async () => {
+    const c = await boot();
+    await c.started();
+    c.goto(at(2, 10, 0) + 1000);
+    await c.waitFor(() => [SHARMA, ROHAN].every((p) => sends(c, p).some((l) => l.outcome === "confirmed" && String(l.refs.templates).includes("page"))), "the reminders with the private pages");
+    const rohans = lines(c, "open_fee", "confirmed").filter((l) => l.conversation === ROHAN).map((l) => l.booking);
+    const hash = parentChatHash(parentRef(ROHAN));
+    const conversation = chatConversationOf(hash);
+    const whatsapp = sends(c, ROHAN).length;
+    const requests = lines(c, "upi_request").length + lines(c, "create_fee_link").length;
+    assert.equal((await c.chat(hash, "how much do I have to pay")).status, 200);
+    const said = sends(c, conversation).filter((l) => l.refs.to === "customer" && l.outcome === "confirmed");
+    assert.ok(said.length >= 1 && said.every((l) => l.refs.templates === "fee_menu" && rohans.includes(l.booking)), JSON.stringify(said.map((l) => [l.refs.templates, l.booking])));
+    assert.ok(lines(c, "receive_message").some((l) => l.conversation === conversation && l.notes.includes("a parent's own chat")));
+    const words = JSON.stringify((await c.call(`/internal/channel/chat?handle=${hash}`)).body);
+    assert.match(words, /Rohan Mehta/u, "their own child's fee");
+    for (const other of ["Aarav", "Anaya", "Meera", "Kiran", "+9198"]) assert.ok(!words.includes(other), `nothing of another family: ${other}`);
+    assert.equal(sends(c, ROHAN).length, whatsapp, "nothing to WhatsApp");
+    assert.equal(lines(c, "upi_request").length + lines(c, "create_fee_link").length, requests, "no payment request from the chat");
+    const g = c.guest();
+    await c.chat(g.hash, "how much do I have to pay");
+    assert.equal(sends(c).filter((l) => l.refs.to === "customer").at(-1)!.refs.templates, "fee_chat_public", "a public guest reads no fee");
   });
 });

@@ -26,6 +26,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/terms"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
@@ -146,6 +147,8 @@ func run(folder string) error {
 	if kit.Settings.Classes != nil {
 		kit.MaterialsDir = filepath.Join(client.Folder, "materials")
 	}
+	// B72: the shop terms, read from the client folder again whenever the file changes; no file: the feature is off (as cmd/orders)
+	kit.Terms = terms.NewReader(client.Folder)
 	kit.PageBase = func() string {
 		p := access.ReadPages(filepath.Join(client.Folder, access.PagesFile))
 		if p == nil {
