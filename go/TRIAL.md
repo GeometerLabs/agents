@@ -1498,3 +1498,7 @@ is in `internal/fees/Explanation.md` § The credit book and `templates/education
   book); (2) one owner page that draws each part's section (the credit section is one self-contained section and route); (3) a customer's number known to two parts: one STOP
   for the shop, shared (today each part keeps its own customers); (4) one record and one monthly report with each part's block (the credit block is already conditional);
   (5) the panel's set-up of a shop with two parts (a preset per part today), and one WhatsApp template list for the number (the union of the parts' lists).
+- **Run of record (24 Nov 2026, through the heat lock, the Go programs built in this worktree's go/bin, GEO_GUARD_BIN and GEOMETER_MONOREPO set; on the branch, before the
+  move onto the new main):** `go build/vet ./...` clean, `go test ./...` 40 packages ok; contracts (`node --test --test-concurrency=1 <folder>/`): Fees 111/111 (102 + the
+  credit book's 9), Bookings 178/178, Orders 117/117, Stock orders 74/74, listings 208 pass, 2 skipped, directory 36/36; Fees units 245/245, channels units 218/218, panel
+  268 pass, 1 skipped (the monorepo's price list, not set for that run); bundle 731: 722 pass, 9 skipped (REAL_CADDY); every Fees generator `--check` fresh.
