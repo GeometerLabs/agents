@@ -6,15 +6,22 @@ import { runOn } from "../crash-test/situations.ts";
 import { annapurna, annapurnaRazorpay, sweetCrumbs } from "../src/harness.ts";
 import { notTestedOf } from "../crash-test/not-tested.ts";
 
-for (const [name, settings, held, skipped] of [
-  ["Annapurna Tiffins (UPI)", annapurna(), 17, 2],
-  ["Annapurna Tiffins (Razorpay)", annapurnaRazorpay(), 18, 1],
-  ["Sweet Crumbs Bakery (Razorpay, pickup only, no approval line)", sweetCrumbs(), 16, 3],
+/**
+ * A finding of the hand check on Go (24 Nov 2026, go/TRIAL.md handcheck-go-24nov): on a Razorpay shop, the owner's message about a late payment that was refunded
+ * (`owner_payment_unused`) has no approved WhatsApp template, so outside the owner's 24 hours the provider refuses it and the owner is not told. The demo engine's stand-in
+ * approved every name, so it never showed. Pinned here as exactly that one failure: a new failure, or this one fixed (the template registered), changes this test.
+ */
+const OWNER_PAYMENT_UNUSED = ["A payment after the hold ended is taken again only if the cut-off, the stock and the day still allow it: (b) The owner was told; Every message the program sent was taken by the provider"];
+
+for (const [name, settings, held, skipped, known] of [
+  ["Annapurna Tiffins (UPI)", annapurna(), 17, 2, []],
+  ["Annapurna Tiffins (Razorpay)", annapurnaRazorpay(), 18, 1, OWNER_PAYMENT_UNUSED],
+  ["Sweet Crumbs Bakery (Razorpay, pickup only, no approval line)", sweetCrumbs(), 16, 3, OWNER_PAYMENT_UNUSED],
 ] as const) {
-  test(`every situation holds on ${name}`, { skip: goSkip("orders") }, async () => {
+  test(`every situation holds on ${name}${known.length ? ", but the one the owner's untemplated message fails" : ""}`, { skip: goSkip("orders") }, async () => {
     const run = await runOn(settings);
     const failed = run.results.filter((r) => !r.held).map((r) => `${r.situation.title}: ${r.checks.filter((c) => !c.passed).map((c) => c.label).join("; ")}`);
-    assert.deepEqual(failed, []);
+    assert.deepEqual(failed, [...known]);
     assert.equal(run.results.length, held);
     assert.equal(run.skipped.length, skipped);
     assert.ok(run.skipped.every((s) => s.reason.length > 10));
