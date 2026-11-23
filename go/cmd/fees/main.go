@@ -20,8 +20,10 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/access"
 	"github.com/GeometerLabs/agents/go/internal/fees"
+	"github.com/GeometerLabs/agents/go/internal/feesreport"
 	"github.com/GeometerLabs/agents/go/internal/health"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
@@ -93,7 +95,7 @@ func run(folder string) error {
 	}
 	kit.Settings, kit.Now = client.Settings.Own.(*fees.Settings), now
 	var rt *runtime.Runtime
-	ports, err := fees.BuildPorts(client.Config, kit.Settings, fees.PortsOptions{Now: now, Window: st, Say: log})
+	ports, err := fees.BuildPorts(client.Config, kit.Settings, fees.PortsOptions{Now: now, Window: st, Say: log, ReportTemplates: feesreport.ReportTemplateNames()})
 	if err != nil {
 		return err
 	}
@@ -135,6 +137,12 @@ func run(folder string) error {
 		}
 	}
 	kit.Ports = ports
+	// the monthly report (report/monthly-job.ts) from runtime.json's `report` block; no block, no report (the QR pictures above read the same block)
+	if setup, err := reportwire.ReadSetup(client.Config, client.Folder, log); err != nil {
+		return err
+	} else if setup != nil {
+		kit.Report = fees.NewMonthlyReport(*setup, ports.WhatsApp)
+	}
 	if kit.Settings.Classes != nil {
 		kit.MaterialsDir = filepath.Join(client.Folder, "materials")
 	}
