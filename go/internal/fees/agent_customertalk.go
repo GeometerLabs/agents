@@ -55,8 +55,12 @@ func (a *Agent) publicContext(phone string) []assistant.TalkSource {
 		due += " Part payments are not taken."
 	}
 	out = append(out, assistant.TalkSource{ID: "s:due", Kind: "setting", Text: due, AmountsInr: []float64{float64(s.LateFeeInr), float64(s.PartPayments.MinInr)}})
-	// a parent's chat talks about that parent's own fee, never another's (the parent's own chat is not ported: phone is the parent's number)
-	if open := a.store.openDues(phone); len(open) > 0 {
+	// W2: a parent's chat talks about that parent's own fee, never another's (assistant.ts `parentOfChat(store, phone) ?? phone`)
+	who := phone
+	if p := a.store.parentOfChat(phone); p != "" {
+		who = p
+	}
+	if open := a.store.openDues(who); len(open) > 0 {
 		m := open[0]
 		text := "This parent's open fee " + m.ID + " for their child, " + monthLabel(m.Month, lang) + ": balance " + inr(balancePaise(m)/100) + " (fee " + inr(m.FeeInr)
 		if m.LateFeeInr > 0 {

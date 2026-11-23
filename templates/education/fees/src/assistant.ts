@@ -152,8 +152,10 @@ export function feesSkill(deps: FeesSkillDeps): OwnerSkill {
       // cancelling a fee is taking off what is still owed on it: only an open fee, owing whole rupees
       if (d.state !== "open" || balancePaise(d) <= 0) return { ok: false, why: "not_live" };
       if (balancePaise(d) % 100 !== 0) return { ok: false, why: "too_much" };
-      // the card shows no money coming back (a cancel takes off what is owed; it refunds nothing: that is "refund f-3"), so its shown amount is 0; the card is still bound to the balance
-      return { ok: true, action: action("cancel", d, { amountPaise: balancePaise(d) }), shown: { who: d.studentName, what: what(d), amountPaise: 0 } };
+      // The card shows the balance it waives ("... and waive the ₹1,800 balance? No money moves.", SKILL_ASK.fees). The action carries that balance only as `balancePaise`
+      // (standing), never as `amountPaise`: conversation.ts words a done cancel with an `amountPaise` as money on its way back, and a waiver moves no money (23 Nov 2026 fix
+      // of stream FA's finding: the card read "Nothing is owed." and the done line "₹1,800 is on its way back").
+      return { ok: true, action: action("cancel", d, {}), shown: { who: d.studentName, what: what(d), amountPaise: balancePaise(d) } };
     }
     if (p.kind !== "refund") return { ok: false, why: "not_here" };
     // a refund of money paid: once the fee no longer asks for money (a fee that is still open is cancelled first, with its own card); one refund for a payment, and never cash
@@ -162,7 +164,8 @@ export function feesSkill(deps: FeesSkillDeps): OwnerSkill {
     if (candidates.length === 0) return { ok: false, why: d.payments.some((x) => x.linkId !== CASH_LINK) ? "already_back" : "nothing_paid" };
     const target = candidates[0];
     const amount = p.amountPaise ?? target.amountPaise;
-    if (amount < 100 || amount > target.amountPaise || amount % 100 !== 0) return { ok: false, why: "too_much" }; // refunds go in whole rupees, never above the payment
+    // refunds go in whole rupees, never above the payment; the refusal names the payment ("more than was paid on f-2 (₹1,800)"), not ₹0
+    if (amount < 100 || amount > target.amountPaise || amount % 100 !== 0) return { ok: false, why: "too_much", paidPaise: target.amountPaise };
     return { ok: true, action: action("refund", d, { paymentId: target.id, amountPaise: amount, availablePaise: target.amountPaise }), shown: { who: d.studentName, what: what(d), amountPaise: amount }, ...(aboveLimit(amount) ? { aboveLimit: true } : {}) };
   }
 
@@ -182,7 +185,9 @@ export function feesSkill(deps: FeesSkillDeps): OwnerSkill {
     const now = standing(d);
     for (const key of ["state", "balancePaise", "payments", "waivedInr", "lateFeeInr"] as const) if (a.fields[key] !== now[key]) return { ok: false, note: "failed" };
     if (busy(d)) return { ok: false, note: "failed" };
-    if (a.kind === "cancel") return (await acts.cancelFee(d, Number(a.fields.amountPaise) / 100)) ? { ok: true, note: "done", told: true } : { ok: false, note: "failed" };
+    // a cancel waives the balance the card was bound to (a card still open from before 23 Nov 2026 also carries `amountPaise`, so it no longer matches the action prepared
+    // now: it is void on its tap and a new card is made, as for any change)
+    if (a.kind === "cancel") return (await acts.cancelFee(d, Number(a.fields.balancePaise) / 100)) ? { ok: true, note: "done", told: true } : { ok: false, note: "failed" };
     const result = await acts.refund(d, String(a.fields.paymentId), Number(a.fields.amountPaise) / 100, "refunded by the owner through the shop's assistant");
     return result === "owed" ? { ok: true, note: "owed_by_owner" } : result === "done" ? { ok: true, note: "done" } : result === "held" ? { ok: true, note: "held_by_guard" } : { ok: false, note: "failed" };
   }

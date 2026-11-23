@@ -39,6 +39,9 @@ type Prepared struct {
 	Action     assistant.Action
 	Shown      Shown
 	AboveLimit bool
+	// RefusedPaidPaise is skill.ts's refusal `paidPaise`: with the refusal "too_much", what was paid on the payment the refund would come from, for the owner's words
+	// ("That is more than was paid on f-2 (₹1,800)."). Zero says ₹0, as the TypeScript's `?? 0` does.
+	RefusedPaidPaise int64
 }
 
 // Executed is skill.ts Executed: whether it worked and the note the owner's answer is worded by (done, held_by_guard, owed_by_owner, sent, failed, not_sent).

@@ -64,7 +64,7 @@ export type Prepared =
     /** Above the shop's limit: after the tap Guard holds it and the owner approves once more (the relay's card). The card says so before the tap. */
     aboveLimit?: boolean;
   }
-  | { ok: false; why: PrepareRefusal; candidates?: DayRow[] };
+  | { ok: false; why: PrepareRefusal; candidates?: DayRow[]; /** "too_much": what was paid on the payment the refund would come from, for the owner's words (words.ts). */ paidPaise?: number };
 
 /** Why a proposal cannot become a card. words.ts words each one. */
 export type PrepareRefusal =

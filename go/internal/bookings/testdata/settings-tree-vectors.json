@@ -3810,6 +3810,333 @@
    "digest": "sha256:f7b03fd6b8ef2f9e99cb4a444aae00ad300d148c9bc23c46dfd42cfc8e46480f"
   },
   {
+   "name": "glow-salon.example.json: a null payment block",
+   "input": {
+    "name": "Glow Salon",
+    "address": "12 MG Road, Kochi",
+    "timezone": "Asia/Kolkata",
+    "services": [
+     {
+      "id": "haircut",
+      "names": {
+       "en": [
+        "haircut",
+        "hair cut"
+       ],
+       "hi": [
+        "हेयरकट",
+        "हेयर कट",
+        "बाल कटवाना",
+        "कटिंग"
+       ],
+       "ml": [
+        "ഹെയർകട്ട്",
+        "ഹെയർ കട്ട്",
+        "മുടി വെട്ട്",
+        "കട്ടിംഗ്"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಟ್",
+        "ಹೇರ್ಕಟ್",
+        "ಕೂದಲು ಕತ್ತರಿಸ",
+        "ಕಟಿಂಗ್"
+       ]
+      },
+      "priceInr": 450,
+      "durationMinutes": 45
+     },
+     {
+      "id": "beard-trim",
+      "names": {
+       "en": [
+        "beard trim",
+        "beard"
+       ],
+       "hi": [
+        "दाढ़ी ट्रिम",
+        "दाढ़ी"
+       ],
+       "ml": [
+        "താടി ട്രിം",
+        "താടി"
+       ],
+       "kn": [
+        "ಗಡ್ಡ ಟ್ರಿಮ್",
+        "ಗಡ್ಡ"
+       ]
+      },
+      "priceInr": 250,
+      "durationMinutes": 20
+     },
+     {
+      "id": "facial",
+      "names": {
+       "en": [
+        "facial"
+       ],
+       "hi": [
+        "फेशियल"
+       ],
+       "ml": [
+        "ഫേഷ്യൽ"
+       ],
+       "kn": [
+        "ಫೇಶಿಯಲ್"
+       ]
+      },
+      "priceInr": 900,
+      "durationMinutes": 60
+     },
+     {
+      "id": "hair-colour",
+      "names": {
+       "en": [
+        "hair colour",
+        "hair color"
+       ],
+       "hi": [
+        "हेयर कलर",
+        "बाल रंगवाना"
+       ],
+       "ml": [
+        "ഹെയർ കളർ",
+        "മുടി കളർ",
+        "ഹെയർ ഡൈ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಲರ್",
+        "ಕೂದಲು ಬಣ್ಣ",
+        "ಹೇರ್ ಡೈ"
+       ]
+      },
+      "priceInr": 1800,
+      "durationMinutes": 90
+     }
+    ],
+    "openingHours": {
+     "mon": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "tue": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "wed": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "thu": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "fri": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "sat": {
+      "open": "10:00",
+      "close": "21:00"
+     },
+     "sun": null
+    },
+    "slotMinutes": 30,
+    "bufferMinutes": 10,
+    "deposit": {
+     "amountInr": 200,
+     "holdMinutes": 15
+    },
+    "cancellation": {
+     "windowHours": 24,
+     "refundLimitInr": 200
+    },
+    "languages": [
+     "hi",
+     "en",
+     "ml",
+     "kn"
+    ],
+    "owner": {
+     "whatsapp": "+919000000000",
+     "language": "en"
+    },
+    "reminders": {
+     "hoursBefore": [
+      24,
+      2
+     ]
+    },
+    "payment": null
+   },
+   "ok": false,
+   "errors": [
+    "The payment module (\"payment\") must look like {\"module\": \"upi\", \"upi\": {\"id\": \"glowsalon@okicici\", \"payee\": \"Glow Salon\"}} or {\"module\": \"razorpay\"}."
+   ]
+  },
+  {
+   "name": "glow-salon.example.json: no payment block",
+   "input": {
+    "name": "Glow Salon",
+    "address": "12 MG Road, Kochi",
+    "timezone": "Asia/Kolkata",
+    "services": [
+     {
+      "id": "haircut",
+      "names": {
+       "en": [
+        "haircut",
+        "hair cut"
+       ],
+       "hi": [
+        "हेयरकट",
+        "हेयर कट",
+        "बाल कटवाना",
+        "कटिंग"
+       ],
+       "ml": [
+        "ഹെയർകട്ട്",
+        "ഹെയർ കട്ട്",
+        "മുടി വെട്ട്",
+        "കട്ടിംഗ്"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಟ್",
+        "ಹೇರ್ಕಟ್",
+        "ಕೂದಲು ಕತ್ತರಿಸ",
+        "ಕಟಿಂಗ್"
+       ]
+      },
+      "priceInr": 450,
+      "durationMinutes": 45
+     },
+     {
+      "id": "beard-trim",
+      "names": {
+       "en": [
+        "beard trim",
+        "beard"
+       ],
+       "hi": [
+        "दाढ़ी ट्रिम",
+        "दाढ़ी"
+       ],
+       "ml": [
+        "താടി ട്രിം",
+        "താടി"
+       ],
+       "kn": [
+        "ಗಡ್ಡ ಟ್ರಿಮ್",
+        "ಗಡ್ಡ"
+       ]
+      },
+      "priceInr": 250,
+      "durationMinutes": 20
+     },
+     {
+      "id": "facial",
+      "names": {
+       "en": [
+        "facial"
+       ],
+       "hi": [
+        "फेशियल"
+       ],
+       "ml": [
+        "ഫേഷ്യൽ"
+       ],
+       "kn": [
+        "ಫೇಶಿಯಲ್"
+       ]
+      },
+      "priceInr": 900,
+      "durationMinutes": 60
+     },
+     {
+      "id": "hair-colour",
+      "names": {
+       "en": [
+        "hair colour",
+        "hair color"
+       ],
+       "hi": [
+        "हेयर कलर",
+        "बाल रंगवाना"
+       ],
+       "ml": [
+        "ഹെയർ കളർ",
+        "മുടി കളർ",
+        "ഹെയർ ഡൈ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಲರ್",
+        "ಕೂದಲು ಬಣ್ಣ",
+        "ಹೇರ್ ಡೈ"
+       ]
+      },
+      "priceInr": 1800,
+      "durationMinutes": 90
+     }
+    ],
+    "openingHours": {
+     "mon": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "tue": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "wed": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "thu": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "fri": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "sat": {
+      "open": "10:00",
+      "close": "21:00"
+     },
+     "sun": null
+    },
+    "slotMinutes": 30,
+    "bufferMinutes": 10,
+    "deposit": {
+     "amountInr": 200,
+     "holdMinutes": 15
+    },
+    "cancellation": {
+     "windowHours": 24,
+     "refundLimitInr": 200
+    },
+    "languages": [
+     "hi",
+     "en",
+     "ml",
+     "kn"
+    ],
+    "owner": {
+     "whatsapp": "+919000000000",
+     "language": "en"
+    },
+    "reminders": {
+     "hoursBefore": [
+      24,
+      2
+     ]
+    }
+   },
+   "ok": false,
+   "errors": [
+    "Add how customers pay (\"payment\"). UPI is the default: {\"module\": \"upi\", \"upi\": {\"id\": \"glowsalon@okicici\", \"payee\": \"Glow Salon\"}}, with the shop's own UPI ID and the name its customers see. A shop with its own gateway account names it instead: {\"module\": \"razorpay\"}."
+   ]
+  },
+  {
    "name": "glow-salon.example.json: approvers: one person with no language",
    "input": {
     "name": "Glow Salon",
@@ -14585,6 +14912,333 @@
     }
    },
    "digest": "sha256:eff780b0202ad028fb4773f34b9d6a428266db0d95f69ad33c8ce2ce20bd9baf"
+  },
+  {
+   "name": "glow-salon-upi.example.json: a null payment block",
+   "input": {
+    "name": "Glow Salon (UPI)",
+    "address": "12 MG Road, Kochi",
+    "timezone": "Asia/Kolkata",
+    "services": [
+     {
+      "id": "haircut",
+      "names": {
+       "en": [
+        "haircut",
+        "hair cut"
+       ],
+       "hi": [
+        "हेयरकट",
+        "हेयर कट",
+        "बाल कटवाना",
+        "कटिंग"
+       ],
+       "ml": [
+        "ഹെയർകട്ട്",
+        "ഹെയർ കട്ട്",
+        "മുടി വെട്ട്",
+        "കട്ടിംഗ്"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಟ್",
+        "ಹೇರ್ಕಟ್",
+        "ಕೂದಲು ಕತ್ತರಿಸ",
+        "ಕಟಿಂಗ್"
+       ]
+      },
+      "priceInr": 450,
+      "durationMinutes": 45
+     },
+     {
+      "id": "beard-trim",
+      "names": {
+       "en": [
+        "beard trim",
+        "beard"
+       ],
+       "hi": [
+        "दाढ़ी ट्रिम",
+        "दाढ़ी"
+       ],
+       "ml": [
+        "താടി ട്രിം",
+        "താടി"
+       ],
+       "kn": [
+        "ಗಡ್ಡ ಟ್ರಿಮ್",
+        "ಗಡ್ಡ"
+       ]
+      },
+      "priceInr": 250,
+      "durationMinutes": 20
+     },
+     {
+      "id": "facial",
+      "names": {
+       "en": [
+        "facial"
+       ],
+       "hi": [
+        "फेशियल"
+       ],
+       "ml": [
+        "ഫേഷ്യൽ"
+       ],
+       "kn": [
+        "ಫೇಶಿಯಲ್"
+       ]
+      },
+      "priceInr": 900,
+      "durationMinutes": 60
+     },
+     {
+      "id": "hair-colour",
+      "names": {
+       "en": [
+        "hair colour",
+        "hair color"
+       ],
+       "hi": [
+        "हेयर कलर",
+        "बाल रंगवाना"
+       ],
+       "ml": [
+        "ഹെയർ കളർ",
+        "മുടി കളർ",
+        "ഹെയർ ഡൈ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಲರ್",
+        "ಕೂದಲು ಬಣ್ಣ",
+        "ಹೇರ್ ಡೈ"
+       ]
+      },
+      "priceInr": 1800,
+      "durationMinutes": 90
+     }
+    ],
+    "openingHours": {
+     "mon": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "tue": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "wed": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "thu": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "fri": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "sat": {
+      "open": "10:00",
+      "close": "21:00"
+     },
+     "sun": null
+    },
+    "slotMinutes": 30,
+    "bufferMinutes": 10,
+    "deposit": {
+     "amountInr": 200,
+     "holdMinutes": 60
+    },
+    "cancellation": {
+     "windowHours": 24,
+     "refundLimitInr": 200
+    },
+    "languages": [
+     "hi",
+     "en",
+     "ml",
+     "kn"
+    ],
+    "owner": {
+     "whatsapp": "+919000000000",
+     "language": "en"
+    },
+    "reminders": {
+     "hoursBefore": [
+      24,
+      2
+     ]
+    },
+    "payment": null
+   },
+   "ok": false,
+   "errors": [
+    "The payment module (\"payment\") must look like {\"module\": \"upi\", \"upi\": {\"id\": \"glowsalon@okicici\", \"payee\": \"Glow Salon\"}} or {\"module\": \"razorpay\"}."
+   ]
+  },
+  {
+   "name": "glow-salon-upi.example.json: no payment block",
+   "input": {
+    "name": "Glow Salon (UPI)",
+    "address": "12 MG Road, Kochi",
+    "timezone": "Asia/Kolkata",
+    "services": [
+     {
+      "id": "haircut",
+      "names": {
+       "en": [
+        "haircut",
+        "hair cut"
+       ],
+       "hi": [
+        "हेयरकट",
+        "हेयर कट",
+        "बाल कटवाना",
+        "कटिंग"
+       ],
+       "ml": [
+        "ഹെയർകട്ട്",
+        "ഹെയർ കട്ട്",
+        "മുടി വെട്ട്",
+        "കട്ടിംഗ്"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಟ್",
+        "ಹೇರ್ಕಟ್",
+        "ಕೂದಲು ಕತ್ತರಿಸ",
+        "ಕಟಿಂಗ್"
+       ]
+      },
+      "priceInr": 450,
+      "durationMinutes": 45
+     },
+     {
+      "id": "beard-trim",
+      "names": {
+       "en": [
+        "beard trim",
+        "beard"
+       ],
+       "hi": [
+        "दाढ़ी ट्रिम",
+        "दाढ़ी"
+       ],
+       "ml": [
+        "താടി ട്രിം",
+        "താടി"
+       ],
+       "kn": [
+        "ಗಡ್ಡ ಟ್ರಿಮ್",
+        "ಗಡ್ಡ"
+       ]
+      },
+      "priceInr": 250,
+      "durationMinutes": 20
+     },
+     {
+      "id": "facial",
+      "names": {
+       "en": [
+        "facial"
+       ],
+       "hi": [
+        "फेशियल"
+       ],
+       "ml": [
+        "ഫേഷ്യൽ"
+       ],
+       "kn": [
+        "ಫೇಶಿಯಲ್"
+       ]
+      },
+      "priceInr": 900,
+      "durationMinutes": 60
+     },
+     {
+      "id": "hair-colour",
+      "names": {
+       "en": [
+        "hair colour",
+        "hair color"
+       ],
+       "hi": [
+        "हेयर कलर",
+        "बाल रंगवाना"
+       ],
+       "ml": [
+        "ഹെയർ കളർ",
+        "മുടി കളർ",
+        "ഹെയർ ഡൈ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಲರ್",
+        "ಕೂದಲು ಬಣ್ಣ",
+        "ಹೇರ್ ಡೈ"
+       ]
+      },
+      "priceInr": 1800,
+      "durationMinutes": 90
+     }
+    ],
+    "openingHours": {
+     "mon": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "tue": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "wed": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "thu": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "fri": {
+      "open": "10:00",
+      "close": "20:00"
+     },
+     "sat": {
+      "open": "10:00",
+      "close": "21:00"
+     },
+     "sun": null
+    },
+    "slotMinutes": 30,
+    "bufferMinutes": 10,
+    "deposit": {
+     "amountInr": 200,
+     "holdMinutes": 60
+    },
+    "cancellation": {
+     "windowHours": 24,
+     "refundLimitInr": 200
+    },
+    "languages": [
+     "hi",
+     "en",
+     "ml",
+     "kn"
+    ],
+    "owner": {
+     "whatsapp": "+919000000000",
+     "language": "en"
+    },
+    "reminders": {
+     "hoursBefore": [
+      24,
+      2
+     ]
+    }
+   },
+   "ok": false,
+   "errors": [
+    "Add how customers pay (\"payment\"). UPI is the default: {\"module\": \"upi\", \"upi\": {\"id\": \"glowsalon@okicici\", \"payee\": \"Glow Salon\"}}, with the shop's own UPI ID and the name its customers see. A shop with its own gateway account names it instead: {\"module\": \"razorpay\"}."
+   ]
   },
   {
    "name": "glow-salon-upi.example.json: approvers: one person with no language",

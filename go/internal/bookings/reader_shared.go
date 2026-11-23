@@ -43,10 +43,11 @@ func (s *SettingsReader) UnknownKeys(obj map[string]any, path string, allowed []
 	s.r.unknownKeys(obj, s.keys(path), allowed, where)
 }
 
-// Payment is readPaymentSettings: the module ("upi" or "razorpay"), and a UPI shop's ID and payee; module "" when the block was refused (the problem is added).
-func (s *SettingsReader) Payment(v any, path string) Payment {
+// Payment is readPaymentSettings: the module ("upi" or "razorpay"), and a UPI shop's ID and payee; module "" when the block was refused (the problem is added). `given`: the
+// file names the block (a `null` there is the shape sentence; left out, the block is asked for).
+func (s *SettingsReader) Payment(v any, given bool, path string) Payment {
 	var tmp Settings
-	s.r.payment(v, s.keys(path), s.keys(path+"/upi"), &tmp)
+	s.r.payment(v, given, s.keys(path), s.keys(path+"/upi"), &tmp)
 	return tmp.Payment
 }
 

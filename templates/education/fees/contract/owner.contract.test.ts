@@ -106,9 +106,16 @@ describe("the shop's assistant on a Fees centre", () => {
     await c.inbound(OWNER_NUMBER, "cancel f-2");
     const card = c.sent(OWNER_NUMBER).filter((m) => m.interactive?.buttons?.some((b: { id: string }) => b.id.startsWith("card-"))).at(-1);
     assert.ok(card, "a card");
+    // the card shows the balance it waives and that no money moves (a waiver is not a refund; it read "Nothing is owed." before 23 Nov 2026)
+    assert.match(card!.text, /^Cancel fee f-2 \(Rohan Mehta, Sep 2026\) and waive the ₹1,800 balance\? No money moves\.\n/u);
     await c.tap(card!.interactive.buttons[0].id, { from: OWNER_NUMBER });
     assert.deepEqual((await c.status()).fees, { open: 1, closed: 1 });
     assert.ok(lines(c, "waive_fee", "confirmed").some((l) => l.booking === "f-2" && l.refs.amountPaise === "180000"));
+    // the done line says what happened: cancelled, not "₹1,800 is on its way back" (no money moves)
+    const said = c.sent(OWNER_NUMBER).map((m) => m.text);
+    assert.ok(said.includes("Cancelled f-2."), said.slice(-3).join("\n---\n"));
+    assert.ok(!said.some((t) => /on its way back/u.test(t)), "no refund is claimed");
+    assert.equal(c.guards!.of("payments", "POST", /\/refund$/u).length, 0, "and none is sent");
   });
 });
 
