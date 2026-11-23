@@ -160,7 +160,7 @@ const APP_DIR = resolve(dirname(new URL(import.meta.url).pathname), "..");
 export function makeContext(dir: string, overrides: Partial<Context> = {}): Context {
   const docker = process.env.GEOMETER_DOCKER ?? "docker";
   return {
-    dir: resolve(dir), appDir: APP_DIR, runner: realRunner, log: (line) => console.log(line), now: () => new Date(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)), docker,
+    dir: resolve(dir), appDir: APP_DIR, stripApp: true, runner: realRunner, log: (line) => console.log(line), now: () => new Date(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)), docker,
     tool: dockerGuardTool(loadServerImage(dir), realRunner, join(serverPaths(dir).state, "work"), docker),
     ...overrides,
   };

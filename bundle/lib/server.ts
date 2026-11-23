@@ -246,6 +246,8 @@ export function serverPaths(dir: string) {
     speechModels: join(root, "speech-models"),
     /** The Streetlist home's installed builds and the `current` link (lib/home.ts); Caddy mounts the folder read-only on a server with a pages domain. */
     home: join(root, "home"),
+    /** The checkout with its TypeScript stripped to JavaScript once per deploy (lib/strip-app.ts); the server's Node processes mount it as /app. */
+    appJs: join(root, "app-js"),
     exportsOf: (name: string) => join(root, "exports", name),
     panel: join(root, "panel"),
     statusFile: (name: string) => join(root, "status", `${name}.json`),
