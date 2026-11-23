@@ -36,7 +36,9 @@ type Strings struct {
 	HandRun           string            `json:"handRun"`
 	More              string            `json:"more"` // {0} how many more
 	LanguageName      map[string]string `json:"languageName"`
-	Label             struct {
+	// Discounts are E1's labels (modules/limits/discounts.ts DISCOUNT_REPORT_WORDS, carried in strings.ts)
+	Discounts struct{ Given, Asked, Refused string } `json:"discounts"`
+	Label     struct {
 		BalanceCollected, Collected, StillToCollect, GivenBack, OrdersTaken, Cancelled, WasAsked, Approved, SaidNo, StoppedByLimits, NotChecked, Orders string
 	} `json:"label"`
 	Stop       map[string]string                                      `json:"stop"`

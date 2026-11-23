@@ -116,5 +116,8 @@ func (r *MonthlyReport) Tree() map[string]any {
 	if r.Accounting != nil {
 		out["accounting"] = report.JSONTree(r.Accounting)
 	}
+	if r.Discounts != nil {
+		out["discounts"] = r.Discounts.Tree()
+	}
 	return out
 }

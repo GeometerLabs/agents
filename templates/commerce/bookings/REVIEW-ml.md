@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (60)
+## 1. Messages to the customer (64)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -72,8 +72,12 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | നിങ്ങളുടെ ₹200 റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് ഒന്ന് നോക്കൂ. | The owner has marked your ₹200 refund as sent by UPI. Please check your UPI app. |  |
 | `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ക്ഷമിക്കണം, ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുകയാണ്. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Sorry, online booking is paused for now. Please contact Glow Salon directly. |  |
 | `wait_over` | The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised | ക്ഷമിക്കണം, അത് പൂർത്തിയാക്കാൻ പറ്റിയില്ല: ബുക്കിംഗ് സിസ്റ്റം ഇപ്പോൾ പ്രതികരിക്കുന്നില്ല. നിങ്ങളുടെ മെസ്സേജ് ഉടമയുടെ ചെയ്യാനുള്ള കാര്യങ്ങളുടെ ലിസ്റ്റിലുണ്ട്. ദയവായി പിന്നീട് വീണ്ടും എഴുതൂ, അല്ലെങ്കിൽ Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Sorry, I couldn't finish that: the booking system isn't answering just now. Your message is on the owner's to-do list. Please write again later, or contact Glow Salon directly. |  |
+| `discount_agreed` | The customer asked for less, within what the agent may take off alone: the price agreed (the quote follows) | ശരി, നിങ്ങളുടെ ഹെയർകട്ട് ₹400-ന് ചെയ്തുതരാം. | Okay, I can do ₹400 for your haircut. |  |
+| `discount_asked` | The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet | ഞങ്ങളുടെ ഹെയർകട്ട് വില ₹450 ആണ്, അതിനാൽ ₹400-നെക്കുറിച്ച് ഞാൻ ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി കിട്ടിയാലുടൻ ഇവിടെ അറിയിക്കാം. | Our haircut is ₹450, so I've asked the owner about ₹400. I'll message you here when they answer. |  |
+| `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | സന്തോഷവാർത്ത: നിങ്ങളുടെ ഹെയർകട്ട്-ന് ₹400 ഉടമ സമ്മതിച്ചു. | Good news: the owner agreed to ₹400 for your haircut. |  |
+| `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | ക്ഷമിക്കണം, ₹400-ന് ഉടമ സമ്മതിച്ചില്ല. നിങ്ങളുടെ ഹെയർകട്ട്-ന്റെ ഏറ്റവും കുറഞ്ഞ വില ₹450 ആണ്. | Sorry, the owner couldn't agree to ₹400. The lowest for your haircut is ₹450. |  |
 
-## 2. Messages to the owner (36)
+## 2. Messages to the owner (39)
 
 Every owner message that is not the answer to something the owner has just written (a command, a code, a mark, "today") is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -118,6 +122,9 @@ Every owner message that is not the answer to something the owner has just writt
 | `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ശരി, ₹200 നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല. | Noted: you're keeping the ₹200 for a booking you make yourself. Nothing more is owed back. |  |
 | `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുകയാണ്. ഇപ്പോഴുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും പതിവുപോലെ നടക്കും. ഇത് ശരിയാക്കാൻ ദയവായി Divya, Sri Sai Digital-നെ ബന്ധപ്പെടൂ. | Heads up: online booking for Glow Salon is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact Divya, Sri Sai Digital. |  |
 | `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local partner | അറിയിപ്പ്: Divya, Sri Sai Digital നൽകിയിരുന്ന സേവനം അവസാനിച്ചതുകൊണ്ട് Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിന്നു. ഇന്നിന് ശേഷം നിങ്ങളുടെ കലണ്ടറിലുള്ള ബുക്കിംഗുകൾ: 3. മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി തുടരാൻ hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതൂ, Geometer നിങ്ങളെ ബന്ധിപ്പിക്കും. | Heads up: online booking for Glow Salon has stopped, because the service from Divya, Sri Sai Digital has ended. Bookings still in your calendar after today: 3. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch. |  |
+| `owner_discount_ask` | To the owner: the price card, with the exact price, answered with the reference and the card's code | ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: +91 98111 11111 ഹെയർകട്ട്-ന് ₹400 ചോദിക്കുന്നു (നിങ്ങളുടെ വില ₹450). കൃത്യം ₹400 സമ്മതിക്കാൻ "approve b-3 Q7RM2X", അല്ലെങ്കിൽ "deny b-3 Q7RM2X" എന്ന് മറുപടി അയയ്ക്കുക. | A price needs your OK: +91 98111 11111 asks ₹400 for haircut (your price is ₹450). Reply "approve b-3 Q7RM2X" to agree to exactly ₹400, or "deny b-3 Q7RM2X". |  |
+| `owner_discount_use_code` | To the owner: they wrote "approve" or "deny" with the reference alone while a price card waits: the exact words to send | വിലയെക്കുറിച്ചുള്ള b-3 ചോദ്യത്തിന് മറുപടി നൽകാൻ "approve b-3 Q7RM2X" അല്ലെങ്കിൽ "deny b-3 Q7RM2X" എന്ന് അയയ്ക്കുക. | To answer the price ask on b-3, reply "approve b-3 Q7RM2X" or "deny b-3 Q7RM2X". |  |
+| `owner_discount_stale` | To the owner: an answer to a price card that changed or was already answered: nothing was done | ഈ മറുപടി മാറിപ്പോയതോ ഇതിനകം മറുപടി നൽകിയതോ ആയ ഒരു വില ചോദ്യത്തിനുള്ളതാണ്, അതിനാൽ ഒന്നും ചെയ്തില്ല. | That answer is for a price ask that has changed or was already answered, so nothing was done. |  |
 
 ### The words on the buttons and the lists
 
@@ -315,6 +322,9 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `languageName.en` | ഇംഗ്ലീഷ് | English |  |
 | `languageName.ml` | മലയാളം | Malayalam |  |
 | `languageName.kn` | കന്നഡ | Kannada |  |
+| `discounts.given` | നൽകിയ ഇളവുകൾ | Discounts given |  |
+| `discounts.asked` | നിങ്ങളോട് ചോദിച്ച ഇളവുകൾ | Discounts asked of you |  |
+| `discounts.refused` | നിരസിച്ച ഇളവുകൾ | Discounts refused |  |
 | `label.bookingsMade` | ബുക്ക് ആയവ | Bookings made |  |
 | `label.cancelled` | റദ്ദാക്കിയവ | Cancelled |  |
 | `label.moved` | സമയം മാറ്റിയവ | Moved to a new time |  |
@@ -1464,6 +1474,10 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.assistant.orderCap.rule` | സപ്ലയർക്കുള്ള ഒരു ഓർഡറും {v}-ൽ കൂടുതൽ മൂല്യമുള്ളതാകരുത് | No single supplier order may be worth more than {v} |  |
 | `limits.assistant.monthlyBudget.name` | മാസ ബജറ്റ് | monthly budget |  |
 | `limits.assistant.monthlyBudget.rule` | മാസത്തെ സപ്ലയർ ഓർഡറുകൾ ആകെ പരമാവധി {v} വരെ ആകാം | The month's supplier orders may add up to at most {v} |  |
+| `limits.assistant.discountPercent.name` | ഇളവ് പരിധി (ശതമാനം) | discount cap (percent) |  |
+| `limits.assistant.discountPercent.rule` | നിങ്ങളോട് ചോദിക്കാതെ ഏജന്റിന് ഒരു വിലയിൽ നിന്ന് പരമാവധി {v}% കുറയ്ക്കാം | The agent may take at most {v}% off a price without asking you |  |
+| `limits.assistant.discountInr.name` | ഇളവ് പരിധി (രൂപ) | discount cap (rupees) |  |
+| `limits.assistant.discountInr.rule` | നിങ്ങളോട് ചോദിക്കാതെ ഏജന്റിന് ഒരു വിലയിൽ നിന്ന് പരമാവധി {v} കുറയ്ക്കാം | The agent may take at most {v} off a price without asking you |  |
 | `limits.assistant.card` | ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇപ്പോൾ: ₹1000. | Refunds above ₹500 need your approval. Now: ₹1000. |  |
 | `limits.assistant.never` | ഒരിക്കലും ഇല്ല | never |  |
 | `limits.assistant.say.pending` | കാത്തിരിക്കുന്നു: ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം. | Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. |  |

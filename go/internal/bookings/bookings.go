@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
 	"time"
@@ -224,8 +225,9 @@ func (k *Kit) Limits() []runtime.LimitDecl {
 	if s == nil {
 		return nil
 	}
-	return []runtime.LimitDecl{{ID: "refund_limit", Path: "cancellation.refundLimitInr", Unit: "inr", Tighter: "lower", Kind: "refund", File: s.Cancellation.RefundLimitInr,
+	out := []runtime.LimitDecl{{ID: "refund_limit", Path: "cancellation.refundLimitInr", Unit: "inr", Tighter: "lower", Kind: "refund", File: s.Cancellation.RefundLimitInr,
 		Min: 0, Max: min(MostRefundRupees, max(1, s.Deposit.AmountInr))}}
+	return append(out, discounts.LimitDecls(s.Discounts)...) // E1: only a shop with a "discounts" block (modules/limits/discounts.ts DISCOUNT_CHAT_LIMITS)
 }
 
 // ChannelRaw is the saved state's `channel` member as read (runtime chatroutes.go ChannelStater): the chat's thread read needs no other member.

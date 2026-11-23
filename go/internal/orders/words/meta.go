@@ -188,5 +188,7 @@ func ExampleFacts(s *Shop, lang string) *MessageFacts {
 		Link: S(ex.Link), OrderRef: S(ex.OrderRef), CustomerPhone: S(ex.CustomerPhone), ApprovalCode: S(ex.ApprovalCode), ApprovalHours: N(ex.ApprovalHours), ApprovalsLeft: N(ex.ApprovalsLeft),
 		UpiCode: S(ex.UpiCode), Payee: S(s.Name), WindowHours: N(s.WindowHours), Partner: S(ex.Partner), UpcomingCount: N(ex.UpcomingCount),
 		Plan: &PlanFacts{Meals: N(ex.Meals), FromMs: N(day(ex.Date, "00:00")), ToMs: N(day(ex.PlanToDate, "00:00"))},
+		// E1: the item, its price, the price asked and the card's code (meta-templates.ts exampleFacts)
+		ItemName: S(ItemName(item, lang)), PriceInr: N(item.PriceInr), OfferedInr: N(item.PriceInr - ex.OfferedLess), DiscountCode: S(ex.DiscountCode),
 	}
 }

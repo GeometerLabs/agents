@@ -380,5 +380,6 @@ func ExampleFacts(s *Settings, lang string) *MessageFacts {
 	f.BookingRef, f.CustomerPhone, f.ApprovalCode, f.ApprovalHours, f.ApprovalsLeft = S("b-3"), S("+919811111111"), S("K7M2QX"), N(24), N(1)
 	f.UpiID, f.Payee, f.UpiCode, f.MarkedInr, f.LeftInr = S("glowsalon@okicici"), S(s.Name), S("P4XR9T"), N(s.Deposit.AmountInr), N(s.Deposit.AmountInr)
 	f.Partner, f.UpcomingCount = S("Divya, Sri Sai Digital"), N(3)
+	f.OfferedInr, f.DiscountCode = N(s.Services[0].PriceInr-50), S("Q7RM2X") // E1: meta-templates.ts exampleFacts' price asked and card code
 	return f
 }

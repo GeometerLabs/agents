@@ -10,6 +10,8 @@
 //  - A limit "stopped" something at ONE place in the record. A block is written twice (on hold_slot or reschedule_booking,
 //    and again as the reason shown on the message that follows), so each rule is counted at its own entry only.
 //  - Only "unconfirmed" and "failed" outcomes are counted as such, never "attempted" (an attempt is checked in the next step).
+import { discountsOfMonth } from "../../../../modules/limits/discounts.ts";
+import type { DiscountCounts } from "../../../../modules/limits/discounts.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { booksOnlyOf, figuresOf } from "../../../../modules/accounting/figures.ts";
@@ -198,6 +200,11 @@ export interface MonthlyReport {
    */
   accounting?: { summary: AccountingSummary; legacy: LegacyMap };
   /**
+   * E1, the discount authority (24 Nov 2026; modules/limits/discounts.ts discountsOfMonth): the month's discounts given (with the rupees taken off), asked of the owner and
+   * refused. Left out when the month's record has no discount line, which keeps the bytes of every report of a shop without the authority.
+   */
+  discounts?: DiscountCounts;
+  /**
    * The head of the shop's record as a hash-chained ledger (modules/record/ledger.ts) when the report was made: the last entry's number and hash, over the whole record handed
    * in. A later change to any entry it covers gives a different hash, which no longer matches this one or the daily fingerprint. null when the caller named no ledger
    * (`ledger` below), which keeps the bytes of every report made before. Part of the signed bytes.
@@ -369,6 +376,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const nextMonth: LocalDate = firstDay.month === 12 ? { year: firstDay.year + 1, month: 1, day: 1 } : { year: firstDay.year, month: firstDay.month + 1, day: 1 };
   const wholeMonth = zonedToMs({ ...firstDay, day: 1 }, midnight, settings.timezone) === from && zonedToMs(nextMonth, midnight, settings.timezone) === to;
 
+  const discountCounts = discountsOfMonth(month); // E1: undefined (left out) unless the month has a discount line
   return {
     format: "geometer-monthly-report/1",
     pathway: input.pathway ?? PATHWAY,
@@ -397,6 +405,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     ...(input.innovator === true ? { innovator: true as const } : {}),
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
     ...(accounting ? { accounting } : {}),
+    ...(discountCounts ? { discounts: discountCounts } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }

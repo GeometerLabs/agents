@@ -72,6 +72,8 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
     [esc(s.label.approved), fig(r.owner.approved), ""],
     [esc(s.label.saidNo), fig(r.owner.denied), ""],
     [esc(p.retried), fig(r.owner.retried), ""],
+    // E1, the discount authority: three rows, only when the month has a discount
+    ...(r.discounts ? [[esc(s.discounts.given), ...amount(r.discounts.given)], [esc(s.discounts.asked), fig(r.discounts.asked), ""], [esc(s.discounts.refused), fig(r.discounts.refused), ""]] : []),
   ]);
   const rules = table([{ text: p.rule }, { text: p.times, n: true }], RULE_IDS.map((id) => [`${esc(s.stop[id])} <code>${esc(id)}</code>`, String(r.stopped.byRule[id])]));
   const languages = (["hi", "en", "ml", "kn"] as const);

@@ -131,6 +131,11 @@ func ReportSection(sr SealedReport, lang, check string) (string, error) {
 		[]string{e(s.Label.SaidNo), fign(r.Owner.Denied), ""},
 		[]string{e(p.Retried), fign(r.Owner.Retried), ""},
 	)
+	// E1, the discount authority: three rows, only when the month has a discount
+	if d := r.Discounts; d != nil {
+		rowsNumbers = append(rowsNumbers, append([]string{e(s.Discounts.Given)}, amountCells(accounting.Amount{Count: int(d.Given.Count), Paise: d.Given.Paise})...),
+			[]string{e(s.Discounts.Asked), fign(int(d.Asked)), ""}, []string{e(s.Discounts.Refused), fign(int(d.Refused)), ""})
+	}
 	numbers := report.Table([]report.TableHead{{Text: p.Item}, {Text: p.Count, N: true}, {Text: p.Amount, N: true}}, rowsNumbers)
 
 	var ruleRows [][]string

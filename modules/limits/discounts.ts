@@ -11,6 +11,9 @@
 //
 // The rupee cap is for one ask (the whole discount on that line, quantity included), not per unit: "₹100 off alone" means ₹100 off what the customer pays.
 
+import type { ChatLimit } from "./chat-limits.ts";
+import { discountInrLimit, discountPercentLimit } from "./chat-limit-kinds.ts";
+
 /** The checked block. `floors` keeps the file's order. */
 export interface DiscountSettings {
   capPercent: number;
@@ -67,3 +70,42 @@ export function readDiscounts(v: unknown, items: readonly Priced[], what: string
   if (errors.length > before) return undefined;
   return { capPercent: capPercent as number, capInr: capInr as number, floors };
 }
+
+/**
+ * The monthly report's `discounts` block (go/internal/discounts Count, the shops' own copy): from the period's record lines `discount`, the ones given (confirmed: agreed
+ * by the agent or approved by the owner) with the rupees taken off in paise, the ones asked of the owner (held_for_owner) and the ones refused (blocked: below the floor, or
+ * the owner's no). undefined when the period has no such line, so a report of a shop that never had one keeps its bytes.
+ */
+export interface DiscountCounts { given: { count: number; paise: number }; asked: number; refused: number }
+export function discountsOfMonth(entries: readonly { action: string; outcome: string; refs: Record<string, string> }[]): DiscountCounts | undefined {
+  const lines = entries.filter((e) => e.action === "discount");
+  if (lines.length === 0) return undefined;
+  const out: DiscountCounts = { given: { count: 0, paise: 0 }, asked: 0, refused: 0 };
+  for (const e of lines) {
+    if (e.outcome === "confirmed") { out.given.count++; out.given.paise += (Number(e.refs.discountInr) || 0) * 100; }
+    else if (e.outcome === "held_for_owner") out.asked++;
+    else if (e.outcome === "blocked") out.refused++;
+  }
+  return out;
+}
+
+/**
+ * The report's words for the block (the monthly page's rows and the owner's line), the same in every template that has the authority: each template's report strings carry
+ * them as `discounts`, so the generators take them to Go with the rest. Hindi, Malayalam and Kannada are machine-written and on the review sheets.
+ */
+export const DISCOUNT_REPORT_WORDS = {
+  en: { given: "Discounts given", asked: "Discounts asked of you", refused: "Discounts refused" },
+  hi: { given: "दी गई छूट", asked: "आपसे पूछी गई छूट", refused: "मना की गई छूट" },
+  ml: { given: "നൽകിയ ഇളവുകൾ", asked: "നിങ്ങളോട് ചോദിച്ച ഇളവുകൾ", refused: "നിരസിച്ച ഇളവുകൾ" },
+  kn: { given: "ನೀಡಿದ ರಿಯಾಯಿತಿಗಳು", asked: "ನಿಮ್ಮನ್ನು ಕೇಳಿದ ರಿಯಾಯಿತಿಗಳು", refused: "ನಿರಾಕರಿಸಿದ ರಿಯಾಯಿತಿಗಳು" },
+} as const;
+
+/**
+ * The discount caps as limits the owner may change ("cap 10%" through the assistant's limit card; loosening only behind the passkey page), for a shop that HAS a
+ * "discounts" block. The Go runtimes declare them only then (go/internal/bookings and orders Limits); the deployer reads these to carry a change into the file
+ * (bundle/lib/kinds.ts). Kept out of the templates' CHAT_LIMITS so the public demos, which have no discounts, show the limits they always did.
+ */
+export const DISCOUNT_CHAT_LIMITS: readonly ChatLimit[] = [
+  discountPercentLimit("discounts.capPercent", (s) => ((s as { discounts?: unknown })?.discounts ? { min: 0, max: MAX_CAP_PERCENT } : { min: 0, max: 0 })),
+  discountInrLimit("discounts.capInr", (s) => ((s as { discounts?: unknown })?.discounts ? { min: 0, max: MAX_CAP_INR } : { min: 0, max: 0 })),
+];

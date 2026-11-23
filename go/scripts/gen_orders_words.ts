@@ -239,7 +239,7 @@ function metaWords(language: Language): { meta: unknown[]; metaSlots: Bag } {
 function exampleWords(language: Language): unknown {
   const a = annapurna(), b = sweetCrumbs();
   const ea = exampleFacts(a, language), eb = exampleFacts(b, language);
-  const keys = ["address", "link", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiCode", "partner", "upcomingCount", "leftInr", "mode"] as const;
+  const keys = ["address", "link", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiCode", "partner", "upcomingCount", "leftInr", "mode", "discountCode"] as const;
   const out: Record<string, unknown> = {};
   for (const k of keys) {
     if (ea[k] !== eb[k]) throw new Error(`exampleFacts ${k} differs between shops: it is not a constant`);
@@ -260,6 +260,9 @@ function exampleWords(language: Language): unknown {
   out.date = ymd(ea.dateMs!);
   out.cutoffDate = ymd(ea.cutoffMs!);
   out.planToDate = ymd(ea.plan!.toMs!);
+  // E1: the price asked is the item's price less a constant
+  if (ea.priceInr !== item.priceInr || ea.itemName !== first || item.priceInr - ea.offeredInr! !== b.menu[0].priceInr - eb.offeredInr!) throw new Error("exampleFacts' discount facts are not the item's price less a constant");
+  out.offeredLess = item.priceInr - ea.offeredInr!;
   if (JSON.stringify(ymd(eb.dateMs!)) !== JSON.stringify(out.date)) throw new Error("exampleFacts date differs between shops");
   return out;
 }

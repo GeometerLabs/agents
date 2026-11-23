@@ -7,6 +7,8 @@ package discounts
 import (
 	"strings"
 	"testing"
+
+	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
 var shop = &Settings{CapPercent: 10, CapInr: 100, Floors: []Floor{{"haircut", 300}, {"thali", 100}}}
@@ -104,17 +106,19 @@ func TestCardCodeIsBoundToEveryField(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	d := Deal{Item: "haircut", Qty: 1, ListInr: 400, OfferedInr: 360, DiscountInr: 40, TotalInr: 360, Code: "ABCDEF"}
-	e := []Entry{
-		{Action: Action, Outcome: "confirmed", Time: "2026-11-03T10:00:00.000Z", Refs: Refs(d, "agent")},
-		{Action: Action, Outcome: "held_for_owner", Time: "2026-11-04T10:00:00.000Z", Refs: Refs(d, "")},
-		{Action: Action, Outcome: "confirmed", Time: "2026-11-04T11:00:00.000Z", Refs: Refs(Deal{DiscountInr: 100}, "owner")},
-		{Action: Action, Outcome: "blocked", Time: "2026-11-05T10:00:00.000Z", Refs: Refs(d, "owner")},
-		{Action: Action, Outcome: "blocked", Time: "2026-10-31T10:00:00.000Z", Refs: Refs(d, "rule")},
-		{Action: "refund", Outcome: "confirmed", Time: "2026-11-05T10:00:00.000Z", Refs: map[string]string{"discountInr": "5"}},
+	e := []store.Entry{
+		{Action: Action, Outcome: "confirmed", Refs: Refs(d, "agent")},
+		{Action: Action, Outcome: "held_for_owner", Refs: Refs(d, "")},
+		{Action: Action, Outcome: "confirmed", Refs: Refs(Deal{DiscountInr: 100}, "owner")},
+		{Action: Action, Outcome: "blocked", Refs: Refs(d, "owner")},
+		{Action: "refund", Outcome: "confirmed", Refs: map[string]string{"discountInr": "5"}},
 	}
-	got := Count(e, func(t string) bool { return strings.HasPrefix(t, "2026-11") })
-	if got != (Counts{Given: 2, GivenInr: 140, Asked: 1, Refused: 1}) {
+	got := Count(e)
+	if got == nil || *got != (Counts{Given: Amount{2, 14000}, Asked: 1, Refused: 1}) {
 		t.Errorf("count %+v", got)
+	}
+	if Count(e[4:]) != nil {
+		t.Errorf("no discount line: no block")
 	}
 }
 

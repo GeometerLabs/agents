@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
@@ -24,7 +25,13 @@ func stands(b *Booking) bool {
 
 // Facts is skill.ts `facts` for Bookings.
 func (k *bookingsSkill) Facts(nowMs int64) []assistant.TalkSource {
-	return ownerTalkFacts(k.a.settings, k.a.store, nowMs)
+	out := ownerTalkFacts(k.a.settings, k.a.store, nowMs)
+	if s := k.a.settings; s.Discounts != nil { // E1: "discounts this month", from the record (internal/discounts TalkFact)
+		first := zone.LocalParts(nowMs, s.Timezone).Date
+		first.Day = 1
+		out = append(out, discounts.TalkFact(k.a.c.Rec.Entries(), isoTime(zone.ZonedToMs(first, 0, 0, s.Timezone))))
+	}
+	return out
 }
 
 // PublicContext is skill.ts `publicContext` for Bookings (no links: assistant.ts gives none).

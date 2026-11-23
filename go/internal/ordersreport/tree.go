@@ -70,6 +70,9 @@ func (r *Report) Tree() map[string]any {
 	if r.Accounting != nil {
 		out["accounting"] = report.JSONTree(r.Accounting)
 	}
+	if r.Discounts != nil {
+		out["discounts"] = r.Discounts.Tree()
+	}
 	if r.Plans != nil {
 		p := r.Plans
 		out["plans"] = map[string]any{"active": p.Active, "started": p.Started, "renewals": p.Renewals, "mealsDelivered": p.MealsDelivered,

@@ -23,8 +23,12 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 
+	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/language"
+	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
 // RuleID is the rule every discount decision is recorded under.
@@ -330,36 +334,75 @@ func itoa(n int64) string { return fmt.Sprintf("%d", n) }
 
 // ---- what the record and the report count ------------------------------------------------------------------------------------------------------------------------------
 
-// Entry is the part of a record line the count reads (store.Entry and accounting.Entry both have it).
-type Entry struct {
-	Action, Outcome, Time string
-	Refs                  map[string]string
-}
+// Amount is the report's {count, paise}.
+type Amount struct{ Count, Paise int64 }
 
-// Counts are the discounts of a period: given (agreed by the agent or approved by the owner, and the rupees taken off), asked of the owner, and refused (below the
-// floor, or the owner's no).
+// Counts are the discounts of a period, the monthly report's `discounts` block (discounts.ts discountsOfMonth): given (agreed by the agent or approved by the owner) with the
+// rupees taken off, in paise as every report amount is; asked of the owner; and refused (below the floor, or the owner's no).
 type Counts struct {
-	Given, GivenInr, Asked, Refused int64
+	Given          Amount
+	Asked, Refused int64
 }
 
-// Count reads the record's discount lines: `discount` with outcome confirmed (given), held_for_owner (asked) or blocked (refused). in says whether a line's time is in the period.
-func Count(entries []Entry, in func(time string) bool) Counts {
+// Count reads the period's record lines: `discount` with outcome confirmed (given), held_for_owner (asked) or blocked (refused). nil when there is none, so a report of a shop
+// that never had a discount line keeps its bytes (the block is left out).
+func Count(entries []store.Entry) *Counts {
 	var c Counts
+	seen := false
 	for _, e := range entries {
-		if e.Action != Action || (in != nil && !in(e.Time)) {
+		if e.Action != Action {
 			continue
 		}
+		seen = true
 		switch e.Outcome {
 		case "confirmed":
-			c.Given++
-			var n int64
-			fmt.Sscanf(e.Refs["discountInr"], "%d", &n)
-			c.GivenInr += n
+			c.Given.Count++
+			n, _ := strconv.ParseInt(e.Refs["discountInr"], 10, 64) // Number(x) || 0 of whole rupees as text
+			c.Given.Paise += n * 100
 		case "held_for_owner":
 			c.Asked++
 		case "blocked":
 			c.Refused++
 		}
 	}
-	return c
+	if !seen {
+		return nil
+	}
+	return &c
+}
+
+// Tree is the block as the report's JSON has it.
+func (c *Counts) Tree() map[string]any {
+	return map[string]any{"given": map[string]any{"count": c.Given.Count, "paise": c.Given.Paise}, "asked": c.Asked, "refused": c.Refused}
+}
+
+// LimitDecls are the caps as limits the owner may change (modules/limits/discounts.ts DISCOUNT_CHAT_LIMITS, the words chat-limit-kinds.ts discountPercent and discountInr):
+// tightened by a tap on the assistant's limit card, loosened only behind the passkey page, as every limit. None for a shop without the block, so its limits page is as before.
+func LimitDecls(s *Settings) []runtime.LimitDecl {
+	if s == nil {
+		return nil
+	}
+	return []runtime.LimitDecl{
+		{ID: "discount_cap_percent", Path: "discounts.capPercent", Unit: "count", Tighter: "lower", Kind: "discountPercent", File: s.CapPercent, Min: 0, Max: MaxCapPercent},
+		{ID: "discount_cap_inr", Path: "discounts.capInr", Unit: "inr", Tighter: "lower", Kind: "discountInr", File: s.CapInr, Min: 0, Max: MaxCapInr},
+	}
+}
+
+// TalkFact is the owner's talk's source for "discounts this month" (the assistant's Facts, counts only): read from the record since the first of this month in the shop's
+// zone, so the answer rests on what was recorded, never on a model's guess. monthStartIso is that moment as the record writes times (ISO, UTC); a record time sorts as text.
+// Only a shop with the authority adds it (the TypeScript demo has none, so the talk-facts vectors are unchanged).
+func TalkFact(entries []store.Entry, monthStartIso string) assistant.TalkSource {
+	var month []store.Entry
+	for _, e := range entries {
+		if e.Time >= monthStartIso {
+			month = append(month, e)
+		}
+	}
+	c := Count(month)
+	if c == nil {
+		c = &Counts{}
+	}
+	rupees := c.Given.Paise / 100
+	return assistant.TalkSource{ID: "r:discounts", Kind: "record", AmountsInr: []float64{float64(rupees)},
+		Text: fmt.Sprintf("Discounts this month: %d given (%s off in all), %d asked of the owner, %d refused.", c.Given.Count, inr(rupees), c.Asked, c.Refused)}
 }

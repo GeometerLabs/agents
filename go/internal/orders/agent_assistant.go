@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
@@ -571,6 +572,11 @@ func (k *ordersSkill) Facts(nowMs int64) []assistant.TalkSource {
 		}
 	}
 	out = append(out, assistant.TalkSource{ID: "r:open", Kind: "record", Text: "Open orders now: " + strconv.Itoa(open) + ". Cancelled over the last 28 days: " + strconv.Itoa(cancelled) + "."})
+	if s.Discounts != nil { // E1: "discounts this month", from the record (internal/discounts TalkFact)
+		first := zone.LocalParts(nowMs, tz).Date
+		first.Day = 1
+		out = append(out, discounts.TalkFact(k.a.c.Rec.Entries(), time.UnixMilli(zone.ZonedToMs(first, 0, 0, tz)).UTC().Format("2006-01-02T15:04:05.000Z")))
+	}
 	return out
 }
 

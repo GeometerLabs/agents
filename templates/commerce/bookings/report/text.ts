@@ -64,7 +64,10 @@ export function ownerText(report: MonthlyReport, language: Language): string {
 
   const notChecked = `${pair(s.label.notChecked, notCheckedList(report, language))}${language === "hi" ? "।" : "."} ${s.handRun}`;
 
-  return [title, moneyAndBookings, asked, stoppedLine, notChecked].join("\n");
+  // E1, the discount authority: one line, only when the month has a discount
+  const d = report.discounts;
+  const discountLine = d ? [pair(s.discounts.given, `${rupees(d.given.paise)} (${d.given.count})`), pair(s.discounts.asked, d.asked), pair(s.discounts.refused, d.refused)].join(" · ") : "";
+  return [title, moneyAndBookings, asked, stoppedLine, ...(discountLine ? [discountLine] : []), notChecked].join("\n");
 }
 
 /** The owner's messages for a language choice: one, or two for "both". */
