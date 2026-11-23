@@ -1120,3 +1120,8 @@ the translated words stay. Go: the @orders/@fees help lines and new `need_ref.<k
 said "deposit": SKILL_ASK.orders words it "Ravi cancelled order o-5 late. Refund the ₹120 advance?" in four languages; Go reads `card.answer.late_refund@orders` (cardQuestion
 looks for the skill's own answer key first). Tests: modules/assistant/test/words.test.ts (two new tests, every language) and the assistant line vectors (help@orders, three
 "which one?" lines, the Orders late-refund card, in four languages; run by internal/runtime TestAssistantLinesAreTheTypeScriptsAndTheirCheckToo).
+
+**Measured at the end (on the branch merged with main 4421c2f5: OG, FR and SR in; through the heat lock).** Fees contract **73 of 73 on Go and 73 of 73 on TypeScript**
+(assistant.contract.test.ts 6 of 6 on both); Orders contract 94 of 94 on Go and on TypeScript; Bookings contract on Go 151 of 151; listings 208 of 208 (words-fresh included);
+modules/assistant/test 110 of 110; `go vet ./...` and `go test ./...` clean; `gen_words.ts --check` and `gen_assistant_vectors.ts --check` fresh. The Fees morning line runs
+after FR's monthly report in AfterTick. internal/fees/Deferred.md still lists the monthly report as not ported: that row is Stream FR's to remove.
