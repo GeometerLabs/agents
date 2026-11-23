@@ -162,8 +162,9 @@ export interface ReportInput {
 
 /** What governs how the agent behaves and speaks, without contact details. Two centres with the same policy digest have the same limits and words. */
 export function policyOf(settings: Settings): unknown {
-  const { address: _address, owner, students: _students, ...rest } = settings;
-  return { ...rest, owner: { language: owner.language }, students: settings.students.length };
+  const { address: _address, owner, students: _students, creditBook, ...rest } = settings;
+  // the credit book's people are counted like the students: no name or number is in what the digest is of (left out when the shop has no credit book, so its digest is as it was)
+  return { ...rest, owner: { language: owner.language }, students: settings.students.length, ...(creditBook ? { creditBook: { ...creditBook, people: creditBook.people.length } } : {}) };
 }
 export const policyDigest = (settings: Settings): string => digestOf(policyOf(settings));
 

@@ -101,6 +101,16 @@ type rulesVectors struct {
 				} `json:"backDues"`
 			} `json:"students"`
 			OldDuesStopLink *bool `json:"oldDuesStopLink"`
+			Credit          *struct {
+				MaxPerPersonInr int64 `json:"maxPerPersonInr"`
+				RemindEveryDays int64 `json:"remindEveryDays"`
+				People          []struct {
+					Name      string `json:"name"`
+					Phone     string `json:"phone"`
+					AmountInr int64  `json:"amountInr"`
+					Language  string `json:"language"`
+				} `json:"people"`
+			} `json:"credit"`
 		} `json:"checked"`
 	} `json:"settings"`
 }
@@ -275,6 +285,20 @@ func TestSettingsAreTheTypeScripts(t *testing.T) {
 		}
 		if (w.OldDuesStopLink != nil) != (s.Classes != nil) || (s.Classes != nil && s.Classes.OldDuesStopLink != *w.OldDuesStopLink) {
 			t.Errorf("%s: oldDuesStopLink differs", c.Name)
+		}
+		// the credit book: the block as checked (the defaults filled), its people in the file's order
+		if (w.Credit != nil) != (s.Credit != nil) {
+			t.Errorf("%s: the credit book is there in one runtime only", c.Name)
+		} else if w.Credit != nil {
+			got := s.Credit
+			same := got.MaxPerPersonInr == w.Credit.MaxPerPersonInr && got.RemindEveryDays == w.Credit.RemindEveryDays && len(got.People) == len(w.Credit.People)
+			for i := 0; same && i < len(got.People); i++ {
+				p, x := got.People[i], w.Credit.People[i]
+				same = p.Name == x.Name && p.Phone == x.Phone && p.AmountInr == x.AmountInr && p.Language == x.Language
+			}
+			if !same {
+				t.Errorf("%s: the credit book differs: Go %+v, TypeScript %+v", c.Name, *got, *w.Credit)
+			}
 		}
 		if len(s.Students) != len(w.Students) {
 			t.Fatalf("%s: %d students, TypeScript %d", c.Name, len(s.Students), len(w.Students))

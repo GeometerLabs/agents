@@ -1,0 +1,57 @@
+{
+  "name": "Sri Lakshmi Hardware",
+  "address": "12 Market Road, Mysuru",
+  "timezone": "Asia/Kolkata",
+  "languages": [
+    "kn",
+    "en",
+    "hi",
+    "ml"
+  ],
+  "creditBook": {
+    "maxPerPersonInr": 50000,
+    "remindEveryDays": 7,
+    "people": [
+      {
+        "name": "Ramesh",
+        "phone": "+919845011111",
+        "amountInr": 2400,
+        "language": "kn"
+      },
+      {
+        "name": "Suresh Electricals",
+        "phone": "+919845022222",
+        "amountInr": 7850,
+        "language": "en"
+      },
+      {
+        "name": "Anil",
+        "phone": "+919845033333",
+        "amountInr": 600,
+        "language": "hi"
+      }
+    ]
+  },
+  "reminders": {
+    "hour": 10,
+    "maxPerMonth": 4
+  },
+  "partPayments": {
+    "allowed": true,
+    "minInr": 100
+  },
+  "refund": {
+    "limitInr": 500
+  },
+  "payment": {
+    "module": "upi",
+    "upi": {
+      "id": "srilakshmihw@oksbi",
+      "payee": "Sri Lakshmi Hardware"
+    }
+  },
+  "owner": {
+    "whatsapp": "+919845000000",
+    "language": "kn"
+  }
+}

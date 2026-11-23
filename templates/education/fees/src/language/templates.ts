@@ -7,6 +7,8 @@ import type { Language } from "../../../../../modules/language/languages.ts";
 import { localParts } from "../../../../../modules/core/time.ts";
 import { CLASS_TEMPLATES } from "../classes/words.ts";
 import type { ClassTemplateId } from "../classes/words.ts";
+import { CREDIT_TEMPLATES } from "../credit/words.ts";
+import type { CreditTemplateId } from "../credit/words.ts";
 
 /**
  * One open fee in a reminder that lists several (a parent with more than one child, or with an earlier month still unpaid): each keeps its OWN payment link, so a payment
@@ -112,7 +114,7 @@ export type TemplateId =
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
   | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId | CreditTemplateId;
 
 /**
  * Item 11h: the reminders with the parent's private page in them, used whenever the centre has a page (its pages file): the same words as the three reminders, and a
@@ -153,7 +155,7 @@ export const TEMPLATE_NAMES = { customer: "fee_update", reminder: "fee_reminder_
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId | CreditTemplateId>, Template>;
 type FamilySet = Record<FamilyTemplateId, Template>;
 type PageSet = Record<PageTemplateId, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
@@ -606,7 +608,7 @@ const familyKn: FamilySet = {
   fee_reminder_family_page: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ಬಾಕಿ ಶುಲ್ಕಗಳು: ${familyLines(f)}. ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ ಎಲ್ಲವನ್ನೂ ತೋರಿಸುತ್ತದೆ: ${page(f)} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn, ...familyEn, ...CLASS_TEMPLATES.en }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi, ...familyHi, ...CLASS_TEMPLATES.hi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl, ...familyMl, ...CLASS_TEMPLATES.ml }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn, ...familyKn, ...CLASS_TEMPLATES.kn } };
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn, ...familyEn, ...CLASS_TEMPLATES.en, ...CREDIT_TEMPLATES.en }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi, ...familyHi, ...CLASS_TEMPLATES.hi, ...CREDIT_TEMPLATES.hi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl, ...familyMl, ...CLASS_TEMPLATES.ml, ...CREDIT_TEMPLATES.ml }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn, ...familyKn, ...CLASS_TEMPLATES.kn, ...CREDIT_TEMPLATES.kn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

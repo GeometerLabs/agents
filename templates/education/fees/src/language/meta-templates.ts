@@ -17,6 +17,7 @@ import { batchName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import { dueDate, familyLines, inr, need, payTo, render } from "./templates.ts";
 import { CLASS_META_IDS, classDate, classTime } from "../classes/words.ts";
+import { CREDIT_META } from "../credit/words.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
@@ -141,6 +142,8 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   // Classes (17 Nov 2026, src/classes/): the messages that go out on the agent's own, so often outside the window: the first question, the class link, the missed-class
   // note, the material link, and what the teacher is asked for (attendance, a missing class link, doubts waiting)
   ...CLASS_META_IDS.map((id) => template(id, id, id.startsWith("owner_") ? "owner" : "customer")),
+  // the credit book (24 Nov 2026, src/credit/words.ts): the first question after the owner's tap, the reminder, the receipts, and what the owner is told unasked
+  ...CREDIT_META.map(([name, id, audience]) => template(name, id, audience)),
 ];
 
 const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ templates: META_TEMPLATES, values: VALUE });
