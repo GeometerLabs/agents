@@ -152,17 +152,19 @@ func IsPeriod(period string) bool {
 }
 
 // FitText is fitText(text, maxBytes): on one line (every run of JavaScript whitespace one space), without control or direction-changing characters, costing at most maxBytes
-// (CarriedLength). A longer text is cut at a whole grapheme cluster and ends with "…". The steps are the TypeScript's, in its order: whitespace runs, then unsafe characters, then
-// invalid UTF-8 (its lone surrogates), then trim. (A removal can leave two spaces side by side, as in the TypeScript; encodeSummary then refuses the text.)
+// (CarriedLength). A longer text is cut at a whole grapheme cluster and ends with "…". The steps are the TypeScript's (since 22 Nov): invalid UTF-8 (its lone surrogates) and the
+// unsafe characters that are not whitespace go first, then every run of JavaScript whitespace (an unsafe line break or tab included) is one space, then trim; so a removal never
+// leaves two spaces side by side (it did, in both, before: encodeSummary then refused the text).
 func FitText(text string, maxBytes int) string {
-	var collapsed []rune // -1 stands for an invalid byte (a lone surrogate)
+	var collapsed []rune
 	inSpace := false
 	for i := 0; i < len(text); {
 		r, n := utf8.DecodeRuneInString(text[i:])
 		i += n
 		if r == utf8.RuneError && n == 1 {
-			collapsed = append(collapsed, -1)
-			inSpace = false
+			continue // a lone surrogate goes, and the space run around it stays one run
+		}
+		if unsafeRune(r) && !language.IsJSSpace(r) {
 			continue
 		}
 		if language.IsJSSpace(r) {
@@ -175,13 +177,7 @@ func FitText(text string, maxBytes int) string {
 		inSpace = false
 		collapsed = append(collapsed, r)
 	}
-	var b strings.Builder
-	for _, r := range collapsed {
-		if r >= 0 && !unsafeRune(r) {
-			b.WriteRune(r)
-		}
-	}
-	plain := language.TrimJS(b.String())
+	plain := language.TrimJS(string(collapsed))
 	if CarriedLength(plain) <= maxBytes {
 		return plain
 	}

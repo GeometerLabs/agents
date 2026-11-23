@@ -559,7 +559,10 @@ func (j *Journal) readNew(e Entry, kindText string) error {
 	r := e.Refs
 	doc := r[RefDoc]
 	var amount int64
-	if kind != "correction" && kind != "refund_cancelled" {
+	// journal.ts: a refund owed that the owner keeps (`kept` naming `owed`) carries no amount (post writes none; it is the refund's open part), so none is read.
+	_, keptOwed := r[RefOwed]
+	keptOwed = keptOwed && kind == "kept"
+	if kind != "correction" && kind != "refund_cancelled" && !keptOwed {
 		var err error
 		if amount, err = paiseRef(r, RefAmount); err != nil { // read before anything else, as the TypeScript does: a missing amount is the first thing said
 			return err

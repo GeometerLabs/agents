@@ -83,7 +83,7 @@ const bookings: WorldDef = {
     post("2026-04-13T05:00:00Z", () => money("received", { case: "b-7", paymentId: "pay_7", amountPaise: 12000, method: "gateway", evidence: "provider", for: "advance" }), L("record_deposit", "confirmed", "b-7", { paymentId: "pay_7" })),
     post("2026-04-13T07:00:00Z", () => money("refund_made", { case: "b-7", owed: "b-7:pay_7", paymentId: "pay_7", amountPaise: 12000, method: "gateway", evidence: "person_word" }), L("refund", "confirmed", "b-7", { paymentId: "pay_7", confirmedBy: "caller" })),
     post("2026-04-13T07:01:00Z", () => money("refund_made", { case: "b-7", owed: "b-7:pay_7", paymentId: "pay_7", amountPaise: 12000, method: "gateway", evidence: "person_word" }), L("refund_again", "confirmed", "b-7")),
-    // a late cancellation the owner keeps; a refund owed the owner keeps (the amount is not in the event: the TypeScript's post throws, then a template that adds the amount works)
+    // a late cancellation the owner keeps; a refund owed the owner keeps (the amount is not in the event and not needed: it posts; the second keep is a repeat)
     post("2026-04-14T05:00:00Z", () => money("received", { case: "b-8", paymentId: "pay_8", amountPaise: 40000, method: "gateway", evidence: "provider", for: "advance" }), L("record_deposit", "confirmed", "b-8", { paymentId: "pay_8" })),
     post("2026-04-14T06:00:00Z", () => money("kept", { case: "b-8", amountPaise: 40000, why: "late_cancellation" }), L("cancel_booking", "confirmed", "b-8"), "b8-kept"),
     post("2026-04-14T06:01:00Z", () => money("kept", { case: "b-8", amountPaise: 40000, why: "late_cancellation" }), L("cancel_again", "confirmed", "b-8")),

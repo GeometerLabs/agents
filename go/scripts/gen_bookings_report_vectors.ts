@@ -165,6 +165,7 @@ function rulesWorld(): { entries: RecordEntry[]; bookings: { id: string; state: 
   w.add(D(5, 7), "send_message", "blocked", "b-2", { decisions: [block("no-double-booking")], refs: { to: "customer" } }); // not its stop site: not counted as a limit
   w.add(D(5, 8), "send_message", "blocked", "b-2", { decisions: [block("no-message-after-stop"), block("opt-out"), block("opt-out")], refs: { to: "customer" } });
   w.add(D(5, 9), "send_message", "blocked", "b-2", { decisions: [block("subscription_suspended")], refs: { to: "owner" } }); // the licence's rule: never a limit that held
+  w.add(D(5, 9, 30), "send_message", "blocked", "b-2", { decisions: [block("constructor"), block("toString")], refs: { to: "owner" } }); // a rule id that is an Object.prototype member: an unknown rule (data.ts threw before 22 Nov)
   w.add(D(5, 10), "send_message", "confirmed", "b-2", { decisions: [{ ruleId: "opt-out", verdict: "allow", reason: "fine" }], refs: { to: "customer" }, language: "en" });
   w.add(D(5, 11), "record_deposit", "blocked", "b-2", { decisions: [block("one-deposit-per-booking")] });
   w.add(D(5, 12), "refund", "blocked", "b-2", { decisions: [block("refund-limit")] });

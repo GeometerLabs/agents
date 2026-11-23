@@ -27,8 +27,9 @@
   that list makes the test fail; the fix is then to add the range, or to generate it in `gen_report_words.ts` from `\p{Mc}` and the probe.
 * **A non-string `keyId`** in a signature (`sign.ts` marks the file signed and fails the key-id check): Go fails the "right fields" check instead. Both refuse the file.
 
-## TypeScript findings (not changed)
+## TypeScript findings (fixed on both sides, 22 Nov 2026)
 
-* `summary.ts fitText`: the whitespace runs are folded before the zero-width and direction characters are removed, so "a ​ b" becomes "a  b" (two spaces); `encodeSummary` then refuses
-  the text, `summaryFor` returns undefined and that paper silently gets the older #digest link. The Go port copies this on purpose (the vectors have the case).
-* `text.ts settledWho`: `who.slice(0, 39)` can cut inside a surrogate pair and leave half an emoji in a printed paper.
+* `summary.ts fitText`: the whitespace runs were folded before the zero-width and direction characters were removed, so "a ​ b" became "a  b" (two spaces), `encodeSummary`
+  refused it and that paper silently got the older #digest link. Now the characters that go are removed first (an unsafe line break or tab is a space), in both.
+* `text.ts settledWho`: `who.slice(0, 39)` could cut inside a surrogate pair. It now uses `sliceUnits` (modules/language/format.ts), which drops the half character as
+  `language.UTF16Slice` always did.

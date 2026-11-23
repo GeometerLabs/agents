@@ -49,11 +49,11 @@ the TypeScript has moved. The tests are `live_test.go`, `misc_test.go`, `fake_te
 * `.length` is UTF-16 (`language.UTF16Len`) for the file name (240), captions (1024), media url (2048), mime (80) and the status title cut (200);
   `interactiveProblem` counts CODE POINTS (`[...s].length`), as the TypeScript does. `\s` is `language.JSSpace` everywhere (`cleanParameter`,
   `[^\s]` in every link check, `;\s*` in the mime pattern, the status title). `.trim()` is `language.TrimJS`.
-* `toUpperCase`/`toLowerCase` are full case mappings (`golang.org/x/text/cases`): a template status `"straße"` upper-cases to `STRASSE`; STOP
-  matches `"ﬆop"` as JavaScript does (the fake's `receive`).
+* `toUpperCase`/`toLowerCase` are full case mappings (`golang.org/x/text/cases`): a template status `"straße"` upper-cases to `STRASSE`. The fake's STOP is
+  ASCII letters only (`isASCIIStop`, the TypeScript's `/^stop$/i` since 22 Nov), so `"ﬆop"` is not STOP.
 * `Number(x)` is `numberOf` (`jsnum.go`): `""` is 0, `" 12 "` is 12, `"0x10"` is 16, `"1e3"` is 1000, `"1_0"`, `"12px"` and `"inf"` are NaN, `null` is 0, `[]` is 0, `[7]` is 7, an object is NaN.
-* `new Date(ms).toISOString()` is `isoString`: years past 9999 are written `+010000-...`; a time past ±8.64e15 ms is `ErrInvalidTime`
-  (the TypeScript's `RangeError`, which it lets escape: see the findings in `Deferred.md`).
+* `new Date(ms).toISOString()` is `isoString` (and `ISOString` for the runtime): years past 9999 are written `+010000-...`; a time past ±8.64e15 ms has none,
+  and a status line then leaves `reportedAt` out, as `statuses.ts` does since 22 Nov (it threw a `RangeError` before).
 * Numbers from a reply: money and times are integers. A webhook timestamp is whole milliseconds as an `int64`: a fractional millisecond
   (`"1.0001"` seconds) is truncated, and a value past 2^53 is held at 2^53 (either way the record's Date is invalid or unchanged).
   A reply's error `code` is read with `guard.Int`: a fractional code reads as absent (the TypeScript would carry 131047.5, which is never 131047 either).

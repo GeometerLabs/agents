@@ -83,22 +83,19 @@ func YesterdayOf(nowMs int64, timeZone string) zone.Date {
 const catchUpDays = 7
 
 // daysToRead is every day after the last one read up to yesterday (at most catchUpDays), or just yesterday when none was ever read. The last one read is the greatest `refs.day` as
-// JavaScript's default sort puts it: by code unit, with a line that has no day sorted last (so such a line makes the last read "none").
+// JavaScript's default sort puts it: by code unit (sort.Strings on UTF-8 orders the same for these ASCII days); a line with no day is skipped.
 func daysToRead(i SettlementsInput, yesterday zone.Date) []zone.Date {
 	days := []string{}
-	missing := false
 	for _, e := range i.Record.Entries() {
 		if e.Action != SettlementRead {
 			continue
 		}
-		if d, ok := e.Refs["day"]; ok {
+		if d, ok := e.Refs["day"]; ok { // settlements.ts (22 Nov): a read line with no day is skipped (it used to sort last as undefined and hide the real last day)
 			days = append(days, d)
-		} else {
-			missing = true
 		}
 	}
 	sort.Strings(days)
-	last, hasLast := "", len(days) > 0 && !missing
+	last, hasLast := "", len(days) > 0
 	if hasLast {
 		last = days[len(days)-1]
 	}
@@ -200,6 +197,7 @@ func readDay(i SettlementsInput, day zone.Date) SettlementsResult {
 		}
 		event := MoneyEvent{Kind: "settled", Case: known, SettlementID: *row.SettlementID, UTR: *row.UTR, EntityID: row.EntityID, RowType: row.Type, PaymentID: *paymentID,
 			AmountPaise: row.Amount, FeePaise: row.Fee, TaxPaise: row.Tax, CreditPaise: row.Credit, DebitPaise: row.Debit, SettledAt: row.SettledAt}
+		before := len(i.Record.Entries())
 		done, err := i.Accounting.Post(event, func(money map[string]string) error {
 			notes := "the payment service paid this out"
 			if len(money) == 0 {
@@ -209,7 +207,9 @@ func readDay(i SettlementsInput, day zone.Date) SettlementsResult {
 			return nil
 		})
 		if err != nil {
-			list("problem", row, err.Error(), known) // a post that threw after its write leaves the row's line in the record; the listing is added as the TypeScript does
+			if len(i.Record.Entries()) == before { // settlements.ts: only a post that threw before its write is listed; after it, the row's own line is the journal's problem already
+				list("problem", row, err.Error(), known)
+			}
 			continue
 		}
 		if done.Posted {

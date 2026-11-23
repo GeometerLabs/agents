@@ -219,7 +219,8 @@ function stopsIn(month: readonly RecordEntry[]): { total: number; byRule: Record
   let total = 0;
   const justChecked = new Map<string, Set<string>>(); // conversation -> rules the previous entry's check stopped
   for (const e of month) {
-    const blocked = new Set(e.decisions.filter((d) => d.verdict === "block" && (STOP_SITES[d.ruleId as OrderRuleId] ?? []).includes(e.action)).map((d) => d.ruleId));
+    // own members only: a rule id such as "constructor" found Object.prototype's member and `.includes` threw (the Bookings copy's fix, 22 Nov)
+    const blocked = new Set(e.decisions.filter((d) => d.verdict === "block" && (Object.hasOwn(STOP_SITES, d.ruleId) ? STOP_SITES[d.ruleId as OrderRuleId] : []).includes(e.action)).map((d) => d.ruleId));
     const before = justChecked.get(e.conversation);
     justChecked.delete(e.conversation);
     if (CHECK_SITES.includes(e.action)) justChecked.set(e.conversation, blocked);

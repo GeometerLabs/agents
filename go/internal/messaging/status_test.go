@@ -64,7 +64,7 @@ func TestStatusVectors(t *testing.T) {
 			rec := &fakeRecord{entries: c.Entries}
 			_, wrote, err := messaging.RecordMessageStatus(rec, c.Status, ctx)
 			if c.Result.Thrown != nil {
-				if err == nil || err.Error() != c.Result.Thrown.Message || err != messaging.ErrInvalidTime {
+				if err == nil || err.Error() != c.Result.Thrown.Message {
 					t.Fatalf("Go %v, TypeScript threw %s: %s", err, c.Result.Thrown.Name, c.Result.Thrown.Message)
 				}
 				if rec.captured != nil {
