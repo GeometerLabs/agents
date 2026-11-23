@@ -470,7 +470,7 @@ var creditTwins = map[string]string{
 	"fee_discount_to_owner": "credit_discount_to_owner", "fee_request_waiting": "credit_request_waiting", "fee_refund_asked": "credit_refund_asked",
 	"fee_refund_too_much": "credit_refund_too_much", "fee_refund_none": "credit_refund_none", "fee_upi_qr_caption": "credit_upi_qr_caption",
 	"fee_upi_refund_owed": "credit_upi_refund_owed", "fee_upi_refund_sent": "credit_upi_refund_sent", "fee_chat_public": "credit_chat_public", "fee_paused": "credit_paused",
-	"fee_wait_over": "credit_wait_over",
+	"fee_wait_over":       "credit_wait_over",
 	"owner_payment_claim": "owner_credit_claim", "owner_fee_upi_claim": "owner_credit_upi_claim", "owner_fee_upi_expected": "owner_credit_upi_expected",
 	"owner_fee_upi_marked": "owner_credit_upi_marked", "owner_fee_upi_part": "owner_credit_upi_part", "owner_link_failed": "owner_credit_link_failed",
 	"owner_discount_note": "owner_credit_discount_note", "owner_refund_request": "owner_credit_refund_request", "owner_overpayment": "owner_credit_overpayment",

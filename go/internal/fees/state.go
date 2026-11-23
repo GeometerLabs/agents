@@ -227,13 +227,13 @@ type Store struct {
 	StartedAtMs  *int64
 	// the optional blocks, kept whole until a step types them (nil: left out)
 	Upi, ParentLinks, Confirmations, Classes, Channel, Credit json.RawMessage
-	Unknown                                           []runtime.Member
-	upi                                               *ownermarked.State
-	links                                             *keyed[ParentLink]
-	confirmations                                     *keyed[Confirmation]
-	channel                                           *runtime.ChannelState
-	classes                                           *ClassesState
-	credit                                            *CreditState
+	Unknown                                                   []runtime.Member
+	upi                                                       *ownermarked.State
+	links                                                     *keyed[ParentLink]
+	confirmations                                             *keyed[Confirmation]
+	channel                                                   *runtime.ChannelState
+	classes                                                   *ClassesState
+	credit                                                    *CreditState
 }
 
 // NewStore is due.ts createStore.

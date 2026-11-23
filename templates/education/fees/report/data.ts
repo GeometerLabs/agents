@@ -82,8 +82,8 @@ export const NOT_COUNTED: readonly NotCountedId[] = ["cash-and-transfers", "read
 export const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "cash-and-transfers": "cash-and-transfers-upi", "outside-agent": "outside-agent-upi" };
 
 /** The templates whose message is a fee reminder, and the ones that are receipts, by the name the record keeps in `refs.templates`. */
-export const REMINDER_TEMPLATES: readonly string[] = ["fee_reminder", "fee_reminder_family", "fee_reminder_family_page", "fee_overdue", "fee_overdue_late"];
-export const RECEIPT_TEMPLATES: readonly string[] = ["fee_received", "fee_part_received"];
+export const REMINDER_TEMPLATES: readonly string[] = ["fee_reminder", "fee_reminder_family", "fee_reminder_family_page", "fee_overdue", "fee_overdue_late", "credit_reminder"];
+export const RECEIPT_TEMPLATES: readonly string[] = ["fee_received", "fee_part_received", "credit_received", "credit_part_received"];
 
 export interface Amount { count: number; paise: number }
 export type ByLanguage = Record<Language, number>;
@@ -138,6 +138,13 @@ export interface FeesReport {
    * teacher confirmed; `attendanceMarked` the students marked in them. Delivery of a link is not attendance and attendance is not learning: nothing here says either.
    */
   classes?: { held: number; linksSent: number; attendanceMarked: number; missedNotes: number; doubts: number };
+  /**
+   * The credit book (the Fees adult variant, src/credit/): its one number and its one check, counted from the record, only for a shop with the `creditBook` block (a Fees centre's
+   * report is as it was). `owedAtStart` is what the accounts showed at the month's start (each account's entries less its recorded payments and the owner's marks, before `from`;
+   * count = accounts that owed); `collectedAfterReminder` the payments and owner's marks in the month on an account that had been sent a reminder before them; `remindersAfterPaid`
+   * the month's reminders sent when the record already showed the account paid, which must be 0. A part payment still leaves a reminder for the rest: that is not "after paid".
+   */
+  credit?: { owedAtStart: Amount; collectedAfterReminder: Amount; remindersSent: number; remindersAfterPaid: number };
   /** The head of the centre's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
   anchor: LedgerHead | null;
 }
@@ -295,6 +302,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     missedNotes: toParents.filter((x) => templatesOf(x).includes("class_missed_note")).length,
     doubts: month.filter((e) => e.action === "class_doubt" && e.outcome === "confirmed" && e.refs.answered === undefined).length,
   } : undefined;
+  const credit = settings.creditBook ? creditCounts(all, from) : undefined;
   return {
     format: "geometer-fees-report/1",
     pathway: PATHWAY,
@@ -319,8 +327,40 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     goLive,
     ...(accounting ? { accounting } : {}),
     ...(classes ? { classes } : {}),
+    ...(credit ? { credit } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
+}
+
+/**
+ * The credit book's counts (FeesReport.credit), from the whole record in its order: each account's entries (`credit_add`), its recorded payments and owner's marks
+ * (`record_payment`, `owner_marked_paid`, by their `amountPaise`, as limits.ts no-reminder-once-paid reads them) and its reminders (a confirmed `send_message` to the customer
+ * naming `credit_reminder`), by the fee they are on.
+ */
+export function creditCounts(all: readonly RecordEntry[], from: number): NonNullable<FeesReport["credit"]> {
+  const owed = new Map<string, number>();
+  const reminded = new Set<string>();
+  const out = { owedAtStart: emptyAmount(), collectedAfterReminder: emptyAmount(), remindersSent: 0, remindersAfterPaid: 0 };
+  let started = false;
+  const takeStart = () => { for (const v of owed.values()) if (v > 0) { out.owedAtStart.count++; out.owedAtStart.paise += v; } started = true; };
+  for (const e of all) {
+    const inMonth = Date.parse(e.time) >= from;
+    if (inMonth && !started) takeStart();
+    const fee = e.booking;
+    if (!fee || e.outcome !== "confirmed") continue;
+    const paise = Number(e.refs.amountPaise);
+    if (e.action === "credit_add" && Number.isFinite(paise)) owed.set(fee, (owed.get(fee) ?? 0) + paise);
+    else if (!owed.has(fee)) continue;
+    else if ((e.action === "record_payment" || e.action === "owner_marked_paid") && Number.isFinite(paise)) {
+      owed.set(fee, owed.get(fee)! - paise);
+      if (inMonth && reminded.has(fee)) add(out.collectedAfterReminder, e.refs.amountPaise);
+    } else if (e.action === "send_message" && e.refs.to === "customer" && (e.refs.templates ?? "").split("+").includes("credit_reminder")) {
+      reminded.add(fee);
+      if (inMonth) { out.remindersSent++; if (owed.get(fee)! <= 0) out.remindersAfterPaid++; }
+    }
+  }
+  if (!started) takeStart();
+  return out;
 }
 
 /** The report as the exact bytes that are digested and signed. */

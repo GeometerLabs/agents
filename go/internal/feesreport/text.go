@@ -47,7 +47,11 @@ func sourceTag(s *Strings, r *Report) string { return s.SourceTag[r.Source] }
 // stillToCollectText is "₹4,500 (3 students)", or ₹0 when nothing is open.
 func stillToCollectText(r *Report, s *Strings) string {
 	if r.Fees.StillToCollect.Count > 0 {
-		return fmt.Sprintf("%s (%d %s)", report.Rupees(r.Fees.StillToCollect.Paise), r.Fees.StillToCollect.Count, s.Label.Students)
+		who := s.Label.Students
+		if r.Credit != nil {
+			who = s.Credit.Accounts // a credit book counts accounts, not students
+		}
+		return fmt.Sprintf("%s (%d %s)", report.Rupees(r.Fees.StillToCollect.Paise), r.Fees.StillToCollect.Count, who)
 	}
 	return report.Rupees(0)
 }
@@ -72,6 +76,12 @@ func OwnerText(r *Report, lang string) string {
 	if c := r.Classes; c != nil {
 		classLine = strings.Join([]string{pair(s.Classes.Held, c.Held), pair(s.Classes.LinksSent, c.LinksSent), pair(s.Classes.Attendance, c.AttendanceMarked),
 			pair(s.Classes.MissedNotes, c.MissedNotes), pair(s.Classes.Doubts, c.Doubts)}, " · ")
+	}
+	// the credit book: one more line, only for a shop that has it
+	creditLine := ""
+	if c := r.Credit; c != nil {
+		creditLine = strings.Join([]string{pair(s.Credit.OwedAtStart, report.Rupees(c.OwedAtStart.Paise)), pair(s.Credit.CollectedAfterReminder, report.Rupees(c.CollectedAfterReminder.Paise)),
+			pair(s.Credit.RemindersSent, c.RemindersSent), pair(s.Credit.RemindersAfterPaid, c.RemindersAfterPaid)}, " · ")
 	}
 
 	var byCount []string // ties keep the rules' own order
@@ -101,6 +111,9 @@ func OwnerText(r *Report, lang string) string {
 	lines := []string{title, moneyLine, doneLine}
 	if classLine != "" {
 		lines = append(lines, classLine)
+	}
+	if creditLine != "" {
+		lines = append(lines, creditLine)
 	}
 	return strings.Join(append(lines, stoppedLine, notChecked), "\n")
 }

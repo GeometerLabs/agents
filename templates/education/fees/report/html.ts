@@ -49,6 +49,7 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
     [esc(s.label.saidNo), fig(r.owner.denied), ""],
     [esc(p.stoppedParents), fig(r.parents.stopped), ""],
     ...(r.classes ? [[esc(s.classes.held), fig(r.classes.held), ""], [esc(s.classes.linksSent), fig(r.classes.linksSent), ""], [esc(s.classes.attendance), fig(r.classes.attendanceMarked), ""], [esc(s.classes.missedNotes), fig(r.classes.missedNotes), ""], [esc(s.classes.doubts), fig(r.classes.doubts), ""]] : []),
+    ...(r.credit ? [[esc(s.credit.owedAtStart), ...amount(r.credit.owedAtStart)], [esc(s.credit.collectedAfterReminder), ...amount(r.credit.collectedAfterReminder)], [esc(s.credit.remindersSent), fig(r.credit.remindersSent), ""], [esc(s.credit.remindersAfterPaid), fig(r.credit.remindersAfterPaid), ""]] : []),
   ]);
   const rules = table([{ text: p.rule }, { text: p.times, n: true }], RULE_IDS.map((id) => [`${esc(s.stop[id])} <code>${esc(id)}</code>`, String(r.stopped.byRule[id])]));
   const messages = table([{ text: p.item }, { text: p.count, n: true }, ...LANGUAGES.map((l) => ({ text: s.languageName[l], n: true }))], [

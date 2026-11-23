@@ -37,13 +37,14 @@ type Strings struct {
 	Label             struct {
 		Collected, OldDuesCollected, StillToCollect, GivenBack, TakenOff, WasAsked, Approved, SaidNo, RemindersSent, StoppedByLimits, NotChecked, Students string
 	} `json:"label"`
-	Classes    struct{ Held, LinksSent, Attendance, MissedNotes, Doubts string }   `json:"classes"`
-	Stop       map[string]string                                                   `json:"stop"`
-	SourceTag  map[string]string                                                   `json:"sourceTag"`
-	NotChecked struct{ Cash, UPI, WhatsApp, Razorpay, Review string }              `json:"notChecked"`
-	UpiLabel   struct{ Collected, OldDuesCollected, GivenBack, NotChecked string } `json:"upiLabel"`
-	NotTested  map[string]string                                                   `json:"notTested"`
-	NotCounted map[string]string                                                   `json:"notCounted"`
+	Classes    struct{ Held, LinksSent, Attendance, MissedNotes, Doubts string }                                 `json:"classes"`
+	Credit     struct{ OwedAtStart, CollectedAfterReminder, RemindersSent, RemindersAfterPaid, Accounts string } `json:"credit"`
+	Stop       map[string]string                                                                                 `json:"stop"`
+	SourceTag  map[string]string                                                                                 `json:"sourceTag"`
+	NotChecked struct{ Cash, UPI, WhatsApp, Razorpay, Review string }                                            `json:"notChecked"`
+	UpiLabel   struct{ Collected, OldDuesCollected, GivenBack, NotChecked string }                               `json:"upiLabel"`
+	NotTested  map[string]string                                                                                 `json:"notTested"`
+	NotCounted map[string]string                                                                                 `json:"notCounted"`
 	Cert       struct {
 		Held string `json:"held"` // {0} held, {1} total, {2} failed, {3} not tested
 	} `json:"cert"`

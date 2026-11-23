@@ -91,6 +91,10 @@ func ReportSection(sr SealedReport, lang, check string) (string, error) {
 			[]string{e(s.Classes.Held), fign(c.Held), ""}, []string{e(s.Classes.LinksSent), fign(c.LinksSent), ""}, []string{e(s.Classes.Attendance), fign(c.AttendanceMarked), ""},
 			[]string{e(s.Classes.MissedNotes), fign(c.MissedNotes), ""}, []string{e(s.Classes.Doubts), fign(c.Doubts), ""})
 	}
+	if c := r.Credit; c != nil {
+		rowsNumbers = append(rowsNumbers, append([]string{e(s.Credit.OwedAtStart)}, amountCells(c.OwedAtStart)...), append([]string{e(s.Credit.CollectedAfterReminder)}, amountCells(c.CollectedAfterReminder)...),
+			[]string{e(s.Credit.RemindersSent), fign(c.RemindersSent), ""}, []string{e(s.Credit.RemindersAfterPaid), fign(c.RemindersAfterPaid), ""})
+	}
 	numbers := report.Table([]report.TableHead{{Text: p.Item}, {Text: p.Count, N: true}, {Text: p.Amount, N: true}}, rowsNumbers)
 
 	var ruleRows [][]string
