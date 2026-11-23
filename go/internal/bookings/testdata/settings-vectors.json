@@ -3593,7 +3593,7 @@
   "output": {
    "ok": false,
    "errors": [
-    "I don't know what \"colour\" means in the settings. Allowed: name, address, timezone, services, openingHours, slotMinutes, bufferMinutes, resources, deposit, cancellation, languages, owner, approvers, reminders, payment, calendar, assistant."
+    "I don't know what \"colour\" means in the settings. Allowed: name, address, timezone, services, openingHours, slotMinutes, bufferMinutes, resources, deposit, cancellation, languages, owner, approvers, reminders, payment, calendar, assistant, discounts."
    ]
   }
  }

@@ -185,10 +185,16 @@ const MUTATIONS: Mut[] = [
   ["plans: no weekdays and a price over a day's refunds", (s) => { s.plans = { types: [{ ...PLAN, weekdays: [], priceInr: 6000 }] }; }],
   ["plans: a price over a day's refunds", (s) => { s.plans = { types: [{ ...PLAN, priceInr: 6000 }] }; }],
   ["plans: a plan with no names", (s) => { s.plans = { types: [{ ...PLAN, names: undefined }] }; }],
+  // E1, the discount authority (24 Nov 2026): read last; only a shop that has the block reads back any different
+  ["discounts: a floor and a cap", (s) => { s.discounts = { capPercent: 10, capInr: 100, floors: { "veg-thali": 100, curd: 15 } }; }],
+  ["discounts: a floor exactly the menu price", (s) => { s.discounts = { capPercent: 0, capInr: 0, floors: { curd: 20 } }; }],
+  ["discounts: every mistake", (s) => { s.discounts = { capPercent: -1, capInr: 100001, floors: { "veg-thali": 121, pizza: 10, curd: 0.5 }, also: true }; }],
+  ["discounts: no floors", (s) => { s.discounts = { capPercent: 10, capInr: 100 }; }],
+  ["discounts: not an object", (s) => { s.discounts = [1]; }],
   ["problems in several places come in the TypeScript's order", (s) => { s.orders.maxPerDay = 0; s.approvers = { people: [] }; s.payment = { module: "bitcoin" }; s.assistant = { morning: true }; s.plans = { types: [] }; s.menu[0].priceInr = 0; }],
 ];
 
-const PLAIN = ["as it is", "a name with spaces round it", "no address", "the defaults left out", "the assistant on with its defaults", "a gateway shop", "plans: one plan", "a slot with a limit of its own", "a reminder two hours before"];
+const PLAIN = ["discounts: a floor and a cap", "as it is", "a name with spaces round it", "no address", "the defaults left out", "the assistant on with its defaults", "a gateway shop", "plans: one plan", "a slot with a limit of its own", "a reminder two hours before"];
 
 /** What the helpers answer for one accepted shop. */
 function helpers(s: any): unknown {

@@ -50,3 +50,23 @@ test("Guard's numbers come from the settings: the refund threshold is the refund
   assert.equal(highestOrderInr(s), 10 * 160);
   assert.ok(!JSON.stringify(spec).includes("encoding"), "the call's amounts are JSON numbers: the spec declares no text encoding");
 });
+
+// E1, the discount authority (24 Nov 2026, modules/limits/discounts.ts): off by default; a floor per item and a cap on the whole line
+test("discounts: left out, no block (every price below the menu refused, as before); a good block reads back last", () => {
+  assert.equal(parseSettings(raw()).discounts, undefined);
+  const s = raw();
+  s.discounts = { capPercent: 10, capInr: 100, floors: { "veg-thali": 100 } };
+  const r = parseSettings(s);
+  assert.deepEqual(r.discounts, { capPercent: 10, capInr: 100, floors: { "veg-thali": 100 } });
+  assert.equal(Object.keys(r).at(-1), "discounts");
+});
+
+test("discounts: a floor above the menu price or for an item not on the menu, and caps out of range, are refused in plain words", () => {
+  assert.deepEqual(errorsOf((s) => { s.discounts = { capPercent: 10.5, capInr: 100001, floors: { "veg-thali": 121, pizza: 50 } }; }), [
+    'The most the agent may take off alone, as a percentage ("discounts.capPercent"), must be a whole number from 0 to 90.',
+    'The most the agent may take off alone, in rupees ("discounts.capInr"), must be a whole number from 0 to 100000.',
+    'The lowest price for "veg-thali" (₹121) is above its list price (₹120). It must be at or below the list price.',
+    '"discounts.floors" names "pizza", which is not one of the items.',
+  ]);
+  assert.deepEqual(errorsOf((s) => { s.discounts = { capPercent: 10, capInr: 100, floors: {} }; }), ['"discounts.floors" must name at least one item and its lowest price in whole rupees, for example {"veg-thali": 120}.']);
+});

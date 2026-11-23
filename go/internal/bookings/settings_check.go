@@ -391,6 +391,9 @@ func (s *Settings) Tree() map[string]any {
 	if s.Assistant != nil {
 		t["assistant"] = s.Assistant
 	}
+	if s.Discounts != nil {
+		t["discounts"] = s.Discounts.Tree() // only a shop with the block: every other tree, and its policy digest, is as before
+	}
 	return t
 }
 
