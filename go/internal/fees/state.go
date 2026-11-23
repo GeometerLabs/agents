@@ -2,7 +2,7 @@ package fees
 
 // The Fees store as the snapshot keeps it: the Go twin of templates/education/fees/src/due.ts `Store` and its codec (server/snapshot.ts). The members, in the codec's order:
 // dues (a Map written as [id, due] pairs, oldest first), customers ([phone, customer] pairs), seenMessages and seenEvents (Sets written as lists), nextDue and nextRequest (the
-// id counters), startedAtMs (the day the agent first ran), and the optional ai, upi, assistant, parentLinks, confirmations, classes and channel (each left out until first set).
+// id counters), startedAtMs (the day the agent first ran), and the optional ai, upi, assistant, parentLinks, confirmations, classes, channel and credit (each left out until first set).
 //
 // LOSES NOTHING: a fee and a customer are typed for the fields this runtime reads and writes, and every other member is carried through as raw JSON in its place (Extra), so a
 // centre that goes back to the TypeScript runtime finds every field it wrote. The optional blocks are kept whole as raw JSON until a step uses one; then it is typed and written
@@ -226,13 +226,14 @@ type Store struct {
 	NextRequest  int64
 	StartedAtMs  *int64
 	// the optional blocks, kept whole until a step types them (nil: left out)
-	Upi, ParentLinks, Confirmations, Classes, Channel json.RawMessage
+	Upi, ParentLinks, Confirmations, Classes, Channel, Credit json.RawMessage
 	Unknown                                           []runtime.Member
 	upi                                               *ownermarked.State
 	links                                             *keyed[ParentLink]
 	confirmations                                     *keyed[Confirmation]
 	channel                                           *runtime.ChannelState
 	classes                                           *ClassesState
+	credit                                            *CreditState
 }
 
 // NewStore is due.ts createStore.
@@ -436,7 +437,7 @@ func ParseStore(ms []runtime.Member) (*Store, error) {
 				n := int64(*f)
 				s.StartedAtMs = &n
 			}
-		case "upi", "parentLinks", "confirmations", "classes", "channel":
+		case "upi", "parentLinks", "confirmations", "classes", "channel", "credit":
 			if !isJSONObject(m.Raw) {
 				continue
 			}
@@ -450,6 +451,8 @@ func ParseStore(ms []runtime.Member) (*Store, error) {
 				s.Confirmations = raw
 			case "classes":
 				s.Classes = raw
+			case "credit":
+				s.Credit = raw
 			default:
 				s.Channel = raw
 			}
@@ -771,6 +774,13 @@ func (s *Store) Members() ([]runtime.Member, error) {
 	if s.channel != nil {
 		s.Channel = s.channel.Marshal()
 	}
+	if s.credit != nil {
+		raw, err := json.Marshal(s.credit)
+		if err != nil {
+			return nil, err
+		}
+		s.Credit = raw
+	}
 	var started json.RawMessage
 	if s.StartedAtMs != nil {
 		started = json.RawMessage(strconv.FormatInt(*s.StartedAtMs, 10))
@@ -790,6 +800,7 @@ func (s *Store) Members() ([]runtime.Member, error) {
 		{Name: "confirmations", Raw: s.Confirmations},
 		{Name: "classes", Raw: s.Classes},
 		{Name: "channel", Raw: s.Channel},
+		{Name: "credit", Raw: s.Credit},
 	}
 	return append(out, s.Unknown...), nil
 }

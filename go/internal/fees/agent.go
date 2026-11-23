@@ -206,6 +206,7 @@ func (a *Agent) Handle(ev map[string]any) error {
 
 func (a *Agent) handle(ev map[string]any) error {
 	kind, _ := ev["kind"].(string)
+	a.creditOpen() // the credit book: the settings' people are in the book before any word about them is read (a no-op without it)
 	switch kind {
 	case "recovery":
 		return a.onRecovery(ev)

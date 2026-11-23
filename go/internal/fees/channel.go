@@ -50,7 +50,9 @@ func batchNames(s *Settings, batchID string) map[string]string {
 	out := map[string]string{}
 	b := s.BatchByID(batchID)
 	for _, l := range runtime.LANGUAGES {
-		if b != nil {
+		if batchID == CreditBatch && s.Credit != nil {
+			out[l] = WordsFor(l).Labels["creditBook"] // a credit account's entry is named "Credit book" where a batch's name would go
+		} else if b != nil {
 			out[l] = BatchName(b, l)
 		} else {
 			out[l] = batchID
@@ -373,6 +375,9 @@ func (k *channelKit) Owner(sv runtime.KitState, sn *runtime.Snap, entries []stor
 	}
 	if s.Classes != nil {
 		out["classes"] = ownerClassesView(s, st, now)
+	}
+	if s.Credit != nil {
+		out["credit"] = creditRows(st) // the credit book (credit.go): who owes what, the owner's alone; left out for a centre without it, so its view is as it was
 	}
 	if app := k.kit.appView(st, sn); app != nil {
 		out["app"] = app

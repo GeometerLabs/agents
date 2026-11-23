@@ -23,6 +23,7 @@ import type { PartMonth } from "./joining.ts";
 import type { Batch, Settings, Student } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";
 import type { ClassesState } from "./classes/state.ts";
+import type { CreditState } from "./credit/state.ts";
 
 export type DueState = "open" | "paid" | "closed";
 
@@ -153,6 +154,8 @@ export interface Store {
   channel?: ChannelState;
   /** Classes (src/classes/): the class links, the sessions, the consent answers and the doubts. Left out until the first class is touched, and for a centre without Classes. */
   classes?: ClassesState;
+  /** The credit book (src/credit/state.ts): who is in the book, their numbers and where each first question stands. Left out until the book's first entry, and for a centre without the credit book. */
+  credit?: CreditState;
 }
 
 export function createStore(): Store {
