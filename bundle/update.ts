@@ -22,7 +22,7 @@ import { updateAgent } from "./agent/update.ts";
 import { Refused, composeFile, deploy } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { compare, runHandCheck, savedDataLayout } from "./handcheck.ts";
-import { ensureGoRuntimes, goRuntimeOf, pruneGoImages } from "./lib/go-build.ts";
+import { copyGoPrograms, ensureGoRuntimes, goRuntimeOf, pruneGoImages } from "./lib/go-build.ts";
 import { appliedPathwayDir, checkoutDirOf, keptDirFor, pathwayDirFor } from "./lib/pathways.ts";
 import { listShops, readShop, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
@@ -143,6 +143,13 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
   const fromDir = appliedPathwayDir(ctx.appDir, ctx.dir, applied);
   if (!fromDir) return heldBack(`This server no longer has ${running}, the version it runs, so there is nothing to compare ${to} with. It stays on ${running}.`, { from: running, to });
 
+  // 24 Nov 2026: a version on Go runs its hand check on the shop's Go program, so the programs of this checkout are built and copied for it first (runHandCheck reads the copy)
+  if (goRuntimeOf(toDir) && !opts.dryRun) {
+    const built = await ensureGoRuntimes(ctx);
+    if (!built.ok) return heldBack(`${to} runs on a Go program, and it could not be built here: ${built.reason} It stays on ${running}.`, { from: running, to });
+    const copied = await copyGoPrograms(ctx, built.image, serverPaths(ctx.dir).programs);
+    if (!copied.ok) ctx.log(copied.reason);
+  }
   // the hand check on this client's own settings: at the version it runs now, and at the new one
   ctx.log(`${shop}: running the hand check on its own settings at ${running} and at ${to}...`);
   const settingsFile = join(serverPaths(ctx.dir).shop(shop), "settings.json");

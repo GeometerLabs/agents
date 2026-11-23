@@ -2,7 +2,9 @@
 // comparing two answers. The hand check is run as the program it is, started through the Runner, so each version brings its own situations and the
 // tests can answer for it. The answer is read from the same lines a person reads ("Held N of M", then one line per situation, and under a failed
 // one the checks that failed), so any version that prints them can be asked, and a version that prints something else is held back, not guessed at.
+import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { serverPaths } from "./lib/server.ts";
 import { pathToFileURL } from "node:url";
 import type { Context } from "./deploy.ts";
 
@@ -40,7 +42,11 @@ const firstWords = (text: string): string => (text.split("\n").map((l) => l.trim
 
 /** Run the hand check that sits in one version's folder on one settings file. A hand check that finds a situation failing exits 1; that is an answer, not a failure to ask. */
 export async function runHandCheck(ctx: Context, pathwayDir: string, settingsFile: string): Promise<{ ok: true; read: HandCheckRead } | { ok: false; reason: string }> {
-  const r = await ctx.runner.run(process.execPath, [join(pathwayDir, "scripts", "hand-check.ts"), "--settings", settingsFile], { timeoutMs: 180_000 });
+  // since 24 Nov 2026 a version's hand check runs each situation on the shop's Go program: on a server, the copy of the programs of the image the shops run (lib/go-build.ts
+  // copyGoPrograms; update.ts makes it before it asks); a version from before runs on its own TypeScript engine and ignores it
+  const programs = serverPaths(ctx.dir).programs;
+  const env = existsSync(programs) ? { GEOMETER_GO_PROGRAMS: programs } : undefined;
+  const r = await ctx.runner.run(process.execPath, [join(pathwayDir, "scripts", "hand-check.ts"), "--settings", settingsFile], { timeoutMs: 600_000, ...(env ? { env } : {}) });
   const read = readHandCheck(r.stdout);
   if (read) return { ok: true, read };
   return { ok: false, reason: firstWords(r.stderr) || firstWords(r.stdout) || `it ended with exit code ${r.code} and printed nothing` };
