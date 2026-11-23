@@ -27,7 +27,9 @@ type Kit struct {
 	Now      func() int64
 	// WhatsApp is the shop's one service (required: the order goes to a supplier on it).
 	WhatsApp messaging.Messaging
-	shared   *runtime.Settings
+	// Report is the monthly report to the owner (report.go); nil when runtime.json has no `report` block: none is made and nothing is sent.
+	Report *MonthlyReport
+	shared *runtime.Settings
 }
 
 var (

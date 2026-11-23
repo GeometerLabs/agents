@@ -989,6 +989,21 @@ The Fees monthly report ("the monthly report" contract test, the last Fees test 
 
 **Not done, and why:** see `internal/feesreport/Deferred.md` (the CLI's pieces, the sample message and the Meta list, the fold of Bookings and Orders onto the shared pieces).
 
+## go-so-report-23nov (23 Nov 2026): the Stock orders monthly report on Go (stream SR)
+
+**Built.** `internal/stockordersreport` (Explanation.md, Deferred.md there): the Go twin of `templates/commerce/stock-orders/report/` over the shared `internal/report`, proved on vectors
+made by running the TypeScript (`scripts/gen_stockorders_report_words.ts`, `gen_stockorders_report_vectors.ts`, both with `--check`, both in words-fresh). Wired into `internal/stockorders` by
+`report.go` (`NewMonthlyReport`, `Agent.AfterTick`, `OrdersOf`) and `settingstree.go` (`Settings.Tree`: the validated settings as the JSON tree the policy digest is of, proved against
+`validateSettings` in `settingstree_test.go`); `cmd/stock-orders` reads runtime.json's `report` block. The owner's morning line over Stock orders now runs after the report
+(`Agent.AfterTick`, the skill's `Waiting` and `Problems`).
+
+**Shared changes (additions only).** `internal/runtime/reportwiring.go`: `ReadReportConfig` (config.ts `readReport`, `reportOptionsReader`, start.ts `monthlyReportSetup`),
+`ReportMessagingOf` (the shop's messaging as the report package takes it, with its faults) and `ReportRecordOf`. Written once so Stock orders is not a third copy; Orders and Bookings
+keep their own (fold them: Deferred.md of `stockordersreport`).
+
+**Not ported:** the go-live certificate's builder (`report/certificate.ts`), which the CLI and the deployer run over the hand check; the runtime only reads a certificate, as Orders'
+does. The deletion step must keep it or port it (Deferred.md). The assistant's talk reads and open list over Stock orders (stockorders/Deferred.md).
+
 ## go-orders-gaps-23nov: Orders gaps before the deletion (23 Nov 2026, stream OG)
 
 Started from agents main 077371a6. The job was to give every Orders money path a test that will survive when the TypeScript runtime (and its unit tests) is deleted, to

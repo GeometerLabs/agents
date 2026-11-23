@@ -130,6 +130,12 @@ func run(folder string) error {
 		}
 		kit.WhatsApp = c
 	}
+	// the monthly report (report/monthly-job.ts) from runtime.json's `report` block; without it none is made
+	if cfg, err := runtime.ReadReportConfig(client.Config, client.Folder, log); err != nil {
+		return err
+	} else if cfg != nil {
+		kit.Report = stockorders.NewMonthlyReport(cfg, kit.Settings, kit.WhatsApp)
+	}
 	var acc *access.Access
 	if channelToken != "" {
 		if acc, err = access.Open(filepath.Join(client.Config.DataDir, access.OwnerAccessFile)); err != nil {
