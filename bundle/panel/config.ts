@@ -41,6 +41,11 @@ export interface PanelConfig {
    */
   accountUrl?: string;
   staleMinutes: number;
+  /**
+   * Minutes without a request before the panel exits and the container's restart policy starts it again asleep (ondemand.ts). PANEL_IDLE_MINUTES; left out: 15;
+   * 0: never sleeps. Never shorter than the sign-in limiter's window (15 minutes), whatever is set: a restart forgets the failed sign-ins it counts.
+   */
+  idleMinutes?: number;
   now?: () => number;
 }
 
@@ -128,6 +133,7 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
     ...(num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") !== undefined ? { hostingSharePaise: num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") as number } : {}),
     ...(num(env.PANEL_APPROVAL_WAIT_HOURS, "PANEL_APPROVAL_WAIT_HOURS") !== undefined ? { approvalWaitHours: num(env.PANEL_APPROVAL_WAIT_HOURS, "PANEL_APPROVAL_WAIT_HOURS") as number } : {}),
     staleMinutes: num(env.PANEL_STALE_MINUTES, "PANEL_STALE_MINUTES") ?? 30,
+    idleMinutes: num(env.PANEL_IDLE_MINUTES, "PANEL_IDLE_MINUTES") ?? 15,
     accountUrl: accountUrlOf(env.PANEL_ACCOUNT_URL),
   };
 }
