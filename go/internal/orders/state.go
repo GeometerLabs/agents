@@ -169,8 +169,10 @@ type Store struct {
 	upi     *ownermarked.State
 	channel *runtime.ChannelState
 	reqs    *ChannelRequests
-	// plans is the `plans` block once a step or a read typed it (PlansState, plans_state.go); Members writes it back
-	plans *PlansState
+	// plans is the `plans` block once a step or a read typed it (PlansState, plans_state.go); Members writes it back. plansBad: the block as read is not one this version
+	// reads, so it is kept as it is
+	plans    *PlansState
+	plansBad bool
 }
 
 // NewStore is order.ts createStore.

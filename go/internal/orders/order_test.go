@@ -156,6 +156,14 @@ func TestStoreRoundTrip(t *testing.T) {
 		// every typed block used, then written back: the same bytes again (the ledger and the channel are typed and re-encoded)
 		st.Ledger(false)
 		st.Requests()
+		// the plans block typed and written back is the same BYTES (plans_state.go writes each member in the order flow.ts first sets it)
+		if raw := st.Plans; raw != nil {
+			if st.PlansState(false) == nil {
+				t.Errorf("%s: the plans block cannot be read", c.Name)
+			} else if ms, _ := st.Members(); string(memberRaw(ms, "plans")) != string(raw) {
+				t.Errorf("%s: the plans block written back differs\n got %s\nwant %s", c.Name, memberRaw(ms, "plans"), raw)
+			}
+		}
 		if got := writeSnapshot(st, shared); !sameJSON([]byte(got), []byte(c.Snapshot)) {
 			t.Errorf("%s: the store with its blocks typed differs\n got %s\nwant %s", c.Name, got, c.Snapshot)
 		} else if got != c.Snapshot {
@@ -439,4 +447,13 @@ func factsJSON(fs []stock.OrderFact) []map[string]any {
 		out = append(out, m)
 	}
 	return out
+}
+
+func memberRaw(ms []runtime.Member, name string) json.RawMessage {
+	for _, m := range ms {
+		if m.Name == name {
+			return m.Raw
+		}
+	}
+	return nil
 }

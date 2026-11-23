@@ -322,18 +322,27 @@ func (ps *PlansState) json() json.RawMessage {
 	return b.Bytes()
 }
 
-// PlansState is the store's `plans` block, typed once per store; with create, `store.plans ??= { plans: {} }`. nil without create when there is none (or a block this version
-// cannot read: it is then counted as no plans, and with create started fresh in memory only).
+// PlansState is the store's `plans` block, typed once per store; with create, `store.plans ??= { plans: {} }`. nil when there is none and create is false. A block this
+// version cannot read is never replaced: it reads as no plans (nil, even with create) and is written back as it was; the plans' own steps stop on it (errBadPlans), as the
+// agent stops on a UPI ledger it cannot read, so a step never saves the customers' plans as nothing.
 func (s *Store) PlansState(create bool) *PlansState {
-	if s.plans == nil && s.Plans != nil {
+	if s.plans == nil && s.Plans != nil && !s.plansBad {
 		if ps, ok := parsePlansState(s.Plans); ok {
 			s.plans = ps
+		} else {
+			s.plansBad = true
 		}
 	}
-	if s.plans == nil && create {
+	if s.plans == nil && create && !s.plansBad {
 		s.plans = newPlansState()
 	}
 	return s.plans
+}
+
+// PlansUnreadable: the saved `plans` block is not one this version reads.
+func (s *Store) PlansUnreadable() bool {
+	s.PlansState(false)
+	return s.plansBad
 }
 
 // ---- periods.ts: the dates of a plan's periods ------------------------------------------------------------------------------------------------------------------------

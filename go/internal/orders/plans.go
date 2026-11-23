@@ -13,6 +13,7 @@ package orders
 // The words are internal/orders/words' plan_* templates (generated from plans/templates.ts); the reading is internal/orders/reading ReadPlanIntent (generated from plans/words.ts).
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
@@ -24,6 +25,9 @@ import (
 )
 
 func init() { newPlans = func(a *Agent) Plans { return &plansFlow{a: a} } }
+
+// errBadPlans: the saved `plans` block is not one this version can read; a step that went on would save the customers' plans as nothing (agent.go errBadLedger's twin).
+var errBadPlans = errors.New("The shop's monthly plans (plans in the saved state) cannot be read by this version, so nothing about a plan is done until it is fixed or the TypeScript runtime runs the shop.")
 
 // plansFlow is createPlans' return over one step's agent.
 type plansFlow struct{ a *Agent }
@@ -360,6 +364,9 @@ func (pf *plansFlow) attach(o *Order, p *Plan, per *PlanPeriod) {
 // OnPaid is flow.ts onPaid: the period is paid, the plan stands, the customer (and for a first period, the owner) is told.
 func (pf *plansFlow) OnPaid(o *Order) error {
 	a := pf.a
+	if a.store.PlansUnreadable() {
+		return errBadPlans
+	}
 	p := pf.state().Get(o.Plan.ID)
 	var per *PlanPeriod
 	if p != nil && o.Plan.Period >= 0 && o.Plan.Period < int64(len(p.Periods)) {
@@ -407,6 +414,9 @@ var notAddress = regexp.MustCompile(`(?i)^[` + language.JSSpace + `]*(stop|cance
 // OnMessage is flow.ts onMessage: true when the message was about a plan and has been answered.
 func (pf *plansFlow) OnMessage(phone, text, lang string) (bool, error) {
 	a := pf.a
+	if a.store.PlansUnreadable() {
+		return false, errBadPlans
+	}
 	cfg := pf.cfg()
 	pending := pf.state().Get("pending:" + phone)
 	p := a.store.PlansState(false).planOfCustomer(phone)
@@ -647,6 +657,9 @@ func (pf *plansFlow) closeAndRefund(p *Plan, per *PlanPeriod) error {
 // a hold ends.
 func (pf *plansFlow) OnTick() error {
 	a := pf.a
+	if a.store.PlansUnreadable() {
+		return errBadPlans
+	}
 	now := a.now()
 	ps := pf.state()
 	for _, id := range ps.IDs() {

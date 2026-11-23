@@ -49,3 +49,18 @@ copied because a template may not import another. Each is template-free and belo
   (no renewal, no slot window). The settings check refuses such a file, so only a hand-edited store can show it.
 * **The page head's character** (`Kit.OfferCharacter`) has no contract test; it is publicCharacter's two members (the name when given, the public face) over the same reads as
   the owner's mood.
+* **Paths no test runs on Go yet.** The plans contract covers the quote, the owner's mark starting a plan, a skip before and after the cut-off and a plan's meals filling a slot.
+  Not yet run by any test on Go: a renewal (its credit taken, its reminder, its lapse with the balance refunded), a cancel with the unused days refunded, a carried credit, a
+  pause and a resume, a delivery plan's address, and through them G2's `refundPlanCredit` and `planApplied`; the store vectors hold first periods only, so the member order of a
+  renewal's period (`payByMs`, `reminders`), a settlement, a pause with its end and a cancelled plan is ordered from flow.ts by reading. Also not run: the morning line's Orders
+  part, the page head's character and the owner's talk's sources (`Facts`). The next step is a plans store-vector world in gen_orders_settings.ts that renews, pauses, cancels
+  and settles, and a contract test of a renewal.
+
+## TypeScript findings (not changed; for the lead)
+
+* An Orders shop's help and "didn't get that" lines give "cancel b-14" and "message b-14 Running 15 minutes late" as examples (words.ts's examples are Bookings' references);
+  an Orders owner's references are o-14.
+* The late-refund card on an Orders shop says "deposit" ("cancelled o-5 late. Refund the ₹120 deposit?"): SKILL_ASK.orders words only the cancel and the refund cards.
+* A plan's period payment waiting for its money is an open order the owner can cancel through the assistant ("cancel o-3", acts.cancelWaiting): the order is cancelled but the
+  plan is not told, so its period stays awaiting_payment for ever (flow.ts watch returns at once for an order that is not awaiting_advance, so it never lapses, and renewalDue
+  never comes as the last period is not paid); "my plan" then answers with the unpaid period as if current. Go does the same.

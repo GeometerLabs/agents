@@ -109,7 +109,8 @@ until set; the agent calls them at agent.ts's places. The paths a plan is handed
 **One plans state.** The block is typed once per store and every reader goes through it: a slot's count (`PlanMealsInSlot`), the plans' own changes, the open rows. A
 payment recorded inside a cancel or a hold's end re-enters through `reconcilePayments` -> `completeOrder` -> `OnPaid` on the same objects. The plans are an ordered list (a
 JavaScript object's insertion order, the `pending:<phone>` entries among them), and each struct lists its members in the order flow.ts first sets them, so a TypeScript store
-read and written back is the same bytes (the plans shop of `testdata/store-vectors.json.gz`). A member flow.ts sets to `undefined` is left out; an empty list stays `[]`.
+read, typed and written back is the same bytes (the plans shop of `testdata/store-vectors.json.gz`, TestStoreRoundTrip; its plans hold first periods, paid and asked, and a
+skipped day). A block this version cannot read is never replaced: the plans' steps stop on it (errBadPlans), as the agent stops on a UPI ledger it cannot read. A member flow.ts sets to `undefined` is left out; an empty list stays `[]`.
 
 **How the assistant's lines are written** (the outgoing check, 22 Nov). The Orders skill writes no words: every line is the shared runtime's packed words, filled through one
 `assistant.Writer`. The open orders' list is `open_list.none`, `open_list.head` (the count in `{n}`), `open_list.row` (`{who}`, `{what}` and `{case}` as the key's own literals,
@@ -123,4 +124,5 @@ assistant.ts writes them through `w.lit`.
 **The shared runtime's Orders profile** (internal/runtime `assistantopen.go`, and small additions in assistant.go, assistantkit.go, morning.go; internal/assistant reading.go and
 words.go): `AssistantHooks.Orders` and `OwnerReading.Orders` (the kinds and the router's reading of an Orders shop: the listings-only kinds and `open_orders`), the
 `OpenSkill` interface ("open orders", the morning line's count), a skill's own wording of a card or a refusal (`skillKey`: the key's `@<skill>` form when the pack has it) and
-`PublicFace` (character.ts publicFace). A Bookings or listings-only shop takes none of these branches.
+`PublicFace` (character.ts publicFace). A Bookings or listings-only shop says exactly what it said before: `skillKey` and the reworked `idOf` run for every shop and find no
+`@<skill>` key for them, and the other branches are taken only by an Orders shop.
