@@ -6,10 +6,9 @@
 //  3. "Ready to go live": allowed only when 1 and 2 passed, the deployer says the last update was applied and every limit is proven, and the settings
 //     are still the ones that were checked. It writes the go-live certificate (report/), signed when the panel has a key.
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { goProgramsDir } from "../../modules/crash-test/go-shop.ts";
+import { goProgramsDir, programDigest } from "../../modules/crash-test/programs.ts";
 import { runGoHandCheck } from "../lib/hand-check-go.ts";
 import type { HandCheckOutcome } from "../lib/hand-check-go.ts";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
@@ -87,14 +86,10 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
 
   /** The hand check of one shop, on its own program: the panel's own runner (a test's, or the child process of lib/hand-check-go.ts). */
   const handCheck = config.handCheck ?? ((kind: string, settingsFile: string) => runGoHandCheck(kind, settingsFile));
-  /** The SHA-256 of a program file as it is now on this server, or undefined when it is not there. */
-  const programDigest = (name: string): string | undefined => {
-    const file = join(goProgramsDir(), name);
-    try { return existsSync(file) ? createHash("sha256").update(readFileSync(file)).digest("hex") : undefined; } catch { return undefined; }
-  };
-  /** A stored hand check still stands for these settings when it ran on them (the same digest) and on the program that is on this server now (the same file digest). */
-  const handStillStands = (checks: StoredChecks | undefined, digest: string): boolean =>
-    !!checks && checks.settingsDigest === digest && checks.hand.total > 0 && !!checks.hand.program && programDigest(checks.hand.program.name) === checks.hand.program.sha256;
+  /** The hand check ran on the program that is on this server now (the same file digest): after an update swaps the program, a stored check of the old one no longer counts. */
+  const ranOnThisProgram = (checks: StoredChecks | undefined): boolean => !!checks?.hand.program && programDigest(join(goProgramsDir(), checks.hand.program.name)) === checks.hand.program.sha256;
+  /** A stored hand check still stands for these settings when it ran on them (the same digest) and on the program that is here now. */
+  const handStillStands = (checks: StoredChecks | undefined, digest: string): boolean => !!checks && checks.settingsDigest === digest && checks.hand.total > 0 && ranOnThisProgram(checks);
   /** What a hand check that could not run is kept as: nothing held, nothing tried, and why, so the gate refuses it and the page says what happened. */
   const notRun = (outcome: Extract<HandCheckOutcome, { ok: false }>): HandCheckSummaryLike => ({ held: 0, total: 0, checks: 0, failedTitles: [], notRun: [outcome.reason] });
 
@@ -146,8 +141,9 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       if (!kindOf(shop).papers) return []; // nothing to check or prove: see `run`
       const checks = stored(shop);
       const out: Unmet[] = [];
-      // the hand check stands only when it ran on the shop's own Go program (a check stored before 24 Nov 2026 names none: it is run again) and every situation held
-      if (!checks || checks.hand.total === 0 || checks.hand.held < checks.hand.total || !checks.hand.program) out.push("hand-check");
+      // the hand check stands only when it ran on the shop's own Go program (a check stored before 24 Nov 2026 names none: it is run again), every situation held,
+      // and it ran on the program that is on this server now (an update that swaps the program asks for the check again)
+      if (!checks || checks.hand.total === 0 || checks.hand.held < checks.hand.total || !ranOnThisProgram(checks)) out.push("hand-check");
       else if (checks.settingsDigest !== kindOf(shop).papers!.policyDigest(settings)) out.push("settings-changed");
       const read = shops.status(shop);
       if (!read.ok || read.status.deploy?.state !== "applied") out.push("deploy");

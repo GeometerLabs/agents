@@ -31,7 +31,8 @@ import type { RunningStubGuard } from "../standins/guard.ts";
 import { LostReply, serveHandlers } from "../standins/http.ts";
 import type { Handler } from "../standins/http.ts";
 import { startFakeModel, statusReply } from "../test/contract/fake-model.ts";
-import { closeLater, goProgram, startGoShop } from "./go-shop.ts";
+import { goProgram, startGoShop } from "./go-shop.ts";
+import { closeLater } from "./situations.ts";
 import type { GoShop, MovableClock } from "./go-shop.ts";
 
 /** The router's two models as stand-ins over HTTP (see `GoWorldBaseOptions.models`). */
@@ -71,6 +72,8 @@ export interface GoWorldBaseOptions<Settings> {
   runtime?: Record<string, unknown>;
   /** licence.json as the deployer writes it before the first start. */
   licence?: unknown;
+  /** The situation makes the provider refuse sends on purpose (a template it says is not approved), so a refused send is not a failure of its own. */
+  sendFailuresPlanned?: boolean;
   /** Read the template's saved state (its server/snapshot.ts parseStore). */
   parseStore: (json: string) => any;
   /** The template's own settings check (its parseSettings): the file the program is given must read back as exactly these settings. */
@@ -173,7 +176,7 @@ export const goWorldHook: { closing?: (world: { settings: unknown; entries: any[
 const PHONE_NUMBER_ID = "100000000000001";
 const PAGES = "https://reports.example.com/r";
 
-/** Start a world. It is closed when the situation that made it ends (go-shop.ts closeLater). Throws when the program is not there: runOnProgram checks first. */
+/** Start a world. It is closed when the situation that made it ends (situations.ts closeLater). Throws when the program is not there: runOnProgram checks first. */
 export async function openGoWorld<Settings extends { owner: { whatsapp: string } }, Store>(o: GoWorldBaseOptions<Settings>): Promise<GoWorldBase<Settings, Store>> {
   const program = goProgram(o.program);
   if (!program.ok) throw new Error(program.reason);
@@ -188,10 +191,17 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   const agentToken = randomBytes(16).toString("hex");
   const closers: (() => Promise<void>)[] = [];
   let shop: GoShop | undefined;
+  // a send the provider refused is a failure of the situation unless the situation planned one (a fault put on the stand-in WhatsApp, or a template it was told is not
+  // approved): "nothing was sent to the owner" must not pass because a send failed. Read from the record as the world closes.
+  let sendFaultsPlanned = o.sendFailuresPlanned === true;
+  const inject = messaging.inject.bind(messaging);
+  messaging.inject = ((...a: Parameters<typeof inject>) => { sendFaultsPlanned = true; return inject(...a); }) as typeof inject;
   closeLater(async () => {
-    if (shop && goWorldHook.closing) goWorldHook.closing({ settings: o.settings, entries: shop.record() });
+    const lines = shop ? shop.record() : [];
+    if (shop && goWorldHook.closing) goWorldHook.closing({ settings: o.settings, entries: lines });
     await shop?.close();
     for (const c of closers.reverse()) await c();
+    return sendFaultsPlanned ? [] : lines.filter((e) => e.action === "send_message" && e.outcome === "failed").map((e) => `a message ${e.refs?.to ? `to the ${e.refs.to} ` : ""}was refused by the provider: ${String(e.notes ?? "").slice(0, 160)}`);
   });
   const standins = await o.standins(viaShop, { payments, messaging });
   closers.push(() => standins.close());

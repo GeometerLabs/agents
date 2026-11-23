@@ -13,11 +13,9 @@
 //      agent.db read-only (the same file the TypeScript runtime wrote: a shop moves between the two and loses nothing, so the TypeScript readers read it).
 // The clock: the program reads the machine's clock plus an offset from a file (go/internal/testclock); this side's stand-ins read the same offset, so both see one time. Time
 // keeps running between steps (a moved clock is not a frozen one): a situation that needs an exact instant sets it right before the step that reads it.
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../channels/owner-link.ts";
 import type { Clock } from "../core/clock.ts";
@@ -29,42 +27,9 @@ import type { Answer, CallOptions, RuntimeProcess } from "../test/contract/runti
 import { makeTestClockFile } from "../test/contract/test-clock-file.ts";
 
 export type { Answer };
-
-/**
- * Where the Go programs are: GEOMETER_GO_PROGRAMS (a folder: the server's copy of the programs the deployer built, bundle/lib/go-build.ts), else this checkout's go/bin
- * (`cd go && go build -o bin/ ./cmd/...`). The hand check never falls back to anything else: a program that is not there is a hand check that could not run, and says so.
- */
-export function goProgramsDir(env: Record<string, string | undefined> = process.env): string {
-  return env.GEOMETER_GO_PROGRAMS || join(dirname(fileURLToPath(import.meta.url)), "..", "..", "go", "bin");
-}
-
-/** What the hand check ran on: the program's name, the template version it serves (its /status `version`) and the SHA-256 of its file, so a certificate names the exact program. */
-export interface ProgramRan { name: string; version: string; sha256: string }
-
-/** The program `name` (bookings, orders, fees, stock-orders): its path and file digest, or why it cannot be run. */
-export function goProgram(name: string): { ok: true; path: string; sha256: string } | { ok: false; reason: string } {
-  const path = join(goProgramsDir(), name);
-  if (!existsSync(path)) return { ok: false, reason: `the shop's Go program (${name}) is not on this machine, so no situation could be run on it (build it with "cd go && go build -o bin/ ./cmd/${name}", or set GEOMETER_GO_PROGRAMS to the folder of the server's programs)` };
-  return { ok: true, path, sha256: createHash("sha256").update(readFileSync(path)).digest("hex") };
-}
-
-/** Why a test that runs situations on the program `name` is skipped (it is not built here), or undefined: it runs. A test is skipped only when what it needs is not there. */
-export function goSkip(name: string): string | undefined {
-  return existsSync(join(goProgramsDir(), name)) ? undefined : `the Go program ${name} is not built (cd go && go build -o bin/ ./cmd/${name}), and every situation runs on it`;
-}
-
-// Every world a situation opens is closed when the situation ends (modules/crash-test/situations.ts runSituation calls closeOpened), so no shop and no stand-in outlives it,
-// also when the situation throws half-way.
-const opened = new Set<() => Promise<void>>();
-/** Register a world's `close` to be called at the end of the situation that opened it. */
-export function closeLater(close: () => Promise<void>): void { opened.add(close); }
-/** Close every world opened since the last call. Never throws: a world that would not close is logged, not a failure of the next situation. */
-export async function closeOpened(): Promise<void> {
-  for (const close of [...opened]) {
-    opened.delete(close);
-    try { await close(); } catch (e) { console.error(`A hand-check world would not close: ${(e as Error).message}`); }
-  }
-}
+export { goProgram, goProgramsDir, goSkip } from "./programs.ts";
+export type { ProgramRan } from "./programs.ts";
+import { goProgramsDir } from "./programs.ts";
 
 /** A service the shop reaches over HTTP: a stand-in on this machine (and the credential it presents, for a payments Guard). */
 export interface ServiceAt { baseUrl: string; agentToken?: string; [member: string]: unknown }

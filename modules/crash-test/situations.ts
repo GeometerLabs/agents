@@ -2,8 +2,23 @@
 // RECORDS: what the payments service holds, what the messaging outbox holds. It never judges from what the agent said it did. The situations themselves are each
 // template's (Bookings: a calendar that saves nothing; Fees: a payment event that arrives twice). The frame is the same, and so is the hand check that prints it.
 // Since 24 Nov 2026 each situation runs on the shop's own Go program (modules/crash-test/go-shop.ts): every world a situation opens is closed when it ends.
-import { closeOpened, goProgram } from "./go-shop.ts";
-import type { ProgramRan } from "./go-shop.ts";
+import { goProgram } from "./programs.ts";
+import type { ProgramRan } from "./programs.ts";
+
+// Every world a situation opens is closed when the situation ends (runSituation below calls closeOpened; go-world.ts registers each world), so no shop and no stand-in outlives it,
+// also when the situation throws half-way.
+const opened = new Set<() => Promise<string[] | void>>();
+/** Register a world's `close` to be called at the end of the situation that opened it. It may answer problems the world saw that no check of the situation looks at. */
+export function closeLater(close: () => Promise<string[] | void>): void { opened.add(close); }
+/** Close every world opened since the last call, and answer the problems they saw. Never throws: a world that would not close is logged, not a failure of the next situation. */
+export async function closeOpened(): Promise<string[]> {
+  const problems: string[] = [];
+  for (const close of [...opened]) {
+    opened.delete(close);
+    try { problems.push(...((await close()) ?? [])); } catch (e) { console.error(`A hand-check world would not close: ${(e as Error).message}`); }
+  }
+  return problems;
+}
 
 export interface CheckResult { label: string; passed: boolean; detail: string }
 
@@ -41,9 +56,10 @@ export async function runSituation(situation: Situation): Promise<SituationResul
     checks = await situation.run();
   } catch (e) {
     checks = [{ label: "The agent kept going without an error", passed: false, detail: (e as Error).stack?.split("\n").slice(0, 3).join(" ") ?? String(e) }];
-  } finally {
-    await closeOpened();
   }
+  // what the worlds saw that no check of the situation reads: a message the program sent that the provider refused, with no fault planned (go-world.ts), is a failure too
+  const problems = await closeOpened();
+  if (problems.length > 0) checks = [...checks, { label: "Every message the program sent was taken by the provider", passed: false, detail: problems.join(" | ") }];
   return { situation, held: checks.length > 0 && checks.every((c) => c.passed), checks };
 }
 

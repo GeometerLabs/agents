@@ -164,8 +164,9 @@ const PROGRAMS_FROM = "image.txt";
 
 /**
  * Copy the hand check's programs out of the image the shops run into `dir` (serverPaths().programs), so the panel, which has no Docker, runs the go-live hand check on the very
- * programs the shops run. A folder that already holds this image's programs is left as it is. The copy is made beside the folder and renamed over it, so the panel never sees half
- * a set. Never throws: a failure says why, and the panel's hand check then says the programs are not there (it never runs anything else).
+ * programs the shops run. A folder that already holds this image's programs is left as it is. Each program is copied beside its old file and renamed over it, INSIDE the folder:
+ * the panel has the folder bind-mounted, and a folder replaced from outside would leave a running panel on the old, deleted one. The file naming the image is written last.
+ * Never throws: a failure says why, and the panel's hand check then says the programs are not there or not the ones the shops run (it never runs anything else).
  */
 export async function copyGoPrograms(ctx: GoBuildContext, image: string, dir: string): Promise<{ ok: true; copied: boolean } | { ok: false; reason: string }> {
   try {
@@ -174,24 +175,23 @@ export async function copyGoPrograms(ctx: GoBuildContext, image: string, dir: st
   const name = `geo-go-copy-${createHash("sha256").update(`${image}:${Date.now()}:${Math.random()}`).digest("hex").slice(0, 12)}`;
   const made = await ctx.runner.run(ctx.docker, ["create", "--name", name, image, `/${HAND_CHECK_PROGRAMS[0]}`]);
   if (made.code !== 0) return { ok: false, reason: `The shop programs could not be copied for the panel's hand check (${lastLines(made)}).` };
-  const next = `${dir}.next`;
   try {
-    rmSync(next, { recursive: true, force: true });
-    mkdirSync(next, { recursive: true });
+    mkdirSync(dir, { recursive: true });
+    rmSync(join(dir, PROGRAMS_FROM), { force: true }); // until every program is in, the folder names no image
     for (const p of HAND_CHECK_PROGRAMS) {
-      const r = await ctx.runner.run(ctx.docker, ["cp", `${name}:/${p}`, join(next, p)]);
+      const next = join(dir, `.${p}.next`);
+      rmSync(next, { force: true });
+      const r = await ctx.runner.run(ctx.docker, ["cp", `${name}:/${p}`, next]);
       if (r.code !== 0) return { ok: false, reason: `The shop program ${p} could not be copied for the panel's hand check (${lastLines(r)}).` };
+      renameSync(next, join(dir, p));
     }
-    writeFileSync(join(next, PROGRAMS_FROM), `${image}\n`);
-    rmSync(dir, { recursive: true, force: true });
-    renameSync(next, dir);
+    writeFileSync(join(dir, PROGRAMS_FROM), `${image}\n`);
     ctx.log(`The panel's hand check runs on the shop programs of ${image}.`);
     return { ok: true, copied: true };
   } catch (e) {
     return { ok: false, reason: `The shop programs could not be copied for the panel's hand check (${(e as Error).message}).` };
   } finally {
     await ctx.runner.run(ctx.docker, ["rm", "-f", name]);
-    rmSync(next, { recursive: true, force: true });
   }
 }
 

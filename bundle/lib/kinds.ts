@@ -13,7 +13,6 @@ import { CHAT_LIMITS as ordersChatLimits } from "../../templates/commerce/orders
 import { DISCOUNT_CHAT_LIMITS } from "../../modules/limits/discounts.ts"; // E1: the discount caps, a limit only of a shop with a "discounts" block
 import { CHAT_LIMITS as feesChatLimits } from "../../templates/education/fees/src/chat-limits.ts";
 import { CHAT_LIMITS as stockChatLimits } from "../../templates/commerce/stock-orders/src/chat-limits.ts";
-import { runOn as stockRunOn } from "../../templates/commerce/stock-orders/crash-test/situations.ts";
 import { buildGoLiveCertificate as stockCertificate, summariseRun as stockSummary } from "../../templates/commerce/stock-orders/report/certificate.ts";
 import { policyDigest as stockDigest } from "../../templates/commerce/stock-orders/report/data.ts";
 import { writeGoLiveCertificate as stockWrite } from "../../templates/commerce/stock-orders/report/run.ts";
@@ -33,21 +32,18 @@ import { createStore as stockStore } from "../../templates/commerce/stock-orders
 import { serializeStore as stockSerialize } from "../../templates/commerce/stock-orders/server/snapshot.ts";
 import type { LimitsSpec, LimitsSpecIdentity, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { ReportLanguage } from "../../modules/report/text.ts";
-import { runOn as bookingsRunOn } from "../../templates/commerce/bookings/crash-test/situations.ts";
 import { buildGoLiveCertificate as bookingsCertificate, summariseRun as bookingsSummary } from "../../templates/commerce/bookings/report/certificate.ts";
 import { policyDigest as bookingsDigest } from "../../templates/commerce/bookings/report/data.ts";
 import { writeGoLiveCertificate as bookingsWrite } from "../../templates/commerce/bookings/report/run.ts";
 import { gatewayLimitsSpec as bookingsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import { validateSettings as bookingsSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { validateRuntimeConfig as bookingsRuntime } from "../../templates/commerce/bookings/server/config.ts";
-import { runOn as ordersRunOn } from "../../templates/commerce/orders/crash-test/situations.ts";
 import { buildGoLiveCertificate as ordersCertificate, summariseRun as ordersSummary } from "../../templates/commerce/orders/report/certificate.ts";
 import { policyDigest as ordersDigest } from "../../templates/commerce/orders/report/data.ts";
 import { writeGoLiveCertificate as ordersWrite } from "../../templates/commerce/orders/report/run.ts";
 import { gatewayLimitsSpec as ordersSpec } from "../../templates/commerce/orders/src/guard-limits.ts";
 import { validateSettings as ordersSettings } from "../../templates/commerce/orders/src/settings.ts";
 import { validateRuntimeConfig as ordersRuntime } from "../../templates/commerce/orders/server/config.ts";
-import { runOn as feesRunOn } from "../../templates/education/fees/crash-test/situations.ts";
 import { buildGoLiveCertificate as feesCertificate, summariseRun as feesSummary } from "../../templates/education/fees/report/certificate.ts";
 import { policyDigest as feesDigest } from "../../templates/education/fees/report/data.ts";
 import { writeGoLiveCertificate as feesWrite } from "../../templates/education/fees/report/run.ts";
@@ -124,7 +120,11 @@ export interface Kind {
   gatewaySpec?(settings: any, identity: LimitsSpecIdentity, options: { approvalTtlSeconds: number; caps?: Partial<PaymentCaps> }): LimitsSpec;
   /** The numbers the shop's WhatsApp Guard lets a message go to, when the template writes only to a fixed list (Stock orders: its owner and its approved suppliers). Left out: any number. */
   guardRecipients?(settings: any): string[];
-  /** The checks and papers the panel makes: the same hand check the template's scripts run, on this shop's own settings, and the go-live certificate from it. */
+  /**
+   * The checks and papers the panel makes: the same hand check the template's scripts run, on this shop's own settings, and the go-live certificate from it. `runOn` is loaded
+   * when it is called (the hand check's own child process, bundle/lib/hand-check-go.ts), so the panel and the deployer never load the hand check's runner, its stand-ins or its
+   * process tracker (modules/crash-test/go-shop.ts).
+   */
   papers?: {
     runOn(settings: any): Promise<unknown>;
     summariseRun(run: any): HandCheckSummaryLike;
@@ -149,7 +149,7 @@ export const KINDS: Record<string, Kind> = {
     storeWith: carry(bookingsStore, bookingsSerialize),
     validateRuntimeConfig: bookingsRuntime,
     gatewaySpec: bookingsSpec,
-    papers: { runOn: bookingsRunOn, summariseRun: bookingsSummary, buildGoLiveCertificate: bookingsCertificate, policyDigest: bookingsDigest, writeGoLiveCertificate: bookingsWrite },
+    papers: { runOn: (settings) => import("../../templates/commerce/bookings/crash-test/situations.ts").then((m) => m.runOn(settings)), summariseRun: bookingsSummary, buildGoLiveCertificate: bookingsCertificate, policyDigest: bookingsDigest, writeGoLiveCertificate: bookingsWrite },
   },
   fees: {
     id: "fees",
@@ -160,7 +160,7 @@ export const KINDS: Record<string, Kind> = {
     storeWith: carry(feesStore, feesSerialize),
     validateRuntimeConfig: feesRuntime,
     gatewaySpec: feesSpec,
-    papers: { runOn: feesRunOn, summariseRun: feesSummary, buildGoLiveCertificate: feesCertificate, policyDigest: feesDigest, writeGoLiveCertificate: feesWrite },
+    papers: { runOn: (settings) => import("../../templates/education/fees/crash-test/situations.ts").then((m) => m.runOn(settings)), summariseRun: feesSummary, buildGoLiveCertificate: feesCertificate, policyDigest: feesDigest, writeGoLiveCertificate: feesWrite },
   },
   orders: {
     id: "orders",
@@ -171,7 +171,7 @@ export const KINDS: Record<string, Kind> = {
     storeWith: carry(ordersStore, ordersSerialize),
     validateRuntimeConfig: ordersRuntime,
     gatewaySpec: ordersSpec,
-    papers: { runOn: ordersRunOn, summariseRun: ordersSummary, buildGoLiveCertificate: ordersCertificate, policyDigest: ordersDigest, writeGoLiveCertificate: ordersWrite },
+    papers: { runOn: (settings) => import("../../templates/commerce/orders/crash-test/situations.ts").then((m) => m.runOn(settings)), summariseRun: ordersSummary, buildGoLiveCertificate: ordersCertificate, policyDigest: ordersDigest, writeGoLiveCertificate: ordersWrite },
   },
   // Stock orders (17 Nov 2026): WhatsApp only. It takes no payment and has no calendar, so it has no Razorpay Guard and no gateway spec; its cap and budget are the agent's own
   // (and the owner's WhatsApp messages to suppliers are limited by the WhatsApp Guard's list of numbers: bundle/generate/guards.ts supplierNumbers).
@@ -184,7 +184,7 @@ export const KINDS: Record<string, Kind> = {
     chatLimits: stockChatLimits,
     storeWith: carry(stockStore, stockSerialize),
     validateRuntimeConfig: stockRuntime,
-    papers: { runOn: stockRunOn, summariseRun: stockSummary, buildGoLiveCertificate: stockCertificate, policyDigest: stockDigest, writeGoLiveCertificate: stockWrite },
+    papers: { runOn: (settings) => import("../../templates/commerce/stock-orders/crash-test/situations.ts").then((m) => m.runOn(settings)), summariseRun: stockSummary, buildGoLiveCertificate: stockCertificate, policyDigest: stockDigest, writeGoLiveCertificate: stockWrite },
   },
   // Listings only (18 Nov 2026): a shop that only shows what it has. No Guard, no money, no WhatsApp: it runs on the server's one shared process (go/cmd/listings-shared) and is free.
   // It has no hand check or go-live paper (nothing it does can move money or send a message), so `papers` is left out and every place that makes one asks first.

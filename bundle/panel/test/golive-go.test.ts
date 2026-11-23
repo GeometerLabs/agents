@@ -6,6 +6,7 @@
 //   * the certificate made from such a run names the program it ran on and checks (its signature and its digest);
 //   * a hand check that could not run (no program here) is kept as nothing held, with the reason, and the gate refuses it; a stored check from before (no program) is refused too;
 //   * a deliberately broken setting fails it (a fee above the day's refund cap the deployer gives Guard), and a setting changed after the check is "settings changed".
+import { generateKeyPairSync } from "node:crypto";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -49,10 +50,11 @@ test("a pickup-hold shop: its hold situations run on the Orders program, and the
     // the certificate made from this run checks, and says what it ran on
     const cert = KINDS.orders.papers!.buildGoLiveCertificate({ settings: shops.settings("ganesh"), handCheck: ran.hand, issuedAt: Date.UTC(2026, 10, 24) });
     const dir = mkdtempSync(join(tmpdir(), "golive-go-"));
-    const { files } = KINDS.orders.papers!.writeGoLiveCertificate({ settings: shops.settings("ganesh"), handCheck: ran.hand, language: "en", out: dir, key: undefined, now: Date.UTC(2026, 10, 24) });
+    const key = generateKeyPairSync("ed25519").privateKey;
+    const { files } = KINDS.orders.papers!.writeGoLiveCertificate({ settings: shops.settings("ganesh"), handCheck: ran.hand, language: "en", out: dir, key, now: Date.UTC(2026, 10, 24) });
     const json = files.find((f) => f.endsWith(".json"))!;
     const v = verifyEnvelopeText(readFileSync(json, "utf8"));
-    assert.equal(v.unchanged, true, v.summary);
+    assert.equal(v.unchanged && v.signed, true, v.summary);
     assert.deepEqual((v.envelope!.document as { program?: unknown }).program, ran.hand.program, "the certificate names the program and its digest");
     assert.equal((cert as { checks: { total: number } }).checks.total, ran.hand.total);
     assert.ok(readFileSync(files.find((f) => f.endsWith(".html"))!, "utf8").includes(`Go orders ${ran.hand.program!.version}`), "and the page says it");

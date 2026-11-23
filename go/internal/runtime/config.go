@@ -7,6 +7,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -448,8 +449,10 @@ func standInsProblems(v any, mode string, services map[string]any) []string {
 		if !ok {
 			continue
 		}
-		u, _ := m["baseUrl"].(string)
-		if !strings.HasPrefix(u, "http://127.0.0.1:") && !strings.HasPrefix(u, "http://localhost:") {
+		raw, _ := m["baseUrl"].(string)
+		u, err := url.Parse(raw)
+		// parsed, not matched as text: "http://127.0.0.1:1@elsewhere.example" names another host
+		if err != nil || u.Scheme != "http" || u.User != nil || (u.Hostname() != "127.0.0.1" && u.Hostname() != "localhost") || u.Port() == "" {
 			errs = append(errs, fmt.Sprintf(`With "standins", services.%s.baseUrl must be a stand-in on this machine (http://127.0.0.1:<port>).`, name))
 		}
 	}
