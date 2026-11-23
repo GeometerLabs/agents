@@ -2,7 +2,7 @@
 // comparing two answers. The hand check is run as the program it is, started through the Runner, so each version brings its own situations and the
 // tests can answer for it. The answer is read from the same lines a person reads ("Held N of M", then one line per situation, and under a failed
 // one the checks that failed), so any version that prints them can be asked, and a version that prints something else is held back, not guessed at.
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { serverPaths } from "./lib/server.ts";
 import { pathToFileURL } from "node:url";
@@ -44,8 +44,10 @@ const firstWords = (text: string): string => (text.split("\n").map((l) => l.trim
 export async function runHandCheck(ctx: Context, pathwayDir: string, settingsFile: string): Promise<{ ok: true; read: HandCheckRead } | { ok: false; reason: string }> {
   // since 24 Nov 2026 a version's hand check runs each situation on the shop's Go program: on a server, the copy of the programs of the image the shops run (lib/go-build.ts
   // copyGoPrograms; update.ts makes it before it asks); a version from before runs on its own TypeScript engine and ignores it
-  const programs = serverPaths(ctx.dir).programs;
-  const env = existsSync(programs) ? { GEOMETER_GO_PROGRAMS: programs } : undefined;
+  // where there is no server copy (a Mac, a test), the programs this checkout built (go/bin); a version folder kept beside the server has no go/bin of its own
+  const candidates = [ctx.dir ? serverPaths(ctx.dir).programs : undefined, ctx.appDir ? join(ctx.appDir, "go", "bin") : undefined];
+  const programs = candidates.find((d): d is string => d !== undefined && existsSync(d) && readdirSync(d).length > 0);
+  const env = programs ? { GEOMETER_GO_PROGRAMS: programs } : undefined;
   const r = await ctx.runner.run(process.execPath, [join(pathwayDir, "scripts", "hand-check.ts"), "--settings", settingsFile], { timeoutMs: 600_000, ...(env ? { env } : {}) });
   const read = readHandCheck(r.stdout);
   if (read) return { ok: true, read };

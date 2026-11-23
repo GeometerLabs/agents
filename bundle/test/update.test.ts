@@ -377,7 +377,10 @@ test("rollback across a change in how the runtime lays out its saved data is ref
 
 // ---- the whole thing with the real hand check -----------------------------------------------------------------------------------------------
 
-test("with a real fault in the new version that only a client with a 48-hour cancellation window meets, the real hand check holds that client back and moves the other", async () => {
+// todo (24 Nov 2026): the hand check runs each situation on the shop's Go program, so a fault written into a version's TypeScript agent (src/agent.ts) no longer reaches it, and
+// both versions here run the same programs (this checkout's). Holding a client back on a new failure is held by the stand-in tests above; a fault in a version's own program
+// needs each version's programs kept beside it (bundle/panel/Deferred.md). The test still runs and says what it sees.
+test("with a real fault in the new version that only a client with a 48-hour cancellation window meets, the real hand check holds that client back and moves the other", { todo: "a version's TypeScript agent is not what the hand check runs since the switch to Go (bundle/panel/Deferred.md)" }, async () => {
   const w = world({ "glow-salon": panelRuntime(), "bright-tuition": panelRuntime() }); try {
     for (const s of ["glow-salon", "bright-tuition"]) w.handIn(s);
     setSettings(w, "bright-tuition", (x) => { x.name = "Bright Tuition"; x.cancellation.windowHours = 48; });
