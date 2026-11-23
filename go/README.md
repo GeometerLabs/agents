@@ -111,6 +111,10 @@ internal/ordersreport/   Orders' monthly report (templates/commerce/orders/repor
 internal/feesreport/     Fees' monthly report (templates/education/fees/report): the data (old dues apart, Classes counts, no student's name), the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job; read Explanation.md and Deferred.md
 internal/reportwire/     what a template's runtime needs to run the monthly report: the runtime.json `report` block, the messaging adapter, the job on a beat (the one copy: Bookings, Orders, Fees and Stock orders all use it)
 internal/stockordersreport/  Stock orders' monthly report (templates/commerce/stock-orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job
+internal/discounts/      E1, the discount authority (decision 64, 24 Nov 2026), one copy for every template that sells at a list price (Bookings, Orders; the Service desk and Quotes later):
+                         the `discounts` settings block (modules/limits/discounts.ts's sentences), the decision (within the cap / ask the owner / below the floor), the deal on a case and
+                         its card code bound to every field, the record's refs, the report's count, the caps as limits, the owner's talk fact; off (no block) nothing calls it; read
+                         Explanation.md and Deferred.md
 internal/stock/          the shop's one stock count (modules/stock/stock.ts): the state under assistant.stock, the owner's acts, the shop's own record of a sale or a delivery (Orders,
                          Stock orders), the reconciles and their history rules, the low alerts once per crossing; listings keeps aliases of it (22 Nov)
 internal/stockorders/    the Stock orders template (wave 2, go-w5-stock-22nov): settings, the store field for field, the rule reader, the words (generated), the limits, the agent with

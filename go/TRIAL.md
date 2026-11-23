@@ -1394,3 +1394,17 @@ Stock orders 74/74, listings 210/210 (with words-fresh), directory 36/36; every 
 the 13 tests that need the monorepo run) 725: 716 pass, 9 skipped (REAL_CADDY), 0 fail (two tests that ran past the pass's 180 s test timeout pass without it); the
 panel 253: 252 pass, 1 skipped.
 
+
+## e1-discounts-24nov: E1, the discount authority (24 Nov 2026, decision 64)
+
+The first enhancement after the switch to Go, built once in `internal/discounts` and used by Bookings and Orders. The design is in `internal/discounts/Explanation.md`, and what is left is in its `Deferred.md`.
+
+- **Off by default.** A shop with no `discounts` block refuses every price below the list exactly as before. Its checked settings tree, policy digest, limits view, record and monthly report bytes are all unchanged. The only text that changed for every shop is the unknown-key sentence, which now lists `discounts` among the allowed keys, in TypeScript and Go alike.
+- **Settings.** The TypeScript check is `modules/limits/discounts.ts` (the panel and the deployer use it); Go is `discounts.Read`. Vectors are made by running the TypeScript: 9 new Bookings mutations and 5 new Orders mutations. A Bookings floor is never below the deposit, because Guard holds the deposit link to exactly the deposit.
+- **Bookings.** The agreed price is the booking's own (`discount` member), and the quote says it. The deposit link is unchanged.
+- **Orders.** The order's total, advance, balance and payment link follow the agreed total. A changed order is decided again, with a new card if it is still beyond the cap.
+- **The owner's card.** It is bound to the case and a code over every field: `approve b-3 K7M2QX`. A WhatsApp template in four languages carries it outside the owner's window. A yes to an old card is refused, and the same ask again makes no second card.
+- **Words.** The customer's four lines and the owner's three, in en, hi, ml and kn, are written in the templates' `language/templates.ts` and generated to Go. The review sheets are regenerated.
+- **Record and report.** Each decision is a `discount` line, with its amounts in refs. The report's `discounts` block (given count and paise, asked, refused) is present only when the month has such a line. The page has three rows and the owner's text one line, and the report vectors have a `discounts` case each.
+- **Limits and the assistant.** The two caps are declared limits only for a shop with the block. The owner's talk has a "Discounts this month" source read from the record.
+- **Not done** (Deferred.md): the panel's boxes, the owner's page card, a rule phrase for "discounts this month" without the model, and "offer the cap".

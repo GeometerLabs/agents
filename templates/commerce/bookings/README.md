@@ -311,6 +311,7 @@ One JSON file per business. [`settings/glow-salon.example.json`](settings/glow-s
 | `owner` | `whatsapp` number, and `language` for the owner's messages (default `en`; any of the four) |
 | `approvers` | Optional: others who approve a refund Guard holds, each from their own phone. `people`: 1 to 6 of `{"id", "whatsapp", "language"}`; `twoAboveInr`: above it two different people must approve, and one no refuses. When the owner's own command asks for a refund, someone else approves it. Left out: the owner alone |
 | `reminders` | `hoursBefore`, default `[24, 2]` |
+| `discounts` | Optional (E1, the discount authority, 24 Nov 2026): `{"capPercent": 10, "capInr": 100, "floors": {"haircut": 350}}`. A service named in `floors` may be agreed below its list price but never below its floor (a floor is never below the deposit); the agent agrees alone when the discount is within the cap (the percentage of the price rounded down to a whole rupee, or the rupees, the lower wins); above the cap the owner gets a card with the exact price and answers `approve b-3 K7M2QX` (the booking AND the card's code); below the floor it is refused. The deposit link stays the deposit; the agreed price is the booking's, in the record and the words. **Left out: every price below the list is refused, as before.** The two caps are limits the owner can tighten from the assistant ("cap 5%") and loosen only behind their passkey page |
 
 ## The rules, in plain words
 
@@ -318,7 +319,8 @@ These are pure checks in [`src/limits.ts`](src/limits.ts). Each reads only its a
 
 | Rule | In plain words |
 | --- | --- |
-| `price-at-or-above-list` | Never quote or agree below the price list |
+| `price-at-or-above-list` | Never quote or agree below the price list (with a `discounts` block: below the list only within the discount authority) |
+| `discount-authority` | With a `discounts` block only: within the cap the agent agrees; beyond it the owner decides on a card bound to the exact price; below the floor it is refused. Each decision is a `discount` line in the record (rule, list price, offered, given, who agreed), and the monthly report counts discounts given (rupees), asked and refused |
 | `within-hours` | Never book outside opening hours (or between two slots) |
 | `no-double-booking` | One customer per slot; holds count, and the gap between bookings is kept |
 | `confirm-only-when-recorded` | Say "booked" only when the calendar shows it **and** the deposit is recorded, both read back from the services |

@@ -62,7 +62,8 @@ from 08:00. How it works: [modules/Explanation.md](../../../modules/Explanation.
 
 | Rule | Where |
 | --- | --- |
-| Never below the menu price (the price is also the floor) | `price-at-or-above-menu` |
+| Never below the menu price (the price is also the floor), unless the shop has a `discounts` block | `price-at-or-above-menu` |
+| With a `discounts` block: within the cap the agent agrees and the total, advance and link follow the agreed total; beyond it the owner decides on a card bound to the exact item, quantity and total; below the floor it is refused | `discount-authority` |
 | At most so many items in one order (Guard bounds a link by the same number) | `order-size` |
 | Never more of an item than the day's stock, counting what other orders hold | `within-stock` |
 | Never more orders for a day than the shop takes | `within-day-cap` |
@@ -92,6 +93,7 @@ A shop is a JSON file ([annapurna-tiffins.example.json](settings/annapurna-tiffi
 | `refund.limitInr` | The refund the agent may ask for alone; above it Guard holds it for the owner (Guard's threshold is made from the same number) |
 | `payment` | `{"module": "upi", "upi": {"id", "payee"}}` (the default) or `{"module": "razorpay"}` |
 | `owner` | WhatsApp number, language, `approveOverInr` (an order above it waits for the owner; 0 is never) |
+| `discounts` | Optional (E1, the discount authority, 24 Nov 2026): `{"capPercent": 10, "capInr": 100, "floors": {"veg-thali": 100}}`. The price a customer names is for one of the order's first item; the discount is on that line (quantity included), never below the item's floor; the agent agrees alone within the cap (the percentage of the line rounded down to a whole rupee, or the rupees, the lower wins); above it the owner gets a card with the item, quantity, prices and total and answers `approve o-3 K7M2QX` (the order AND the card's code); a changed order is decided again with a new card. The order's total, its advance and its payment link follow the agreed total. **Left out: every price below the menu is refused, as before.** The caps are limits the owner can tighten from the assistant and loosen only behind the passkey page |
 
 ## Languages
 
