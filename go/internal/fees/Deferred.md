@@ -25,3 +25,8 @@ centre without the feature, and says so in the record. The contract tests that w
   internal/runtime with the relay patterns above.
 - The settlement read's watched call (agent_settlements.go watchedSettlements) is internal/orders' settlementPayments with the same `Do`; the read itself is Bookings' shared
   books adapter (bookings.NewBooks).
+
+## The credit book (24 Nov 2026)
+
+What the credit book leaves open is in templates/education/fees/Deferred.md, "The credit book" (E4, a shared contact, changing a number, editing the settings' people,
+a customer's page, several parts behind one number, the hand check, native review).

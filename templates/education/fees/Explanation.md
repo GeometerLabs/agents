@@ -238,3 +238,26 @@ Now, by default, only the student's ordinary fees (not back dues) decide the lin
 - Words: "Old dues collected" in four languages, and a UPI form ("marked paid by owner"); Hindi, Malayalam and Kannada are machine-written and on `REVIEW-hi/ml/kn.md` (regenerated).
 
 **Tests (written, not run):** `test/old-dues-report.test.ts`.
+
+## The credit book, an adult variant (decision 63, 24 Nov 2026)
+
+What was asked: the shop starter's first job, the *khata* of a hardware, electrical or spares shop, as a variant of Fees, written once in Go (decision 61). Exactly the
+catalogue's five points: an amount per person added by the owner in words; words to an adult about their own account; the first message asks whether reminders on WhatsApp
+are fine and STOP ends them; cash at the counter is the owner's mark and a UPI payment counts only from the payment record; the list of who owes what is the owner's alone.
+
+**Why a block of Fees, not a template.** Fees already has every money path the book needs, held by its contract: reminders that read the record first and stop once it shows
+the fee paid, the link for exactly what is owed, the owner-marked UPI and cash marks, refunds, the books and the report. A person's debt is one open fee, so all of it applies
+with no second ledger. What is new is who writes the entries (the owner, in words), when a customer may be written to (after the owner's tap, then their yes), and the words.
+
+**Why the gate sits in the say path.** "Nothing reaches a customer for the first time without the owner's tap" must hold for every message, not only the reminder: a receipt
+after a cash mark, a reply to a customer who wrote first, a refund note. So the check is one more gate beside STOP's (go/internal/fees credit.go `creditGate`), and the
+contract proves it on reminders, receipts and a customer who writes first.
+
+**Why rules and not a model read the owner's words.** The words carry a customer's number and an amount of money; a model's reading is untrusted and a number must stay in the
+shop. The reader takes the number, the amount and the credit words out, and the rest is the name, in the owner's own letters. A message with a number it cannot place is
+answered with the book's help line and never handed to the assistant.
+
+**The one number and its check** (the catalogue's measure): the monthly page counts what was owed at the month's start and what was paid after a reminder; and the reminders
+sent when the record already showed the account paid, which must be 0. A part payment still leaves a reminder for the rest: that is not "after a recorded payment".
+
+**What this does not claim.** It ran on stand-ins only; no real shop uses it; the Hindi, Malayalam and Kannada words are machine-written. What is left: Deferred.md.

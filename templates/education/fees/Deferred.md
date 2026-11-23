@@ -110,3 +110,17 @@
 | **Which child a doubt is from, for a parent of several** | The doubt is filed under all the parent's students' names and the batch whose class is nearest; the teacher knows the family. | If teachers say it is confusing. |
 | **Material on a link replaced** | A material link is the parent's private page link; sending it makes a new private page link when the parent's is not remembered by this process, which replaces the one in earlier fee reminders (as any reminder does). | If parents complain of a dead link. |
 | **Old dues on the report: owner page, panel and the website's verify page** | The report, its text, the signed summary (layout 7) and the accountant's files separate old dues (Explanation.md, 17 Nov 2026). Not changed: the panel's report view (`bundle/panel/views-fees.ts`) shows only "Collected" (this month's fees now, as it should) with no old-dues figure; the website's verify page must add the figure id `oldDues` for layout 7 (another repo); the old-dues words in Hindi, Malayalam and Kannada are machine-written, on the REVIEW sheets | A centre has an old due paid; the public-web release that carries layout 7; a native reader is found |
+
+## The credit book (24 Nov 2026)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| **E4, a credit ceiling per customer** | Not approved (owner). Room is left: `addCredit` (go/internal/fees credit.go) is the one place an entry is written; a ceiling would hold an entry past the customer's ceiling for the owner's yes (a card, as a waiver asks), and the yes would raise that customer's ceiling once. `maxPerPersonInr` is a link bound, not this. | The owner approves E4 |
+| **A shared contact** | The inbox hands the runtime text, buttons, pictures and voice notes; WhatsApp's `contacts` message is not read (modules/inbox, go/internal/messaging InboundMessage). The owner types the number. | The inbox reads `contacts`; then the credit reader takes the contact's number as a typed one |
+| **Changing a person's number, or taking someone out of the book** | One number is one account and an account is never deleted (the record names it). The owner writes a new name with the new number; the old account stays. | An Operator asks |
+| **Editing the settings' people after setup** | Each settings person is opened once, by number; a changed amount for someone already opened changes nothing (the owner's words are the book from then on). The panel's form says the box is who owes what "today". | Operators find it confusing |
+| **A customer's private page for their account** | A credit reminder carries the UPI link, not the parent's private page (`/f/<link>`), whose words are a parent's about children's fees. | A customer asks to see their entries |
+| **Several template parts behind one number (decision 65)** | Built inside Fees. What the bundle would need is in go/TRIAL.md, "Credit book". | The bundle's multi-part build |
+| **The hand check on a credit shop** | Its situations are a parent's monthly fee: on a credit shop every one is listed as not run, with the reason (crash-test/shop.ts); the credit paths are the Go contract's. | A credit hand check is wanted for the go-live certificate |
+| **The owner's words for a stranger's messages** | A message from a number not in the book reaches the owner in the Fees words ("Parent ... would like to talk"), because the credit twin names the account. | Credit shops see strangers write |
+| **Native review** | Hindi, Malayalam and Kannada are machine-written (REVIEW-*.md, the panel's review). | Before a real shop |

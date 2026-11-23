@@ -40,6 +40,7 @@ attendance question, the missed-class notes, doubts waiting) and, after it, the 
 | `owner.contract.test.ts` | the licence, the owner's page, the shop's assistant over the Fees skill, the panel's to-do list, the monthly report |
 | `assistant.contract.test.ts` | the shop's assistant's money paths: a waiver card's Refuse, a cancel card void after a payment, refund cards on a Razorpay centre (held by Guard, released once) and a UPI centre (owed by the owner), a message card, the morning line's fees not paid |
 | `classes.contract.test.ts` | Classes: the class link and consent, the attendance and the missed-class note, a fee past its grace days, doubts, the reading material |
+| `credit.contract.test.ts` | the credit book (variant `creditBook`, 24 Nov 2026): nothing before the owner's tap, reminders only after the customer's yes, the owner's words (a name waiting for its number), cash as the owner's mark and zero reminders after a recorded payment, a part, the calendar month's cap, STOP and "no", the owner's page (no number) and its Ask button, the account maximum, the words on the wire, the monthly report's credit block |
 | `chat.contract.test.ts` | the centre's public chat |
 | `push.contract.test.ts` | the parents' web push: a reminder pushed to the parent's page without its links (one for a family of two), kept under the parent's ref, STOP ends it |
 | `record.contract.test.ts` | the store file, the saved state's members, what never leaves the centre (numbers, words, students' names) |

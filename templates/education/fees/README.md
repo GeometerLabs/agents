@@ -135,6 +135,29 @@ The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. 
 
 A `classes` block in the settings turns the same package into Classes: a timetable, the class link sent shortly before each class only to students whose fee is paid or within the grace days, private reading material per batch, attendance marked by the teacher in one tap, a short note to the parent when a child misses a class, and doubts handed to the teacher. Fees (money, reminders, the report) is unchanged and shared. Without the block nothing of it runs. See `settings/bright-tuition-classes.example.json`, the Classes section of Explanation.md and the Classes rows of Deferred.md.
 
+## The credit book (a variant, 24 Nov 2026, decision 63)
+
+A `creditBook` block in the settings turns the same package into the shop's *khata*: who owes what, for a hardware, electrical or spares shop (the shop starter's first job).
+Each person's debt is one open fee (batch `credit`), so the payment record, the owner-marked UPI, the cash mark, reminders that stop on a recorded payment, refunds, the books
+and the report are Fees' own: there is no second ledger. Without the block nothing of it runs. Example: [`settings/hardware-credit.example.json`](settings/hardware-credit.example.json);
+the panel's preset "Hardware or electrical shop: credit book" sets it up in one sitting.
+
+- **The owner writes the book in words**, on WhatsApp or in the box on their page, in any of the four languages: "Ramesh owes 2,400", "Ramesh paid 1,000", "who owes",
+  "ask Ramesh". A name the book does not know waits for its WhatsApp number (typed: "Ramesh 98450 12345"); the number stays in the shop. Read by rules alone, never by a model;
+  a message with a number the book cannot place gets the book's help line and is never handed to the assistant.
+- **Nothing reaches a customer before the owner's tap.** The tap ("Ask Ramesh", or "ask Ramesh") sends one message: what the book shows, and whether reminders on WhatsApp are
+  fine. Reminders go only after the customer's yes; "no" or STOP ends every message. A customer who writes first gets nothing about the account, and the owner is told.
+- **Cash at the counter is the owner's mark** ("Ramesh paid 1,000"), recorded as marked paid by the owner, never as a confirmed payment. A UPI payment counts only when the
+  owner marks its request received; a gateway's only from the gateway's own list.
+- **Reminders** go at most every `remindEveryDays` (7) at the reminder hour, and at most `reminders.maxPerMonth` in a calendar month (an account runs across months); a part
+  payment leaves a reminder for the rest; once the record shows the account paid, none.
+- **Who owes what is the owner's alone**: their WhatsApp list and the credit section of their page (names, never numbers); no customer, page or report lists it.
+- **`maxPerPersonInr`** is the most one account may show, because a payment link is never for more (Guard's bound). It is not a credit ceiling (E4, not approved).
+- **The monthly page** counts what was owed at the month's start, what was paid after a reminder, the credit reminders sent, and the reminders after a recorded payment (0).
+- **Words** are an adult's about their own account ([`src/credit/words.ts`](src/credit/words.ts)), four languages, machine-written and on the review sheets.
+
+The runtime is the Go program (`go/internal/fees/credit*.go`); the contract is `contract/credit.contract.test.ts`. What is left open: Deferred.md, "The credit book".
+
 ## What is in the folder
 
 | Path | What |

@@ -17,7 +17,8 @@ import { recorder } from "../../../commerce/bookings/contract/guards.ts";
 import type { GuardCall, Recorder } from "../../../commerce/bookings/contract/guards.ts";
 import { startStandins } from "../standins/server.ts";
 import type { RunningStandins } from "../standins/server.ts";
-import { gatewayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec, highestPaise } from "../src/guard-limits.ts";
+import { DEFAULT_CAPS } from "../../../../modules/payments/guard-limits.ts";
 import type { Settings } from "../src/settings.ts";
 
 export type { GuardCall, Recorder };
@@ -45,7 +46,9 @@ export async function startFeesGuards(settings: Settings, o: { approvalTtlSecond
   const agentToken = randomBytes(16).toString("hex");
   const standins = await startStandins({ clock: systemClock, gatewayWebhookSecret: "contract-rzp", whatsappAppSecret: "contract-wa", phoneNumberId }, { port: 0 });
   const stub = await startStubGuard({
-    clock: systemClock, upstreamUrl: standins.url, spec: gatewayLimitsSpec(settings, { tenant: "contract", version: 1, reviewedBy: "contract" }, o.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: o.approvalTtlSeconds } : {}), agentToken,
+    // the day's refund cap is at least the dearest amount (a credit book's account may show ₹50,000, above the default cap; paymentNumbers refuses a cap below it, as a deployer
+    // of a gateway credit shop must raise it): for every other centre of this contract the default cap stands, so their specs are as they were
+    clock: systemClock, upstreamUrl: standins.url, spec: gatewayLimitsSpec(settings, { tenant: "contract", version: 1, reviewedBy: "contract" }, { ...(o.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: o.approvalTtlSeconds } : {}), caps: { refundPaisePerDay: Math.max(DEFAULT_CAPS.refundPaisePerDay, highestPaise(settings)) } }), agentToken,
     approver: { id: "owner-contract", secret: randomBytes(16).toString("hex") }, readToken: randomBytes(16).toString("hex"),
   });
   const calls: GuardCall[] = [];

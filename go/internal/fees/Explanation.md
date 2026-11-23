@@ -69,3 +69,22 @@ Proved by `templates/education/fees/contract/assistant.contract.test.ts` (both r
 - **A parent's own chat (W2)**, agent_parentchat.go: the thread opened from a parent's private page is that parent's (parentOfChat, by the chat conversation of
   parentChatHash(parentRef(parent))); it reads only their open fees, sends nothing to WhatsApp and makes no payment request. The public chat lets the shop's talk answer
   when the assistant is on, as agent.ts onChatTurn does.
+
+## The credit book (24 Nov 2026, `credit-book-24nov`)
+
+The Fees adult variant (decision 63), switched on by the settings' `creditBook` block. The files: `credit_settings.go` (the block, the TypeScript's sentences in its order),
+`credit_state.go` (the store's `credit` member: accounts by ref, name and number, where each first question stands, the month's reminder count, an entry waiting for its
+number), `credit_read.go` (the owner's words by rules: the lists are credit/words.ts CREDIT_WORDS, generated into reading.json), `credit.go` (the agent's part).
+
+- **One fee per person, no second ledger.** An entry raises the account's open fee (a `fee_charged` for the amount, `credit_add` in the record) or opens one; the payment
+  record, the owner-marked UPI, the links for exactly what is owed, refunds, the books and the report are Fees' paths unchanged. `onOwnerCash`'s mark is now `recordCash`, shared
+  with "Ramesh paid 1,000" (the page's record lines are as they were).
+- **The gate is in the say path** (`creditGate`, in agent_say.go Gates): to a customer in the book nothing goes before their yes, except the first question, and that only once
+  the owner tapped (the account is "asked"). So receipts, replies and refunds are held too, not only reminders.
+- **The twins.** Each Fees message a credit account reaches has its credit twin (credit/words.ts), chosen in `args` (`creditTwin`); an owner's twin only when the account is known.
+- **Reminders** are scheduled by `creditSchedule` (every `remindEveryDays` after the later of the yes, the entry and the last reminder, at the reminder hour) and sent by
+  `remind` (which reads the record first, as for any fee); the cap counts the calendar month (`RemindMonth`, `RemindCount`).
+- **The owner's words come before the assistant** (onOwnerMessage, and the page's talk box in onOwnerPageMessage), and a message with a number in it is always taken, so a
+  customer's number never reaches a model.
+- **The owner's page** gets `credit` rows (name, amount, consent; never a number) and the `credit_ask` action bound to the row's digest.
+- **E4** would sit in `addCredit` (the file's head says how).

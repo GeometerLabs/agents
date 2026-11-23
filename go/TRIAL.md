@@ -1465,3 +1465,28 @@ What was built is in `internal/discounts/Explanation.md` § Before the pilot, an
   - TypeScript: Bookings 838/838, Orders 215/215, modules (channels, limits, assistant, understanding) 334/334.
   - `--check` of every generator: fresh. The three generators without a `--check` (digest, format, rules vectors) were run and changed no file.
 - **Every shop sees one change: the model's prompt and schema.** They gain `askDiscount`, so a model reading sees it. A message the rules read is answered exactly as before.
+
+## credit-book-24nov: the credit book, a Fees adult variant (24 Nov 2026, decision 63)
+
+The shop starter's first job (the *khata* of a hardware, electrical or spares shop), built in Go inside Fees as the settings' `creditBook` block, off by default. What was built
+is in `internal/fees/Explanation.md` § The credit book and `templates/education/fees/README.md` § The credit book; what is left, with the reason, in the Fees Deferred.md.
+
+- **Off by default.** A centre without the block: its settings tree, policy digest, limits, record and report bytes are as they were (the report vectors of every other case are
+  unchanged). Three things every Fees centre sees: the unknown-key sentence lists `creditBook`; the owner page's action list (and its refusal sentence) has `credit_ask`; the
+  WhatsApp template list has the credit book's 17 templates.
+- **Settings** (`src/credit/settings.ts`, Go `credit_settings.go`): `maxPerPersonInr` (the link bound, not E4), `remindEveryDays`, `people` (who owes what at setup); with the
+  block no batches, students, late fee, joining rule, Classes, and a waiver limit of 0. Nine new settings vectors.
+- **The agent** (`credit.go`, `credit_read.go`, `credit_state.go`): one open fee per person (no second ledger); the owner's words by rules in four languages; the first message
+  only after the owner's tap, reminders only after the customer's yes, held for every message by a gate in the say path; cash as the owner's mark (`recordCash`, shared with
+  the page's cash press); reminders every `remindEveryDays`, capped per calendar month; the credit twins of every Fees message an account reaches.
+- **The owner's page** (`modules/channels/owner-credit.ts`): who owes what (names, never numbers), the Ask button bound to the row's digest, a box posted to `/credit`.
+- **The report**: a `credit` block (owed at the month's start, paid after a reminder, credit reminders, reminders after a recorded payment), TypeScript and Go, three vectors.
+- **The panel**: the preset "Hardware or electrical shop: credit book" and its two-step form in four languages; the review sheets.
+- **Found:** a gateway (Razorpay) credit shop whose `maxPerPersonInr` is above ₹5,000 is refused by the Guard spec generator (`paymentNumbers`: the default daily refund cap is
+  smaller than the dearest link), so its deployer must raise the cap; a UPI shop (the example, the default) has no payments Guard. The contract's guards harness raises the cap
+  to the dearest amount (every other centre's spec is unchanged). Not a TypeScript bug: the check is right; it is a setting the panel does not offer yet (Deferred.md).
+- **Decision 65, several parts behind one number: what the bundle and panel would need** (not built here): (1) one inbound router per number that hands the owner's message to
+  each part in turn and stops at the first that takes it (the credit reader already answers "not taken" for words that are not its own, and takes "paid" only for a name in the
+  book); (2) one owner page that draws each part's section (the credit section is one self-contained section and route); (3) a customer's number known to two parts: one STOP
+  for the shop, shared (today each part keeps its own customers); (4) one record and one monthly report with each part's block (the credit block is already conditional);
+  (5) the panel's set-up of a shop with two parts (a preset per part today), and one WhatsApp template list for the number (the union of the parts' lists).
