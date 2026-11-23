@@ -111,8 +111,14 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 	ch := rt.o.Kit.Channel()
 	switch path {
 	case "/internal/channel/listings", "/internal/channel/listing-photo", "/internal/channel/shop-feed", "/internal/channel/shop-check", "/internal/channel/shop-card",
-		"/internal/channel/owner-listing", "/internal/channel/owner-stock", "/internal/channel/owner-photo", "/internal/channel/material":
+		"/internal/channel/owner-listing", "/internal/channel/owner-photo", "/internal/channel/material":
 		return true, nothing
+	case "/internal/channel/owner-stock":
+		// the owner's Stock page for a template whose shop counts stock (kitstock.go StockKit); 404 for the others, as before
+		if !rt.stockOn() {
+			return true, nothing
+		}
+		return true, s.ownerStockRoute(w, r)
 	case "/internal/channel/parent":
 		if err := only(r, "GET"); err != nil {
 			return true, err

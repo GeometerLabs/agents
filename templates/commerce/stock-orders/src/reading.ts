@@ -16,7 +16,7 @@ export type Reading =
   | { kind: "status" }
   | { kind: "other" };
 
-const WORDS = {
+export const WORDS = {
   cancel: ["cancel", "रद्द", "cancel karo", "റദ്ദ്", "റദ്ദാക്കൂ", "ರದ್ದು", "ರದ್ದುಮಾಡಿ"],
   paid: ["paid", "payment done", "i paid", "paid outside", "bhugtan", "भुगतान", "पैसे दे दिए", "paise de diye", "അടച്ചു", "പണം കൊടുത്തു", "ಪಾವತಿಸಿದೆ", "ಹಣ ಕೊಟ್ಟೆ"],
   wrong: ["wrong", "wrong item", "galat", "ghalat", "ग़लत", "गलत", "തെറ്റായ", "തെറ്റ്", "ತಪ್ಪು"],
@@ -29,7 +29,7 @@ const WORDS = {
 };
 const RE = Object.fromEntries(Object.entries(WORDS).map(([k, v]) => [k, wordRe(v, "u", false)])) as Record<keyof typeof WORDS, RegExp>;
 
-const ENGLISH_NUMBERS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twelve: 12, fifteen: 15, twenty: 20 };
+export const ENGLISH_NUMBERS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twelve: 12, fifteen: 15, twenty: 20 };
 const REF_RE = /\bpo-?\s*(\d{1,6})\b/iu;
 
 /** The text as words: lower case, digits in any script as Western digits, every run of other characters a single space, a space at each end. */

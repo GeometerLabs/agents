@@ -1,0 +1,1764 @@
+{
+ "settings": {
+  "name": "Glow Unisex Salon",
+  "address": "12 Temple Road, Thrissur",
+  "timezone": "Asia/Kolkata",
+  "languages": [
+   "en",
+   "hi"
+  ],
+  "owner": {
+   "whatsapp": "+919812300001",
+   "language": "en"
+  },
+  "items": [
+   {
+    "id": "hair-colour",
+    "names": {
+     "en": [
+      "hair colour",
+      "hair color",
+      "colour"
+     ],
+     "hi": [
+      "हेयर कलर",
+      "कलर"
+     ],
+     "ml": [
+      "ഹെയർ കളർ"
+     ],
+     "kn": [
+      "ಹೇರ್ ಕಲರ್"
+     ]
+    }
+   },
+   {
+    "id": "shampoo",
+    "names": {
+     "en": [
+      "shampoo"
+     ],
+     "hi": [
+      "शैम्पू"
+     ],
+     "ml": [
+      "ഷാംപൂ"
+     ],
+     "kn": [
+      "ಶಾಂಪೂ"
+     ]
+    }
+   },
+   {
+    "id": "hair-oil",
+    "names": {
+     "en": [
+      "hair oil",
+      "oil"
+     ],
+     "hi": [
+      "हेयर ऑयल",
+      "तेल"
+     ],
+     "ml": [
+      "ഹെയർ ഓയിൽ"
+     ],
+     "kn": [
+      "ಹೇರ್ ಆಯಿಲ್"
+     ]
+    }
+   },
+   {
+    "id": "towel",
+    "names": {
+     "en": [
+      "towel",
+      "towels"
+     ],
+     "hi": [
+      "तौलिया"
+     ],
+     "ml": [
+      "ടവൽ"
+     ],
+     "kn": [
+      "ಟವೆಲ್"
+     ]
+    }
+   }
+  ],
+  "units": [
+   {
+    "id": "box",
+    "names": {
+     "en": [
+      "box"
+     ],
+     "hi": [
+      "डिब्बा",
+      "बॉक्स"
+     ],
+     "ml": [
+      "ബോക്സ്"
+     ],
+     "kn": [
+      "ಬಾಕ್ಸ್"
+     ]
+    }
+   },
+   {
+    "id": "piece",
+    "names": {
+     "en": [
+      "piece",
+      "pc"
+     ],
+     "hi": [
+      "पीस",
+      "नग"
+     ],
+     "ml": [
+      "എണ്ണം"
+     ],
+     "kn": [
+      "ತುಂಡು"
+     ]
+    }
+   },
+   {
+    "id": "bottle",
+    "names": {
+     "en": [
+      "bottle"
+     ],
+     "hi": [
+      "बोतल"
+     ],
+     "ml": [
+      "കുപ്പി"
+     ],
+     "kn": [
+      "ಬಾಟಲ್"
+     ]
+    }
+   }
+  ],
+  "suppliers": [
+   {
+    "id": "ravi-traders",
+    "name": "Ravi Traders",
+    "aliases": [
+     "ravi"
+    ],
+    "whatsapp": "+919876500001",
+    "language": "hi",
+    "approved": true
+   },
+   {
+    "id": "meena-beauty",
+    "name": "Meena Beauty Supplies",
+    "aliases": [
+     "meena"
+    ],
+    "whatsapp": "+919876500002",
+    "language": "en",
+    "approved": true
+   },
+   {
+    "id": "kumar-wholesale",
+    "name": "Kumar Wholesale",
+    "aliases": [
+     "kumar"
+    ],
+    "whatsapp": "+919876500003",
+    "language": "en",
+    "approved": false
+   }
+  ],
+  "catalogue": [
+   {
+    "item": "hair-colour",
+    "supplier": "ravi-traders",
+    "unit": "box",
+    "priceInr": 450,
+    "reorderQty": 10
+   },
+   {
+    "item": "hair-colour",
+    "supplier": "ravi-traders",
+    "unit": "piece",
+    "priceInr": 40
+   },
+   {
+    "item": "hair-colour",
+    "supplier": "meena-beauty",
+    "unit": "box",
+    "priceInr": 460,
+    "reorderQty": 10
+   },
+   {
+    "item": "hair-colour",
+    "supplier": "kumar-wholesale",
+    "unit": "box",
+    "priceInr": 430
+   },
+   {
+    "item": "shampoo",
+    "supplier": "ravi-traders",
+    "unit": "bottle",
+    "priceInr": 180,
+    "reorderQty": 12
+   },
+   {
+    "item": "shampoo",
+    "supplier": "meena-beauty",
+    "unit": "bottle",
+    "priceInr": 175.5,
+    "reorderQty": 12
+   },
+   {
+    "item": "hair-oil",
+    "supplier": "meena-beauty",
+    "unit": "bottle",
+    "priceInr": 120,
+    "reorderQty": 6
+   },
+   {
+    "item": "towel",
+    "supplier": "meena-beauty",
+    "unit": "piece",
+    "priceInr": 90
+   }
+  ],
+  "limits": {
+   "maxPerOrderInr": 12000,
+   "monthlyBudgetInr": 20000,
+   "maxQuantity": 200
+  },
+  "followUpHours": [
+   4,
+   24
+  ]
+ },
+ "facts": {
+  "hi": {
+   "language": "hi",
+   "timeZone": "Asia/Kolkata",
+   "businessName": "Glow Unisex Salon",
+   "supplierName": "Ravi Traders",
+   "itemName": "हेयर कलर",
+   "unitName": "डिब्बा",
+   "qty": 12,
+   "unitPriceInr": 175.5,
+   "totalInr": 2106,
+   "orderRef": "po-7",
+   "code": "K7M2QX",
+   "budgetInr": 20000,
+   "reservedInr": 4500,
+   "leftInr": 13394,
+   "capInr": 12000,
+   "receivedQty": 4,
+   "moreQty": 8,
+   "saidQty": 13,
+   "maxQty": 200,
+   "hours": 24,
+   "monthLabel": "Nov 2026",
+   "stateWord": "sent, no answer yet",
+   "options": [
+    "hair colour",
+    "shampoo"
+   ],
+   "refs": [
+    "po-7",
+    "po-8"
+   ],
+   "example": "order 10 box hair colour from Ravi Traders",
+   "lines": [
+    {
+     "ref": "po-7",
+     "itemName": "हेयर कलर",
+     "unitName": "डिब्बा",
+     "supplierName": "Ravi Traders",
+     "qty": 12,
+     "receivedQty": 4,
+     "totalInr": 2106,
+     "stateWord": "part received"
+    }
+   ]
+  },
+  "en": {
+   "language": "en",
+   "timeZone": "Asia/Kolkata",
+   "businessName": "Glow Unisex Salon",
+   "supplierName": "Ravi Traders",
+   "itemName": "hair colour",
+   "unitName": "box",
+   "qty": 12,
+   "unitPriceInr": 175.5,
+   "totalInr": 2106,
+   "orderRef": "po-7",
+   "code": "K7M2QX",
+   "budgetInr": 20000,
+   "reservedInr": 4500,
+   "leftInr": 13394,
+   "capInr": 12000,
+   "receivedQty": 4,
+   "moreQty": 8,
+   "saidQty": 13,
+   "maxQty": 200,
+   "hours": 24,
+   "monthLabel": "Nov 2026",
+   "stateWord": "sent, no answer yet",
+   "options": [
+    "hair colour",
+    "shampoo"
+   ],
+   "refs": [
+    "po-7",
+    "po-8"
+   ],
+   "example": "order 10 box hair colour from Ravi Traders",
+   "lines": [
+    {
+     "ref": "po-7",
+     "itemName": "hair colour",
+     "unitName": "box",
+     "supplierName": "Ravi Traders",
+     "qty": 12,
+     "receivedQty": 4,
+     "totalInr": 2106,
+     "stateWord": "part received"
+    }
+   ]
+  },
+  "ml": {
+   "language": "ml",
+   "timeZone": "Asia/Kolkata",
+   "businessName": "Glow Unisex Salon",
+   "supplierName": "Ravi Traders",
+   "itemName": "ഹെയർ കളർ",
+   "unitName": "ബോക്സ്",
+   "qty": 12,
+   "unitPriceInr": 175.5,
+   "totalInr": 2106,
+   "orderRef": "po-7",
+   "code": "K7M2QX",
+   "budgetInr": 20000,
+   "reservedInr": 4500,
+   "leftInr": 13394,
+   "capInr": 12000,
+   "receivedQty": 4,
+   "moreQty": 8,
+   "saidQty": 13,
+   "maxQty": 200,
+   "hours": 24,
+   "monthLabel": "Nov 2026",
+   "stateWord": "sent, no answer yet",
+   "options": [
+    "hair colour",
+    "shampoo"
+   ],
+   "refs": [
+    "po-7",
+    "po-8"
+   ],
+   "example": "order 10 box hair colour from Ravi Traders",
+   "lines": [
+    {
+     "ref": "po-7",
+     "itemName": "ഹെയർ കളർ",
+     "unitName": "ബോക്സ്",
+     "supplierName": "Ravi Traders",
+     "qty": 12,
+     "receivedQty": 4,
+     "totalInr": 2106,
+     "stateWord": "part received"
+    }
+   ]
+  },
+  "kn": {
+   "language": "kn",
+   "timeZone": "Asia/Kolkata",
+   "businessName": "Glow Unisex Salon",
+   "supplierName": "Ravi Traders",
+   "itemName": "ಹೇರ್ ಕಲರ್",
+   "unitName": "ಬಾಕ್ಸ್",
+   "qty": 12,
+   "unitPriceInr": 175.5,
+   "totalInr": 2106,
+   "orderRef": "po-7",
+   "code": "K7M2QX",
+   "budgetInr": 20000,
+   "reservedInr": 4500,
+   "leftInr": 13394,
+   "capInr": 12000,
+   "receivedQty": 4,
+   "moreQty": 8,
+   "saidQty": 13,
+   "maxQty": 200,
+   "hours": 24,
+   "monthLabel": "Nov 2026",
+   "stateWord": "sent, no answer yet",
+   "options": [
+    "hair colour",
+    "shampoo"
+   ],
+   "refs": [
+    "po-7",
+    "po-8"
+   ],
+   "example": "order 10 box hair colour from Ravi Traders",
+   "lines": [
+    {
+     "ref": "po-7",
+     "itemName": "ಹೇರ್ ಕಲರ್",
+     "unitName": "ಬಾಕ್ಸ್",
+     "supplierName": "Ravi Traders",
+     "qty": 12,
+     "receivedQty": 4,
+     "totalInr": 2106,
+     "stateWord": "part received"
+    }
+   ]
+  }
+ },
+ "messages": [
+  {
+   "language": "hi",
+   "id": "supplier_order",
+   "text": "नया ऑर्डर po-7 (Glow Unisex Salon की ओर से): 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106। कृपया \"OK\" लिखें अगर आप यह दे सकते हैं, या \"NO\" अगर नहीं दे सकते।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "supplier_check",
+   "text": "पहले भेजे ऑर्डर po-7 की याद दिलाना (Glow Unisex Salon की ओर से): 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106। यह वही ऑर्डर है, नया नहीं। कृपया \"OK\" लिखें अगर आप दे सकते हैं, या \"NO\" अगर नहीं दे सकते।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "supplier_which",
+   "text": "Glow Unisex Salon के कई ऑर्डर आपके जवाब का इंतज़ार कर रहे हैं (po-7, po-8)। कृपया ऑर्डर संदेश के बटन से जवाब दें, या \"OK\" या \"NO\" के बाद ऑर्डर नंबर लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "supplier_unclear",
+   "text": "आपके संदेश के लिए धन्यवाद। Glow Unisex Salon के ऑर्डर po-7 का जवाब देने के लिए कृपया \"OK\" या \"NO\" लिखें, या ऑर्डर संदेश का बटन दबाएँ।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "supplier_thanks_yes",
+   "text": "धन्यवाद। ऑर्डर po-7 आपकी ओर से पक्का दर्ज हुआ।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "supplier_thanks_no",
+   "text": "धन्यवाद। ऑर्डर po-7 आपकी ओर से \"नहीं दे सकते\" दर्ज हुआ।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "card",
+   "text": "मंज़ूरी के लिए ऑर्डर po-7: 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106, Ravi Traders से। इस महीने आपके ₹20,000 बजट में से ₹4,500 रखा जा चुका है, इस ऑर्डर के बाद ₹13,394 बचेगा। बटन से मंज़ूर करें, या \"yes K7M2QX\" लिखें। मना करने के लिए \"no K7M2QX\" लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "card_changed",
+   "text": "उस कार्ड के बाद ऑर्डर बदल गया, इसलिए पुराना कार्ड मान्य नहीं है और कुछ नहीं भेजा गया। अभी का कार्ड यह है:",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "card_closed",
+   "text": "उस कार्ड का जवाब पहले ही दिया जा चुका है या उसकी जगह नया कार्ड आ गया है, इसलिए कुछ नहीं किया गया।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "card_expired",
+   "text": "उस कार्ड का समय ख़त्म हो गया, इसलिए कुछ नहीं भेजा गया। अगर अब भी चाहिए तो फिर कहें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "card_unknown",
+   "text": "उस कोड का कोई कार्ड मेरे पास नहीं है, इसलिए कुछ नहीं किया गया।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "order_declined",
+   "text": "ऑर्डर po-7 मना कर दिया गया। Ravi Traders को कुछ नहीं भेजा गया।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "order_approved",
+   "text": "ऑर्डर po-7 मंज़ूर: 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106, Ravi Traders से। इस महीने के बजट से ₹2,106 रख लिया गया है और ₹13,394 बचा है। अब सप्लायर को भेज रहा हूँ।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "sent_ok",
+   "text": "ऑर्डर po-7 Ravi Traders को भेज दिया गया। उन्होंने अभी जवाब नहीं दिया है। चुप रहने पर मैं फिर पूछूँगा।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "sent_unknown",
+   "text": "ऑर्डर po-7 Ravi Traders तक पहुँचा या नहीं, WhatsApp ने पक्का नहीं बताया। मैं ऑर्डर दोबारा नहीं भेजूँगा। इसके बदले Ravi Traders से po-7 के बारे में पूछूँगा और आपको बताऊँगा।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "send_failed",
+   "text": "ऑर्डर po-7 Ravi Traders को नहीं गया: WhatsApp ने मना कर दिया, इसलिए कुछ नहीं भेजा गया। बजट रखा हुआ है। फिर कोशिश के लिए \"send po-7\" लिखें, या छोड़ने के लिए \"cancel po-7\"।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "send_blocked",
+   "text": "ऑर्डर po-7 Ravi Traders को नहीं भेजा गया: एक जाँच ने रोक दिया, जैसे उन्होंने और संदेश न भेजने को कहा हो। कुछ नहीं गया। बजट छोड़ने के लिए \"cancel po-7\" लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "owner_supplier_accepted",
+   "text": "सप्लायर Ravi Traders ने ऑर्डर po-7 पक्का किया: 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106। इसका मतलब है कि वे देंगे, यह नहीं कि माल आ गया। माल आने पर \"received po-7\" लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "owner_supplier_declined",
+   "text": "सप्लायर Ravi Traders ने ऑर्डर po-7 मना कर दिया: 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106। माल नहीं आएगा, और रखा हुआ पैसा इस महीने के बजट में वापस आ गया है। कृपया दूसरा सप्लायर चुनें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "owner_supplier_silent",
+   "text": "सप्लायर Ravi Traders से ऑर्डर po-7 का 24 घंटे बाद भी जवाब नहीं आया: 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106। मैंने फिर पूछा और नया ऑर्डर नहीं भेजूँगा। कृपया उन्हें फ़ोन करें। ऑर्डर पक्का नहीं है।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "owner_supplier_stopped",
+   "text": "सप्लायर Ravi Traders ने और संदेश न भेजने को कहा है, इसलिए मैं उन्हें दोबारा संदेश नहीं भेजूँगा। उनके लिए रुका हुआ ऑर्डर नहीं भेजा जाएगा, मैं बताऊँगा कौन सा।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "received_full",
+   "text": "पूरा माल आया दर्ज: ऑर्डर po-7, 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106। यह आपका दर्ज किया हुआ है, सप्लायर का नहीं। भुगतान अलग बात है: भुगतान करने पर \"paid po-7\" लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "received_part",
+   "text": "दर्ज: ऑर्डर po-7 (हेयर कलर) के 12 में से 4 आए। 8 आना बाकी है। बाकी आने पर \"received po-7 8\" लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "received_wrong",
+   "text": "दर्ज: ऑर्डर po-7 (हेयर कलर) में ग़लत माल आया। इसे आया हुआ नहीं गिना गया। कृपया Ravi Traders से बात करें: मैंने उन्हें कुछ नहीं भेजा।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "receive_too_many",
+   "text": "आपने 13 लिखा, पर ऑर्डर po-7 का सिर्फ़ 8 आना बाकी है। कुछ दर्ज नहीं हुआ। कृपया बताएँ कि असल में क्या आया।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "order_not_open",
+   "text": "ऑर्डर po-7 में अभी यह बदलाव नहीं हो सकता: वह sent, no answer yet।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "paid_outside_noted",
+   "text": "दर्ज: आपने ऑर्डर po-7 का भुगतान इस चैट के बाहर ख़ुद किया। मैंने कुछ नहीं चुकाया और जाँच नहीं सकता: यह सिर्फ़ आपका दर्ज किया हुआ है।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "cannot_change",
+   "text": "ऑर्डर po-7 मंज़ूर हो चुका है, इसलिए बदला नहीं जा सकता। अगर ग़लत है तो Ravi Traders से सीधे बात करें, फिर मुझे नया अनुरोध भेजें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "cancelled",
+   "text": "ऑर्डर po-7 रद्द हुआ। कुछ नहीं भेजा गया, और इसने जो बजट रखा था वह छूट गया।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "cannot_cancel",
+   "text": "ऑर्डर po-7 पहले ही Ravi Traders के पास है, इसलिए मैं यहाँ से रद्द नहीं कर सकता। कृपया उन्हें ख़ुद बताएँ।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "no_such_order",
+   "text": "मेरे पास ऑर्डर po-7 नहीं है।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "ask_line",
+   "text": "हेयर कलर मँगाने के एक से ज़्यादा तरीके हैं। आपका मतलब कौन सा है?",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "ask_qty",
+   "text": "Ravi Traders से हेयर कलर के कितने डिब्बा मँगाऊँ? एक संख्या लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "item_unknown",
+   "text": "यह आपकी सूची में नहीं है, इसलिए कुछ नहीं मँगाया गया। मैं ये मँगा सकता हूँ: hair colour, shampoo।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "blocked_supplier",
+   "text": "कुछ नहीं मँगाया गया: Ravi Traders आपकी मंज़ूर सप्लायर सूची में नहीं है, या रोका हुआ है। किसी को कुछ नहीं भेजा गया।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "blocked_cap",
+   "text": "कुछ नहीं मँगाया गया: 12 × हेयर कलर (डिब्बा), ₹175.50 प्रति डिब्बा, कुल ₹2,106 एक ऑर्डर की ₹12,000 की हद से ज़्यादा है। कम मँगाएँ, या अपने ऑपरेटर से हद बदलने को कहें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "blocked_budget",
+   "text": "कुछ नहीं मँगाया गया: ₹2,106 इस महीने (Nov 2026) के ₹20,000 बजट के बचे ₹13,394 से ज़्यादा है।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "blocked_qty",
+   "text": "कुछ नहीं मँगाया गया: 13 एक ऑर्डर के 200 से ज़्यादा है, यह टाइपिंग की ग़लती लगती है। कृपया संख्या फिर लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "already_open",
+   "text": "Ravi Traders से हेयर कलर का ऑर्डर po-7 पहले से खुला है, इसलिए दूसरा नहीं बनाया। देखने के लिए \"status\" लिखें।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "status",
+   "text": "खुले स्टॉक ऑर्डर:\npo-7: 12 × हेयर कलर (डिब्बा), Ravi Traders से, ₹2,106, part received\nइस महीने (Nov 2026) आपके ₹20,000 बजट में से ₹4,500 रखा जा चुका है।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "status_empty",
+   "text": "कोई स्टॉक ऑर्डर खुला नहीं है। इस महीने (Nov 2026) आपके ₹20,000 बजट में से ₹4,500 रखा जा चुका है।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "didnt_understand",
+   "text": "मैं समझ नहीं पाया कि आप क्या चाहते हैं। आप ऐसे लिख सकते हैं: \"order 10 box hair colour from Ravi Traders\", \"received po-7\", \"paid po-7\" या \"status\"।",
+   "check": "allow"
+  },
+  {
+   "language": "hi",
+   "id": "owner_message_held",
+   "text": "ऑर्डर po-7 के बारे में एक संदेश मैंने रोक लिया क्योंकि वह मेरे रिकॉर्ड से मेल नहीं खाता था। कुछ ग़लत नहीं भेजा गया। कृपया ऑर्डर देख लें।",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "supplier_order",
+   "text": "New order po-7 from Glow Unisex Salon: 12 × hair colour (box), ₹175.50 per box, total ₹2,106. Please reply OK to confirm you can supply it, or NO if you cannot.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "supplier_check",
+   "text": "Reminder about order po-7 from Glow Unisex Salon, sent earlier: 12 × hair colour (box), ₹175.50 per box, total ₹2,106. This is the same order, not a new one. Please reply OK to confirm, or NO if you cannot supply it.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "supplier_which",
+   "text": "Several orders from Glow Unisex Salon are waiting for your answer (po-7, po-8). Please answer with the button on the order message, or write OK or NO followed by the order number.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "supplier_unclear",
+   "text": "Thank you for your message. To answer order po-7 from Glow Unisex Salon, please reply OK or NO, or use the button on the order message.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "supplier_thanks_yes",
+   "text": "Thank you. Order po-7 is noted as confirmed by you.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "supplier_thanks_no",
+   "text": "Thank you. Order po-7 is noted as not supplied by you.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "card",
+   "text": "Order po-7 for your approval: 12 × hair colour (box), ₹175.50 per box, total ₹2,106, from Ravi Traders. This month ₹4,500 of your ₹20,000 budget is reserved, so ₹13,394 is left after this order. Approve with the button, or reply \"yes K7M2QX\". To decline reply \"no K7M2QX\".",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "card_changed",
+   "text": "The order changed since that card, so the earlier card no longer counts and nothing was sent. Here is the card as it is now:",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "card_closed",
+   "text": "That card was already answered or replaced, so nothing was done.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "card_expired",
+   "text": "That card ran out, so nothing was sent. Ask me again if you still want it.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "card_unknown",
+   "text": "I have no card with that code, so nothing was done.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "order_declined",
+   "text": "Order po-7 is declined. Nothing was sent to Ravi Traders.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "order_approved",
+   "text": "Order po-7 is approved: 12 × hair colour (box), ₹175.50 per box, total ₹2,106, from Ravi Traders. ₹2,106 is now reserved from this month's budget and ₹13,394 is left. Sending it to the supplier now.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "sent_ok",
+   "text": "Order po-7 went to Ravi Traders. They have not answered yet. I will ask again if they stay silent.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "sent_unknown",
+   "text": "Order po-7 may or may not have reached Ravi Traders: WhatsApp did not confirm it. I will not send the order again. I will ask Ravi Traders about po-7 instead, and tell you what they say.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "send_failed",
+   "text": "Order po-7 did not go to Ravi Traders: WhatsApp refused it, so nothing was sent. The budget stays reserved. Reply \"send po-7\" to try again, or \"cancel po-7\" to release it.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "send_blocked",
+   "text": "Order po-7 was not sent to Ravi Traders: a check held it back, for example because they asked for no more messages. Nothing went out. Reply \"cancel po-7\" to release the budget.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "owner_supplier_accepted",
+   "text": "Order po-7 confirmed by the supplier, Ravi Traders: 12 × hair colour (box), ₹175.50 per box, total ₹2,106. This means they will supply it, not that it has arrived. When it comes, reply \"received po-7\".",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "owner_supplier_declined",
+   "text": "Order po-7 was declined by the supplier, Ravi Traders: 12 × hair colour (box), ₹175.50 per box, total ₹2,106. Nothing is coming, and the money reserved is released back to this month's budget. Please choose another supplier.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "owner_supplier_silent",
+   "text": "No answer yet to order po-7 from the supplier, Ravi Traders, after 24 hours: 12 × hair colour (box), ₹175.50 per box, total ₹2,106. I asked again and will not send a new order. Please call them. The order is not confirmed.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "owner_supplier_stopped",
+   "text": "Supplier Ravi Traders asked for no more messages, so I will not message them again. Any order waiting for them stays unsent, and I will tell you which.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "received_full",
+   "text": "Marked received, all of it: order po-7, 12 × hair colour (box), ₹175.50 per box, total ₹2,106. This is your mark, not the supplier's. Payment is separate: reply \"paid po-7\" when you have paid.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "received_part",
+   "text": "Marked: 4 of 12 received for order po-7 (hair colour). 8 still to come. Reply \"received po-7 8\" when the rest arrives.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "received_wrong",
+   "text": "Marked: the wrong item came for order po-7 (hair colour). It is not counted as received. Please sort it out with Ravi Traders: I sent them nothing.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "receive_too_many",
+   "text": "You wrote 13, but only 8 of order po-7 are still to come. Nothing was marked. Please tell me what actually arrived.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "order_not_open",
+   "text": "Order po-7 cannot be changed that way now: it is sent, no answer yet.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "paid_outside_noted",
+   "text": "Noted: you paid for order po-7 yourself, outside this chat. I paid nothing and cannot check it: it is only your mark.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "cannot_change",
+   "text": "Order po-7 is already approved, so it cannot be changed. If it is wrong, ask Ravi Traders directly, then send me a new request.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "cancelled",
+   "text": "Order po-7 is cancelled. Nothing was sent, and any budget it held is released.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "cannot_cancel",
+   "text": "Order po-7 is already with Ravi Traders, so I cannot cancel it from here. Please tell them yourself.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "no_such_order",
+   "text": "I have no order po-7.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "ask_line",
+   "text": "There is more than one way to order hair colour. Which one do you mean?",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "ask_qty",
+   "text": "How many box of hair colour from Ravi Traders should I order? Reply with a number.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "item_unknown",
+   "text": "I do not have that in your catalogue, so nothing was ordered. I can order: hair colour, shampoo.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "blocked_supplier",
+   "text": "Nothing was ordered: Ravi Traders is not on your approved supplier list, or is paused. Nothing was sent to anyone.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "blocked_cap",
+   "text": "Nothing was ordered: 12 × hair colour (box), ₹175.50 per box, total ₹2,106 is more than the ₹12,000 one order may be worth. Order less, or ask your Operator to change the limit.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "blocked_budget",
+   "text": "Nothing was ordered: ₹2,106 is more than the ₹13,394 left of this month's ₹20,000 budget (Nov 2026).",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "blocked_qty",
+   "text": "Nothing was ordered: 13 is more than 200 in one order, which looks like a typing slip. Please write the number again.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "already_open",
+   "text": "Order po-7 for hair colour from Ravi Traders is already open, so I did not make another. Reply \"status\" to see it.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "status",
+   "text": "Open stock orders:\npo-7: 12 × hair colour (box) from Ravi Traders, ₹2,106, part received\nThis month (Nov 2026): ₹4,500 of your ₹20,000 budget is reserved.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "status_empty",
+   "text": "No open stock orders. This month (Nov 2026): ₹4,500 of your ₹20,000 budget is reserved.",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "didnt_understand",
+   "text": "I could not tell what you want. You can write, for example, \"order 10 box hair colour from Ravi Traders\", \"received po-7\", \"paid po-7\" or \"status\".",
+   "check": "allow"
+  },
+  {
+   "language": "en",
+   "id": "owner_message_held",
+   "text": "I held back a message about order po-7 because it did not match my record. Nothing wrong was sent. Please check the order.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "supplier_order",
+   "text": "പുതിയ ഓർഡർ po-7 (Glow Unisex Salon-ൽ നിന്ന്): 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106. ഇത് നൽകാൻ കഴിയുമെങ്കിൽ \"OK\" എന്നും കഴിയില്ലെങ്കിൽ \"NO\" എന്നും മറുപടി തരൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "supplier_check",
+   "text": "നേരത്തെ അയച്ച ഓർഡർ po-7-നെക്കുറിച്ചുള്ള ഓർമ്മപ്പെടുത്തൽ (Glow Unisex Salon-ൽ നിന്ന്): 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106. ഇത് അതേ ഓർഡറാണ്, പുതിയതല്ല. നൽകാൻ കഴിയുമെങ്കിൽ \"OK\" എന്നും കഴിയില്ലെങ്കിൽ \"NO\" എന്നും മറുപടി തരൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "supplier_which",
+   "text": "Glow Unisex Salon-ന്റെ ഒന്നിലധികം ഓർഡറുകൾ നിങ്ങളുടെ മറുപടിക്ക് കാത്തിരിക്കുന്നു (po-7, po-8). ഓർഡർ സന്ദേശത്തിലെ ബട്ടൺ ഉപയോഗിക്കൂ, അല്ലെങ്കിൽ \"OK\" അല്ലെങ്കിൽ \"NO\" എന്നെഴുതി ഓർഡർ നമ്പർ ചേർക്കൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "supplier_unclear",
+   "text": "നിങ്ങളുടെ സന്ദേശത്തിന് നന്ദി. Glow Unisex Salon-ന്റെ ഓർഡർ po-7-ന് മറുപടി നൽകാൻ \"OK\" അല്ലെങ്കിൽ \"NO\" എന്ന് എഴുതൂ, അല്ലെങ്കിൽ ഓർഡർ സന്ദേശത്തിലെ ബട്ടൺ ഉപയോഗിക്കൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "supplier_thanks_yes",
+   "text": "നന്ദി. ഓർഡർ po-7 നിങ്ങൾ സ്ഥിരീകരിച്ചതായി രേഖപ്പെടുത്തി.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "supplier_thanks_no",
+   "text": "നന്ദി. ഓർഡർ po-7 നിങ്ങൾക്ക് നൽകാൻ കഴിയില്ലെന്ന് രേഖപ്പെടുത്തി.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "card",
+   "text": "അനുമതിക്കായി ഓർഡർ po-7: 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106, Ravi Traders-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ ₹20,000 ബജറ്റിൽ ₹4,500 മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം ₹13,394 ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ \"yes K7M2QX\" എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ \"no K7M2QX\" എന്ന് നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "card_changed",
+   "text": "ആ കാർഡിന് ശേഷം ഓർഡർ മാറി, അതിനാൽ പഴയ കാർഡ് സാധുവല്ല, ഒന്നും അയച്ചില്ല. ഇപ്പോഴത്തെ കാർഡ് ഇതാ:",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "card_closed",
+   "text": "ആ കാർഡിന് ഇതിനകം മറുപടി നൽകി, അല്ലെങ്കിൽ പുതിയ കാർഡ് വന്നു, അതിനാൽ ഒന്നും ചെയ്തില്ല.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "card_expired",
+   "text": "ആ കാർഡിന്റെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും അയച്ചില്ല. ഇപ്പോഴും വേണമെങ്കിൽ വീണ്ടും പറയൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "card_unknown",
+   "text": "ആ കോഡുള്ള കാർഡ് എന്റെ പക്കലില്ല, അതിനാൽ ഒന്നും ചെയ്തില്ല.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "order_declined",
+   "text": "ഓർഡർ po-7 വേണ്ടെന്ന് വച്ചു. Ravi Traders-ന് ഒന്നും അയച്ചില്ല.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "order_approved",
+   "text": "ഓർഡർ po-7 അനുവദിച്ചു: 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106, Ravi Traders-ൽ നിന്ന്. ഈ മാസത്തെ ബജറ്റിൽ നിന്ന് ₹2,106 മാറ്റിവച്ചു, ₹13,394 ബാക്കി. ഇപ്പോൾ വിതരണക്കാരന് അയയ്ക്കുന്നു.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "sent_ok",
+   "text": "ഓർഡർ po-7 Ravi Traders-ന് അയച്ചു. അവർ ഇതുവരെ മറുപടി തന്നിട്ടില്ല. മിണ്ടാതിരുന്നാൽ ഞാൻ വീണ്ടും ചോദിക്കും.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "sent_unknown",
+   "text": "ഓർഡർ po-7 Ravi Traders-ൽ എത്തിയോ എന്ന് WhatsApp ഉറപ്പിച്ചില്ല. ഞാൻ ഓർഡർ വീണ്ടും അയയ്ക്കില്ല. പകരം Ravi Traders-നോട് po-7-നെക്കുറിച്ച് ചോദിച്ച് അവർ പറയുന്നത് നിങ്ങളെ അറിയിക്കും.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "send_failed",
+   "text": "ഓർഡർ po-7 Ravi Traders-ന് പോയില്ല: WhatsApp നിരസിച്ചു, അതിനാൽ ഒന്നും അയച്ചില്ല. ബജറ്റ് മാറ്റിവച്ചതായി തുടരുന്നു. വീണ്ടും ശ്രമിക്കാൻ \"send po-7\" എന്നും ഒഴിവാക്കാൻ \"cancel po-7\" എന്നും നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "send_blocked",
+   "text": "ഓർഡർ po-7 Ravi Traders-ന് അയച്ചില്ല: ഒരു പരിശോധന തടഞ്ഞു, ഉദാഹരണത്തിന് അവർ ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞതിനാൽ. ഒന്നും പോയില്ല. ബജറ്റ് വിടുവിക്കാൻ \"cancel po-7\" എന്ന് നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "owner_supplier_accepted",
+   "text": "വിതരണക്കാരൻ Ravi Traders ഓർഡർ po-7 സ്ഥിരീകരിച്ചു: 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106. അവർ നൽകും എന്നാണ് ഇതിനർത്ഥം, സാധനം എത്തി എന്നല്ല. സാധനം വരുമ്പോൾ \"received po-7\" എന്ന് നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "owner_supplier_declined",
+   "text": "വിതരണക്കാരൻ Ravi Traders ഓർഡർ po-7 നിരസിച്ചു: 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106. സാധനം വരില്ല, മാറ്റിവച്ച തുക ഈ മാസത്തെ ബജറ്റിലേക്ക് തിരികെ വന്നു. മറ്റൊരു വിതരണക്കാരനെ തിരഞ്ഞെടുക്കൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "owner_supplier_silent",
+   "text": "വിതരണക്കാരൻ Ravi Traders-ൽ നിന്ന് ഓർഡർ po-7-ന് 24 മണിക്കൂറിന് ശേഷവും മറുപടിയില്ല: 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106. ഞാൻ വീണ്ടും ചോദിച്ചു, പുതിയ ഓർഡർ അയയ്ക്കില്ല. അവരെ വിളിക്കൂ. ഓർഡർ സ്ഥിരീകരിച്ചിട്ടില്ല.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "owner_supplier_stopped",
+   "text": "വിതരണക്കാരൻ Ravi Traders ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞു, അതിനാൽ ഞാൻ അവർക്ക് വീണ്ടും സന്ദേശം അയയ്ക്കില്ല. അവർക്കുള്ള ഓർഡർ അയയ്ക്കാതെ കിടക്കും, ഏതെന്ന് ഞാൻ പറയാം.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "received_full",
+   "text": "മുഴുവൻ സാധനവും കിട്ടി എന്ന് രേഖപ്പെടുത്തി: ഓർഡർ po-7, 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106. ഇത് നിങ്ങളുടെ രേഖപ്പെടുത്തലാണ്, വിതരണക്കാരന്റേതല്ല. പണമടയ്ക്കൽ വേറെയാണ്: അടച്ചാൽ \"paid po-7\" എന്ന് നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "received_part",
+   "text": "രേഖപ്പെടുത്തി: ഓർഡർ po-7 (ഹെയർ കളർ) ലെ 12-ൽ 4 കിട്ടി. 8 വരാനുണ്ട്. ബാക്കി വരുമ്പോൾ \"received po-7 8\" എന്ന് നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "received_wrong",
+   "text": "രേഖപ്പെടുത്തി: ഓർഡർ po-7 (ഹെയർ കളർ) ന് തെറ്റായ സാധനം വന്നു. ഇത് കിട്ടിയതായി കണക്കാക്കിയില്ല. Ravi Traders-നോട് സംസാരിക്കൂ: ഞാൻ അവർക്ക് ഒന്നും അയച്ചിട്ടില്ല.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "receive_too_many",
+   "text": "നിങ്ങൾ 13 എന്ന് എഴുതി, പക്ഷേ ഓർഡർ po-7-ൽ 8 മാത്രമേ വരാനുള്ളൂ. ഒന്നും രേഖപ്പെടുത്തിയില്ല. യഥാർത്ഥത്തിൽ എന്താണ് വന്നതെന്ന് പറയൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "order_not_open",
+   "text": "ഓർഡർ po-7 ഇപ്പോൾ ഇങ്ങനെ മാറ്റാനാവില്ല: അത് sent, no answer yet.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "paid_outside_noted",
+   "text": "രേഖപ്പെടുത്തി: ഓർഡർ po-7-ന്റെ പണം നിങ്ങൾ ഈ ചാറ്റിന് പുറത്ത് സ്വയം അടച്ചു. ഞാൻ ഒന്നും അടച്ചിട്ടില്ല, പരിശോധിക്കാനും കഴിയില്ല: ഇത് നിങ്ങളുടെ രേഖപ്പെടുത്തൽ മാത്രം.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "cannot_change",
+   "text": "ഓർഡർ po-7 ഇതിനകം അനുവദിച്ചു, അതിനാൽ മാറ്റാനാവില്ല. തെറ്റാണെങ്കിൽ Ravi Traders-നോട് നേരിട്ട് പറയൂ, എന്നിട്ട് എനിക്ക് പുതിയ അഭ്യർത്ഥന അയയ്ക്കൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "cancelled",
+   "text": "ഓർഡർ po-7 റദ്ദാക്കി. ഒന്നും അയച്ചില്ല, അത് മാറ്റിവച്ച ബജറ്റ് തിരികെ കിട്ടി.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "cannot_cancel",
+   "text": "ഓർഡർ po-7 ഇതിനകം Ravi Traders-ന്റെ പക്കലാണ്, അതിനാൽ ഇവിടെ നിന്ന് റദ്ദാക്കാനാവില്ല. അവരോട് നേരിട്ട് പറയൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "no_such_order",
+   "text": "എന്റെ പക്കൽ ഓർഡർ po-7 ഇല്ല.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "ask_line",
+   "text": "ഹെയർ കളർ ഓർഡർ ചെയ്യാൻ ഒന്നിലധികം വഴികളുണ്ട്. ഏതാണ് ഉദ്ദേശിച്ചത്?",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "ask_qty",
+   "text": "Ravi Traders-ൽ നിന്ന് ഹെയർ കളർ എത്ര ബോക്സ് ഓർഡർ ചെയ്യണം? ഒരു സംഖ്യ നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "item_unknown",
+   "text": "അത് നിങ്ങളുടെ പട്ടികയിലില്ല, അതിനാൽ ഒന്നും ഓർഡർ ചെയ്തില്ല. ഞാൻ ഓർഡർ ചെയ്യാവുന്നത്: hair colour, shampoo.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "blocked_supplier",
+   "text": "ഒന്നും ഓർഡർ ചെയ്തില്ല: Ravi Traders നിങ്ങളുടെ അംഗീകൃത വിതരണക്കാരുടെ പട്ടികയിലില്ല, അല്ലെങ്കിൽ നിർത്തിവച്ചിരിക്കുന്നു. ആർക്കും ഒന്നും അയച്ചില്ല.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "blocked_cap",
+   "text": "ഒന്നും ഓർഡർ ചെയ്തില്ല: 12 × ഹെയർ കളർ (ബോക്സ്), ഒരു ബോക്സ്-ന് ₹175.50, ആകെ ₹2,106 ഒരു ഓർഡറിന്റെ ₹12,000 പരിധിയേക്കാൾ കൂടുതലാണ്. കുറച്ച് ഓർഡർ ചെയ്യൂ, അല്ലെങ്കിൽ പരിധി മാറ്റാൻ നിങ്ങളുടെ ഓപ്പറേറ്ററോട് പറയൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "blocked_budget",
+   "text": "ഒന്നും ഓർഡർ ചെയ്തില്ല: ₹2,106 ഈ മാസത്തെ (Nov 2026) ₹20,000 ബജറ്റിൽ ബാക്കിയുള്ള ₹13,394-നേക്കാൾ കൂടുതലാണ്.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "blocked_qty",
+   "text": "ഒന്നും ഓർഡർ ചെയ്തില്ല: 13 ഒരു ഓർഡറിലെ 200-നേക്കാൾ കൂടുതലാണ്, ടൈപ്പ് ചെയ്തതിലെ പിഴവാകാം. സംഖ്യ വീണ്ടും എഴുതൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "already_open",
+   "text": "Ravi Traders-ൽ നിന്ന് ഹെയർ കളർ-നുള്ള ഓർഡർ po-7 ഇതിനകം തുറന്നിരിക്കുന്നു, അതിനാൽ മറ്റൊന്ന് ഉണ്ടാക്കിയില്ല. കാണാൻ \"status\" എന്ന് നൽകൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "status",
+   "text": "തുറന്ന സ്റ്റോക്ക് ഓർഡറുകൾ:\npo-7: 12 × ഹെയർ കളർ (ബോക്സ്), Ravi Traders-ൽ നിന്ന്, ₹2,106, part received\nഈ മാസം (Nov 2026) നിങ്ങളുടെ ₹20,000 ബജറ്റിൽ ₹4,500 മാറ്റിവച്ചിട്ടുണ്ട്.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "status_empty",
+   "text": "തുറന്ന സ്റ്റോക്ക് ഓർഡറുകളൊന്നുമില്ല. ഈ മാസം (Nov 2026) നിങ്ങളുടെ ₹20,000 ബജറ്റിൽ ₹4,500 മാറ്റിവച്ചിട്ടുണ്ട്.",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "didnt_understand",
+   "text": "നിങ്ങൾക്ക് എന്താണ് വേണ്ടതെന്ന് എനിക്ക് മനസ്സിലായില്ല. ഉദാഹരണത്തിന് ഇങ്ങനെ എഴുതാം: \"order 10 box hair colour from Ravi Traders\", \"received po-7\", \"paid po-7\" അല്ലെങ്കിൽ \"status\".",
+   "check": "allow"
+  },
+  {
+   "language": "ml",
+   "id": "owner_message_held",
+   "text": "ഓർഡർ po-7-നെക്കുറിച്ചുള്ള ഒരു സന്ദേശം എന്റെ രേഖയുമായി ചേരാത്തതിനാൽ ഞാൻ തടഞ്ഞുവച്ചു. തെറ്റായ ഒന്നും അയച്ചില്ല. ഓർഡർ പരിശോധിക്കൂ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "supplier_order",
+   "text": "ಹೊಸ ಆರ್ಡರ್ po-7 (Glow Unisex Salon ಅವರಿಂದ): 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106. ಇದನ್ನು ಪೂರೈಸಲು ಸಾಧ್ಯವಾದರೆ \"OK\" ಎಂದು, ಸಾಧ್ಯವಿಲ್ಲದಿದ್ದರೆ \"NO\" ಎಂದು ಉತ್ತರಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "supplier_check",
+   "text": "ಈ ಮೊದಲು ಕಳುಹಿಸಿದ ಆರ್ಡರ್ po-7 ಬಗ್ಗೆ ನೆನಪೋಲೆ (Glow Unisex Salon ಅವರಿಂದ): 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106. ಇದು ಅದೇ ಆರ್ಡರ್, ಹೊಸದಲ್ಲ. ಪೂರೈಸಲು ಸಾಧ್ಯವಾದರೆ \"OK\" ಎಂದು, ಸಾಧ್ಯವಿಲ್ಲದಿದ್ದರೆ \"NO\" ಎಂದು ಉತ್ತರಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "supplier_which",
+   "text": "Glow Unisex Salon ಅವರ ಹಲವು ಆರ್ಡರ್‌ಗಳು ನಿಮ್ಮ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿವೆ (po-7, po-8). ಆರ್ಡರ್ ಸಂದೇಶದ ಬಟನ್ ಬಳಸಿ, ಅಥವಾ \"OK\" ಅಥವಾ \"NO\" ಎಂದು ಬರೆದು ಆರ್ಡರ್ ಸಂಖ್ಯೆ ಸೇರಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "supplier_unclear",
+   "text": "ನಿಮ್ಮ ಸಂದೇಶಕ್ಕೆ ಧನ್ಯವಾದ. Glow Unisex Salon ಅವರ ಆರ್ಡರ್ po-7 ಗೆ ಉತ್ತರಿಸಲು \"OK\" ಅಥವಾ \"NO\" ಎಂದು ಬರೆಯಿರಿ, ಅಥವಾ ಆರ್ಡರ್ ಸಂದೇಶದ ಬಟನ್ ಬಳಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "supplier_thanks_yes",
+   "text": "ಧನ್ಯವಾದ. ಆರ್ಡರ್ po-7 ಅನ್ನು ನೀವು ಖಚಿತಪಡಿಸಿದ್ದೀರಿ ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "supplier_thanks_no",
+   "text": "ಧನ್ಯವಾದ. ಆರ್ಡರ್ po-7 ಅನ್ನು ನೀವು ಪೂರೈಸಲಾಗದು ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "card",
+   "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ po-7: 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106, Ravi Traders ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ ₹20,000 ಬಜೆಟ್‌ನಲ್ಲಿ ₹4,500 ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ ₹13,394 ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ \"yes K7M2QX\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ \"no K7M2QX\" ಎಂದು ಉತ್ತರಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "card_changed",
+   "text": "ಆ ಕಾರ್ಡ್ ನಂತರ ಆರ್ಡರ್ ಬದಲಾಗಿದೆ, ಹಾಗಾಗಿ ಹಳೆಯ ಕಾರ್ಡ್ ಮಾನ್ಯವಲ್ಲ ಮತ್ತು ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಈಗಿನ ಕಾರ್ಡ್ ಇಲ್ಲಿದೆ:",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "card_closed",
+   "text": "ಆ ಕಾರ್ಡ್‌ಗೆ ಈಗಾಗಲೇ ಉತ್ತರಿಸಲಾಗಿದೆ ಅಥವಾ ಹೊಸ ಕಾರ್ಡ್ ಬಂದಿದೆ, ಹಾಗಾಗಿ ಏನೂ ಮಾಡಿಲ್ಲ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "card_expired",
+   "text": "ಆ ಕಾರ್ಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ, ಹಾಗಾಗಿ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಈಗಲೂ ಬೇಕಿದ್ದರೆ ಮತ್ತೆ ಹೇಳಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "card_unknown",
+   "text": "ಆ ಕೋಡ್‌ನ ಕಾರ್ಡ್ ನನ್ನ ಬಳಿ ಇಲ್ಲ, ಹಾಗಾಗಿ ಏನೂ ಮಾಡಿಲ್ಲ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "order_declined",
+   "text": "ಆರ್ಡರ್ po-7 ಬೇಡವೆಂದು ಹೇಳಲಾಗಿದೆ. Ravi Traders ಅವರಿಗೆ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "order_approved",
+   "text": "ಆರ್ಡರ್ po-7 ಒಪ್ಪಲಾಗಿದೆ: 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106, Ravi Traders ಅವರಿಂದ. ಈ ತಿಂಗಳ ಬಜೆಟ್‌ನಿಂದ ₹2,106 ಮೀಸಲಿಡಲಾಗಿದೆ, ₹13,394 ಉಳಿದಿದೆ. ಈಗ ಪೂರೈಕೆದಾರರಿಗೆ ಕಳುಹಿಸುತ್ತಿದ್ದೇನೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "sent_ok",
+   "text": "ಆರ್ಡರ್ po-7 ಅನ್ನು Ravi Traders ಅವರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ. ಅವರು ಇನ್ನೂ ಉತ್ತರಿಸಿಲ್ಲ. ಮೌನವಾಗಿದ್ದರೆ ನಾನು ಮತ್ತೆ ಕೇಳುತ್ತೇನೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "sent_unknown",
+   "text": "ಆರ್ಡರ್ po-7 Ravi Traders ಅವರಿಗೆ ತಲುಪಿತೇ ಎಂದು WhatsApp ಖಚಿತಪಡಿಸಲಿಲ್ಲ. ನಾನು ಆರ್ಡರ್ ಅನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಬದಲಿಗೆ Ravi Traders ಅವರನ್ನು po-7 ಬಗ್ಗೆ ಕೇಳಿ, ಅವರು ಹೇಳಿದ್ದನ್ನು ನಿಮಗೆ ತಿಳಿಸುತ್ತೇನೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "send_failed",
+   "text": "ಆರ್ಡರ್ po-7 Ravi Traders ಅವರಿಗೆ ಹೋಗಲಿಲ್ಲ: WhatsApp ನಿರಾಕರಿಸಿತು, ಹಾಗಾಗಿ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಬಜೆಟ್ ಮೀಸಲಾಗಿಯೇ ಇದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು \"send po-7\" ಎಂದು, ಬಿಡಲು \"cancel po-7\" ಎಂದು ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "send_blocked",
+   "text": "ಆರ್ಡರ್ po-7 ಅನ್ನು Ravi Traders ಅವರಿಗೆ ಕಳುಹಿಸಲಿಲ್ಲ: ಒಂದು ಪರಿಶೀಲನೆ ತಡೆಯಿತು, ಉದಾಹರಣೆಗೆ ಅವರು ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದಿದ್ದರೆ. ಏನೂ ಹೋಗಿಲ್ಲ. ಬಜೆಟ್ ಬಿಡುಗಡೆ ಮಾಡಲು \"cancel po-7\" ಎಂದು ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "owner_supplier_accepted",
+   "text": "ಪೂರೈಕೆದಾರ Ravi Traders ಆರ್ಡರ್ po-7 ಖಚಿತಪಡಿಸಿದ್ದಾರೆ: 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106. ಅವರು ಪೂರೈಸುತ್ತಾರೆ ಎಂದರ್ಥ, ಸರಕು ಬಂದಿದೆ ಎಂದಲ್ಲ. ಬಂದಾಗ \"received po-7\" ಎಂದು ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "owner_supplier_declined",
+   "text": "ಪೂರೈಕೆದಾರ Ravi Traders ಆರ್ಡರ್ po-7 ಅನ್ನು ನಿರಾಕರಿಸಿದ್ದಾರೆ: 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106. ಸರಕು ಬರುವುದಿಲ್ಲ, ಮೀಸಲಿಟ್ಟ ಹಣ ಈ ತಿಂಗಳ ಬಜೆಟ್‌ಗೆ ಮರಳಿದೆ. ದಯವಿಟ್ಟು ಬೇರೆ ಪೂರೈಕೆದಾರರನ್ನು ಆರಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "owner_supplier_silent",
+   "text": "ಪೂರೈಕೆದಾರ Ravi Traders ಅವರಿಂದ ಆರ್ಡರ್ po-7 ಗೆ 24 ಗಂಟೆಗಳ ನಂತರವೂ ಉತ್ತರ ಬಂದಿಲ್ಲ: 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106. ನಾನು ಮತ್ತೆ ಕೇಳಿದ್ದೇನೆ ಮತ್ತು ಹೊಸ ಆರ್ಡರ್ ಕಳುಹಿಸುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಕರೆ ಮಾಡಿ. ಆರ್ಡರ್ ಖಚಿತವಾಗಿಲ್ಲ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "owner_supplier_stopped",
+   "text": "ಪೂರೈಕೆದಾರ Ravi Traders ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದಿದ್ದಾರೆ, ಹಾಗಾಗಿ ನಾನು ಅವರಿಗೆ ಮತ್ತೆ ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಅವರಿಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಆರ್ಡರ್ ಕಳುಹಿಸಲ್ಪಡದೆ ಉಳಿಯುತ್ತದೆ, ಯಾವುದೆಂದು ತಿಳಿಸುತ್ತೇನೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "received_full",
+   "text": "ಪೂರ್ತಿ ಸರಕು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ po-7, 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106. ಇದು ನಿಮ್ಮ ದಾಖಲೆ, ಪೂರೈಕೆದಾರರದ್ದಲ್ಲ. ಪಾವತಿ ಬೇರೆ ವಿಷಯ: ಪಾವತಿಸಿದಾಗ \"paid po-7\" ಎಂದು ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "received_part",
+   "text": "ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ po-7 (ಹೇರ್ ಕಲರ್) ನ 12 ರಲ್ಲಿ 4 ಬಂದಿದೆ. 8 ಬರಬೇಕಿದೆ. ಉಳಿದದ್ದು ಬಂದಾಗ \"received po-7 8\" ಎಂದು ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "received_wrong",
+   "text": "ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ po-7 (ಹೇರ್ ಕಲರ್) ಗೆ ತಪ್ಪು ಸರಕು ಬಂದಿದೆ. ಅದನ್ನು ಬಂದಿದೆ ಎಂದು ಎಣಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು Ravi Traders ಅವರೊಂದಿಗೆ ಮಾತನಾಡಿ: ನಾನು ಅವರಿಗೆ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "receive_too_many",
+   "text": "ನೀವು 13 ಎಂದು ಬರೆದಿದ್ದೀರಿ, ಆದರೆ ಆರ್ಡರ್ po-7 ನ 8 ಮಾತ್ರ ಬರಬೇಕಿದೆ. ಏನೂ ದಾಖಲಿಸಿಲ್ಲ. ನಿಜವಾಗಿ ಏನು ಬಂತು ಎಂದು ತಿಳಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "order_not_open",
+   "text": "ಆರ್ಡರ್ po-7 ಅನ್ನು ಈಗ ಹಾಗೆ ಬದಲಿಸಲಾಗದು: ಅದು sent, no answer yet.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "paid_outside_noted",
+   "text": "ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ po-7 ಗೆ ನೀವೇ ಈ ಚಾಟ್‌ನ ಹೊರಗೆ ಪಾವತಿಸಿದ್ದೀರಿ. ನಾನು ಏನನ್ನೂ ಪಾವತಿಸಿಲ್ಲ ಮತ್ತು ಪರಿಶೀಲಿಸಲೂ ಆಗದು: ಇದು ನಿಮ್ಮ ದಾಖಲೆ ಮಾತ್ರ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "cannot_change",
+   "text": "ಆರ್ಡರ್ po-7 ಈಗಾಗಲೇ ಒಪ್ಪಲಾಗಿದೆ, ಹಾಗಾಗಿ ಬದಲಿಸಲಾಗದು. ತಪ್ಪಿದ್ದರೆ Ravi Traders ಅವರಿಗೆ ನೇರವಾಗಿ ಹೇಳಿ, ನಂತರ ನನಗೆ ಹೊಸ ವಿನಂತಿ ಕಳುಹಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "cancelled",
+   "text": "ಆರ್ಡರ್ po-7 ರದ್ದಾಗಿದೆ. ಏನೂ ಕಳುಹಿಸಿಲ್ಲ, ಅದು ಮೀಸಲಿಟ್ಟ ಬಜೆಟ್ ಬಿಡುಗಡೆಯಾಗಿದೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "cannot_cancel",
+   "text": "ಆರ್ಡರ್ po-7 ಈಗಾಗಲೇ Ravi Traders ಅವರ ಬಳಿ ಇದೆ, ಹಾಗಾಗಿ ಇಲ್ಲಿಂದ ರದ್ದುಮಾಡಲಾಗದು. ದಯವಿಟ್ಟು ಅವರಿಗೆ ನೀವೇ ತಿಳಿಸಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "no_such_order",
+   "text": "ನನ್ನ ಬಳಿ ಆರ್ಡರ್ po-7 ಇಲ್ಲ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "ask_line",
+   "text": "ಹೇರ್ ಕಲರ್ ಅನ್ನು ಆರ್ಡರ್ ಮಾಡಲು ಒಂದಕ್ಕಿಂತ ಹೆಚ್ಚು ಮಾರ್ಗಗಳಿವೆ. ನಿಮ್ಮ ಅರ್ಥ ಯಾವುದು?",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "ask_qty",
+   "text": "Ravi Traders ಅವರಿಂದ ಹೇರ್ ಕಲರ್ ನ ಎಷ್ಟು ಬಾಕ್ಸ್ ಆರ್ಡರ್ ಮಾಡಲಿ? ಒಂದು ಸಂಖ್ಯೆ ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "item_unknown",
+   "text": "ಅದು ನಿಮ್ಮ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲ, ಹಾಗಾಗಿ ಏನೂ ಆರ್ಡರ್ ಮಾಡಿಲ್ಲ. ನಾನು ಆರ್ಡರ್ ಮಾಡಬಲ್ಲದ್ದು: hair colour, shampoo.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "blocked_supplier",
+   "text": "ಏನೂ ಆರ್ಡರ್ ಮಾಡಿಲ್ಲ: Ravi Traders ನಿಮ್ಮ ಒಪ್ಪಿದ ಪೂರೈಕೆದಾರರ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲ, ಅಥವಾ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಯಾರಿಗೂ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "blocked_cap",
+   "text": "ಏನೂ ಆರ್ಡರ್ ಮಾಡಿಲ್ಲ: 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), ಒಂದು ಬಾಕ್ಸ್ಗೆ ₹175.50, ಒಟ್ಟು ₹2,106 ಒಂದು ಆರ್ಡರ್‌ನ ₹12,000 ಮಿತಿಗಿಂತ ಹೆಚ್ಚು. ಕಡಿಮೆ ಆರ್ಡರ್ ಮಾಡಿ, ಅಥವಾ ಮಿತಿ ಬದಲಿಸಲು ನಿಮ್ಮ ಆಪರೇಟರ್‌ಗೆ ಹೇಳಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "blocked_budget",
+   "text": "ಏನೂ ಆರ್ಡರ್ ಮಾಡಿಲ್ಲ: ₹2,106 ಈ ತಿಂಗಳ (Nov 2026) ₹20,000 ಬಜೆಟ್‌ನಲ್ಲಿ ಉಳಿದಿರುವ ₹13,394 ಗಿಂತ ಹೆಚ್ಚು.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "blocked_qty",
+   "text": "ಏನೂ ಆರ್ಡರ್ ಮಾಡಿಲ್ಲ: 13 ಒಂದು ಆರ್ಡರ್‌ನ 200 ಕ್ಕಿಂತ ಹೆಚ್ಚು, ಇದು ಟೈಪಿಂಗ್ ತಪ್ಪಿನಂತೆ ಕಾಣುತ್ತದೆ. ದಯವಿಟ್ಟು ಸಂಖ್ಯೆಯನ್ನು ಮತ್ತೆ ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "already_open",
+   "text": "Ravi Traders ಅವರಿಂದ ಹೇರ್ ಕಲರ್ ಗಾಗಿ ಆರ್ಡರ್ po-7 ಈಗಾಗಲೇ ತೆರೆದಿದೆ, ಹಾಗಾಗಿ ಇನ್ನೊಂದನ್ನು ಮಾಡಿಲ್ಲ. ನೋಡಲು \"status\" ಎಂದು ಬರೆಯಿರಿ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "status",
+   "text": "ತೆರೆದ ಸ್ಟಾಕ್ ಆರ್ಡರ್‌ಗಳು:\npo-7: 12 × ಹೇರ್ ಕಲರ್ (ಬಾಕ್ಸ್), Ravi Traders ಅವರಿಂದ, ₹2,106, part received\nಈ ತಿಂಗಳು (Nov 2026) ನಿಮ್ಮ ₹20,000 ಬಜೆಟ್‌ನಲ್ಲಿ ₹4,500 ಮೀಸಲಿಡಲಾಗಿದೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "status_empty",
+   "text": "ತೆರೆದ ಸ್ಟಾಕ್ ಆರ್ಡರ್‌ಗಳಿಲ್ಲ. ಈ ತಿಂಗಳು (Nov 2026) ನಿಮ್ಮ ₹20,000 ಬಜೆಟ್‌ನಲ್ಲಿ ₹4,500 ಮೀಸಲಿಡಲಾಗಿದೆ.",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "didnt_understand",
+   "text": "ನಿಮಗೆ ಏನು ಬೇಕೆಂದು ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ಉದಾಹರಣೆಗೆ ಹೀಗೆ ಬರೆಯಬಹುದು: \"order 10 box hair colour from Ravi Traders\", \"received po-7\", \"paid po-7\" ಅಥವಾ \"status\".",
+   "check": "allow"
+  },
+  {
+   "language": "kn",
+   "id": "owner_message_held",
+   "text": "ಆರ್ಡರ್ po-7 ಬಗ್ಗೆ ಒಂದು ಸಂದೇಶ ನನ್ನ ದಾಖಲೆಗೆ ಹೊಂದದ ಕಾರಣ ತಡೆಹಿಡಿದಿದ್ದೇನೆ. ತಪ್ಪಾದದ್ದು ಏನೂ ಹೋಗಿಲ್ಲ. ದಯವಿಟ್ಟು ಆರ್ಡರ್ ನೋಡಿ.",
+   "check": "allow"
+  }
+ ],
+ "readings": [
+  {
+   "text": "order 10 boxes of hair colour from Ravi Traders",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 10,
+    "item": "hair-colour",
+    "supplier": "ravi-traders",
+    "unit": "box"
+   },
+   "qty": 10
+  },
+  {
+   "text": "order 10 hair colour",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 10,
+    "item": "hair-colour"
+   },
+   "qty": 10
+  },
+  {
+   "text": "shampoo from ravi is low",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "shampoo",
+    "supplier": "ravi-traders"
+   },
+   "qty": null
+  },
+  {
+   "text": "order hair oil from meena",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "item": "hair-oil",
+    "supplier": "meena-beauty"
+   },
+   "qty": null
+  },
+  {
+   "text": "received po-3",
+   "reading": {
+    "kind": "command",
+    "command": "receive",
+    "ref": "po-3"
+   },
+   "qty": null
+  },
+  {
+   "text": "received po-3 6",
+   "reading": {
+    "kind": "command",
+    "command": "receive",
+    "ref": "po-3",
+    "qty": 6
+   },
+   "qty": 6
+  },
+  {
+   "text": "wrong po-3",
+   "reading": {
+    "kind": "command",
+    "command": "wrong",
+    "ref": "po-3"
+   },
+   "qty": null
+  },
+  {
+   "text": "paid po-3",
+   "reading": {
+    "kind": "command",
+    "command": "paid",
+    "ref": "po-3"
+   },
+   "qty": null
+  },
+  {
+   "text": "cancel po-3",
+   "reading": {
+    "kind": "command",
+    "command": "cancel",
+    "ref": "po-3"
+   },
+   "qty": null
+  },
+  {
+   "text": "send po-3",
+   "reading": {
+    "kind": "command",
+    "command": "send",
+    "ref": "po-3"
+   },
+   "qty": null
+  },
+  {
+   "text": "change po-3 12",
+   "reading": {
+    "kind": "command",
+    "command": "change",
+    "ref": "po-3",
+    "qty": 12
+   },
+   "qty": 12
+  },
+  {
+   "text": "status",
+   "reading": {
+    "kind": "status"
+   },
+   "qty": null
+  },
+  {
+   "text": "what is open",
+   "reading": {
+    "kind": "status"
+   },
+   "qty": null
+  },
+  {
+   "text": "good morning",
+   "reading": {
+    "kind": "other"
+   },
+   "qty": null
+  },
+  {
+   "text": "order 5 soap",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 5
+   },
+   "qty": 5
+  },
+  {
+   "text": "order 10 boxes of hair colour from Sharma Stores",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 10,
+    "item": "hair-colour",
+    "unit": "box",
+    "unknownSupplier": "sharma stores"
+   },
+   "qty": 10
+  },
+  {
+   "text": "order 201 bottles of shampoo from ravi",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 201,
+    "item": "shampoo",
+    "supplier": "ravi-traders",
+    "unit": "bottle"
+   },
+   "qty": 201
+  },
+  {
+   "text": "send me 10 boxes of hair colour",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 10,
+    "item": "hair-colour",
+    "unit": "box"
+   },
+   "qty": 10
+  },
+  {
+   "text": "received",
+   "reading": {
+    "kind": "command",
+    "command": "receive"
+   },
+   "qty": null
+  },
+  {
+   "text": "monthly budget at most ₹15000",
+   "reading": {
+    "kind": "status"
+   },
+   "qty": null
+  },
+  {
+   "text": "order twelve towels from meena",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 12,
+    "item": "towel",
+    "supplier": "meena-beauty"
+   },
+   "qty": 12
+  },
+  {
+   "text": "order 1,000 towels",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 0,
+    "item": "towel"
+   },
+   "qty": 0
+  },
+  {
+   "text": "po 12 received 4",
+   "reading": {
+    "kind": "command",
+    "command": "receive",
+    "ref": "po-12",
+    "qty": 4
+   },
+   "qty": 4
+  },
+  {
+   "text": "हेयर कलर खत्म",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "hair-colour"
+   },
+   "qty": null
+  },
+  {
+   "text": "रवि से 10 डिब्बा हेयर कलर मंगाओ",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 10,
+    "item": "hair-colour",
+    "unit": "box"
+   },
+   "qty": 10
+  },
+  {
+   "text": "ഷാംപൂ തീർന്നു",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "shampoo"
+   },
+   "qty": null
+  },
+  {
+   "text": "ಶಾಂಪೂ ಮುಗಿದಿದೆ",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "shampoo"
+   },
+   "qty": null
+  },
+  {
+   "text": "order ₹450 hair colour 3 box",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 3,
+    "item": "hair-colour",
+    "unit": "box"
+   },
+   "qty": 3
+  },
+  {
+   "text": "order 10.5 towels",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "item": "towel"
+   },
+   "qty": null
+  },
+  {
+   "text": "order 2x towels",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 2,
+    "item": "towel"
+   },
+   "qty": 2
+  }
+ ]
+}

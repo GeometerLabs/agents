@@ -1,6 +1,6 @@
-package listings
+package stock
 
-// Tests of what the contract cannot reach in a short run: the daily tidy and the prune of old keys (they depend on days passing), the keys keeping their order through a read and a
+// Tests of the one stock count (moved here from internal/listings with the count itself, 22 Nov 2026): what the contract cannot reach in a short run: the daily tidy and the prune of old keys (they depend on days passing), the keys keeping their order through a read and a
 // write of a state the TypeScript runtime wrote, and an alias naming a line.
 
 import (
@@ -27,7 +27,7 @@ func TestStockRoundTripKeepsTypeScriptsMembersAndKeyOrder(t *testing.T) {
 	if n, ok := st.Count("l-1"); !ok || n != 3 {
 		t.Fatalf("count by id: %d %v", n, ok)
 	}
-	if st.lineOf("menu:kit") == nil {
+	if st.LineOf("menu:kit") == nil {
 		t.Fatal("an alias names its line")
 	}
 }
@@ -38,10 +38,10 @@ func TestTidyForgetsOldKeysAndAlerts(t *testing.T) {
 	st.Fix()
 	st.Tidy(1500 + AppliedKeptMs)
 	l := st.Lines[0]
-	if _, ok := l.Applied.get("sale:o-9:listing:l-1"); ok {
+	if _, ok := l.Applied.Get("sale:o-9:listing:l-1"); ok {
 		t.Fatal("a key older than 120 days stays")
 	}
-	if _, ok := l.Applied.get("delivery:p-1"); !ok {
+	if _, ok := l.Applied.Get("delivery:p-1"); !ok {
 		t.Fatal("a younger key went")
 	}
 	if len(st.Alerts) != 0 {
@@ -49,11 +49,11 @@ func TestTidyForgetsOldKeysAndAlerts(t *testing.T) {
 	}
 	var fresh Stock
 	_ = json.Unmarshal([]byte(tsStock), &fresh)
-	fresh.Tidy(5 + 30*Day - 1)
+	fresh.Tidy(5 + 30*day - 1)
 	if len(fresh.Alerts) != 1 {
 		t.Fatal("an alert just under 30 days old went")
 	}
-	fresh.Tidy(5 + 30*Day)
+	fresh.Tidy(5 + 30*day)
 	if len(fresh.Alerts) != 0 {
 		t.Fatal("an alert 30 days old stays")
 	}
@@ -64,8 +64,8 @@ func TestTidyForgetsOldKeysAndAlerts(t *testing.T) {
 }
 
 func TestPruneDropsOnlyOldKeysPastTheCapOldestFirst(t *testing.T) {
-	l := StockLine{Applied: appliedMap{m: map[string]Applied{}}}
-	now := int64(1000 * Day)
+	l := Line{Applied: appliedMap{m: map[string]Applied{}}}
+	now := int64(1000 * day)
 	for i := 0; i < MaxApplied+3; i++ {
 		l.Applied.set("k"+string(rune('a'+i%26))+string(rune('a'+i/26%26))+string(rune('a'+i/676)), Applied{AtMs: now - SafeKeepMs - int64(i)*1000})
 	}
@@ -73,12 +73,12 @@ func TestPruneDropsOnlyOldKeysPastTheCapOldestFirst(t *testing.T) {
 	if len(l.Applied.keys) != MaxApplied {
 		t.Fatalf("kept %d, want %d", len(l.Applied.keys), MaxApplied)
 	}
-	if _, gone := l.Applied.get("kaaa"); !gone {
+	if _, gone := l.Applied.Get("kaaa"); !gone {
 		// the oldest are the ones with the largest i: the first key stays
 		t.Fatal("the newest of the old keys was dropped")
 	}
 	// keys younger than the safe horizon are never dropped, even past the cap
-	l2 := StockLine{Applied: appliedMap{m: map[string]Applied{}}}
+	l2 := Line{Applied: appliedMap{m: map[string]Applied{}}}
 	for i := 0; i < MaxApplied+3; i++ {
 		l2.Applied.set(string(rune(0x4e00+i)), Applied{AtMs: now})
 	}
@@ -89,8 +89,8 @@ func TestPruneDropsOnlyOldKeysPastTheCapOldestFirst(t *testing.T) {
 }
 
 func TestRestoreAfterYesOnlyAtZero(t *testing.T) {
-	st := NewStock()
-	st.start(StockOp{Op: "start", ID: "listing:l-1", Count: 0}, 1)
+	st := New()
+	st.Start(Owner("owner"), "listing:l-1", StartInput{Count: 0}, 1)
 	if st.RestoreAfterYes("l-2", 0, "c-1", 2) {
 		t.Fatal("an uncounted listing was set")
 	}

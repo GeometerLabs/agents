@@ -818,3 +818,35 @@ after the merge); `go build`, `go vet ./...`, `go test ./...` pass (30 packages)
 held buttons cases included); listings contract 200 of 200; the changed modules' unit tests 296 of 296; Orders' and Fees' accounting-figures, Fees' classes and the channels tests
 68 of 68; Bookings' unit tests 947 of 949 (one skipped; `sample-report.test.ts` fails the same way at the base ead21fd8, the same code 192V-X9KH: the committed sample predates
 main's 21 Nov price list, so it is not this stream's).
+## Wave 2: Stock orders on Go (22 Nov 2026, `go-w5-stock-22nov`, stream W5)
+
+**The contract first.** `templates/commerce/stock-orders/contract/` (README there): 59 tests in 8 files, black-box over HTTP and agent.db, in front of a recording WhatsApp
+Guard over the shared stand-in (guards mode, the real clock) or on the runtime's own stand-in with the test clock (fakes mode). Green on TypeScript: **57 pass, 2 skipped**
+(the cross-restart pair, which needs the Go binary). `server/main.ts` took the same test-clock seam Bookings' has (nothing changes without the two variables).
+
+**The shared stock count** is its own package, `internal/stock` (modules/stock/stock.ts whole), moved out of `internal/listings` (which keeps aliases, so the runtime's call sites
+did not change) and proved on vectors made by running the TypeScript (`scripts/gen_stock_vectors.ts`, in words-fresh). Orders (W4) uses `Sale`, `ReconcileSales`,
+`UnbookedHolds` and `LeftFor` from it.
+
+**The template**: `internal/stockorders` and `cmd/stock-orders` (Explanation.md there). Shared changes, all additions (`internal/runtime/kitstock.go`): a Kit's agent that is
+an `AfterSaver` is called after the step's save on every step and beat (core.ts `agent.sendOnce.run`), unless the licence is in its final stop; a Kit that is a `StockKit` gets
+the owner's Stock page (its items after the shop's listings) and its `owner_stock` events run in the step (Bookings is not one: 404 and dropped, as before);
+`Snap.EnsureAssistant`, `Snap.EnsureStock`, `StepContext.LooksLikeLimitRule`.
+
+**End of the stream (main with streams A and B merged in, one pass through the heat lock):** the contract is now 62 tests (the assistant's three added): TypeScript **62 of 62**, Go **61 of 62** (only the monthly report, not ported); listings contract on Go 203 of 203 (words-fresh with the three Stock orders checks); `go vet ./...` clean, `go test ./...` 31 packages ok, none failing; Bookings on Go 149 of 149 after stream A's merge (not run again after stream B's).
+
+**Earlier, on Go: 58 of 59** (`STOCK_ORDERS_IMPL=go STOCK_ORDERS_GO_BIN=go/bin/stock-orders node --test --test-concurrency=1 templates/commerce/stock-orders/contract/`, through the
+heat lock), the cross-restart pair included (a shop moved TypeScript to Go and Go to TypeScript keeps its orders field for field, its open card, its record and its counter).
+The one that fails is the monthly report: `report/` is not ported (Deferred.md of internal/stockorders), so a Go shop with a `report` block makes none.
+
+Not done, with the reason in `internal/stockorders/Deferred.md`: the monthly report and the go-live certificate; the `assistant` block's own sentences; settings vectors (the
+sentences are copied from settings.ts); the assistant's talk reads, open list and routing words, and the morning line over Stock orders; the owner's push; waiting for a Guard
+that is down inside a step. TypeScript was not changed in behaviour: `server/main.ts` gained the test-clock seam, `src/reading.ts` exports its two word lists for the generator.
+
+TypeScript findings (nothing was changed):
+- A message to the owner OUTSIDE their 24-hour window that has no WhatsApp template of its own (the supplier asked for no more messages, a card ran out, a delivery marked, ...)
+  goes as the generic `stock_owner_notice` with no parameters; a provider that knows only the real templates refuses it, so the owner is not told. Only the card, the supplier's
+  OK, no and silence have templates (meta-templates.ts).
+- `lowStockTick` says "X is low (n left). Order from Y?" only because `pendingAlerts` returns the queue's own alert objects, so `noteAsked` has already counted the question
+  when `a.asked === 1` is read. A copy there would silently drop the line; Go reads the count `noteAsked` returns.
+- A Stock orders monthly report writes the report, its page and the owner's lines, and no monthly certificate (the go-live certificate is separate): different from Bookings.
