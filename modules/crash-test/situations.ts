@@ -1,6 +1,9 @@
 // The frame of a crash test, for every template. A situation starts a fresh world, makes something go wrong on purpose, and then JUDGES FROM THE STAND-INS' OWN
 // RECORDS: what the payments service holds, what the messaging outbox holds. It never judges from what the agent said it did. The situations themselves are each
 // template's (Bookings: a calendar that saves nothing; Fees: a payment event that arrives twice). The frame is the same, and so is the hand check that prints it.
+// Since 24 Nov 2026 each situation runs on the shop's own Go program (modules/crash-test/go-shop.ts): every world a situation opens is closed when it ends.
+import { closeOpened, goProgram } from "./go-shop.ts";
+import type { ProgramRan } from "./go-shop.ts";
 
 export interface CheckResult { label: string; passed: boolean; detail: string }
 
@@ -25,8 +28,11 @@ export interface SituationResult {
   checks: CheckResult[];
 }
 
-/** What a run on one shop's settings did: the situations that ran, and the ones that could not be run on these settings. */
-export interface HandCheckRun<Settings = unknown> { results: SituationResult[]; skipped: Skipped[]; settings: Settings }
+/**
+ * What a run on one shop's settings did: the situations that ran, the ones that could not be run on these settings, and the program they ran on (left out when none could
+ * run because the program is not there: then `skipped` says so, and the gate refuses a run with nothing in it).
+ */
+export interface HandCheckRun<Settings = unknown> { results: SituationResult[]; skipped: Skipped[]; settings: Settings; program?: ProgramRan }
 
 /** Run one situation. An exception inside the agent counts as a failure, not a crash of the check. */
 export async function runSituation(situation: Situation): Promise<SituationResult> {
@@ -35,8 +41,20 @@ export async function runSituation(situation: Situation): Promise<SituationResul
     checks = await situation.run();
   } catch (e) {
     checks = [{ label: "The agent kept going without an error", passed: false, detail: (e as Error).stack?.split("\n").slice(0, 3).join(" ") ?? String(e) }];
+  } finally {
+    await closeOpened();
   }
   return { situation, held: checks.length > 0 && checks.every((c) => c.passed), checks };
+}
+
+/**
+ * Run the situations on the shop's own Go program `name` (go/cmd/<name>), which serves template version `version`. A program that is not on this machine runs nothing: every
+ * situation is listed as not run with that reason, never passed and never run on anything else.
+ */
+export async function runOnProgram<Settings>(name: string, version: string, build: () => { situations: Situation[]; skipped: Skipped[] }, settings: Settings): Promise<HandCheckRun<Settings>> {
+  const program = goProgram(name);
+  if (!program.ok) return { results: [], skipped: [{ id: "all", title: "Every situation", reason: program.reason }], settings };
+  return { ...(await runAllSituations(build(), settings)), program: { name, version, sha256: program.sha256 } };
 }
 
 /** Run every built situation in order. */
