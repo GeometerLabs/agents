@@ -1,9 +1,7 @@
 # internal/orders: the Orders shop on Go (the skeleton, wave W4 part G1)
 
-The Go twin of `templates/commerce/orders`, modelled module for module on `internal/bookings`. This part is the skeleton the agent (G2) and the plans, assistant and report
-wiring (G3) build on: the settings, the store, the reads worked out from the orders, the books, the channel's reads, the Kit and the command. The agent is a stand-in
-(`agent.go`): every event and beat ends with `runtime.Unported` and its sentence, so the shop starts, answers `/healthz`, `/status` and its channel reads, and its queue says
-honestly that nothing was handled.
+The Go twin of `templates/commerce/orders`, modelled module for module on `internal/bookings`. Part G1 is the skeleton (the settings, the store, the reads worked out from the
+orders, the books, the channel's reads, the Kit and the command); part G2 is the agent (`agent*.go`, `limits.go`, below); the plans and the assistant (G3) fill the agent's two seams.
 
 ## The map, file by file
 
@@ -18,7 +16,7 @@ honestly that nothing was handled.
 | `channel.go` | `src/channel.ts` | `OrderOffer`, `OrderView`, `OwnerItems`, `OwnerView`, `DocumentsOf`, `ExportFilesOf`, `ChatWork` |
 | `orders.go` | `server/runtime.ts` | the `Kit` (runtime.Kit, ChannelKit, AccountantFiler, ChannelStater), `Limits`, `RefundContext`, `CompactStore` |
 | `ports.go` | `server/services.ts` | `Ports`, `BuildPorts`, `TemplateNames` |
-| `agent.go` | `src/agent.ts` | the stand-in agent (G2 replaces it) |
+| `agent*.go`, `limits.go` | `src/agent.ts`, `src/limits.ts` | the agent: see "The agent" below |
 | `../../cmd/orders/main.go` | `server/main.ts`, `start.ts` | one shop, copied from cmd/bookings less the calendar |
 
 ## What G2 and G3 call
@@ -71,3 +69,29 @@ The owner's codes are random in the TypeScript; the generator counts them instea
 A missing key and a null are told apart by `has` (`??` versus `=== undefined`); keys are listed in the file's order (`keyOrder`); typed text goes into a sentence as it is
 (`jsQuote` is JSON.stringify of a string, never `%q`); JSON is written without HTML escaping (`jsonOf`); `Math.round` of the minutes left is floor(x + 0.5); `Number.isInteger`
 is any finite whole double (1e21 is said "1e+21"); a time zone "" or "Local" is refused (Go would read both as zones).
+
+## The agent (wave W4 part G2)
+
+`agent*.go` are the Go twin of `src/agent.ts` and `src/limits.ts`, in agent.ts's order of sections and of checks, modelled on `internal/bookings/agent*.go`:
+
+| Go file | agent.ts | What |
+| --- | --- | --- |
+| `agent.go` | `createAgent`, `handle`, `giveUp`, `onChatMessage` | the step's agent: the watched services, the ledger, say and refunds made once; the limits in force laid over the settings (the big-order line, the refund limit, the day's count); the events by kind; `wait_over` |
+| `agent_watch.go` | `modules/runtime/guard-wait.ts` | every Guard call watched (Bookings' copy, less the calendar) |
+| `agent_say.go` | "saying things", push.ts, outbox.ts | the offers, the facts (`Settings.FactsFor` with agent.ts's extras), the generated words, the gates (confirmed only when recorded, the final stop, the chat's ping cap), the owner's route, a page's outbox, the QR picture's send |
+| `agent_flow.go` | the order, the hold and the advance, STOP, a voice note, `onMessage` | the reader over `internal/orders/reading` (rules, then the router), `fill`, the slot a time means, `availability` (cut-off, the day's stock, the shelf count, the day's cap, a slot's own limit), `proceed`, the big-order line, `proceedToHold` (the chat guests' cap, the hold, the link, the UPI request, its QR and the owner's note), the address, yes and no |
+| `agent_money.go` | refunds, "the advance", `onPaymentEvent`, the licence, `reconcileStock`, `onTick`, `onRecovery`, the plans' payment paths | the money lines through `OrdersAccounting`, the reminder (reminders.ts), the settlement read once a day, `askPlanPayment`, `refundPlanCredit`, `planApplied` |
+| `agent_marks.go` | the owner-marked money | marks, late marks, refunds owed, claims, the owner's replies, asking again, reminders |
+| `agent_owner.go` | cancelling, the owner's answers, the balance | the window, the late cancellation's ask, the handover code, the terms, `balance o-N cash/upi/link`, approve and deny; the balance and reminders blocks written in the TypeScript's spread order |
+| `agent_channel.go` | the page's requests, the owner's page | the problems before anything is held, the per-number and per-shop limits, the owner's presses by digest |
+| `agent_talk.go` | `assistant?.talkToCustomer`, assistant.ts `publicContext` | the customer's talk where nothing else answers (a shop with an `assistant` block) |
+| `agent_after.go` | `server/licence.ts`, `report/monthly-job.ts`, config.ts `readReport` | the licence notice and the monthly report after the beat; the `report` block |
+| `agent_mode.go` | reader.ts `announceButtonMode` | the AI mode's lines and the owner's notices |
+| `agent_seams.go` | `createPlans`, `assistantForAgent` | the two seams G3 fills (below) |
+| `limits.go` | `src/limits.ts` | every Orders limit, word for word |
+
+**The seams for G3** (`agent_seams.go`): `newPlans func(a *Agent) Plans` (the `Plans` interface: `OnMessage`, `AwaitingOrderOf`, `OnPaid`, `OnTick`) and `assistantFor func(a *Agent) *runtime.Assistant`. Both nil
+until set; the agent calls them at agent.ts's places. The paths a plan is handed are the agent's own methods (`askPlanPayment`, `refundPlanCredit`, `planApplied`, `qrOf`,
+`reconcilePayments`, `cancelWaiting`, `log`, `tellCustomer`, `tellOwner`, `sayOpts.facts` for the plan facts). The morning line goes at the end of `AfterTick`.
+
+`cmd/orders` wires the reader (`runtime.RouterFor` over `ReadingOf`), the terms, voice, the monthly report and a UPI shop's QR pictures (into the report's pages folder, as start.ts).

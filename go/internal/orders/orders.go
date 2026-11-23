@@ -12,9 +12,14 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/listings"
+	"github.com/GeometerLabs/agents/go/internal/orders/reading"
 	"github.com/GeometerLabs/agents/go/internal/payments"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/terms"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
+	"github.com/GeometerLabs/agents/go/internal/voice"
 )
 
 // Pathway and Version are what an Orders folder's pathway.lock must name: the number in templates/commerce/orders/package.json (the contract suite pins a folder to it).
@@ -42,8 +47,31 @@ type Kit struct {
 	// assistant.
 	OfferCharacter func(st *Store) json.RawMessage
 	OwnerApp       func(st *Store, sn *runtime.Snap) json.RawMessage
+	// Router reads a customer's words past the rules (the decision model and the language model, runtime.RouterFor over internal/orders/reading); nil: the rules alone.
+	Router *understanding.Router[reading.Intent]
+	// Terms is the shop terms now (B72: client/terms.json, terms.NewReader); nil, or a nil answer: the feature is off.
+	Terms func() *terms.File
+	// Voice is the shop's voice service (runtime.json `speech`, internal/voice); nil: voice is off, and a voice note gets the one line asking to type.
+	Voice *voice.Service
+	// QRImage makes and hosts the QR picture of a UPI request's link (an owner-marked shop with a `report` block: start.ts folderQrImages into its pages folder); nil: the words
+	// carry the link, the UPI ID and the amount.
+	QRImage ownermarked.ImageMaker
+	// Report is the monthly report job (agent_after.go), made once per process from runtime.json's `report` block; nil: the shop has none. reportErr and reportErrAt are core.ts
+	// lastReportError: a report that cannot be made is said once, and again each hour it goes on.
+	Report      *MonthlyReport
+	reportErr   string
+	reportErrAt int64
 	// shared is the part of the settings every shop has (the assistant's character), kept for the assistant's views
 	shared *runtime.Settings
+	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.
+	given map[string]bool
+}
+
+func (k *Kit) givenUp() map[string]bool {
+	if k.given == nil {
+		k.given = map[string]bool{}
+	}
+	return k.given
 }
 
 var _ runtime.Kit = (*Kit)(nil)

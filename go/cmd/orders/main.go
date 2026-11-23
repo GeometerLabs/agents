@@ -8,8 +8,9 @@
 // Press Ctrl+C (or send SIGTERM) to stop: the step in hand finishes and the store is closed.
 //
 // What is wired here: the settings, the store, the payments and WhatsApp (built from runtime.json as internal/orders/ports.go says: a UPI shop's owner-marked ledger needs no
-// Guard), the owner's messages by WhatsApp, push or both, the page's address, the saved stock count for the page's offer, and the licence. The agent itself, the shop terms, voice,
-// the reader of customers' words, the monthly report and the assistant are the next parts of wave W4 (internal/orders Deferred.md).
+// Guard), the owner's messages by WhatsApp, push or both, the page's address, the saved stock count for the page's offer, the licence, the monthly report and a UPI shop's QR
+// pictures (runtime.json `report`), the shop terms, voice (`speech`) and the reader of customers' words (`decision`, `parser`). The assistant and the monthly plans are the next
+// part of wave W4 (internal/orders Deferred.md).
 package main
 
 import (
@@ -26,10 +27,14 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/health"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/orders"
+	"github.com/GeometerLabs/agents/go/internal/orders/reading"
+	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/terms"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
 	"github.com/GeometerLabs/agents/go/internal/understanding"
+	"github.com/GeometerLabs/agents/go/internal/voice"
 )
 
 func main() {
@@ -134,6 +139,29 @@ func run(folder string) error {
 		return p.Choice()
 	}
 	kit.Ports = ports
+	// the monthly report (report/monthly-job.ts) from runtime.json's `report` block; a UPI shop's QR pictures go into the folder its pages are served from (start.ts folderQrImages)
+	if setup, err := orders.ReportSetupOf(client.Config, client.Folder, kit.Settings, log); err != nil {
+		return err
+	} else if setup != nil {
+		kit.Report = orders.NewMonthlyReport(*setup, ports.WhatsApp)
+		if kit.Settings.OwnerMarked() {
+			kit.QRImage = ownermarked.FolderImages(setup.PagesDir, setup.PagesBaseURL, log)
+		}
+	}
+	// B72: the shop terms, read from the client folder again whenever the file changes; no file: the feature is off
+	kit.Terms = terms.NewReader(client.Folder)
+	// B29: the shop's voice service, from runtime.json `speech` (internal/voice); left out, voice is off and a voice note gets the one line asking to type
+	if raw, ok := client.Config.Raw["speech"]; ok {
+		c, problems := voice.Read(raw, client.Folder)
+		if len(problems) > 0 {
+			return runtime.ClientError{Msg: "runtime.json: " + strings.Join(problems, " ")}
+		}
+		if kit.Voice, err = voice.Build(c, kit.Settings.Languages, now, log); err != nil {
+			return runtime.ClientError{Msg: err.Error()}
+		}
+	}
+	// how the shop reads a customer's words past the rules (the decision model and the language model of runtime.json), over internal/orders/reading
+	kit.Router = runtime.RouterFor[reading.Intent](&client.Config, orders.ReadingOf(kit.Settings), log)
 	// item 11h: where an order's own page lives, read fresh from the deployer's pages.json (start.ts pageBase: the pages domain's address, else this server's)
 	kit.PageBase = func() string {
 		p := access.ReadPages(filepath.Join(client.Folder, access.PagesFile))
