@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/guard"
 	"io"
 	"math"
 	"net/http"
@@ -94,7 +95,7 @@ func NewSystemOne(c *DecisionConfig) *SystemOne {
 	if kind == "" {
 		kind = "system-one"
 	}
-	return &SystemOne{Kind: kind, Model: c.Model, url: url, key: key, timeoutMs: t, client: &http.Client{}}
+	return &SystemOne{Kind: kind, Model: c.Model, url: url, key: key, timeoutMs: t, client: guard.HTTPClient(nil, 0)}
 }
 
 // Decide asks the choice questions about `state`. The error is a few plain words (never what the model said, a key or the message).

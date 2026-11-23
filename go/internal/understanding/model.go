@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/guard"
 	"io"
 	"net/http"
 	"net/url"
@@ -119,7 +120,7 @@ func providerOf(cfg ModelConfig) string {
 // maxTokens are the use's defaults, used where the config gives none. client nil is a plain one.
 func Open(cfg ModelConfig, bearer string, client *http.Client, timeoutMs, maxTokens int) *Model {
 	if client == nil {
-		client = &http.Client{}
+		client = guard.HTTPClient(nil, 0) // held to this machine in the hand check's shop (guard/loopback.go); as a plain client otherwise
 	}
 	m := &Model{Cfg: cfg, bearer: bearer, client: client, Provider: providerOf(cfg)}
 	if m.Cfg.TimeoutMs <= 0 {

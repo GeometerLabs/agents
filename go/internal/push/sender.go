@@ -87,7 +87,7 @@ func NewSender(o SenderOptions) *Sender {
 		o.Log = func(string) {}
 	}
 	if o.Client == nil {
-		o.Client = &http.Client{Timeout: 20 * time.Second}
+		o.Client = guard.HTTPClient(nil, 20*time.Second) // held to this machine in the hand check's shop (guard/loopback.go)
 	}
 	if o.Every == 0 {
 		o.Every = 15 * time.Second

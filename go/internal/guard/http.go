@@ -79,7 +79,7 @@ func New(baseURL, what string, timeoutMs int, agentToken string) (*Client, error
 		timeoutMs = DefaultTimeoutMs
 	}
 	// no keep-alive: net/http would quietly send a GET again on a cut connection, and a call that may have happened must be seen to have failed once
-	return &Client{BaseURL: baseURL, What: what, Timeout: time.Duration(timeoutMs) * time.Millisecond, AgentToken: agentToken, HTTP: &http.Client{Transport: &http.Transport{DisableCompression: true, DisableKeepAlives: true, Proxy: nil}}}, nil
+	return &Client{BaseURL: baseURL, What: what, Timeout: time.Duration(timeoutMs) * time.Millisecond, AgentToken: agentToken, HTTP: HTTPClient(&http.Transport{DisableCompression: true, DisableKeepAlives: true, Proxy: nil}, 0)}, nil
 }
 
 // CheckBaseURL is http.ts checkBaseUrl.
