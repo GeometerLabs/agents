@@ -30,6 +30,7 @@ import { screen } from "../chat-screens.ts";
 import { LANGUAGES } from "../../language/languages.ts";
 import { prepareGuestMessage } from "../../assistant/wire.ts";
 import { readOwnerRules } from "../../assistant/intents.ts";
+import { fileURLToPath } from "node:url";
 
 const TZ = "Asia/Kolkata";
 const NOW = Date.UTC(2026, 10, 17, 6, 0);
@@ -130,7 +131,7 @@ test("each signboard paint is Streetlist's own and its text colour passes AA (4.
   assert.deepEqual(PAINT_IDS, ["pink", "blue", "green", "marigold", "brick"]);
   // Streetlist's stylesheet is another repository: compared when this checkout sits beside it (the lead's machine), skipped otherwise
   let site = "";
-  try { site = readFileSync(process.env.STREETLIST_CSS ?? "../streetlist/src/styles/site.css", "utf8"); } catch { /* not beside this checkout */ }
+  try { site = readFileSync(process.env.STREETLIST_CSS ?? fileURLToPath(new URL("../../../../streetlist/src/styles/site.css", import.meta.url)) /* the checkout beside agents */, "utf8"); } catch { /* not beside this checkout */ }
   for (const id of PAINT_IDS) {
     const { hex, ink } = PAINTS[id];
     assert.ok(contrastRatio(hex, ink) >= 4.5, `${id}: ${contrastRatio(hex, ink).toFixed(2)}`);

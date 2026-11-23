@@ -5,11 +5,12 @@
 import { existsSync } from "node:fs";
 import { startRealGuard as start } from "../agent/guard-process.ts";
 import type { RealGuard, RealGuardOptions } from "../agent/guard-process.ts";
+import { fileURLToPath } from "node:url";
 
 export { credential } from "../agent/guard-process.ts";
 export type { RealGuard } from "../agent/guard-process.ts";
 
-export const BINARY = process.env.GEO_GUARD_BIN ?? "../monorepo/target/debug/geo-guard";
+export const BINARY = process.env.GEO_GUARD_BIN ?? fileURLToPath(new URL("../../../monorepo/target/debug/geo-guard", import.meta.url)) /* the checkout beside agents */;
 export const haveBinary = existsSync(BINARY);
 export const skipWithoutBinary: string | false = haveBinary ? false : `needs the built geo-guard binary, which is not at ${BINARY} (build it in the monorepo, or set GEO_GUARD_BIN); these tests run the real Guard`;
 

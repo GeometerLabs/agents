@@ -39,6 +39,7 @@ import { fakeClock } from "../../../../modules/core/clock.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import type { Payments } from "../../../../modules/payments/payments.ts";
 import { agentRuntime, countRefunds, inProcessRuntimeClient } from "../../../../modules/test/agent-runtime.ts";
+import { fileURLToPath } from "node:url";
 
 /** What the Orders runtime's /internal/refund-context answered for a held refund (the Go runtime's answer is held by contract/money.contract.test.ts): the order behind it. */
 function ordersRefundContext(settings: Settings, store: Store, receipt: string): RefundContext | null {
@@ -69,7 +70,7 @@ function ordersAgent(settings: Settings, payments: Payments) {
   return { clock, messaging, runtime, say, client: inProcessRuntimeClient(runtime, (receipt) => ordersRefundContext(settings, store, receipt)) };
 }
 
-const BINARY = process.env.GEO_GUARD_BIN ?? "../monorepo/target/debug/geo-guard";
+const BINARY = process.env.GEO_GUARD_BIN ?? fileURLToPath(new URL("../../../../../monorepo/target/debug/geo-guard", import.meta.url)) /* the checkout beside agents */;
 const skip = existsSync(BINARY) ? false : `needs the built geo-guard binary, which is not at ${BINARY} (build it in the monorepo, or set GEO_GUARD_BIN); these tests run the real Guard`;
 
 const freePort = () => new Promise<number>((resolve, reject) => { const s = createServer(); s.once("error", reject); s.listen(0, "127.0.0.1", () => { const { port } = s.address() as { port: number }; s.close(() => resolve(port)); }); });

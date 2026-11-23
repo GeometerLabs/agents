@@ -47,10 +47,11 @@ import type { Runner } from "../../lib/runner.ts";
 import { TEST_PRIVATE_PEM, TEST_PUBLIC_HEX, signTest } from "../licence-helpers.ts";
 import { collect as collectProvenance } from "./provenance.ts";
 import { AGENT_INDEX, AGENT_NAME, OWNER, UPI_AGENT_INDEX, UPI_AGENT_NAME, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
+import { fileURLToPath } from "node:url";
 
 const APP = new URL("../../../", import.meta.url).pathname.replace(/\/$/u, "");
 const EXAMPLE = join(APP, "templates/commerce/bookings/clients/glow-salon.example");
-const MONOREPO = process.env.GEOMETER_MONOREPO ?? "../monorepo";
+const MONOREPO = process.env.GEOMETER_MONOREPO ?? fileURLToPath(new URL("../../../../monorepo", import.meta.url)) /* the checkout beside agents */;
 const SCRATCH = process.env.PROOF_DIR ?? mkdtempSync(join(tmpdir(), "geometer-proof-"));
 const GUARD_IMAGE = process.env.GUARD_IMAGE ?? "geo-guard:local-b14";
 const args = process.argv.slice(2);

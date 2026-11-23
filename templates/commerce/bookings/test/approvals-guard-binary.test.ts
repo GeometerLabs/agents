@@ -29,8 +29,9 @@ import { openRelayStore } from "../../../../modules/approvals/store.ts";
 import { bookingsAgent as agentWith } from "./helpers/approvals-world.ts";
 import { createHmac, randomUUID } from "node:crypto";
 import { GuardDeniedError, GuardHeldError } from "../../../../modules/core/faults.ts";
+import { fileURLToPath } from "node:url";
 
-const BINARY = process.env.GEO_GUARD_BIN ?? "../monorepo/target/debug/geo-guard";
+const BINARY = process.env.GEO_GUARD_BIN ?? fileURLToPath(new URL("../../../../../monorepo/target/debug/geo-guard", import.meta.url)) /* the checkout beside agents */;
 const skip = existsSync(BINARY) ? false : `needs the built geo-guard binary, which is not at ${BINARY} (build it in the monorepo, or set GEO_GUARD_BIN); these tests run the real Guard`;
 
 const freePort = () => new Promise<number>((resolve, reject) => { const s = createServer(); s.once("error", reject); s.listen(0, "127.0.0.1", () => { const { port } = s.address() as { port: number }; s.close(() => resolve(port)); }); });
