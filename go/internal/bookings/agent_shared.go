@@ -27,6 +27,12 @@ func (w *Watch) Payments(p payments.Payments) payments.Payments { return wPaymen
 // Messaging is WhatsApp with every call watched (the optional methods kept where the wrapped value has them).
 func (w *Watch) Messaging(m messaging.Messaging) messaging.Messaging { return watchedMessaging(w.w, m) }
 
+// Do runs one call of a service through the watch (method is guard-wait.ts's name for it: a read, a call found again on a rerun, or one-time), for a call that is not one of
+// the Payments or Messaging methods (Orders' settlement read, 23 Nov 2026).
+func (w *Watch) Do(service, method string, call func() error) error {
+	return w.w.do(service, method, call)
+}
+
 // Decide is core.ts step's decision after the agent returned (agent_watch.go finish, for an agent that is not Bookings'): keep waiting (a *runtime.WaitingForGuard), end the task
 // (a *runtime.EndTask with `taken`), give up quietly (giveUp names the service: the caller writes the owner's to-do line with tell false and the step is saved), or go on.
 func (w *Watch) Decide(task string, lastTry bool, givenUp map[string]bool, thrown error, taken runtime.KitState) (err error, giveUp string) {

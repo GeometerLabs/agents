@@ -513,13 +513,13 @@ function policies(): unknown {
   const raw = { ...rawAnnapurna, name: "  Annapurna Tiffins  " };
   const rawText = JSON.stringify(raw);
   const validated = parseSettings(JSON.parse(rawText));
-  // a settings tree with no payment block: policyOf cannot be made (the TypeScript reads payment.module), but the "not tested" list and the provider's capabilities can
+  // a settings tree with no payment block (never a validated one): its policy digest names a null module (policyOf, 23 Nov 2026), the "not tested" list is Razorpay's
   const noPayment = { ...asJson(gateway) } as Record<string, unknown>; delete noPayment.payment;
   const unknownModule = { ...asJson(gateway), payment: { module: "somewhere-else" } };
   return {
     rows, checkedPolicyDigest: checkedPolicyDigest(),
     raw: { text: rawText, validated: asJson(validated), validatedDigest: policyDigest(validated), rawDigest: policyDigest(JSON.parse(rawText) as Settings) },
-    noPayment: { settings: noPayment, confirmsAutomatically: capabilitiesOf(undefined).confirmsAutomatically, notTested: notTestedOf(noPayment as never).map((n) => n.id) },
+    noPayment: { settings: noPayment, digest: policyDigest(noPayment as never), confirmsAutomatically: capabilitiesOf(undefined).confirmsAutomatically, notTested: notTestedOf(noPayment as never).map((n) => n.id) },
     unknownModule: { settings: unknownModule, confirmsAutomatically: capabilitiesOf(unknownModule.payment as never).confirmsAutomatically, notTested: notTestedOf(unknownModule as never).map((n) => n.id) },
   };
 }

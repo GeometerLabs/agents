@@ -28,7 +28,7 @@ import { allSlots, itemName, itemOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import { isChatConversation } from "../../../../modules/channels/conversation.ts";
 import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
-import { countedLeft, fixSlot, ordersInSlot, ordersOn, takenOf } from "./order.ts";
+import { countedLeft, fixSlot, itemsText, ordersInSlot, ordersOn, takenOf } from "./order.ts";
 import type { Order, OrderState, Store } from "./order.ts";
 
 /** "2026-11-16": a day as the page, the API and the event name it. */
@@ -192,8 +192,12 @@ const plainCustomerOf = customerOf;
 const plainChannelOf = (o: Order | undefined): OwnerItem["channel"] => o?.channel ?? "whatsapp";
 
 /** The order in the owner's words: its lines from the shop's menu ("2 × Veg thali, 1 × Curd"). */
-export const orderWhat = (settings: Settings, o: Order, language: Language = settings.owner.language): string =>
-  o.plan ? `${planName(planTypeOf(settings.plans, o.plan.typeId)!, language)} (monthly plan)` : o.lines.map((l) => { const item = itemOf(settings, l.itemId); return `${l.qty} × ${item ? itemName(item, language) : l.itemId}`; }).join(", ");
+// 23 Nov 2026: a plan type no longer in the settings is named by its id (it threw), as an item no longer on the menu already was; Go's OrderWhat does the same.
+export const orderWhat = (settings: Settings, o: Order, language: Language = settings.owner.language): string => {
+  if (!o.plan) return itemsText(settings, o.lines, language);
+  const type = planTypeOf(settings.plans, o.plan.typeId);
+  return `${type ? planName(type, language) : o.plan.typeId} (monthly plan)`;
+};
 
 /**
  * Everything the owner can answer from their page: an advance to mark received (UPI), a refund the owner owes and marks sent (UPI), a big order to accept or refuse,

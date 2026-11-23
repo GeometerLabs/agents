@@ -189,7 +189,7 @@ func TestDerivedReadsMatchTypeScript(t *testing.T) {
 				}
 				for _, x := range d.InSlot {
 					id := x[0].(string)
-					if got, plan := st.OrdersInSlot(d.Date, id, now, ""), st.PlanMealsInSlot(d.Date, id, now, ""); float64(got) != x[1].(float64) || float64(plan) != x[2].(float64) {
+					if got, plan := st.OrdersInSlot(d.Date, id, now, ""), st.PlanMealsInSlot(d.Date, id, now); float64(got) != x[1].(float64) || float64(plan) != x[2].(float64) {
 						t.Errorf("%s @%d %v: slot %s: %d orders, %d meals, want %v", c.Name, now, d.Date, id, got, plan, x)
 					}
 				}

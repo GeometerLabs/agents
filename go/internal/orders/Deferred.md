@@ -15,8 +15,6 @@ the next clean-up, with both templates' settings vectors as its proof.
 
 * `toLowerCase` of an item's name is Go's simple mapping (a dotted capital I or a final sigma could compare differently; no menu has one).
 * `jsJSON` of an object inside a sentence lists its keys sorted (only a weekday or a language that is an object would show one).
-* `itemsText` and `orderWhat` of an item that is no longer on the menu, and a plan type no longer in the settings, use the id; the TypeScript would throw (`!`) for the first and
-  the last.
 * `words.MessageFacts` leaves an empty `slotChoices` list out where the TypeScript writes `[]`; nothing reads the difference.
 
 ## Left by the agent (G2), and why
@@ -34,9 +32,12 @@ the next clean-up, with both templates' settings vectors as its proof.
 
 ## Copies to hoist into shared packages
 
-The owner's route (push.ts pushMessaging) and a page's outbox (outbox.ts channelMessaging) in `agent_say.go`, the watched services (`agent_watch.go`), the AI mode's lines
-(`agent_mode.go`), the terms' adapters (`agent_owner.go`) and the `report` block's reader with the report's messaging adapters (`agent_after.go`) are internal/bookings' code,
-copied because a template may not import another. Each is template-free and belongs in internal/runtime (or internal/report); both templates would then call the one copy.
+Since 23 Nov 2026 the watched services, the owner's route and a page's outbox are no longer copied here: Orders uses `bookings.Watch`, `bookings.OwnerMessaging` and
+`runtime.ChannelMessaging`, as Fees does. Still copies of internal/bookings' code: the AI mode's lines (`agent_mode.go`), the terms' adapters (`agent_owner.go`), the `report`
+block's reader with the report's messaging adapters (`agent_after.go`), and the settings readers (above). The readers were not folded in stream OG because the two Go copies differ
+in small ways. For `"payment": null`, Bookings' Go reader (which Fees uses too) says "Add how customers pay". The TypeScript's one `readPaymentSettings` and Orders' Go copy say
+"must look like". That is a sentence of Bookings' Go that differs from its TypeScript, reported in go/TRIAL.md. Orders also checks a module against the capabilities list.
+Folding needs a settings vector of each such case, so that the one shared reader is the TypeScript's.
 
 ## Left by the plans and the assistant (G3), and why
 
@@ -49,18 +50,17 @@ copied because a template may not import another. Each is template-free and belo
   (no renewal, no slot window). The settings check refuses such a file, so only a hand-edited store can show it.
 * **The page head's character** (`Kit.OfferCharacter`) has no contract test; it is publicCharacter's two members (the name when given, the public face) over the same reads as
   the owner's mood.
-* **Paths no test runs on Go yet.** The plans contract covers the quote, the owner's mark starting a plan, a skip before and after the cut-off and a plan's meals filling a slot.
-  Not yet run by any test on Go: a renewal (its credit taken, its reminder, its lapse with the balance refunded), a cancel with the unused days refunded, a carried credit, a
-  pause and a resume, a delivery plan's address, and through them G2's `refundPlanCredit` and `planApplied`; the store vectors hold first periods only, so the member order of a
-  renewal's period (`payByMs`, `reminders`), a settlement, a pause with its end and a cancelled plan is ordered from flow.ts by reading. Also not run: the morning line's Orders
-  part, the page head's character and the owner's talk's sources (`Facts`). The next step is a plans store-vector world in gen_orders_settings.ts that renews, pauses, cancels
-  and settles, and a contract test of a renewal.
+* **Paths a contract case runs since 23 Nov 2026** (both runtimes): a renewal with its credit carried and asked once, its reminder and its lapse with the credit owed back, a
+  cancel mid-month with the unused days owed back, a cancel while the renewal waits, a pause and a resume credited at the renewal. Still not run by any test on Go: a delivery
+  plan's address, a renewal paid twice on a gateway shop (a renewal needs the test clock, a gateway payment needs the guards mode, and a shop has only one of the two; the
+  second-payment path is the same one money.contract runs for an order), the morning line's Orders part, the page head's character and the owner's talk's sources (`Facts`).
 
-## TypeScript findings (not changed; for the lead)
+## TypeScript findings
 
-* An Orders shop's help and "didn't get that" lines give "cancel b-14" and "message b-14 Running 15 minutes late" as examples (words.ts's examples are Bookings' references);
-  an Orders owner's references are o-14.
-* The late-refund card on an Orders shop says "deposit" ("cancelled o-5 late. Refund the ₹120 deposit?"): SKILL_ASK.orders words only the cancel and the refund cards.
-* A plan's period payment waiting for its money is an open order the owner can cancel through the assistant ("cancel o-3", acts.cancelWaiting): the order is cancelled but the
-  plan is not told, so its period stays awaiting_payment for ever (flow.ts watch returns at once for an order that is not awaiting_advance, so it never lapses, and renewalDue
-  never comes as the last period is not paid); "my plan" then answers with the unpaid period as if current. Go does the same.
+Fixed on 23 Nov 2026 in both runtimes, with a test on both sides (go/TRIAL.md, section go-orders-gaps-23nov): a plan's waiting payment cancelled by the owner now gives the
+plan up. Two are left for stream FA, which owns `modules/assistant` and `gen_words.ts`. The help lines still give Bookings' examples ("cancel b-14"), and the late-refund card
+still says "deposit".
+
+A new one, not fixed: a customer with no running plan who writes "cancel my plan" (or "my plan") is read as asking to subscribe (`readPlanIntent`: a message that names a plan,
+from a customer with none, is a subscription when the shop has plan types). They are quoted a new plan, or asked which one, instead of being told they have none. Go reads it the
+same way.

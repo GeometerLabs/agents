@@ -968,3 +968,83 @@ then brought it to 73 of 73.
   reads the same numbers. The Bookings contract on Go confirms it (above).
 - A possible Bookings bug, int date values from `bookings/parser.go` where the readers take float64, is not a bug. Both ways in (`readIntent` with and without the router)
   end in `coerce`, which writes the intent to JSON and reads it back, so every number is float64 before `fill` reads it.
+
+## go-orders-gaps-23nov: Orders gaps before the deletion (23 Nov 2026, stream OG)
+
+Started from agents main 077371a6. The job was to give every Orders money path a test that will survive when the TypeScript runtime (and its unit tests) is deleted, to
+fix W4's TypeScript findings on both sides, and to drop Orders' copies of Bookings code.
+
+**1. Every money, limit, approval, licence or recovery behaviour that only a unit test in `templates/commerce/orders/test/` checked, and what holds it now.**
+
+The new contract cases run on both runtimes. P is `contract/plans.contract.test.ts` and G is the new `contract/gaps.contract.test.ts`.
+
+| unit test | behaviour | held by |
+| --- | --- | --- |
+| plans | the renewal: asked once, the carried credit taken off, paid by a mark | P (renewal) |
+| plans | a renewal not paid in time lapses, charges nothing, the carried credit goes back; its one reminder | P (lapse) |
+| plans | a cancel while the renewal's reminder is queued: no reminder, nothing charged | P (cancel while the renewal waits) |
+| plans | a cancelled plan: open days cancelled, closed days kept, the unused part refunded (never carried as well) | P (cancel mid-month) |
+| plans | a pause and a resume; the paused days credited once at the renewal | P (pause and resume) |
+| plans | capacity: a second plan is not started on a full slot; a skipped day gives its place back | P (new case) and the existing slot case |
+| plans | a renewal paid twice on a gateway shop: the second payment refunded | the same second-payment path as M's "a second payment on a paid link is refunded" (a renewal needs the test clock, a gateway payment the guards mode, and a shop has only one of the two) |
+| plans | the ledger's pure rules (a pause spanning the renewal date credited in its own period, one credit per period) | only partly, through P. Left: a plans store-vector world in gen_orders_settings.ts |
+| agent | the same order again keeps its one link; a changed order closes the old link and frees its stock | G |
+| agent | a UPI mark of less than the advance does not confirm | G |
+| agent | the month's AI cap: the model is left out | not covered for Orders. The cap is internal/budget's (shared). Left: a contract case with a spent allowance |
+| assistant-acts | the owner's cancel above the refund limit is held by Guard; a waiting order's cancel closes its link; a big order's cancel; a kept advance refunded by a card, once; a UPI shop's cancel owes the refund | G (the paid cancel within the limit was already in O) |
+| assistant-acts | the skill without acts only reads | not a runtime behaviour (a TypeScript object without its acts); Go always wires them |
+| late-advance-card | the late advance is listed for 48 hours, or 14 days after "I have paid" | G (the late mark itself was in F) |
+| late-advance-card | the assistant's card for a late advance; its yes is the same late mark | the mark is F's; the card's words are in the words vectors. Left: the card over HTTP |
+| licence | Guard's own licence refusal (402) of the advance link | G (the wind-down and the final stop were in D) |
+| reminder-balance | the balance marked once in cash; a customer's word and a UPI shop's "link" mark nothing; a full-advance order has no balance | G (the balance by link was in M) |
+| slot-capacity | a slot's place given back by a cancel and by a hold that ran out | G |
+| guard-outage | a Guard down past the 15-minute bound: the customer told once, the owner's to-do item | NOT covered on Go. HTTP cannot reach it: the bound runs on the real clock in guards mode and runtime.json cannot shorten it. Left: a runtime.json member for the bound (a shared change), or a Go agent test |
+| money-clarity, full-chain, runtime | a Guard-held refund answered by the digest shown, the stale answer, the refund context | M and F, as before |
+| channels | an MCP client cannot mark, approve or refund | modules/channels' front (a different component; its tests stay) |
+| approvals-guard-binary, settings | Guard's threshold is the refund limit; the spec's bounds | the real Guard binary and the deployer's spec generator (they stay); M sees the threshold |
+| limits, stock, report*, accounting-figures, ondc | pure functions | Go vectors made by the TypeScript (orders, stock, ordersreport), as the contract README maps them |
+
+Go passed every new contract case as it stood. The W4 port of the plans and the agent's money paths was right.
+
+**2. W4's TypeScript findings.** Each was fixed in the TypeScript and in Go the same way, with a test on both sides:
+- **A plan's waiting payment cancelled by the owner left the plan stuck** (`awaiting_payment` for ever). flow.ts and plans.go `watch` now give up a period whose order was
+  cancelled outside the plan, at the next beat: the period lapses, a first period's plan is cancelled, and a renewal's plan lapses with its carried credit owed back. Nothing
+  more is said to the customer, because the owner's cancel told them. Test: G "the owner's cancel of a plan's waiting payment ...", which failed on the TypeScript before
+  the fix.
+- **`itemsText`, `orderWhat` and `factsFor` threw on an item or plan type no longer in the settings.** The TypeScript now names them by their id, as Go did (factsFor leaves
+  a missing plan type's items unsaid, as Go's FactsFor does). Test: G "an item taken off the menu ...", which failed on the TypeScript before the fix.
+- **`coerceIntent` did not check the shape of a date and a time.** The shape checks are now `isDatePhrase`/`isTimePhrase` in modules/language/dates.ts, and Bookings'
+  model.ts uses them too: it had the same checks inline. The Go twins are `language.IsDatePhrase`/`IsTimePhrase` (new phrase_shape.go), used by both `bookings.CoerceIntent`
+  and `reading.CoerceIntent`. Test: 24 hostile dates and times in gen_orders_reading.ts's coerce vectors, plus TestCoerceDateShape.
+- **`policyOf` threw with no payment block.** It now writes the module as null, as Go did. Test: the no-payment tree's digest in gen_orders_report_vectors.ts, checked by
+  TestPolicyDigestsAndNotTestedMatchTypeScript.
+- **`planMealsInSlot` ignored a lapsed plan.** Not a bug: no caller ever passed its `except`. The dead parameter is removed on both sides. The inSlot vectors still prove the
+  function.
+- **Not changed (ownership): Orders' help lines with Bookings' examples ("cancel b-14"), and the late-refund card's "deposit".** Both live in modules/assistant/words.ts and
+  gen_words.ts, which only stream FA may change.
+  - The fix for the examples: Orders' own `key@orders` examples ("cancel o-14", "message o-14 Running 15 minutes late") for `cancel` and `message` in the help table and
+    the "which one?" table.
+  - The fix for the card: a `late_refund` entry in the card wording keyed by skill ("cancelled o-5 late. Refund the ₹120 advance?"), in four languages.
+
+New findings (not fixed):
+- A customer with no running plan who writes "cancel my plan" or "my plan" is read as subscribing. The shop quotes a new plan, or asks which one, instead of saying they
+  have none (`readPlanIntent`). The same on Go.
+- Bookings' Go settings reader says "Add how customers pay" for `"payment": null`, where the TypeScript's `readPaymentSettings` says "must look like". Fees uses the same
+  reader.
+
+**3. No duplicates.**
+- Orders' `agent_watch.go` (213 lines) is deleted, along with `agent_say.go`'s owner route and page outbox (about 255 lines). Orders now uses `bookings.Watch`,
+  `bookings.OwnerMessaging` and `runtime.ChannelMessaging`, wrapped in the same order as before. `bookings.Watch` gained `Do`, which Orders' settlement read needs.
+- Not folded: the settings readers. The two Go copies differ in small ways (internal/orders/Deferred.md), so folding them needs a settings vector of each case first.
+
+**4. The Deferred items a shop would meet** (the owner's daily notice that customer talk stopped, the tick's memory of one-time calls) are not done. Neither is small:
+Bookings has neither, and both need a shared runtime hook.
+
+**What passes.** These ran once at the end, through the heat lock, on the branch at e27c3051.
+- The Orders contract on TypeScript (`ORDERS_IMPL=ts node --test --test-concurrency=1 templates/commerce/orders/contract/`): **94 of 94**, up from 75.
+- The Orders contract on Go (`ORDERS_IMPL=go ORDERS_GO_BIN=go/bin/orders ...`): **94 of 94**.
+- `go vet ./...` is clean, and `go test -count=1 ./...` passes (35 packages ok).
+- `words-fresh.test.ts`: 21 of 21.
+- The Orders and Bookings unit tests these changes touch (plans, agent, channels, papers, report-go-live, assistant-acts, late-advance-card, bookings parser): 77 of 77.
+- The Bookings contract on Go: 151 of 151.
+- Before the fixes, both findings cases failed on the TypeScript; after them they pass on both runtimes.

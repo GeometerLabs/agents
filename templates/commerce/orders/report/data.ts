@@ -165,10 +165,14 @@ export interface ReportInput {
   ledger?: { tenant: string };
 }
 
-/** What governs how the agent behaves and speaks, without contact details. Two shops with the same policy digest have the same limits and words. */
+/**
+ * What governs how the agent behaves and speaks, without contact details. Two shops with the same policy digest have the same limits and words. A tree with no `owner` or
+ * no `payment` block (never a validated one) gives those members as undefined, which canonicalJson writes as null, instead of throwing (23 Nov 2026: the Go report's
+ * PolicyOf did so already, and the two now make the same digest of it).
+ */
 export function policyOf(settings: Settings): unknown {
   const { address: _address, owner, payment, ...rest } = settings;
-  return { ...rest, owner: { language: owner.language, approveOverInr: owner.approveOverInr }, payment: { module: payment.module } };
+  return { ...rest, owner: { language: owner?.language, approveOverInr: owner?.approveOverInr }, payment: { module: payment?.module } };
 }
 export const policyDigest = (settings: Settings): string => digestOf(policyOf(settings));
 

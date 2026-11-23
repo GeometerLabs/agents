@@ -12,6 +12,7 @@ import (
 	"math"
 	"regexp"
 
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 )
 
@@ -110,8 +111,7 @@ func isWhole(v any) (float64, bool) {
 var slotIDRe = regexp.MustCompile(`^[a-z0-9-]{1,60}$`)
 
 // CoerceIntent is model.ts coerceIntent: nil for anything that is not an Intent of this shop (an unknown kind, an item it does not have, a quantity of 0, a negative price).
-// `raw` is JSON decoded to `any`. One difference, on purpose: the TypeScript copies a `date` or a `time` of any shape (`raw.date as DatePhrase`); here a date or a time that is not
-// an object is refused, since nothing but an object can be read as one (the model's answer never carries either: shape drops them; no vector has such a value).
+// `raw` is JSON decoded to `any`. A date and a time must have the shapes dates.ts makes (language.IsDatePhrase, IsTimePhrase), as in the TypeScript since 23 Nov 2026.
 func CoerceIntent(raw any, c *ParseContext) *Intent {
 	m, ok := raw.(map[string]any)
 	if !ok {
@@ -157,19 +157,18 @@ func CoerceIntent(raw any, c *ParseContext) *Intent {
 		}
 		in.Items = lines
 	}
+	// a date and a time of the shapes dates.ts makes, or the answer is refused (internal/language's checks, as Bookings'; the TypeScript asks the same since 23 Nov 2026)
 	if v, given := m["date"]; given {
-		d, isObj := v.(map[string]any)
-		if !isObj {
+		if !language.IsDatePhrase(v) {
 			return nil
 		}
-		in.Date = d
+		in.Date = v.(map[string]any)
 	}
 	if v, given := m["time"]; given {
-		t, isObj := v.(map[string]any)
-		if !isObj {
+		if !language.IsTimePhrase(v) {
 			return nil
 		}
-		in.Time = t
+		in.Time = v.(map[string]any)
 	}
 	if v, given := m["slotId"]; given {
 		s, isText := v.(string)
