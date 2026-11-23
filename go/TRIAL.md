@@ -1415,3 +1415,35 @@ The first enhancement after the switch to Go, built once in `internal/discounts`
   - Bundle: 722 pass, 9 skipped (REAL_CADDY). Panel: 259/259.
   - TypeScript: Bookings 829 pass, 7 skipped; Orders 210 pass, 5 skipped; modules/limits 16/16.
   - `--check` of every generator touched: fresh.
+
+## webpush-24nov: web push to customers and parents on Go (24 Nov 2026, owner: "web push after E1")
+
+The TypeScript runtimes pushed a page's message to a customer who allowed alerts (Bookings, Orders, item 11h), a chat guest's answers (W1) and a centre's messages to a parent
+(Fees, batch 3, `alsoPushTo`); the Go programs did not until this branch. Built on the pieces the owner's alerts already use (internal/push and the shop's push Guard, which stay
+the only way out); the server's push sender and each shop's push Guard spec are unchanged.
+
+- **Subscriptions** (`runtime/push.go`): the push route's `customer_state`, `customer_subscribe` and `customer_unsubscribe`, in http.ts's order and answers: a chat thread the
+  runtime knows (403 "Alerts are offered after the first answer." before the shop's first answer; W2's identity resolves a tied phone first), a Fees parent's private page (kept
+  under `parent:<ref>`, the parent's stable ref, never the link), a booking's or order's page made on the page or through MCP (`web:`/`mcp:` and 16 hex digits). The same
+  push.sqlite rows as the TypeScript (who, signer, ref NULL), two phones a page. "Delete my chat" ends the thread's subscriptions ("forgotten"). A listings shop answers as before.
+- **Pushes:** `ChannelMessaging` gains outbox.ts's `onKeep` (Orders, Fees; Bookings' own `chanMsg.keep` calls the same `PushCustomer` port), wired in each command to
+  `Runtime.CustomerPush` (`push.Customer`: tag "update", the shop's name as the title, `fitNotification`; the sender's customer TTL 12 h, normal urgency, one topic per phone;
+  404/410 drops the phone, 429/5xx retries, a Guard refusal with its reason is not tried again). Fees: `internal/fees/agent_push.go` is `alsoPushTo` (every message to a number
+  also to that parent's page, the words with every address taken out, queued before the send, never failing it), on the step's messaging and the beat's.
+- **Tests:** Go units (`push.TestCustomerPush`; `runtime` the ops, the 403, the view and parent reads, `onKeep`; `fees` withoutAddresses and alsoPushTo). Contracts, new
+  `push.contract.test.ts` per template: Bookings 4 (one push through the Guard in the page's words, VAPID on the shop's clock, 410, the fake Guard's daily-count refusal, the
+  REAL geo-guard with `pushSpec` and a customer count of one: the second push refused as `limit_exceeded`, not retried, the phone kept; a chat guest after the first answer and
+  "delete my chat"), Orders 2 (a shop with no WhatsApp, the Guard's count, an MCP order, unsubscribe, 410), Fees 2 (parent-push.test.ts's case: one push for a family of two
+  without links while WhatsApp keeps them, the row under `parent:<ref>`; STOP ends a parent's pushes while another parent's goes, 410).
+- **Kept as the TypeScript did, and said here:** the push is queued inside the step, so a step thrown away and run again (a Guard down mid-step) queues its words again (the
+  push service keeps the newest per topic while the phone is away). Fees' wrapper also covers messages to the owner's number (pushed to that number's parent ref, which no page
+  subscribes to). STOP needs no code: the say gate keeps nothing after it.
+- **TypeScript finding (both senders, sender.ts and sender.go, not changed):** a push Guard 403 is read as the Guard's refusal only when its body has `reason_code`; Guard gives one
+  for a limit (`limit_exceeded`, proved with the real geo-guard here) but not for a rule refusal (`refused_by_policy` alone, as the captured fixture of 3 Nov shows), which the
+  sender reads as the push service's own 403 and drops the phone as "key". The subscription check refuses hosts outside the Guard's list first, so no rule refusal is expected today.
+- **Not done:** the Guard's count and forget per template beyond Bookings (the sender and the route are one shared code path; Orders has the count, Fees and Orders no forget
+  case); Stock orders has no customer pages (nothing to push).
+- **Run of record (24 Nov 2026, through the heat lock, the Go programs built in this worktree's go/bin, GEO_GUARD_BIN and GEOMETER_MONOREPO set):** `go build/vet ./...`
+  clean, `go test ./...` 40 packages ok; contracts (`node --test --test-concurrency=1 <folder>/`): Bookings 169/169 (the real-Guard case ran), Orders 107/107, Fees 102/102,
+  Stock orders 74/74, listings 210/210 (with words-fresh); bundle (`cd bundle && node --test test/`) 731: 722 pass, 9 skipped (REAL_CADDY), 0 fail; panel
+  (`node --test panel/test/`) 259/259. No generator reads the contract folders, so no vectors changed.
