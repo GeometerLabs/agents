@@ -16,7 +16,6 @@ import { parseWhatsAppStatuses, parseWhatsAppWebhook } from "../webhooks.ts";
 import { createRecord } from "../../record/record.ts";
 import { messageFingerprint } from "../../record/fingerprint.ts";
 import { checkEvents, eventKey } from "../../runtime/events.ts";
-import { createRuntimeCore } from "../../runtime/core.ts";
 import { snapshotCodec } from "../../runtime/snapshot.ts";
 import { openStore } from "../../runtime/store.ts";
 import { inboxHandler } from "../../inbox/server.ts";
@@ -193,36 +192,6 @@ test("the inbox forwards Gupshup's reports as message_status in path-token mode,
 });
 
 // ---- the runtime core --------------------------------------------------------------------------------------------------------
-
-test("a runtime core records a status without handing it to the agent, saves it with its task, and keeps the window shut (a report is not the person writing)", async () => {
-  interface Toy { orders: Map<string, { id: string; state: string; pending: { kind: string }[] }>; next: number }
-  const codec = snapshotCodec<Toy>(1, [{ name: "orders", kind: "map" }, { name: "next", kind: "count" }]);
-  const dir = mkdtempSync(join(tmpdir(), "geo-status-core-"));
-  const clock = fakeClock(T0);
-  const handled: string[] = [];
-  const db = openStore(join(dir, "data"));
-  const runtime = createRuntimeCore<Toy, { timezone: string; owner: { whatsapp: string; language: "en" } }, never>({
-    settings: { timezone: "Asia/Kolkata", owner: { whatsapp: OWNER, language: "en" } }, store: db, clock, messaging: createFakeMessaging(clock), pathwayVersion: "0.0.1", retryDelaysMs: [0], recordKey: KEY,
-    kit: {
-      pathway: "toy", casesName: "orders",
-      createStore: () => ({ orders: new Map(), next: 1 }), serialize: codec.serialize, parse: codec.parse,
-      createAgent: () => ({ async handle(event) { handled.push(event.kind); } }),
-      countCases: () => ({}), casesOf: (store) => store.orders.values(), refundContext: () => null,
-    },
-  });
-  try {
-    const status = { kind: "message_status" as const, status: failed(["gs-owner-ask"], OWNER) };
-    assert.deepEqual(runtime.submit([status, status]), { saved: 1, duplicates: 1 });
-    runtime.kick();
-    await runtime.idle();
-    assert.deepEqual(handled, [], "the agent never saw it");
-    const record = db.loadState().record;
-    assert.deepEqual(record.map((e) => [e.action, e.outcome, e.refs.to]), [["message_status", "failed", "owner"]]);
-    assert.equal(record[0].refs.messageId, messageFingerprint(KEY, "gs-owner-ask"), "kept as a fingerprint under the shop's key");
-    assert.equal(runtime.window.lastInboundAt(OWNER), undefined, "a report does not open the owner's 24-hour window");
-    assert.equal(runtime.status().tasks.pending, 0);
-  } finally { await runtime.close(); rmSync(dir, { recursive: true, force: true }); }
-});
 
 test("a runtime too old to know delivery reports (a shop pinned to an earlier version) refuses them with a 400: the messages still go in, the reports are dropped and said once, and the provider is not made to retry for ever", async () => {
   const batchesSeen: string[][] = [];

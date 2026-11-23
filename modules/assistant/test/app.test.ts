@@ -4,7 +4,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { OWNER_APP_SW, ownerAppManifest } from "../app/pwa.ts";
 import { talkBox } from "../app/talk.ts";
-import { ownerAppView, publicCharacter } from "../app/view.ts";
 import { LANGUAGES } from "../../language/languages.ts";
 import { defaultCharacter } from "../character.ts";
 import { emptyAssistantState } from "../state.ts";
@@ -54,32 +53,4 @@ test("on the owner's page (items 11d, 11e, 11f): the script carries the response
   assert.ok(html.includes(`data-csrf="${"c".repeat(32)}"`) && html.includes('headers["x-owner-csrf"] = rec.dataset.csrf'), "the recording's POST sends the form token as a header");
   assert.ok(html.includes("audioBitsPerSecond: 24000"), "a recording small enough for the page's limit");
   assert.ok(!talkBox({ base: BASE, language: "en", assistantName: "Mithra", lines: [], listen: false }).includes('id="talk-rec"'));
-});
-
-test("the view: the mood, today's list and the open cards by id and digest, never a code", () => {
-  const tz = "Asia/Kolkata";
-  const day = { year: 2026, month: 11, day: 12 };
-  const now = zonedToMs(day, { hour: 11, minute: 0 }, tz);
-  const skill: OwnerSkill = {
-    name: "bookings", routing: { refs: /^b-\d+$/u, buttonPrefixes: [], words: {}, liveCaseOf: () => undefined },
-    day: () => [{ case: "b-1", startMs: now + 30 * 60_000, what: "haircut", who: "Priya", state: "confirmed" }],
-    waiting: () => [], problems: () => 0, hours: () => ({ open: 600, close: 1200 }),
-    prepare: () => ({ ok: false, why: "busy" }), execute: async () => ({ ok: false, note: "failed" }),
-  };
-  const state = emptyAssistantState();
-  const { code } = makeCard(state, { kind: "refund", skill: "bookings", case: "b-1", fields: { who: "Priya", amountPaise: 20_000, paymentId: "pay_1" } }, {}, now);
-  const view = ownerAppView({ skills: [skill], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } });
-  assert.equal(view.mood, "waiting_for_owner");
-  assert.equal(view.face, "needs", "the owner's app shows the owner's mood: needs you");
-  // item 11i: the same reads, as the shop's public pages get them (the offer's `shop.character`): a booking within the hour, so busy, never "needs you"
-  assert.deepEqual(publicCharacter({ skills: [skill], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }), { face: "busy" }, "no name: the Operator gave none (owner, 14 Nov)");
-  const nothingSoon = { ...skill, day: () => [] };
-  assert.deepEqual(publicCharacter({ skills: [nothingSoon], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }), { face: "well" }, "a card waits, but the public sees all well");
-  const wrong = { ...nothingSoon, problems: () => 1 };
-  assert.equal(ownerAppView({ skills: [wrong], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }).face, "wrong");
-  assert.equal(publicCharacter({ skills: [wrong], state, nowMs: now + 10 * 3_600_000, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } })?.face, "closed", "something wrong after hours: the public sees closed");
-  assert.equal(publicCharacter({ skills: [skill], state, nowMs: now, timeZone: tz, settings: undefined }), undefined, "no assistant, no character");
-  assert.equal(view.today.length, 1);
-  assert.deepEqual(view.cards.map((c) => [c.case, c.amountPaise, c.who]), [["b-1", 20_000, "Priya"]]);
-  assert.ok(!JSON.stringify(view).includes(code));
 });

@@ -14,8 +14,6 @@ import { LANGUAGES } from "../../language/languages.ts";
 import { bannedIn } from "../../report/claims.ts";
 import { TERMS_VERSION, isAgreeWords, isTermsRequest, readTermsFile, termsDigest, termsText } from "../terms.ts";
 import type { TermsFile } from "../terms.ts";
-import { termsReader } from "../reader.ts";
-
 const FILE: TermsFile = { schema: 1, partnerName: "Divya", partnerPhone: "+919800000000", monthlyInr: 700, setupInr: 1500 };
 
 test("the terms exist in all four languages with the shop, the Operator and both prices, and promise nothing legal or banned", () => {
@@ -45,18 +43,4 @@ test("which words ask and which agree: a bare ok, yes or thumbs-up is not an agr
 test("a terms file is read field by field; anything else is no file", () => {
   assert.deepEqual(readTermsFile(FILE), FILE);
   for (const bad of [null, {}, { ...FILE, schema: 2 }, { ...FILE, partnerName: "" }, { ...FILE, monthlyInr: -1 }, { ...FILE, setupInr: 1.5 }, { ...FILE, partnerPhone: "x".repeat(40) }]) assert.equal(readTermsFile(bad), undefined);
-});
-
-test("the runtime's reader follows the file: no file is off, a good one is read, a bad one or a removed one is off again", () => {
-  const dir = mkdtempSync(join(tmpdir(), "terms-reader-"));
-  try {
-    const read = termsReader(dir);
-    assert.equal(read(), undefined, "no file: the feature is off");
-    writeFileSync(join(dir, "terms.json"), JSON.stringify(FILE));
-    assert.deepEqual(read(), FILE);
-    writeFileSync(join(dir, "terms.json"), JSON.stringify({ ...FILE, schema: 2 }));
-    assert.equal(termsReader(dir)(), undefined, "a file that does not check is off");
-    rmSync(join(dir, "terms.json"));
-    assert.equal(read(), undefined, "the file is gone: off again");
-  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

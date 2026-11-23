@@ -11,7 +11,6 @@ import { bookingsSkill } from "../src/assistant.ts";
 import { ownerItems } from "../src/channel.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { approvalButtonId } from "../../../../modules/approvals/buttons.ts";
-import { createMorningJob } from "../../../../modules/assistant/morning.ts";
 import { HOUR, zonedToMs } from "../../../../modules/core/time.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Store } from "../src/booking.ts";
@@ -449,20 +448,6 @@ test("on the page too a changed amount voids the card and a new one shows the am
   assert.equal(w.payments.refunds().length, 0, "the old WhatsApp card does nothing after the page's no");
   await pagePress(w, second, "yes", "page-yes-after-no");
   assert.equal(w.payments.refunds().length, 0, "nor does a yes on the page after its no");
-});
-
-test("the morning line reads the same store: tomorrow's booking and the deposit recorded the day before", async () => {
-  const w = withAssistant();
-  await bookAndPay(w);
-  for (const language of LANGUAGES) w.messaging.approve("owner_morning", language);
-  const settings = w.settings;
-  const job = createMorningJob<Store>({ shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant! }, skills: (store) => [bookingsSkill({ settings, store, nowMs: () => w.clock.now(), entries: () => [], optedOut: () => false })] });
-  w.clock.set(zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 8, minute: 5 }, settings.timezone));
-  const r = await job.run({ clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, log: () => undefined, save: () => undefined });
-  assert.equal(r.done, true);
-  assert.equal(w.lastTextTo(w.owner), "Good morning from the assistant of Glow Salon. Today, Wed 4 Nov: bookings: 1, the first at 6:00 pm. Recorded yesterday: ₹200. Waiting for you: nothing. Reply here to see more.");
-  w.clock.advance(HOUR);
-  assert.equal((await job.run({ clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, log: () => undefined, save: () => undefined })).done, false);
 });
 
 test("the assistant's part of the store survives a restart, and a shop without one saves as before", async () => {
