@@ -887,3 +887,84 @@ fees" and cancel card, and the monthly report: not ported, Deferred.md), on Type
 `go test` of runtime, bookings and accounting pass (internal/fees has no Go unit tests and no Go vectors: it is proved by the contract only); words-fresh 16 of 16; Bookings'
 smoke on Go 14 of 14 after the kitserver.go hook; every go/scripts generator's `--check` passes. One more hour-dependent contract test was found and fixed (the to-do list's
 ask-again: on a UPI centre an open request is asked about first, and the first beat makes one only after 06:00 in India; the test now uses a Razorpay centre).
+
+## Wave W4: Orders on Go (22-23 Nov 2026, `go-w4-orders-22nov`)
+
+Started from agents main ead21fd8, with the method of the Bookings waves: the contract first, then the Go runtime, judged by the contract.
+
+**The contract (first commit, 72cd36f7, merged into main as 5f24daa0).** `templates/commerce/orders/contract/` is 73 black-box HTTP tests plus `cross-restart.test.ts`, which
+needs both runtimes. They run on the TypeScript runtime and, with `ORDERS_IMPL=go ORDERS_GO_BIN=go/bin/orders`, on Go. Its README maps all 36 unit-test files of
+`templates/commerce/orders/test/`.
+
+The files cover:
+- smoke;
+- the order's flow on the page and on WhatsApp, with every limit;
+- money through the payments Guard;
+- recovery;
+- the record, the monthly report and the licence;
+- the owner's side, the assistant's Orders skill and the shop's one stock count;
+- the chat and a model's untrusted answer;
+- monthly plans.
+
+The harness is Bookings', with Orders' own parts: the four example shops, the instant Mon 9 Nov 2026 10:00 IST, an order from the page, and two Guards. It reuses Bookings'
+Guard recorder (one `export` added in `bookings/contract/guards.ts`). `orders/server/main.ts` takes the test clock as Bookings' main does. Nothing changes without the two
+variables, and a live shop refuses them.
+
+**The Go runtime.** Each package is listed in go/README.md's map; Explanation.md and Deferred.md in each say what was built and what was left.
+
+| package | what | proved by |
+| --- | --- | --- |
+| `internal/orders` | settings and their refusals word for word, the store field for field (unknown members raw; an unreadable `upi` or `plans` block is never overwritten), the derived reads, the books, the channel's reads, the Kit (also a StockKit and an OwnerVoiceKit), and the agent over one step (`agent_*.go`: say and its gates, the order flow and limits, money and refunds, the owner-marked UPI money, cancelling, the owner's commands and the balance, the tick, recovery, the page), monthly plans (`plans*.go`) and the Orders skill of the shop's assistant (`agent_assistant.go`); `stock_calls.go` holds every call of the stock count | settings and store vectors (`gen_orders_settings.ts`: 154 settings cases, 7 stores the TypeScript agent wrote, every read of each), the contract |
+| `internal/orders/words` | every message in four languages, the WhatsApp templates and their parameters, labels, lists, buttons, the outgoing check | 7,328 render vectors (`gen_orders_words.ts`) |
+| `internal/orders/reading` | the rule parser, the check on a model's answer, the router's reading, a tapped reply, the plan reading | about 21k phrases and answers (`gen_orders_reading.ts`) |
+| `internal/ordersreport` | the monthly report (data, page, owner's text, WhatsApp message, signed summary, go-live reading, job) | report vectors (`gen_orders_report_words.ts`, `gen_orders_report_vectors.ts`) |
+| `internal/stock/words.go` | modules/stock/words.ts STOCK_LINE_WORDS (stream W5's stock package has none) | `gen_stock_words.ts` |
+| `cmd/orders` | one Orders shop, the same command line, files and environment as the TypeScript | the contract |
+
+**Shared changes.**
+- `internal/runtime/assistantopen.go` (new): a skill's "open orders" answer, the `key@<skill>` words, and the public face.
+- `AssistantHooks.Orders`, `assistant.OwnerReading.Orders` and the rules' `RouterOrders`/`KindsOrders`. `idOf` cuts an `@` suffix. `cardQuestion` and `refusal` take the skill's
+  wording. The morning line has the open-orders part.
+- `gen_words.ts` has an Orders block. The packs only add keys; every existing key is byte-identical.
+- The Bookings contract on Go after these changes: 151 of 151.
+- My own copy of the stock count's shop-record half was replaced at the merge by stream W5's `internal/stock`. `stock_calls.go` moved to its methods.
+- TypeScript: private constants exported for the generators (rule-parser.ts regexps, `PLAN_RES`, templates.ts `rest`, report/data.ts `UPI_NOT_COUNTED`), with no change of
+  behaviour.
+
+**What passes (23 Nov, the end run, once, through the heat lock, on the branch merged with main: streams A, B, W5 and W3).**
+- The Orders contract on Go (`ORDERS_IMPL=go ORDERS_GO_BIN=go/bin/orders node --test --test-concurrency=1 templates/commerce/orders/contract/`): **75 of 75**, with
+  cross-restart both ways.
+- The Orders contract on TypeScript (`ORDERS_IMPL=ts ...`): **75 of 75**.
+- `go build ./...`, `go vet ./...` and `go test -count=1 ./...`: clean (35 packages with tests ok).
+- `words-fresh.test.ts`: 21 of 21.
+- The Bookings contract on Go: 151 of 151.
+- The listings contract on Go: 198 of 198.
+- Every Orders generator, and `gen_stock_words.ts`, `gen_stock_vectors.ts`, `gen_words.ts` and `gen_bookings_words.ts`: `--check` fresh.
+
+On the way, before the merge, the contract on Go was 64 of 69 after the agent. The five left were the assistant's three and the Stock page's two; the plans and the assistant
+then brought it to 73 of 73.
+
+**Not done, and why** (the detail is in internal/orders/Deferred.md):
+- A chat guest's hold-to-talk: the Orders Kit is not a ChatVoiceKit; Bookings is not one either.
+- The owner's once-a-day notice that customers' talk stopped, and the tick's memory of one-time calls: not ported, as in Bookings.
+- The monthly report goes through the shop's WhatsApp, not the owner's push route, as Bookings does.
+- In fakes mode the settlement read finds no rows.
+- Plan paths that no test reaches yet: renewal, a lapse with the credit refunded, cancel with the unused days refunded, pause and resume.
+- Copies of Bookings code that belong in one shared place: the settings readers, the owner's route, the page outbox, the watched services, the AI-mode lines, the terms adapters
+  and the report setup. Stream W3 has since opened some of them in `bookings/reader_shared.go`, `agent_shared.go` and `runtime/chanmessaging.go`. Folding Orders onto them is
+  the next clean-up, not done here.
+
+**TypeScript findings (reported, not fixed).**
+- `policyOf` (orders report) throws on settings with no payment block.
+- `coerceIntent` copies a model's date and time without checking their shape. The router drops them, so a customer never meets it.
+- `planMealsInSlot` takes off the excepted plan's meal without checking that the plan is lapsed.
+- `itemsText`, `orderWhat` and `factsFor` throw on an item or plan type no longer in the settings.
+- An Orders shop's help lines use Bookings' examples ("cancel b-14").
+- The late-refund card says "deposit".
+- A plan's waiting period payment cancelled by the owner through the assistant leaves the plan `awaiting_payment` for ever.
+
+**Two checks the lead asked for.**
+- dae22236 changed no shared code. It made `orders/channel.go` read `payments.UntoldRefund`'s existing `AmountPaise / 100`; `payments` is untouched, so Bookings' owner view
+  reads the same numbers. The Bookings contract on Go confirms it (above).
+- A possible Bookings bug, int date values from `bookings/parser.go` where the readers take float64, is not a bug. Both ways in (`readIntent` with and without the router)
+  end in `coerce`, which writes the intent to JSON and reads it back, so every number is float64 before `fill` reads it.

@@ -20,7 +20,7 @@ go build -o bin/listings ./cmd/listings                 # 23.3 MB; with -ldflags
 go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags "-s -w" 16.8 MB
 go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, "Waves 1b and 1c finished")
 go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (wave 2, in progress: TRIAL.md "Wave 2: the Bookings runtime")
-go build -o bin/orders ./cmd/orders                     # one Orders shop (wave W4, in progress: internal/orders/Deferred.md)
+go build -o bin/orders ./cmd/orders                     # one Orders shop (wave W4: TRIAL.md "Wave W4: Orders on Go")
 go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (wave 2, go-w5-stock-22nov: TRIAL.md)
 go build -o bin/fees ./cmd/fees                         # one Fees (and Classes) centre (wave 3, in progress: TRIAL.md "Wave 3: Fees")
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
