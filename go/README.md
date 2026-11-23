@@ -21,6 +21,7 @@ go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags
 go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, "Waves 1b and 1c finished")
 go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (wave 2, in progress: TRIAL.md "Wave 2: the Bookings runtime")
 go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (wave 2, go-w5-stock-22nov: TRIAL.md)
+go build -o bin/fees ./cmd/fees                         # one Fees (and Classes) centre (wave 3, in progress: TRIAL.md "Wave 3: Fees")
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -41,6 +42,7 @@ The contracts (from the repository root; build the binaries first, the shared-pr
 node --test --test-concurrency=1 templates/commerce/listings/contract/    # the listings shop (go/bin/listings and go/bin/listings-shared, or LISTINGS_GO_BIN)
 node --test --test-concurrency=1 modules/discovery/contract/    # the directory (go/bin/directory, or DIRECTORY_GO_BIN)
 BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/  # Bookings (wave 2)
+FEES_IMPL=go FEES_GO_BIN=go/bin/fees node --test --test-concurrency=1 templates/education/fees/contract/  # Fees and Classes (wave 3)
 ```
 
 The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
@@ -57,6 +59,11 @@ internal/bookings/       the Bookings template (wave 2): the settings checked wi
                          ledger) and the booking's own page link, agent_after.go the beat's licence notice, monthly report and morning line (runtime.AfterTicker) and the `report` block;
                          agent_assistant.go is Bookings as a skill of the shop's assistant (src/assistant.ts), agent_mode.go the button-mode and step-pause lines (reader.ts announceButtonMode); the words of every message, the WhatsApp templates, the labels and lists
                          (templates.go, meta.go, interactive.go) are packed per language in words/*.json.gz, made from the TypeScript by scripts/gen_bookings_words.ts
+cmd/fees/                main of ONE Fees (and Classes) centre (wave 3): the same command line, token files, environment and test clock as cmd/bookings; the shared runtime with the Fees Kit
+internal/fees/           the Fees template (wave 3): the settings with the TypeScript's sentences, the store field for field, the agent over one step (the month's fees and reminders, the
+                         payment record and one link for what is owed, a UPI centre's owner-marked money, waivers, refunds through the shared refunds, the parent's private link and page,
+                         the owner's page), the words packed per language (words/*.json.gz and reading.json, made by scripts/gen_fees_words.ts), the reading material; read Explanation.md
+                         and Deferred.md (Classes' work, the report, the assistant are not ported yet)
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
 internal/signing/        Ed25519 and RFC 8785 canonical JSON, both ways: the shop's key and the signed feed / answer / notice / Agent Card's JWS (modules/signing), and the reading of them (VerifyDocument, VerifyNotice: the directory's checks)
 internal/listings/       the listings: state and rules, the owner's ops, the public and owner reads, the feed and check documents, photos, the assistant's draft and its grounding checks
@@ -107,6 +114,7 @@ scripts/gen_customer_talk.ts  writes internal/assistant/customerwords/words.json
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
 scripts/gen_stock_vectors.ts     writes internal/stock/testdata/stock-vectors.json: modules/stock/stock.ts run over six scenarios, every step's answer and state (--check)
 scripts/gen_stockorders_words.ts writes internal/stockorders/words.json: Stock orders' messages, templates, labels, state and stock words and the reader's patterns (--check)
+scripts/gen_fees_words.ts  writes internal/fees/words/*.json.gz (every Fees and Classes message, where to pay, a family's line, the WhatsApp templates, the labels) and internal/fees/reading.json (the rule parser's word lists) from templates/education/fees; `--check` only compares (words-fresh)
 scripts/gen_bookings_reading.ts  writes internal/bookings/reading.json: the Bookings rule parser's patterns, the decision model's questions, the model's prompt and schema as templates
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
                            in a corpus); `--check` only compares; the test words-fresh fails when it was not run after a change to a pattern it names
