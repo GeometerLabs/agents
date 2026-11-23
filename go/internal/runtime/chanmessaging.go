@@ -3,6 +3,10 @@ package runtime
 // modules/channels/outbox.ts channelMessaging for a template's agent that keeps its channel in its own store (wave 3: Fees): a message to a channel's conversation (web:, mcp:,
 // chat:) is KEPT in the channel state for its page and never sent to a number; everything else goes to the shop's messaging as it was. Bookings has the same code over its own
 // store (internal/bookings agent_channel.go chanMsg); this is the same behaviour over any store, given the state and the clock, so another template does not write it again.
+//
+// onKeep (outbox.ts's fourth parameter, item 11h; wired in Go 24 Nov 2026) is told of each message kept for a page's conversation, after it is kept, so a customer who allowed
+// alerts on that page gets the same words as a web push (CustomerPush). It is the TypeScript's timing: the push is queued inside the step, so a step thrown away and run again
+// queues its words again (the push service keeps only the newest per phone while the phone is away: the sender's one topic per phone).
 
 import (
 	"context"
@@ -13,18 +17,23 @@ import (
 )
 
 type chanOut struct {
-	base  messaging.Messaging
-	state func() *ChannelState
-	now   func() int64
+	base   messaging.Messaging
+	state  func() *ChannelState
+	now    func() int64
+	onKeep func(to, text string)
 }
 
-// ChannelMessaging is outbox.ts channelMessaging: base is the shop's messaging (nil: none), state the step's channel state, made on first use.
-func ChannelMessaging(base messaging.Messaging, state func() *ChannelState, now func() int64) messaging.Messaging {
-	return chanOutInteractive{&chanOut{base: base, state: state, now: now}}
+// ChannelMessaging is outbox.ts channelMessaging: base is the shop's messaging (nil: none), state the step's channel state, made on first use; onKeep (nil: none) is told of
+// each kept message.
+func ChannelMessaging(base messaging.Messaging, state func() *ChannelState, now func() int64, onKeep func(to, text string)) messaging.Messaging {
+	return chanOutInteractive{&chanOut{base: base, state: state, now: now, onKeep: onKeep}}
 }
 
 func (c *chanOut) keep(to, kind, text string, choices []ChatChoice) messaging.OutboundMessage {
 	m := c.state().Keep(to, text, choices, c.now())
+	if c.onKeep != nil {
+		c.onKeep(to, text) // CustomerPush never fails: an alert that could not be queued never fails the page's message
+	}
 	return messaging.OutboundMessage{ID: m.ID, To: to, Kind: kind, Text: text, SentAt: m.AtMs}
 }
 

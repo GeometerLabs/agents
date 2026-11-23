@@ -116,7 +116,10 @@ func (c chanImages) SendImage(ctx context.Context, to string, i messaging.ImageM
 
 func (c *chanMsg) keep(to, kind, text string, choices []runtime.ChatChoice) messaging.OutboundMessage {
 	m := c.a.store.chanState().Keep(to, text, choices, c.a.now())
-	// TODO(go-bk-agent): onKeep, the customer's web push of the page's message (push.customer), is not wired yet
+	// outbox.ts onKeep: a customer who allowed alerts on this page gets the same words as a web push (runtime.CustomerPush, which never fails the message)
+	if push := c.a.kit.Ports.PushCustomer; push != nil {
+		push(to, text)
+	}
 	return messaging.OutboundMessage{ID: m.ID, To: to, Kind: kind, Text: text, SentAt: m.AtMs}
 }
 

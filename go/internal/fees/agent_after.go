@@ -18,7 +18,8 @@ func (a *Agent) AfterTick(save func() error) {
 	if a.c.PaidThrough != nil {
 		paid = a.c.PaidThrough()
 	}
-	owner := bookings.OwnerMessaging(a.kit.Ports.WhatsApp, bookings.OwnerRoute{Owner: a.owner, Now: a.now, PushOwner: a.kit.Ports.PushOwner, ChooseRoute: a.kit.Ports.OwnerRoute})
+	// the TypeScript core's messaging was alsoPushTo's too (runtime.ts `messaging: services.messaging`), so the beat's sends go through it as the step's do (agent_push.go)
+	owner := alsoPushTo(bookings.OwnerMessaging(a.kit.Ports.WhatsApp, bookings.OwnerRoute{Owner: a.owner, Now: a.now, PushOwner: a.kit.Ports.PushOwner, ChooseRoute: a.kit.Ports.OwnerRoute}), a.kit.Ports.PushCustomer)
 	if _, _, err := runtime.RunLicenceNotice(runtime.NoticeContext{
 		Licence: a.c.Licence(), PaidThrough: paid, Owner: a.owner(), Language: a.settings.Owner.Language, Now: a.now(), Messaging: owner, Rec: a.c.Rec, Save: save, Log: a.c.Log,
 		Message: a.licenceMessage,

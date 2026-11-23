@@ -8,7 +8,6 @@ still has every part, and a shop can be moved back to it.
 |------|-----------|-------------|---------------|
 | The amounts a UPI message shows for a mark typed with paise ("received K7M2QX 150.50") | agent.ts `markedInr: amountPaise / 100` | the message facts hold whole rupees | the words say ₹150 where the TypeScript says ₹150.50; the record keeps the paise exactly |
 | The handover code, approvers other than the owner (B37: `Geo-Requested-By`), yesterday's settlement rows | `agent.ts` | not ported in this slice | the owner's words reach the commands as before |
-| A page message's web push to the customer | `server/runtime.ts` | not ported | the message is on the page; nothing is pushed |
 | The tick's memory of one-time calls (guard-wait.ts `sendMemory`) | `modules/runtime/guard-wait.ts` | a tick thrown away mid-way (a Guard down inside it) is rare | the next beat may repeat a reminder sent by the thrown-away one |
 | The owner page's Money section (`money` in the owner's read: ownerMoney over the record) | channel.ts ownerView | no contract test reads it yet; `accounting.OwnerMoney` is ported | the owner's read leaves `money` out |
 | The member order of a refund issue in the snapshot (`late_upi`, and the shared refunds' issues) | agent.ts pushes `{paymentId, kind, atMs, note}` | `payments.RefundIssue` writes its members in its struct's order (`note` before `atMs`) | the same members and values; a byte-for-byte diff of the two runtimes' snapshots shows the order |

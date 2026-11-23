@@ -91,7 +91,7 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 	a.settings = a.inForce(a.settings)
 	a.parse = parseContextOf(a.settings)
 	// outbox.ts channelMessaging over the watched owner route (the order Bookings wraps them in): a page conversation's message is kept for its page
-	a.msg = runtime.ChannelMessaging(a.watch.Messaging(a.ownerMessaging(k.Ports.WhatsApp)), st.ChannelState, a.now)
+	a.msg = runtime.ChannelMessaging(a.watch.Messaging(a.ownerMessaging(k.Ports.WhatsApp)), st.ChannelState, a.now, k.Ports.PushCustomer)
 	a.say = messaging.NewSay(a.sayDeps())
 	a.refunds = payments.NewRefunds(a.refundDeps())
 	return a

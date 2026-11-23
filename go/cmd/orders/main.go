@@ -118,6 +118,8 @@ func run(folder string) error {
 	// item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push alone for a shop with no WhatsApp: push.ts ownerRoute)
 	ports.PushOwner = func(text string) []string { return rt.OwnerPush(text) } // the one shared owner route (runtime/ownerroute.go); rt is made later, so a closure
 	ports.OwnerRoute = func(hasWhatsApp bool) string { return rt.OwnerRoute(hasWhatsApp) }
+	// 24 Nov 2026: a page's message also goes to the phones that allowed alerts on that page (runtime/push.go CustomerPush, through the shop's push Guard)
+	ports.PushCustomer = func(conversation, text string) { rt.CustomerPush(conversation, text) }
 	kit.Ports = ports
 	// the monthly report (report/monthly-job.ts) from runtime.json's `report` block; a UPI shop's QR pictures go into the folder its pages are served from (start.ts folderQrImages)
 	if setup, err := reportwire.ReadSetup(client.Config, client.Folder, log); err != nil {

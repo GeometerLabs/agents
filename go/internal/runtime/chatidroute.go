@@ -268,10 +268,16 @@ func (s *Server) chatID(w http.ResponseWriter, r *http.Request) error {
 		}
 		return answer(200, map[string]any{"ok": false, "state": stopped})
 	case "forget":
-		// "Delete my chat": the keys, number and ties first (here), then the words by a step (chat.go ForgetChat); a guest's alerts go with them when the template has any
+		// "Delete my chat": the keys, number and ties first (here), then the words by a step (chat.go ForgetChat); and the thread's alert subscriptions (push.Forget)
 		g, err := st.Forget(handle)
 		if err != nil {
 			return err
+		}
+		// the thread's alert subscriptions end with it (chat-identity-http.ts `deps.push?.forget(chatConversationOf(g))`: whenever the store is open, push on or off)
+		if p := rt.Push(); p != nil {
+			if _, err := p.Forget(ChatConversationOf(g)); err != nil {
+				return err
+			}
 		}
 		if err := submit(map[string]any{"kind": "chat_message", "id": newUUID(), "handle": g, "language": lang, "forget": true}); err != nil {
 			return err

@@ -105,7 +105,8 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 	}
 	a.applyInForce()
 	owner := bookings.OwnerMessaging(a.watch.Messaging(k.Ports.WhatsApp), bookings.OwnerRoute{Owner: a.owner, Now: a.now, PushOwner: k.Ports.PushOwner, ChooseRoute: k.Ports.OwnerRoute})
-	a.msg = runtime.ChannelMessaging(owner, st.chanState, a.now)
+	// batch 3: a message to a number also goes to that parent's page as a web push (agent_push.go), and a page's kept message to the phones that allowed alerts on it (outbox.ts onKeep)
+	a.msg = runtime.ChannelMessaging(alsoPushTo(owner, k.Ports.PushCustomer), st.chanState, a.now, k.Ports.PushCustomer)
 	a.say = messaging.NewSay(a.sayDeps())
 	a.refunds = payments.NewRefunds(a.refundDeps())
 	return a
