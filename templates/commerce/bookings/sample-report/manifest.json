@@ -10,9 +10,9 @@
   "report": {
     "json": "report-2026-11.json",
     "html": "report-2026-11-en.html",
-    "code": "ZPHD-RRHR",
-    "digest": "sha256:fda2dc62381200df3e35e59b5b421930a823907b7c8572d0b8d26e0b8d197de4",
-    "check": "https://geometer.dev/verify/#s1.AQIBBzIwMjYtMTEIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQgH4MUIwLgCAQIBAAC1AAPgzI7hQ_2i3GI4EgDfPjXlm1tCGTCoI5B7fIVy0LjSbguNGX3k.Rd7HTlhPLG2RnTb4863ZFOThO7fC0JRyLI1ihJZCrayEZBo0MmPiAiFtclKrT8Z9TsMWNAzoFarwAp0khrRWDA"
+    "code": "GS01-HQWV",
+    "digest": "sha256:864018df9bcea143798300e66815e32bbda5a60b2daed952b2697cf0b1f72cbe",
+    "check": "https://geometer.dev/verify/#s1.AQIBBzIwMjYtMTEIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQgH4MUIwLgCAQIBAAC1AAPgzI7hQ4ZAGN-bzqFDeYMA5mgV4yu9paYLLa7ZUrJpfPCx9yy-._qRJvZx156e1t7B_Bxyv2T0YE3D0dnqfOfhqpDXQMIQ2-gyzSk7pKTGpbNjBw9mVXKMv1nPQKDAuIkXyHYfGBw"
   },
   "crashTest": {
     "json": "go-live-certificate.json",
@@ -21,7 +21,7 @@
     "held": 9,
     "total": 9
   },
-  "priceList": "2026-11-19",
+  "priceList": "2026-11-21",
   "ownerLines": [
     "Sample Salon · Nov 2026 · stand-in services, test money",
     "Bookings made: 7 · Cancelled: 3 · Deposits marked paid by owner: ₹1,400 · Refunds marked sent by owner: ₹400",
