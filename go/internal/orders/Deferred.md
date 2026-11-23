@@ -32,10 +32,18 @@ the next clean-up, with both templates' settings vectors as its proof.
 * **The plans and the assistant** run through two seams (`agent_seams.go`: `newPlans`, `assistantFor`), nil until G3 fills them. Until then a plan's period payment that is
   recorded ends `runtime.Unported` (it is never confirmed as an ordinary order), messages about a plan are read as ordinary words, and a shop with an `assistant` block answers its
   owner with the fixed commands only (its talk box and cards are said as "a shop without the assistant"). The owner's morning line goes at the end of `AfterTick` (G3's).
+* **The owner's Stock page** (`/internal/channel/owner-stock`, owner.contract.test.ts "the shop's stock count", 2 tests): the shared runtime answers 404 for every template
+  (runtime/kitserver.go lists the route with the listings shop's) and its Stock view offers only listings as items to count, so an Orders shop has no page to start a count from.
+  The agent's side (reconcileStock, the shelf count in `availability`, the low mark's line; all in `stock_calls.go`) is ported; the route needs a hook in internal/runtime (the
+  template's menu items as the candidates), a change to existing shared code that is the lead's (or stream W5's) to make.
 * **A chat guest's hold-to-talk**: `onMessage` takes a chat recording when `runtime.ChatTurn` hands one in, but the Orders Kit does not offer `runtime.ChatVoiceKit` yet (Bookings
   does not either), so the chat's voice button is off on Go.
 * **The owner's once-a-day notice that customers' talk stopped** (conversation.ts capNotice, `CustomerTalkResult.NoticeDay`) is not sent, as in internal/bookings.
 * **The tick's memory of one-time calls** (guard-wait.ts sendMemory) is not ported, as in internal/bookings (agent_watch.go says why).
+* **The monthly report goes through the shop's WhatsApp as it is** (`ports.WhatsApp`), not through the owner's route (push.ts pushMessaging, as the TypeScript's runtime messaging
+  is): an owner on push alone gets no report. This is internal/bookings' choice, kept the same here.
+* **The settlement read in fakes mode**: the tick reads yesterday's settlements only from a gateway port that implements `payments.SettlementReader` (the Razorpay client);
+  `payments.Fake` does not, so a stand-in shop's tick reads none where the TypeScript's stand-in reads an empty day. Nothing in the record differs for a day with no rows.
 * **Amounts in rupees in the owner-marked words** are whole rupees (paise / 100 cut toward zero); the TypeScript passes a JavaScript number, so only a mark typed with paise reads
   differently (as in internal/bookings).
 

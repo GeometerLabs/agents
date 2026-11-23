@@ -9,6 +9,7 @@ package orders
 
 import (
 	"encoding/json"
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -808,7 +809,7 @@ func (a *Agent) proceedToHold(o *Order, ctx *flowCtx) error {
 	if a.ownerConfirms {
 		r := a.requestOf(o)
 		if r == nil {
-			return nil
+			return errors.New("the owner-marked ledger has no request for the link it just made (" + o.LinkID + ")") // `requestOf(o)!`: the TypeScript throws here too
 		}
 		a.noteRequest(o, r, "a UPI request to the shop's own UPI ID; it counts as paid only when the owner marks it received")
 		// a page order's page draws its own QR code from the link (item 11h), so no picture is made for it

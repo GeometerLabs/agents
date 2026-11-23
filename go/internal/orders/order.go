@@ -20,9 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/orders/words"
-	"github.com/GeometerLabs/agents/go/internal/stock"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
@@ -103,54 +101,6 @@ func (st *Store) OrdersInSlot(date LocalDate, slotID string, nowMs int64, except
 		}
 	}
 	return n + st.PlanMealsInSlot(date, slotID, nowMs, "")
-}
-
-// OrderFacts is order.ts orderFacts: each item line of every order as the stock module reads it, one fact per order and item (two lines of an item are one fact with both
-// quantities added). Plan payments are not orders of the menu; an order that ended more than stock.FactHorizonMs ago is no longer passed.
-func (st *Store) OrderFacts(nowMs int64) []stock.OrderFact {
-	var out []stock.OrderFact
-	for _, o := range st.Orders {
-		if o.Plan != nil {
-			continue
-		}
-		if (o.State == Completed || o.State == Cancelled) && o.SlotEndMs != nil && nowMs-*o.SlotEndMs > stock.FactHorizonMs {
-			continue
-		}
-		var items []string // a Map keeps the order of first insertion
-		qty := map[string]int64{}
-		for _, l := range o.Lines {
-			if _, seen := qty[l.ItemID]; !seen {
-				items = append(items, l.ItemID)
-			}
-			qty[l.ItemID] += l.Qty
-		}
-		for _, id := range items {
-			f := stock.OrderFact{Key: "sale:" + o.ID + ":" + id, ID: stock.MenuStockID(id), Qty: qty[id], Standing: o.State == Confirmed || o.State == Completed,
-				Cancelled: o.State == Cancelled, Holding: HoldsStock(o, nowMs)}
-			if o.SlotEndMs != nil {
-				end := *o.SlotEndMs
-				f.EndedMs = &end
-			}
-			out = append(out, f)
-		}
-	}
-	return out
-}
-
-// CountedLeft is order.ts countedLeft: what is left of a COUNTED menu item for a new order (the count less what other orders hold that is not yet in it); ok false for an item
-// nobody counts. `count` is the shop's stock count (the assistant's state, runtime.Snap.Stock; nil: none). exceptID is the order being checked.
-func (st *Store) CountedLeft(count *listings.Stock, itemID string, nowMs int64, exceptID string) (int64, bool) {
-	id := stock.MenuStockID(itemID)
-	if count == nil || !stock.IsCounted(count, id) {
-		return 0, false
-	}
-	var facts []stock.OrderFact
-	for _, f := range st.OrderFacts(nowMs) {
-		if exceptID == "" || !strings.HasPrefix(f.Key, "sale:"+exceptID+":") {
-			facts = append(facts, f)
-		}
-	}
-	return stock.LeftFor(count, id, stock.UnbookedHolds(count, id, facts, ""))
 }
 
 // ---- the plans' meals in a slot (plans/ledger.ts planMealsInSlot) ----------------------------------------------------------------------------------------------------------

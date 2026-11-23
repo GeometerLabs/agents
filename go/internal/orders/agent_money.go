@@ -11,16 +11,12 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
-	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/guard"
-	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
-	"github.com/GeometerLabs/agents/go/internal/stock"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
@@ -538,66 +534,6 @@ func (a *Agent) closeLinksAtStop() {
 }
 
 // ---- the shop's stock count (modules/stock) --------------------------------------------------------------------------------------------------------------------------
-
-// stockCount is `store.assistant?.stock`: the shop's one stock count in this step's state (nil: nothing is counted).
-func (a *Agent) stockCount() *listings.Stock {
-	if a.c == nil || a.c.Snap == nil {
-		return nil
-	}
-	return a.c.Snap.Stock
-}
-
-// reconcileStock is agent.ts reconcileStock: for each menu item the owner counts, an order that stands is booked once under `sale:<order>:<item>`, and a cancelled order gives back
-// exactly what it took. Run at the start of every step and tick and again before an availability check; asking twice changes nothing. A shop that counts nothing returns at once,
-// writing nothing and logging nothing. An item that fell to its low mark gets the owner one line in their app now (once per crossing); Orders has no supplier to ask.
-func (a *Agent) reconcileStock() {
-	st := a.stockCount()
-	if st == nil || len(st.Lines) == 0 {
-		return
-	}
-	now := a.now()
-	countsOf := func() string {
-		parts := make([]string, len(st.Lines))
-		for i, l := range st.Lines {
-			parts[i] = i64(l.Count)
-		}
-		return strings.Join(parts, ",")
-	}
-	before := countsOf()
-	if changed := stock.ReconcileSales(st, stock.ShopRecord("orders"), a.store.OrderFacts(now), now); changed > 0 && countsOf() != before {
-		a.log(nil, a.owner(), stock.Action, "confirmed", map[string]any{"changed": changed}, logMore{refs: stock.StockRefs("menu:*", "booked_sale", "shop"),
-			notes: "the shop's stock count was brought in line with the orders that stand and the ones cancelled (each order is booked once)"})
-	}
-	for _, al := range stock.PendingAlerts(st, "") {
-		if stock.KindOf(al.Line) == stock.KindSupply {
-			continue // a supply item belongs to Stock orders, which turns its alert into a reorder
-		}
-		stock.AckAlert(st, al.Line, al.Crossing)
-		// `item ? itemName(item, ownerLanguage) : st.lines.find((l) => l.id === a.line)?.name ?? a.line`
-		name := al.Line
-		var item *MenuItem
-		if strings.HasPrefix(al.Line, "menu:") {
-			item = a.settings.ItemOf(strings.TrimPrefix(al.Line, "menu:"))
-		}
-		if item != nil {
-			name = ItemName(item, a.settings.Owner.Language)
-		} else {
-			for _, l := range st.Lines {
-				if l.ID == al.Line {
-					if l.Name != "" {
-						name = l.Name
-					}
-					break
-				}
-			}
-		}
-		if a.c.Snap.A != nil {
-			a.c.Snap.A.Talk = append(a.c.Snap.A.Talk, assistant.TalkLine{AtMs: now, From: "assistant", Text: stock.Words(a.settings.Owner.Language).RunningLow(name, al.Count)})
-		}
-		a.log(nil, a.owner(), stock.Action, "confirmed", map[string]any{"item": al.Line, "count": al.Count, "crossing": al.Crossing}, logMore{refs: stock.StockRefs(al.Line, "low", "shop"),
-			notes: "a counted item fell to its low mark; the owner was told once for this crossing"})
-	}
-}
 
 // ---- the reminder before the slot (modules/reminders) ----------------------------------------------------------------------------------------------------------------
 
