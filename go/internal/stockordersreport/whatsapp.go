@@ -14,7 +14,6 @@ package stockordersreport
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -24,38 +23,6 @@ import (
 // reportSlots is REPORT_SLOTS: the values in a report message, in the order they come in the wording.
 var reportSlots = []string{"title", "placed", "acknowledged", "received", "part", "wrong", "declined", "silent", "neverSent", "budget", "stopped", "notChecked", "code", "link", "check", "builder"}
 
-var slotRe = regexp.MustCompile(`\{([A-Za-z]+)\}`)
-var metaSlotRe = regexp.MustCompile(`\{\{([0-9]+)\}\}`)
-
-// metaBody is metaBody: the body as Meta wants it: {slot} turned into {{1}}, {{2}} ... in order.
-func metaBody(body string) string {
-	n := 0
-	return slotRe.ReplaceAllStringFunc(body, func(string) string { n++; return "{{" + strconv.Itoa(n) + "}}" })
-}
-
-// fillBody is fillBody: a Meta body ({{1}} ...) filled with its parameters: what the owner will read. A number with no parameter is empty.
-func fillBody(meta string, parameters []string) string {
-	return metaSlotRe.ReplaceAllStringFunc(meta, func(m string) string {
-		n, _ := strconv.Atoi(m[2 : len(m)-2])
-		if n >= 1 && n <= len(parameters) {
-			return parameters[n-1]
-		}
-		return ""
-	})
-}
-
-// reportSlotsOf is reportSlotsOf: the values a body names, in order. A name this file does not know is a mistake in the wording, and says so.
-func reportSlotsOf(body string) ([]string, error) {
-	var out []string
-	for _, m := range slotRe.FindAllStringSubmatch(body, -1) {
-		if !has(reportSlots, m[1]) {
-			return nil, fmt.Errorf("The report template body has an unknown value {%s}.", m[1])
-		}
-		out = append(out, m[1])
-	}
-	return out, nil
-}
-
 // Extras is ReportExtras: the report's check code, the address of the full page, the check link and who set the agent up.
 type Extras struct{ Code, Link, Check, Builder string }
 
@@ -64,26 +31,12 @@ func reportValues(r *Report, lang string, x Extras) map[string]string {
 	s := StringsOf(lang)
 	o := &r.Orders
 	return map[string]string{
-		"title":  strings.Join(nonEmpty(report.OneLine(r.ShopName), report.PeriodLabel(r.Period, lang), s.SourceTag[r.Source]), " · "),
+		"title":  strings.Join(report.NonEmpty(report.OneLine(r.ShopName), report.PeriodLabel(r.Period, lang), s.SourceTag[r.Source]), " · "),
 		"placed": strconv.Itoa(o.Placed), "acknowledged": strconv.Itoa(o.Acknowledged), "received": strconv.Itoa(o.ReceivedFull), "part": strconv.Itoa(o.PartReceived), "wrong": strconv.Itoa(o.WrongItem),
 		"declined": strconv.Itoa(o.DeclinedBySupplier), "silent": strconv.Itoa(o.Silent), "neverSent": strconv.Itoa(o.NeverSent),
 		"budget": BudgetValue(r, lang), "stopped": strconv.Itoa(r.Stopped.Total), "notChecked": NotCheckedList(r, lang),
 		"code": x.Code, "link": x.Link, "check": x.Check, "builder": report.OneLine(x.Builder),
 	}
-}
-
-// reportParameters is reportParameters: the parameters of a template body in the order its {{1}}, {{2}} ... take them. A value is one line: Meta refuses a line break, a tab or a run of
-// spaces in one.
-func reportParameters(body string, values map[string]string) ([]string, error) {
-	slots, err := reportSlotsOf(body)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]string, len(slots))
-	for i, sl := range slots {
-		out[i] = report.OneLine(values[sl])
-	}
-	return out, nil
 }
 
 // ReportMessage is what the owner is sent: the whole message as plain text (and what the template reads as when filled), and the same words as the approved template with its values.
@@ -111,31 +64,16 @@ func MonthlyReportMessage(sr SealedReport, lang, link, check string) (ReportMess
 	if r.PreparedBy == nil || *r.PreparedBy == "" || report.OneLine(*r.PreparedBy) == "" {
 		return ReportMessage{}, fmt.Errorf("The report names no one who set the agent up, and the message says who did.")
 	}
-	body := templateFor(r).Bodies[lang]
-	extras := Extras{Code: sr.Envelope.Code, Link: link, Builder: *r.PreparedBy}
-	var fillErr error
-	fill := func(check string) string {
-		x := extras
-		x.Check = check
-		params, err := reportParameters(body, reportValues(r, lang, x))
-		if err != nil {
-			fillErr = err
-		}
-		return fillBody(metaBody(body), params)
-	}
-	chosen, err := report.MessageCheckLink(fill, sr.Envelope.Digest, sr.Envelope.Code, check)
+	tpl := templateFor(r)
+	text, params, err := report.BuildMessage(report.MessageSpec{
+		Body: tpl.Bodies[lang], Slots: reportSlots,
+		Values: func(c, _ string) map[string]string {
+			return reportValues(r, lang, Extras{Code: sr.Envelope.Code, Link: link, Builder: *r.PreparedBy, Check: c})
+		},
+		Digest: sr.Envelope.Digest, Code: sr.Envelope.Code, SummaryLink: check, Language: lang, // no refunds are settled by a person's word here: nothing to name
+	})
 	if err != nil {
 		return ReportMessage{}, err
 	}
-	x := extras
-	x.Check = chosen
-	parameters, err := reportParameters(body, reportValues(r, lang, x))
-	if err == nil {
-		err = fillErr
-	}
-	if err != nil {
-		return ReportMessage{}, err
-	}
-	text := fillBody(metaBody(body), parameters)
-	return ReportMessage{Text: text, Template: report.Template{Name: templateFor(r).Name, Language: lang, Text: text, Parameters: parameters}}, nil
+	return ReportMessage{Text: text, Template: report.Template{Name: tpl.Name, Language: lang, Text: text, Parameters: params}}, nil
 }

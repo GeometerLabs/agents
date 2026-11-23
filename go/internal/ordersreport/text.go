@@ -13,32 +13,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/report"
-	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
-// whenText is `${formatDate(d, language)} ${d.year}`.
-func whenText(d zone.Date, lang string) string {
-	return fmt.Sprintf("%s %d", language.Formats(lang).Date(d.Year, d.Month, d.Day), d.Year)
-}
-
-// GoLiveLines is goLiveLines: what a monthly document says about the go-live checks, as sentences in the shop's language: no certificate was given, one was given and could not be
-// trusted, or one was read and says what its checks ran on (with its date, the counts it states, and the key that signed it). Never a grade.
+// GoLiveLines is goLiveLines: what a monthly document says about the go-live checks, as sentences in the shop's language (report.GoLiveLines over this template's words).
 func GoLiveLines(g report.GoLiveFinding, lang string) []string {
 	s := StringsOf(lang)
-	switch g.Status {
-	case "none":
-		return []string{s.GoLive.None}
-	case "untrusted":
-		return []string{s.GoLive.Untrusted}
-	case "own":
-		held := Fill(s.Cert.Held, strconv.Itoa(g.Held), strconv.Itoa(g.Total), strconv.Itoa(g.Failed), strconv.Itoa(g.NotTested))
-		return []string{Fill(s.GoLive.Own, whenText(g.IssuedOn, lang)), held, Fill(s.GoLive.SignedWith, g.SignedBy)}
-	case "example":
-		return []string{Fill(s.GoLive.Example, whenText(g.IssuedOn, lang)), Fill(s.GoLive.SignedWith, g.SignedBy)}
-	}
-	return []string{Fill(s.GoLive.Different, whenText(g.IssuedOn, lang)), Fill(s.GoLive.SignedWith, g.SignedBy)} // "different"
+	return report.GoLiveLines(g, goLiveWords(s), lang)
+}
+
+// goLiveWords is the part of the strings the go-live sentences and block use.
+func goLiveWords(s *Strings) report.GoLiveWords {
+	return report.GoLiveWords{None: s.GoLive.None, Untrusted: s.GoLive.Untrusted, Own: s.GoLive.Own, Example: s.GoLive.Example, Different: s.GoLive.Different, SignedWith: s.GoLive.SignedWith, Held: s.Cert.Held}
 }
 
 // NotCheckedList is notCheckedList: what was not checked, as the owner's short form names it: the things an owner would expect, then how many more the full report lists. A UPI shop
@@ -55,16 +41,6 @@ func NotCheckedList(r *Report, lang string) string {
 
 func pair(label string, value any) string { return fmt.Sprintf("%s: %v", label, value) }
 
-func nonEmpty(parts ...string) []string {
-	var out []string
-	for _, p := range parts {
-		if p != "" {
-			out = append(out, p)
-		}
-	}
-	return out
-}
-
 // sourceTag is `s.sourceTag[report.source]`.
 func sourceTag(s *Strings, r *Report) string { return s.SourceTag[r.Source] }
 
@@ -72,7 +48,7 @@ func sourceTag(s *Strings, r *Report) string { return s.SourceTag[r.Source] }
 func OwnerText(r *Report, lang string) string {
 	s := StringsOf(lang)
 	collectedLabel, givenBackLabel := moneyLabels(lang, r.UPI())
-	title := strings.Join(nonEmpty(report.OneLine(r.ShopName), report.PeriodLabel(r.Period, lang), sourceTag(s, r)), " · ")
+	title := strings.Join(report.NonEmpty(report.OneLine(r.ShopName), report.PeriodLabel(r.Period, lang), sourceTag(s, r)), " · ")
 	balance, toCollect, givenBack := "", report.Rupees(0), ""
 	if r.Money.BalanceCollected != nil {
 		balance = pair(s.Label.BalanceCollected, report.Rupees(r.Money.BalanceCollected.Paise))
@@ -83,7 +59,7 @@ func OwnerText(r *Report, lang string) string {
 	if r.Money.GivenBack.Count > 0 {
 		givenBack = pair(givenBackLabel, report.Rupees(r.Money.GivenBack.Paise))
 	}
-	moneyLine := strings.Join(nonEmpty(pair(collectedLabel, report.Rupees(r.Money.Collected.Paise)), balance, pair(s.Label.StillToCollect, toCollect), givenBack), " · ")
+	moneyLine := strings.Join(report.NonEmpty(pair(collectedLabel, report.Rupees(r.Money.Collected.Paise)), balance, pair(s.Label.StillToCollect, toCollect), givenBack), " · ")
 	doneLine := strings.Join([]string{pair(s.Label.OrdersTaken, r.Orders.Taken), pair(s.Label.Cancelled, r.Orders.Cancelled),
 		pair(s.Label.WasAsked, r.Owner.Asked), pair(s.Label.Approved, r.Owner.Approved), pair(s.Label.SaidNo, r.Owner.Denied)}, " · ")
 

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/report"
 )
 
@@ -124,21 +123,5 @@ func TestFilesOnDiskNameNoStudent(t *testing.T) {
 		if n := holds(string(raw), needles); n != "" {
 			t.Errorf("%s names a student or a parent's number (%q)", f.Name(), n)
 		}
-	}
-}
-
-// TestEntryDigestLeavesOutTheNoteAndTheNumber holds the two members a digest of the record must not carry: the parent's number (`conversation`) and the note, which can name a child
-// (Fees' entryDigest is the stricter of the three templates').
-func TestEntryDigestLeavesOutTheNoteAndTheNumber(t *testing.T) {
-	booking := "f-1"
-	a := accounting.Entry{Seq: 1, Time: "2026-11-02T05:00:00.000Z", Conversation: "919811111111", Booking: &booking, Action: "open_fee", Outcome: "confirmed", Notes: "the fee for Rohan Mehta is open", Refs: map[string]string{"month": "2026-11"}}
-	b := a
-	b.Conversation, b.Notes = "919822222222", "another note"
-	if EntryDigest(a) != EntryDigest(b) {
-		t.Error("the digest carries the parent's number or the note")
-	}
-	b.Refs = map[string]string{"month": "2026-12"}
-	if EntryDigest(a) == EntryDigest(b) {
-		t.Error("the digest ignores a ref")
 	}
 }

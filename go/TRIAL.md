@@ -1126,6 +1126,32 @@ looks for the skill's own answer key first). Tests: modules/assistant/test/words
 modules/assistant/test 110 of 110; `go vet ./...` and `go test ./...` clean; `gen_words.ts --check` and `gen_assistant_vectors.ts --check` fresh. The Fees morning line runs
 after FR's monthly report in AfterTick. internal/fees/Deferred.md still lists the monthly report as not ported: that row is Stream FR's to remove.
 
+## go-cleanup-23nov (Stream CL: one copy of each shared piece, and the record digests)
+
+**1. One report wiring.** `internal/reportwire` is the one copy (Fees' Stream FR piece), chosen over `internal/runtime/reportwiring.go` because it also holds the beat's `Runner`
+and the hourly `FailureLog`; the runtime's file is deleted. Bookings (`books.go`, `agent_after.go`), Orders (`agent_after.go`, `books.go`) and Stock orders (`report.go`) now keep only
+what is theirs (the settings tree, the bookings/orders the report reads, a `ReportTick` and a `Run` that binds them); their copies of the `report` block reader, options reader,
+messaging adapter, record adapter, failure log and fault mapping are deleted. `reportwire.Setup` gained `Token` (the test seam for a report folder's name). `Books.ReportMessaging`
+is gone (the messaging adapter always uses a background context now; `BooksPorts.Context` still serves the settlement read). The adapter tests moved to `reportwire/reportwire_test.go`.
+In the report packages: the go-live sentences, block and file reader (`report.GoLiveLines`, `GoLiveBlock`, `ReadGoLiveFile`, `WhenText`), the by-action table, tree and count,
+`PeriodOfRange`, `SplitMonth` (Orders, Stock orders; Bookings keeps its own because its TypeScript builds a `Map` where a repeated seq keeps the last time), `ISOOf`, `Decision`/`DecisionsOf`,
+`NonEmpty`, `RandomToken`, the tree helpers and `BuildMessage` (the WhatsApp message mechanics) are `internal/report`'s; the packages' copies are deleted. Every report vector `--check`
+passes unchanged except the three whose digest changed on purpose (item 3).
+**2. One `PrepareGuestMessage`:** Bookings and Orders call `runtime.PrepareGuestMessage` (as Fees does); their copies are deleted.
+**3. Record digests.** Decision: Fees was right. A note is free text that can name a person, and the record's own chain already leaves `notes` out (modules/record/ledger.ts), so the
+digest now leaves out `conversation` and `notes` in all FOUR templates (Stock orders' TypeScript also kept notes), in TypeScript (`entryDigest` in the three data.ts files) and in Go
+(one `report.EntryDigest`; `bookingsreport.EntryDigest` and Fees' copy deleted). Tests: a new test in each template's report test (TypeScript) and `report/entrydigest_test.go`; vectors
+regenerated for Bookings, Orders and Stock orders (Fees' unchanged). **Effect on old months:** a past month's sealed report file is never rewritten and no verifier recomputes a record
+digest from the record, so sealed files stay valid. A report rebuilt for an old month from a record that has notes would carry a different `record.digest` than the sealed one.
+`refs.page` stays in the digest (a 128-bit random folder name cannot be guessed from a digest).
+**4. The Bookings sample report** was regenerated with `templates/commerce/bookings/scripts/sample-report.ts`; `sample-report.test.ts` passes. **The website's copy** (public-web
+`npm run sample:pull`) needs the owner to pull the new `report-2026-11*.{json,html}` and `manifest.json` and deploy; I did not touch public-web.
+**TypeScript findings.** (a) Bookings' `record.digest` is over the month's rows; Orders, Fees and Stock orders digest the whole record: left alone, worth a decision. (b) Bookings'
+OwnerText keeps a local `nonEmpty` closure, and Bookings counts by action inside its rows loop: not folded (no behaviour reason, small).
+**Owner routes folded (after merging main with SG's e4093b05):** `cmd/bookings`, `cmd/orders` and `cmd/fees` use `rt.OwnerPush` and `rt.OwnerRoute` (`runtime/ownerroute.go`); their 25-line copies are deleted. **Deferred.** Not folded, still copies of one thing: `sealWords`, `e`, `fign`, `amountCells`, `pair`, `NotCheckedList`
+and each package's `Fill`/`StringsOf` (they read each package's own generated strings type).
+
+
 ## go-stockorders-gaps-23nov: Stock orders gaps before the deletion (23 Nov 2026, stream SG)
 
 Started from agents main 3d1cd970. The job: give every money, limit, approval, licence, recovery and stock-count behaviour of Stock orders that only a TypeScript unit test checked a

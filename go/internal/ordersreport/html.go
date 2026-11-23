@@ -9,9 +9,7 @@ package ordersreport
 import (
 	"crypto/ed25519"
 	"fmt"
-	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/accounting/render"
@@ -39,22 +37,12 @@ func sealWords(s *Strings) report.SealWords {
 
 func e(s string) string { return report.Esc(s) }
 
-func fign(n int) string { return report.Fig(strconv.Itoa(n)) }
-
-// GoLiveBlock is goLiveBlock: the go-live checks, in sentences: green when a go-live certificate shows they ran on this shop's own settings, amber for everything else.
+// GoLiveBlock is goLiveBlock (report.GoLiveBlock over this template's words).
 func GoLiveBlock(g report.GoLiveFinding, lang string) string {
-	class := "warn"
-	if g.Status == "own" {
-		class = "note"
-	}
-	var b strings.Builder
-	b.WriteString(`<div class="` + class + `">`)
-	for _, line := range GoLiveLines(g, lang) {
-		b.WriteString("<p>" + e(line) + "</p>")
-	}
-	b.WriteString("</div>")
-	return b.String()
+	return report.GoLiveBlock(g, goLiveWords(StringsOf(lang)), lang)
 }
+
+func fign(n int) string { return report.Fig(strconv.Itoa(n)) }
 
 func amountCells(a accounting.Amount) []string {
 	return []string{report.Fig(strconv.Itoa(a.Count)), report.Fig(report.Rupees(a.Paise))}
@@ -135,38 +123,7 @@ func ReportSection(sr SealedReport, lang, check string) (string, error) {
 		{e(p.HeldBack), strconv.Itoa(r.Messages.HeldBack)},
 	})
 
-	// the by-action table: actions and outcomes in UTF-16 order, as sort() with no comparator
-	var actions []string
-	outcomeSet := map[string]bool{}
-	for a, outs := range r.Record.ByAction {
-		actions = append(actions, a)
-		for o := range outs {
-			outcomeSet[o] = true
-		}
-	}
-	var outcomes []string
-	for o := range outcomeSet {
-		outcomes = append(outcomes, o)
-	}
-	sort.Slice(actions, func(i, j int) bool { return report.LessUTF16(actions[i], actions[j]) })
-	sort.Slice(outcomes, func(i, j int) bool { return report.LessUTF16(outcomes[i], outcomes[j]) })
-	actionHead := []report.TableHead{{Text: p.Action}}
-	for _, o := range outcomes {
-		actionHead = append(actionHead, report.TableHead{Text: o, N: true})
-	}
-	var actionRows [][]string
-	for _, a := range actions {
-		row := []string{"<code>" + e(a) + "</code>"}
-		for _, o := range outcomes {
-			if n, ok := r.Record.ByAction[a][o]; ok {
-				row = append(row, strconv.Itoa(n))
-			} else {
-				row = append(row, "")
-			}
-		}
-		actionRows = append(actionRows, row)
-	}
-	byAction := report.Table(actionHead, actionRows)
+	byAction := report.ByActionTable(r.Record.ByAction, p.Action) // actions and outcomes in UTF-16 order, as sort() with no comparator
 
 	tagHTML := ""
 	if tag != "" {

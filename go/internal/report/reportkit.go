@@ -2,8 +2,9 @@
 // built from, the month's slice of the record and the report's period, the "by action" table, the WhatsApp message mechanics (a `{slot}` body, its Meta form, the parameters, the
 // choice of the settled-by-word words and of the check link that keep the message inside WhatsApp's limit), and the random folder name.
 //
-// Why here: internal/feesreport needs every one of these and they are generic. They are the same code that internal/bookingsreport and internal/ordersreport carry as private copies
-// (templates/*/report/*.ts do the same, in modules/report/*.ts for the TypeScript); those two packages are not changed in this stream and can move onto this file (see Deferred.md).
+// Why here: every template's report needs each of these and they are generic. Bookings, Orders and Stock orders carried private copies until 23 Nov (Stream CL folded them onto this file,
+// as Fees' report already used it); the TypeScript does the same in modules/report/*.ts. Also here, for the same reason: the date as an ISO string, the decisions of an entry, the go-live
+// certificate's sentences and block, and reading the certificate's file.
 //
 // Where Go and JavaScript differ: a tree is map[string]any with ints, strings, bools, nil, []any and json.Number (what CanonicalJSON writes); lengths are UTF-16 units
 // (language.UTF16Len); a regular-expression replace with a function inserts the text as it is (no `$` patterns), as regexp.ReplaceAllStringFunc does; `Array.prototype.sort()` with no
@@ -15,13 +16,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/language"
+	"github.com/GeometerLabs/agents/go/internal/slots"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
@@ -261,4 +265,116 @@ func BuildMessage(s MessageSpec) (text string, parameters []string, err error) {
 		return "", nil, fillErr
 	}
 	return FillBody(MetaBody(s.Body), parameters), parameters, nil
+}
+
+// ISOOf is `new Date(ms).toISOString()` for a year from 1000 to 9999.
+func ISOOf(ms int64) string { return time.UnixMilli(ms).UTC().Format("2006-01-02T15:04:05.000Z") }
+
+// Decision is one rule's verdict as a record entry carries it.
+type Decision struct {
+	RuleID  string `json:"ruleId"`
+	Verdict string `json:"verdict"`
+}
+
+// DecisionsOf is the decisions an entry carries; one that is not an object with these members is left out.
+func DecisionsOf(e accounting.Entry) []Decision {
+	var out []Decision
+	for _, raw := range e.Decisions {
+		var d Decision
+		if json.Unmarshal(raw, &d) == nil {
+			out = append(out, d)
+		}
+	}
+	return out
+}
+
+// NonEmpty is `.filter(Boolean)` over some texts.
+func NonEmpty(parts ...string) []string {
+	var out []string
+	for _, p := range parts {
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// WhenText is `${formatDate(d, language)} ${d.year}`.
+func WhenText(d zone.Date, lang string) string {
+	return fmt.Sprintf("%s %d", language.Formats(lang).Date(d.Year, d.Month, d.Day), d.Year)
+}
+
+// GoLiveWords are the words of a template's strings that the go-live sentences use (`goLive` and `cert.held`); Held is a template with {0} held, {1} total, {2} failed, {3} not tested.
+type GoLiveWords struct{ None, Untrusted, Own, Example, Different, SignedWith, Held string }
+
+// GoLiveLines is goLiveLines: what a monthly document says about the go-live checks, as sentences in the client's language: no certificate was given, one was given and could not be
+// trusted, or one was read and says what its checks ran on (with its date, the counts it states, and the key that signed it). Never a grade.
+func GoLiveLines(g GoLiveFinding, w GoLiveWords, lang string) []string {
+	switch g.Status {
+	case "none":
+		return []string{w.None}
+	case "untrusted":
+		return []string{w.Untrusted}
+	case "own":
+		held := slots.Fill(w.Held, strconv.Itoa(g.Held), strconv.Itoa(g.Total), strconv.Itoa(g.Failed), strconv.Itoa(g.NotTested))
+		return []string{slots.Fill(w.Own, WhenText(g.IssuedOn, lang)), held, slots.Fill(w.SignedWith, g.SignedBy)}
+	case "example":
+		return []string{slots.Fill(w.Example, WhenText(g.IssuedOn, lang)), slots.Fill(w.SignedWith, g.SignedBy)}
+	}
+	return []string{slots.Fill(w.Different, WhenText(g.IssuedOn, lang)), slots.Fill(w.SignedWith, g.SignedBy)} // "different"
+}
+
+// GoLiveBlock is goLiveBlock: the go-live checks, in sentences: green when a go-live certificate shows they ran on this client's own settings, amber for everything else.
+func GoLiveBlock(g GoLiveFinding, w GoLiveWords, lang string) string {
+	class := "warn"
+	if g.Status == "own" {
+		class = "note"
+	}
+	var b strings.Builder
+	b.WriteString(`<div class="` + class + `">`)
+	for _, line := range GoLiveLines(g, w, lang) {
+		b.WriteString("<p>" + Esc(line) + "</p>")
+	}
+	b.WriteString("</div>")
+	return b.String()
+}
+
+// ReadGoLiveFile is cli.ts readGoLive(path, settings): the go-live certificate for a monthly report. An empty path is "none given"; a file that cannot be read is a certificate that could
+// not be trusted. noun is "shop" or "centre"; subject is the template's own (made only when there is a file to read, as the TypeScript does).
+func ReadGoLiveFile(path, noun string, subject func() GoLiveSubject) GoLiveReading {
+	if path == "" {
+		return NoGoLive(noun)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return UntrustedGoLive(fmt.Sprintf("I cannot read %s", path), noun)
+	}
+	return ReadGoLiveText(string(raw), subject())
+}
+
+// DecisionsTree is an entry's decisions as JSON values (a nil list is the empty list the record writes; a decision that is not JSON is null).
+func DecisionsTree(e accounting.Entry) []any {
+	out := make([]any, 0, len(e.Decisions))
+	for _, d := range e.Decisions {
+		var v any
+		dec := json.NewDecoder(strings.NewReader(string(d)))
+		dec.UseNumber()
+		if err := dec.Decode(&v); err != nil {
+			v = nil
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+// EntryDigest is entryDigest, the same for every template (decided 23 Nov, Stream CL): the fingerprint of one record entry. The customer's, parent's or supplier's number
+// (`conversation`) and the note are left out, as the record's chain leaves them out too (modules/record/ledger.ts): a note is free text and can name a person, and a digest of it could
+// be tested by guessing the name. Every other member is in it, `refs.page` as well (a secret folder of 128 random bits: it cannot be guessed from a digest).
+func EntryDigest(e accounting.Entry) string {
+	refs := make(map[string]any, len(e.Refs))
+	for k, v := range e.Refs {
+		refs[k] = v
+	}
+	return DigestOf(map[string]any{"seq": e.Seq, "time": e.Time, "booking": StrTree(e.Booking), "action": e.Action, "inputsDigest": e.InputsDigest, "outcome": e.Outcome,
+		"decisions": DecisionsTree(e), "language": e.Language, "refs": refs})
 }

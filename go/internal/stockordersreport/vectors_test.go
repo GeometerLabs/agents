@@ -537,7 +537,7 @@ func (m *memRecord) Append(n accounting.NewEntry) accounting.Entry {
 	for k, v := range n.Refs {
 		refs[k] = v
 	}
-	e := accounting.Entry{Seq: len(m.entries) + 1, Time: isoOf(m.now()), Conversation: n.Conversation, Booking: n.Booking, Action: n.Action, Outcome: n.Outcome, Language: n.Language, Notes: n.Notes, Refs: refs}
+	e := accounting.Entry{Seq: len(m.entries) + 1, Time: report.ISOOf(m.now()), Conversation: n.Conversation, Booking: n.Booking, Action: n.Action, Outcome: n.Outcome, Language: n.Language, Notes: n.Notes, Refs: refs}
 	m.entries = append(m.entries, e)
 	return e
 }

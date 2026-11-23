@@ -265,9 +265,9 @@ export function notTestedForReport(goLive: GoLiveFinding, settings?: Settings): 
 const zeroByLanguage = (): ByLanguage => Object.fromEntries(LANGUAGES.map((l) => [l, 0])) as ByLanguage;
 const bump = (counts: Record<string, number>, key: string) => { counts[key] = (counts[key] ?? 0) + 1; };
 
-/** The fingerprint of one record entry. The customer's number is left out: the digest must not carry it. */
+/** The fingerprint of one record entry. The customer's number and the note are left out, as they are from the chain (modules/record/ledger.ts): a note is free text and can name a person, and a digest of it could be tested by guessing the name. */
 export function entryDigest(entry: RecordEntry): string {
-  const { conversation: _conversation, ...rest } = entry;
+  const { conversation: _conversation, notes: _notes, ...rest } = entry;
   return digestOf(rest);
 }
 

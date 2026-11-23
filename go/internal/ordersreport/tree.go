@@ -4,70 +4,17 @@
 package ordersreport
 
 import (
-	"encoding/json"
-	"strings"
-
-	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
+	"github.com/GeometerLabs/agents/go/internal/report"
 )
-
-// jsonTree turns a value with JSON tags into the tree report.CanonicalJSON writes (numbers as json.Number, read as the double JSON.parse would make).
-func jsonTree(v any) any {
-	raw, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	dec := json.NewDecoder(strings.NewReader(string(raw)))
-	dec.UseNumber()
-	var out any
-	if err := dec.Decode(&out); err != nil {
-		panic(err)
-	}
-	return out
-}
-
-func strTree(s *string) any {
-	if s == nil {
-		return nil
-	}
-	return *s
-}
-
-func stringsTree(l []string) []any {
-	out := make([]any, len(l))
-	for i, s := range l {
-		out[i] = s
-	}
-	return out
-}
-
-func amountTree(a accounting.Amount) map[string]any {
-	return map[string]any{"count": a.Count, "paise": a.Paise}
-}
-
-func dateTree(year, month, day int) map[string]any {
-	return map[string]any{"year": year, "month": month, "day": day}
-}
 
 // Tree is the report as the tree that is sealed.
 func (r *Report) Tree() map[string]any {
-	byAction := map[string]any{}
-	for a, outcomes := range r.Record.ByAction {
-		m := map[string]any{}
-		for o, n := range outcomes {
-			m[o] = n
-		}
-		byAction[a] = m
-	}
-	var month any
-	if r.Period.Month != nil {
-		month = map[string]any{"year": r.Period.Month.Year, "month": r.Period.Month.Month}
-	}
-	period := map[string]any{"from": r.From, "to": r.To, "firstDay": dateTree(r.Period.FirstDay.Year, r.Period.FirstDay.Month, r.Period.FirstDay.Day),
-		"lastDay": dateTree(r.Period.LastDay.Year, r.Period.LastDay.Month, r.Period.LastDay.Day), "month": month}
-	money := map[string]any{"collected": amountTree(r.Money.Collected), "givenBack": amountTree(r.Money.GivenBack)}
+	byAction := report.ByActionTree(r.Record.ByAction)
+	period := report.PeriodTree(r.Period, r.From, r.To)
+	money := map[string]any{"collected": report.AmountTree(r.Money.Collected), "givenBack": report.AmountTree(r.Money.GivenBack)}
 	if r.Money.BalanceCollected != nil {
-		money["balanceCollected"] = amountTree(*r.Money.BalanceCollected)
+		money["balanceCollected"] = report.AmountTree(*r.Money.BalanceCollected)
 	}
 	if len(r.Money.SettledByWord) > 0 {
 		rows := make([]any, len(r.Money.SettledByWord))
@@ -77,7 +24,7 @@ func (r *Report) Tree() map[string]any {
 		money["settledByWord"] = rows
 	}
 	if r.Money.BooksOnly != nil {
-		money["booksOnly"] = jsonTree(r.Money.BooksOnly)
+		money["booksOnly"] = report.JSONTree(r.Money.BooksOnly)
 	}
 	items := make([]any, len(r.Sold.Items))
 	for i, it := range r.Sold.Items {
@@ -95,22 +42,22 @@ func (r *Report) Tree() map[string]any {
 		"format":       formatReport,
 		"pathway":      map[string]any{"name": r.Pathway.Name, "version": r.Pathway.Version},
 		"source":       r.Source,
-		"shop":         map[string]any{"name": r.ShopName, "timeZone": r.TimeZone, "languages": stringsTree(r.Languages), "ownerLanguage": r.OwnerLang},
-		"preparedBy":   strTree(r.PreparedBy),
+		"shop":         map[string]any{"name": r.ShopName, "timeZone": r.TimeZone, "languages": report.StringsTree(r.Languages), "ownerLanguage": r.OwnerLang},
+		"preparedBy":   report.StrTree(r.PreparedBy),
 		"period":       period,
 		"madeAt":       r.MadeAt,
 		"policyDigest": r.PolicyDig,
 		"record":       map[string]any{"entries": r.Record.Entries, "digest": r.Record.Digest, "byAction": byAction},
 		"money":        money,
 		"orders":       map[string]any{"taken": r.Orders.Taken, "completed": r.Orders.Completed, "cancelled": r.Orders.Cancelled, "holdsRanOut": r.Orders.HoldsRanOut},
-		"sold":         map[string]any{"orders": r.Sold.Orders, "pickup": r.Sold.Pickup, "delivery": r.Sold.Delivery, "items": items, "toCollect": amountTree(r.Sold.ToCollect)},
+		"sold":         map[string]any{"orders": r.Sold.Orders, "pickup": r.Sold.Pickup, "delivery": r.Sold.Delivery, "items": items, "toCollect": report.AmountTree(r.Sold.ToCollect)},
 		"owner":        map[string]any{"asked": r.Owner.Asked, "approved": r.Owner.Approved, "denied": r.Owner.Denied},
 		"customers":    map[string]any{"stopped": r.Customers.Stopped},
 		"stopped":      map[string]any{"total": r.Stopped.Total, "byRule": byRule},
 		"messages":     map[string]any{"toOwner": r.Messages.ToOwner, "heldBack": r.Messages.HeldBack},
 		"unconfirmed":  map[string]any{"open": r.Unconfirmed.Open},
-		"notCounted":   stringsTree(r.NotCounted),
-		"notTested":    stringsTree(r.NotTested),
+		"notCounted":   report.StringsTree(r.NotCounted),
+		"notTested":    report.StringsTree(r.NotTested),
 		"goLive":       bookingsreport.GoLiveTree(r.GoLive),
 		"anchor":       r.Anchor.Tree(),
 	}
@@ -121,7 +68,7 @@ func (r *Report) Tree() map[string]any {
 		out["paidBy"] = r.PaidBy
 	}
 	if r.Accounting != nil {
-		out["accounting"] = jsonTree(r.Accounting)
+		out["accounting"] = report.JSONTree(r.Accounting)
 	}
 	if r.Plans != nil {
 		p := r.Plans

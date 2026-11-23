@@ -1,8 +1,8 @@
 package runtime
 
 // The owner's route for a template that has none of its own yet: the two small functions every template's agent hands to bookings.OwnerRoute (push.ts pushMessaging and ownerRoute),
-// made once here over the runtime, so a template's command does not copy them again (cmd/bookings, cmd/orders and cmd/fees each hold a copy of the same 25 lines; folding them onto
-// this is left for the cleanup stream). Added 23 Nov 2026 for Stock orders (stream SG).
+// made once here over the runtime, so a template's command does not copy them again (cmd/bookings, cmd/orders, cmd/fees and cmd/stock-orders all use these: Stream CL folded the three copies onto this on 23 Nov).
+// Added 23 Nov 2026 for Stock orders (stream SG).
 
 // OwnerPush is `push.owner(text, "")`: the owner's words queued to the phones that allowed alerts; the ids queued, none when push is off.
 func (r *Runtime) OwnerPush(text string) []string {

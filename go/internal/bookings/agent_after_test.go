@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
+	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
 	"github.com/GeometerLabs/agents/go/internal/zone"
@@ -81,8 +81,8 @@ func TestMonthlyReportARestartAfterTheClaimNeverSendsTheMonthTwice(t *testing.T)
 		}
 		books := NewBooks(BooksPorts{Messaging: wa})
 		kit := &Kit{Settings: s, Now: clock, Ports: Ports{WhatsApp: wa, Books: books, Capabilities: payments.Capabilities{ConfirmsAutomatically: true, RefundsAutomatically: true}}}
-		kit.Report = books.NewMonthlyReport(MonthlyReportSetup{Source: "stand-in", PagesDir: t.TempDir(), PagesBaseURL: "https://reports.example/r",
-			Options: func() bookingsreport.Options { return bookingsreport.Options{PreparedBy: "Divya"} }})
+		kit.Report = books.NewMonthlyReport(reportwire.Setup{Source: "stand-in", PagesDir: t.TempDir(), PagesBaseURL: "https://reports.example/r",
+			Options: func() reportwire.Options { return reportwire.Options{PreparedBy: "Divya"} }})
 		client := &runtime.Client{Folder: dir}
 		client.Settings.Own, client.Settings.Name, client.Settings.Timezone = s, s.Name, s.Timezone
 		client.Settings.Owner.Whatsapp, client.Settings.Owner.Language = s.Owner.Whatsapp, s.Owner.Language

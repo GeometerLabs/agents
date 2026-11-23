@@ -26,5 +26,3 @@ centre without the feature, and says so in the record. The contract tests that w
   internal/runtime with the relay patterns above.
 - The settlement read's watched call (agent_settlements.go watchedSettlements) is internal/orders' settlementPayments with the same `Do`; the read itself is Bookings' shared
   books adapter (bookings.NewBooks).
-- The owner's message to a chat guest ("message g-3 ...") is prepared by the shared `runtime.PrepareGuestMessage` (23 Nov 2026); internal/bookings and internal/orders still keep
-  their own copies of it (agent_assistant.go prepareGuestMessage, written before it) and can fold onto it.

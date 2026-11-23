@@ -11,8 +11,6 @@ package bookingsreport
 
 import (
 	"crypto/ed25519"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"path/filepath"
 
@@ -52,20 +50,12 @@ type Setup struct {
 	Shop func() Shop
 }
 
-func randomToken() string {
-	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		panic(err)
-	}
-	return hex.EncodeToString(b)
-}
-
 // NewMonthlyJob is createMonthlyReport(setup): the job with Bookings' report.
 func NewMonthlyJob(setup Setup) *report.MonthlyJob {
 	return &report.MonthlyJob{Make: func(a report.MakeArgs) (report.MadeReport, error) {
 		opts := setup.Options()
 		shop := setup.Shop()
-		token := randomToken()
+		token := report.RandomToken()
 		if setup.Token != nil {
 			token = setup.Token()
 		}

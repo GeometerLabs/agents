@@ -16,17 +16,14 @@
 package bookingsreport
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/report"
-	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
 const formatMonthly = "geometer-monthly-report/1"
@@ -214,31 +211,6 @@ func NotCounted() []string { return loadWords().Facts.NotCounted }
 // Sources is SOURCES (what the numbers were counted from).
 func Sources() []string { return loadWords().Facts.Sources }
 
-// isoOf is new Date(ms).toISOString() for a year from 1000 to 9999.
-func isoOf(ms int64) string { return time.UnixMilli(ms).UTC().Format("2006-01-02T15:04:05.000Z") }
-
-// jsonTree turns a value with JSON tags into the tree report.CanonicalJSON writes (numbers as json.Number, read as the double JSON.parse would make).
-func jsonTree(v any) any {
-	raw, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	dec := json.NewDecoder(strings.NewReader(string(raw)))
-	dec.UseNumber()
-	var out any
-	if err := dec.Decode(&out); err != nil {
-		panic(err)
-	}
-	return out
-}
-
-func strTree(s *string) any {
-	if s == nil {
-		return nil
-	}
-	return *s
-}
-
 func samePtr(a, b *string) bool { return (a == nil && b == nil) || (a != nil && b != nil && *a == *b) }
 
 // refEq is `a.refs.k === b.refs.k`: both missing is equal (undefined === undefined).
@@ -249,24 +221,6 @@ func refEq(a, b map[string]string, k string) bool {
 }
 
 func truthyRef(e accounting.Entry, k string) bool { return e.Refs[k] != "" }
-
-// entryTree is the record entry without the customer's number: what entryDigest digests.
-func entryTree(e accounting.Entry) map[string]any {
-	refs := make(map[string]any, len(e.Refs))
-	for k, v := range e.Refs {
-		refs[k] = v
-	}
-	return map[string]any{"seq": e.Seq, "time": e.Time, "booking": strTree(e.Booking), "action": e.Action, "inputsDigest": e.InputsDigest, "outcome": e.Outcome,
-		"decisions": decisionsTree(e), "language": e.Language, "notes": e.Notes, "refs": refs}
-}
-
-// EntryDigest is entryDigest: the fingerprint of one record entry. The customer's number (`conversation`) is left out: the digest must not carry it.
-func EntryDigest(e accounting.Entry) string { return report.DigestOf(entryTree(e)) }
-
-type decision struct {
-	RuleID  string `json:"ruleId"`
-	Verdict string `json:"verdict"`
-}
 
 // BuildMonthlyReport is buildMonthlyReport(input). The errors are the TypeScript's sentences (a period that ends before it starts, a source it does not know) and the ledger's.
 func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
@@ -340,7 +294,7 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 
 	// ---- money: a gateway's from entries the payments service's own record confirmed; UPI's from the owner's marks, labelled as the owner's (paidBy) ----
 	upi := !ConfirmsAutomatically(shop)
-	fromIso, toIso := isoOf(from), isoOf(to)
+	fromIso, toIso := report.ISOOf(from), report.ISOOf(to)
 	figures := accounting.FiguresOf(accounting.BuildJournal(all, accounting.BookingsLegacy), all, accounting.BookingsLegacy, fromIso, toIso, accounting.FigureOptions{OwnerMarks: &upi})
 	booksOnly := accounting.BooksOnlyOf(figures)
 	acct := accounting.ReportAccounting(all, accounting.BookingsLegacy, fromIso, toIso)
@@ -390,11 +344,7 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 	}
 	for _, e := range month {
 		var blockedRules []string
-		for _, raw := range e.Decisions {
-			var d decision
-			if json.Unmarshal(raw, &d) != nil {
-				continue
-			}
+		for _, d := range report.DecisionsOf(e) {
 			// a rule the report does not list is not one of the shop's limits (the licence's `subscription_suspended`, B13): it is never counted as a limit that held
 			if sites, ok := stopSites[d.RuleID]; d.Verdict == "block" && ok && has(sites, e.Action) {
 				blockedRules = append(blockedRules, d.RuleID)
@@ -486,7 +436,7 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 	r.Record.Rows = make([]RecordRow, 0, len(month))
 	r.Record.ByAction = map[string]map[string]int{}
 	for _, e := range month {
-		d := EntryDigest(e)
+		d := report.EntryDigest(e)
 		r.Record.Rows = append(r.Record.Rows, RecordRow{e.Seq, e.Time, e.Action, e.Outcome, e.Booking, e.InputsDigest, d})
 		digests = append(digests, d)
 		if r.Record.ByAction[e.Action] == nil {
@@ -496,18 +446,7 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 	}
 	r.Record.Entries, r.Record.Digest = len(month), report.DigestOf(digests)
 
-	first := zone.LocalParts(from, shop.Timezone)
-	last := zone.LocalParts(to-1, shop.Timezone)
-	firstDay, lastDay := first.Date, last.Date
-	next := zone.Date{Year: firstDay.Year, Month: firstDay.Month + 1, Day: 1}
-	if firstDay.Month == 12 {
-		next = zone.Date{Year: firstDay.Year + 1, Month: 1, Day: 1}
-	}
-	wholeMonth := zone.ZonedToMs(zone.Date{Year: firstDay.Year, Month: firstDay.Month, Day: 1}, 0, 0, shop.Timezone) == from && zone.ZonedToMs(next, 0, 0, shop.Timezone) == to
-	r.Period = report.ReportPeriod{FirstDay: firstDay, LastDay: lastDay}
-	if wholeMonth {
-		r.Period.Month = &report.YearMonth{Year: firstDay.Year, Month: firstDay.Month}
-	}
+	r.Period = report.PeriodOfRange(from, to, shop.Timezone)
 	r.From, r.To = fromIso, toIso
 
 	r.Pathway = DefaultPathway()
@@ -517,7 +456,7 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 	r.Source = in.Source
 	r.ShopName, r.TimeZone, r.Languages, r.OwnerLang = shop.Name, shop.Timezone, append([]string{}, shop.Languages...), shop.OwnerLanguage
 	r.PreparedBy = in.PreparedBy
-	r.MadeAt = isoOf(in.MadeAt)
+	r.MadeAt = report.ISOOf(in.MadeAt)
 	r.PolicyDig = PolicyDigest(in.Settings)
 	r.Money.SettledByWord = byWordRows
 	r.Money.BooksOnly = booksOnly

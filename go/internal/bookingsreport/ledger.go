@@ -12,7 +12,6 @@
 package bookingsreport
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"sort"
@@ -69,21 +68,6 @@ func tenantOf(text string) (string, error) {
 	return slug, nil
 }
 
-// decisionsTree is an entry's decisions as JSON values (a nil list is the empty list the record writes).
-func decisionsTree(e accounting.Entry) []any {
-	out := make([]any, 0, len(e.Decisions))
-	for _, d := range e.Decisions {
-		var v any
-		dec := json.NewDecoder(strings.NewReader(string(d)))
-		dec.UseNumber()
-		if err := dec.Decode(&v); err != nil {
-			v = nil
-		}
-		out = append(out, v)
-	}
-	return out
-}
-
 func refsTree(refs map[string]string, without string) map[string]any {
 	out := make(map[string]any, len(refs))
 	for k, v := range refs {
@@ -104,7 +88,7 @@ func bookingTree(b *string) any {
 // ledgerBody is ledgerBody(e): the entry's own fields except conversation, notes and refs.page.
 func ledgerBody(e accounting.Entry) map[string]any {
 	return map[string]any{"seq": e.Seq, "time": e.Time, "booking": bookingTree(e.Booking), "action": e.Action, "outcome": e.Outcome, "inputsDigest": e.InputsDigest,
-		"decisions": decisionsTree(e), "language": e.Language, "refs": refsTree(e.Refs, "page")}
+		"decisions": report.DecisionsTree(e), "language": e.Language, "refs": refsTree(e.Refs, "page")}
 }
 
 // wellFormed walks a tree the way bytesOf does, in the TypeScript's key order for an entry body, and names the first text that is not valid UTF-16 (here: not valid UTF-8).

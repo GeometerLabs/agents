@@ -17,11 +17,9 @@
 package feesreport
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
-	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
@@ -127,25 +125,6 @@ func has(list []string, s string) bool {
 	return false
 }
 
-// isoOf is new Date(ms).toISOString() for a year from 1000 to 9999.
-func isoOf(ms int64) string { return time.UnixMilli(ms).UTC().Format("2006-01-02T15:04:05.000Z") }
-
-type decision struct {
-	RuleID  string `json:"ruleId"`
-	Verdict string `json:"verdict"`
-}
-
-func decisionsOf(e accounting.Entry) []decision {
-	var out []decision
-	for _, raw := range e.Decisions {
-		var d decision
-		if json.Unmarshal(raw, &d) == nil {
-			out = append(out, d)
-		}
-	}
-	return out
-}
-
 // addTo is `add(a, paise)`: the line is counted, and its amount is added when it is a finite number (`Number(undefined)` is NaN: not added). The amount is whole paise.
 func addTo(a *accounting.Amount, ref string, present bool) {
 	a.Count++
@@ -155,21 +134,6 @@ func addTo(a *accounting.Amount, ref string, present bool) {
 	if n := accounting.JSNumber(ref); !math.IsNaN(n) && !math.IsInf(n, 0) {
 		a.Paise += int64(n)
 	}
-}
-
-// EntryDigest is entryDigest: the fingerprint of one record entry. The parent's number (`conversation`) and the note are left out: a note can name a child, and a digest of it could be
-// tested by guessing the name. (Bookings' and Orders' digests leave out the number only: Fees' is the stricter one, and this copies Fees'.)
-func EntryDigest(e accounting.Entry) string {
-	refs := make(map[string]any, len(e.Refs))
-	for k, v := range e.Refs {
-		refs[k] = v
-	}
-	decisions := make([]any, 0, len(e.Decisions))
-	for _, d := range e.Decisions {
-		decisions = append(decisions, report.JSONTree(json.RawMessage(d)))
-	}
-	return report.DigestOf(map[string]any{"seq": e.Seq, "time": e.Time, "booking": report.StrTree(e.Booking), "action": e.Action, "inputsDigest": e.InputsDigest, "outcome": e.Outcome,
-		"decisions": decisions, "language": e.Language, "refs": refs})
 }
 
 // refOr is `e.refs.k ?? fallback`: present (even empty) wins.
@@ -204,7 +168,7 @@ func BuildFeesReport(in Input) (*Report, error) {
 	// For a UPI centre the owner's marks are the payment record (cash and bank marks too), and a refund counts once the owner marks it sent; the journal reads them all. A payment is
 	// counted once, a refund once per refund id, and a refund a person settled by their word is not money given back (it is counted on its own below).
 	upi := !ConfirmsAutomatically(shop)
-	fromIso, toIso := isoOf(from), isoOf(to)
+	fromIso, toIso := report.ISOOf(from), report.ISOOf(to)
 	legacy := accounting.FeesLegacy
 	journal := accounting.BuildJournal(all, legacy)
 	opt := accounting.FigureOptions{OwnerMarks: &upi}
@@ -329,7 +293,7 @@ func BuildFeesReport(in Input) (*Report, error) {
 	}
 	for _, e := range month {
 		blocked := map[string]bool{}
-		for _, d := range decisionsOf(e) {
+		for _, d := range report.DecisionsOf(e) {
 			if sites, ok := f.StopSites[d.RuleID]; d.Verdict == "block" && ok && has(sites, e.Action) {
 				blocked[d.RuleID] = true
 			}
@@ -347,7 +311,7 @@ func BuildFeesReport(in Input) (*Report, error) {
 	r.Record.ByAction = report.CountByAction(month)
 	digests := make([]any, 0, len(all))
 	for _, e := range all {
-		digests = append(digests, EntryDigest(e))
+		digests = append(digests, report.EntryDigest(e))
 	}
 	r.Record.Entries, r.Record.Digest = len(month), report.DigestOf(digests)
 
@@ -385,7 +349,7 @@ func BuildFeesReport(in Input) (*Report, error) {
 			r.Messages.ToOwner++
 		}
 		if e.Action == "send_message" && e.Outcome == "blocked" {
-			for _, d := range decisionsOf(e) {
+			for _, d := range report.DecisionsOf(e) {
 				if d.RuleID == "message-matches-record" { // whatever the verdict
 					r.Messages.HeldBack++
 					break
@@ -405,7 +369,7 @@ func BuildFeesReport(in Input) (*Report, error) {
 	r.ShopName, r.TimeZone, r.Languages, r.OwnerLang = shop.Name, shop.Timezone, append([]string{}, shop.Languages...), shop.OwnerLanguage
 	r.PreparedBy = in.PreparedBy
 	r.Innovator = in.Innovator
-	r.MadeAt = isoOf(in.MadeAt)
+	r.MadeAt = report.ISOOf(in.MadeAt)
 	r.PolicyDig = PolicyDigest(in.Settings)
 	if upi {
 		r.PaidBy = "owner-marked"

@@ -16,11 +16,6 @@
   anchored (a vector holds it).
 * **Settings with no payment block**: the TypeScript's `policyOf` keeps the whole payment and `capabilitiesOf(undefined)` reads the default provider; Go reads the same (a vector holds a
   tree with none).
-* **`entryDigest`'s `notes` and `conversation`**: Fees leaves both out; Bookings' and Orders' leave only `conversation` out. `EntryDigest` here is Fees', not a reuse of
-  `bookingsreport.EntryDigest`.
-* **Fold `bookingsreport` and `ordersreport` onto `internal/report/reportkit.go` and `internal/reportwire`.** Both carry private copies of the tree helpers, the by-action table, the
-  `{slot}` message mechanics (`metaBody`, `fillBody`, the settled-words and check-link choice), the random token, and (in `bookings` and `orders`) the messaging adapter, the `report`
-  block reader and the options reader. About 400 lines can go. Not done in this stream: Stream OG works in `internal/orders` and Bookings' shared helpers, and the byte-exact vectors of
-  both packages are the regression test for the fold.
+* **`entryDigest`** is the one `report.EntryDigest` for every template since 23 Nov (number and note left out).
 * **Depends on `internal/bookingsreport`** for the record's ledger head, `GoLiveTree`, `Settings` and `ShopOf`/`ConfirmsAutomatically`. When those move to a shared package (they are
   generic), only the imports here change.

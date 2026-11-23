@@ -7,7 +7,7 @@ import { glowSalon } from "../src/harness.ts";
 import { languageOfScript } from "../../../../modules/language/format.ts";
 import type { Action, Outcome, RecordEntry, RuleDecision } from "../../../../modules/record/record.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import { buildMonthlyReport, policyDigest, RULE_IDS } from "../report/data.ts";
+import { buildMonthlyReport, entryDigest, policyDigest, RULE_IDS } from "../report/data.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 import type { MonthlyReport } from "../report/data.ts";
 import { at, runBusyMonth } from "../report/example-month.ts";
@@ -282,4 +282,15 @@ test("the policy digest ignores the owner's number and the address, and changes 
   other.services[0].priceInr = 500;
   assert.notEqual(policyDigest(other), policyDigest(settings));
   assert.equal(RULE_IDS.length, 9);
+});
+
+// The fingerprint of an entry leaves out the number and the note (modules/record/ledger.ts leaves them out of the chain too): a note is free text that can name a person, so a digest
+// of it could be tested by guessing the name. Every other member is in it. The same on the Go side (internal/bookingsreport, internal/feesreport vectors).
+test("an entry's fingerprint leaves out the number and the note, and holds everything else", () => {
+  const entry = { seq: 7, time: "2026-11-12T05:00:00.000Z", conversation: "+919811111111", booking: "x-1", action: "refund", inputsDigest: "0123456789abcdef", outcome: "confirmed", decisions: [], language: "en", notes: "for Rohan Mehta", refs: { a: "1" } } as never as Parameters<typeof entryDigest>[0];
+  const same = entryDigest(entry);
+  assert.equal(entryDigest({ ...entry, conversation: "+919800000000", notes: "something else" }), same);
+  assert.equal(entryDigest({ ...entry, notes: "" }), same);
+  assert.notEqual(entryDigest({ ...entry, outcome: "blocked" }), same);
+  assert.notEqual(entryDigest({ ...entry, refs: { a: "2" } }), same);
 });

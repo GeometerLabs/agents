@@ -15,12 +15,9 @@
 package ordersreport
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
@@ -172,25 +169,6 @@ func NotCounted() []string { return loadWords().Facts.NotCounted }
 // Sources is SOURCES (what the numbers were counted from).
 func Sources() []string { return loadWords().Facts.Sources }
 
-// isoOf is new Date(ms).toISOString() for a year from 1000 to 9999.
-func isoOf(ms int64) string { return time.UnixMilli(ms).UTC().Format("2006-01-02T15:04:05.000Z") }
-
-type decision struct {
-	RuleID  string `json:"ruleId"`
-	Verdict string `json:"verdict"`
-}
-
-func decisionsOf(e accounting.Entry) []decision {
-	var out []decision
-	for _, raw := range e.Decisions {
-		var d decision
-		if json.Unmarshal(raw, &d) == nil {
-			out = append(out, d)
-		}
-	}
-	return out
-}
-
 // truthy is the TypeScript's `e.booking &&`: a booking id that is there and not empty.
 func bookingOf(e accounting.Entry) (string, bool) {
 	if e.Booking != nil && *e.Booking != "" {
@@ -221,7 +199,7 @@ func stopsIn(month []accounting.Entry) (int, map[string]int) {
 	justChecked := map[string]map[string]bool{} // conversation -> the rules the previous entry's check stopped
 	for _, e := range month {
 		blocked := map[string]bool{}
-		for _, d := range decisionsOf(e) {
+		for _, d := range report.DecisionsOf(e) {
 			// a rule the report does not list is not one of the shop's limits (the licence's `subscription_suspended`): it is never counted as a limit that held
 			if sites, ok := stopSites[d.RuleID]; d.Verdict == "block" && ok && has(sites, e.Action) {
 				blocked[d.RuleID] = true
@@ -264,21 +242,8 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	if !has(Sources(), in.Source) {
 		return nil, fmt.Errorf("Say what the numbers were counted from: %s.", strings.Join(Sources(), ", "))
 	}
-	// nothing after the period can matter; a time that does not parse is NaN, and NaN < to is false
-	var all []accounting.Entry
-	for _, e := range in.Entries {
-		if t, ok := accounting.ParseISO(e.Time); ok && t < to {
-			all = append(all, e)
-		}
-	}
-	sort.SliceStable(all, func(i, j int) bool { return all[i].Seq < all[j].Seq })
-	var month []accounting.Entry
-	for _, e := range all {
-		t, _ := accounting.ParseISO(e.Time)
-		if t >= from {
-			month = append(month, e)
-		}
-	}
+	// nothing after the period can matter; a time that does not parse is NaN, and NaN < to is false (report.SplitMonth)
+	all, month := report.SplitMonth(in.Entries, from, to)
 
 	r := &Report{}
 
@@ -286,7 +251,7 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	// For a UPI shop the owner's marks are the payment record, and a refund counts once the owner marks it sent; the journal reads both. The advance a payment brought is counted once per
 	// payment, a refund once per refund id, and a refund a person settled by their word is not money given back (it is counted on its own below).
 	upi := !ConfirmsAutomatically(shop)
-	fromIso, toIso := isoOf(from), isoOf(to)
+	fromIso, toIso := report.ISOOf(from), report.ISOOf(to)
 	legacy := Legacy()
 	figures := accounting.FiguresOf(accounting.BuildJournal(all, legacy), all, legacy, fromIso, toIso, accounting.FigureOptions{RefundAmountFromPayment: true, OwnerMarks: &upi})
 	r.Money.BooksOnly = accounting.BooksOnlyOf(figures)
@@ -399,16 +364,10 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	r.Stopped.Total, r.Stopped.ByRule = stopsIn(month)
 
 	// ---- the record itself: the counts by action and outcome, and a digest of the WHOLE record (not the month's), never carrying a customer's number ----
-	r.Record.ByAction = map[string]map[string]int{}
-	for _, e := range month {
-		if r.Record.ByAction[e.Action] == nil {
-			r.Record.ByAction[e.Action] = map[string]int{}
-		}
-		r.Record.ByAction[e.Action][e.Outcome]++
-	}
+	r.Record.ByAction = report.CountByAction(month)
 	digests := make([]any, 0, len(all))
 	for _, e := range all {
-		digests = append(digests, bookingsreport.EntryDigest(e))
+		digests = append(digests, report.EntryDigest(e))
 	}
 	r.Record.Entries, r.Record.Digest = len(month), report.DigestOf(digests)
 
@@ -421,7 +380,7 @@ func BuildOrdersReport(in Input) (*Report, error) {
 			r.Messages.ToOwner++
 		}
 		if e.Action == "send_message" && e.Outcome == "blocked" {
-			for _, d := range decisionsOf(e) {
+			for _, d := range report.DecisionsOf(e) {
 				if d.RuleID == "message-matches-record" { // whatever the verdict
 					r.Messages.HeldBack++
 					break
@@ -434,18 +393,7 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	}
 	r.Customers.Stopped = len(stoppedCustomers)
 
-	first := zone.LocalParts(from, shop.Timezone)
-	last := zone.LocalParts(to-1, shop.Timezone)
-	firstDay, lastDay := first.Date, last.Date
-	next := zone.Date{Year: firstDay.Year, Month: firstDay.Month + 1, Day: 1}
-	if firstDay.Month == 12 {
-		next = zone.Date{Year: firstDay.Year + 1, Month: 1, Day: 1}
-	}
-	wholeMonth := zone.ZonedToMs(zone.Date{Year: firstDay.Year, Month: firstDay.Month, Day: 1}, 0, 0, shop.Timezone) == from && zone.ZonedToMs(next, 0, 0, shop.Timezone) == to
-	r.Period = report.ReportPeriod{FirstDay: firstDay, LastDay: lastDay}
-	if wholeMonth {
-		r.Period.Month = &report.YearMonth{Year: firstDay.Year, Month: firstDay.Month}
-	}
+	r.Period = report.PeriodOfRange(from, to, shop.Timezone)
 	r.From, r.To = fromIso, toIso
 
 	r.Pathway = DefaultPathway()
@@ -453,7 +401,7 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	r.ShopName, r.TimeZone, r.Languages, r.OwnerLang = shop.Name, shop.Timezone, append([]string{}, shop.Languages...), shop.OwnerLanguage
 	r.PreparedBy = in.PreparedBy
 	r.Innovator = in.Innovator
-	r.MadeAt = isoOf(in.MadeAt)
+	r.MadeAt = report.ISOOf(in.MadeAt)
 	r.PolicyDig = PolicyDigest(in.Settings)
 	if upi {
 		r.PaidBy = "owner-marked"

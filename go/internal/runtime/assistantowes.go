@@ -59,7 +59,7 @@ func (c *conv) owesList(w *assistant.Writer, rows []OweRow) string {
 // PrepareGuestMessage is wire.ts prepareGuestMessage for any skill: "tell chat guest 3 we open at ten" is the proposal `message g-3`. A guest has no case of the skill's, so the
 // label the owner is shown names the guest, and the words go into the guest's thread through the same message card and the same checks (STOP; an amount, which a guest's record
 // never has: wire.ts checkWords with no amounts). Anything else asked of a guest is "not here". ok false: ref is not a guest's, and the skill's own prepare carries on.
-// (internal/bookings and internal/orders keep their own copies of this, written before it: Deferred.md, to fold onto this one.)
+// Bookings, Orders and Fees all call this one (23 Nov: Stream CL folded Bookings' and Orders' copies onto it).
 func PrepareGuestMessage(cs *ChannelState, skill, kind, ref, words, lang string, optedOut func(conversation string) bool) (prep Prepared, why string, ok bool) {
 	m := GuestRef.FindStringSubmatch(ref)
 	if m == nil {

@@ -19,7 +19,7 @@ The Go twin of `templates/commerce/stock-orders/report/` (data, strings, html, t
 | `monthlyjob.go` | `report/monthly-job.ts` `createMonthlyReport` |
 
 The wiring is in `internal/stockorders/report.go` (`NewMonthlyReport`, `Agent.AfterTick`, `OrdersOf`) and `internal/stockorders/settingstree.go` (the validated settings as the JSON tree the
-digest is of); the `report` block of runtime.json and the shop's messaging are read by `internal/runtime/reportwiring.go` (`ReadReportConfig`, `ReportMessagingOf`, `ReportRecordOf`),
+digest is of); the `report` block of runtime.json and the shop's messaging are read by `internal/reportwire` (`ReadSetup`, `MessagingOf`, `Record`, `Runner`),
 written once for this template so that it is not a third copy (Orders and Bookings keep their own, see Deferred.md).
 
 ## Where the data comes from (nothing is retyped)
