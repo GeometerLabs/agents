@@ -38,6 +38,10 @@ func (a *Agent) onMessage(m messaging.InboundMessage) error {
 		return nil
 	}
 	a.store.SeenMessages = append(a.store.SeenMessages, m.ID)
+	// B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
+	if a.approverRelayReply(m.From, isRelayReply(m)) {
+		return nil
+	}
 	if m.VoiceNote {
 		return a.onVoiceNote(m)
 	}
@@ -656,11 +660,13 @@ func (a *Agent) sendOwnerRefund(d *Due, paymentID string, amountInr int64, why s
 	for i, x := range decisions {
 		ds[i] = x
 	}
-	result, err := a.refunds.RequestRefund(a.ctx, refundCase{d}, paymentID, amountInr, ds, a.refunds.OverLimit(amountInr), nil)
+	// B37: the owner is named as asking (Geo-Requested-By) when others approve, so Guard does not ask the owner to approve their own refund
+	asked := a.askedByOwner()
+	result, err := a.refunds.RequestRefund(a.ctx, refundCase{d}, paymentID, amountInr, ds, a.refunds.OverLimit(amountInr), asked)
 	if err != nil {
 		return "", err
 	}
-	a.refunds.AfterRefund(refundCase{d}, result, payments.RefundAfter{PaymentID: paymentID, AmountInr: amountInr, DoneCust: "fee_refund_approved", Held: "fee_refund_pending"})
+	a.refunds.AfterRefund(refundCase{d}, result, payments.RefundAfter{PaymentID: paymentID, AmountInr: amountInr, DoneCust: "fee_refund_approved", Held: "fee_refund_pending", RequestedBy: asked})
 	return result, nil
 }
 
