@@ -12,9 +12,8 @@ package orders
 // A refund G3 builds goes through checkRefundLimit with a refundAsk: its paidInr is the payment in whole rupees and must be given (its zero is "₹0 was paid", which blocks every
 // refund; -1 is "not given").
 //
-// Until they are filled: a shop without a `plans` block and without an `assistant` block runs exactly as the TypeScript's does. A plans shop's ordinary orders run; a plan's
-// period payment recorded ends runtime.Unported (never confirmed as an ordinary order), and messages about a plan are read as ordinary words. An assistant shop runs as one without
-// it (its owner's words get the fixed commands only).
+// Both are filled, each from its own file's init: plans.go (newPlans) and agent_assistant.go (assistantFor). A shop without a `plans` block and without an `assistant` block
+// never makes either, and runs exactly as the TypeScript's does.
 
 import "github.com/GeometerLabs/agents/go/internal/runtime"
 

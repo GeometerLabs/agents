@@ -32,8 +32,8 @@ orders, the books, the channel's reads, the Kit and the command); part G2 is the
 refuses), `LiveStates`, `CanMove`. An order's optional numbers are pointers, optional texts "" (not there); `Reminders` and `Balance` are raw JSON until their code is typed;
 `ExtraOf`/`SetExtra` for any other member. `Pending` is `[]payments.Pending`: the refunds code's `*payments.GuardHold`/`*payments.RefundRetry`, and the agent's own kinds through
 `NewBigOrder`/`BigOrderOf` and `NewOwnerRefund`/`OwnerRefundOf`. `Ledger(create)` is the owner-marked ledger (`store.upi ??= emptyMarkState()` with create);
-`ChannelState()` the channel block (made on use), `Requests()` its requests (`Get`, `Keys`, `Set`), `OrderOfHandle(hash)` the page's one lookup. `Plans` stays raw JSON: G3 types it
-(and should then keep `PlanMealsInSlot` reading the typed state). The members are written back in the order they were read, so a store read and written back is the same bytes.
+`ChannelState()` the channel block (made on use), `Requests()` its requests (`Get`, `Keys`, `Set`), `OrderOfHandle(hash)` the page's one lookup. `Plans` is the raw block as read; G3 typed it
+(`PlansState(create)`, plans_state.go), and `PlanMealsInSlot` reads the typed state. The members are written back in the order they were read, so a store read and written back is the same bytes.
 
 **Reads** (`order.go`). `HoldsStock(o, now)`, `st.TakenOf(date, item, now, except)`, `st.OrdersOn`, `st.OrdersInSlot` (with the plans' meals), `st.PlanMealsInSlot`,
 `st.OrderFacts(now)` (for `stock.ReconcileSales`), `st.CountedLeft(snap.Stock, item, now, except)`, `s.FixSlot(o)`, `s.SlotMoments(mode, date)`, `s.ItemsText`, `s.TotalOf`,
@@ -95,3 +95,32 @@ until set; the agent calls them at agent.ts's places. The paths a plan is handed
 `reconcilePayments`, `cancelWaiting`, `log`, `tellCustomer`, `tellOwner`, `sayOpts.facts` for the plan facts). The morning line goes at the end of `AfterTick`.
 
 `cmd/orders` wires the reader (`runtime.RouterFor` over `ReadingOf`), the terms, voice, the monthly report and a UPI shop's QR pictures (into the report's pages folder, as start.ts).
+
+## The plans, the assistant, the Stock page and the morning line (wave W4 part G3)
+
+| Go file | TypeScript | What |
+| --- | --- | --- |
+| `plans_state.go` | `src/plans/ledger.ts`, `periods.ts` | the typed `plans` block (`Store.PlansState(create)`, written back in `Members`), the periods' dates, the day states, skip / pause / resume / cancel, delivery, settlement and credits |
+| `plans.go` | `src/plans/flow.ts` | `createPlans` over the agent (`newPlans`): subscribe and its quote, a delivery plan's address, the first period's hold, `OnPaid`, the customer's words (`reading.ReadPlanIntent`), "my plan", cancel with the unused credit refunded, `OnTick` (meals delivered, the renewal asked once with the credit taken, a reminder, a lapse) |
+| `agent_assistant.go` | `src/assistant.ts`, agent.ts's `assistantForAgent` call | the Orders skill (`assistantFor`): open orders and tomorrow's plan meals, what waits (from `OwnerItems`), the cards' prepare and execute through the agent's own paths, the owner's talk's sources; the owner page's `app` view and the page head's character (`Kit.AppView`, `Kit.PublicCharacter`, handed in by cmd/orders as `OwnerApp` and `OfferCharacter`); `OwnerVoiceOn` |
+| `stockkit.go` | core.ts `createStockKit` with `templateItems` | the Kit is a `runtime.StockKit`: the owner's Stock page offers the menu's items as `menu:<id>` |
+| `agent_after.go` | morning.ts via core.ts `daily` | the owner's morning line after the monthly report, over the Orders skill read-only (`runtime.StepContext.Morning`) |
+
+**One plans state.** The block is typed once per store and every reader goes through it: a slot's count (`PlanMealsInSlot`), the plans' own changes, the open rows. A
+payment recorded inside a cancel or a hold's end re-enters through `reconcilePayments` -> `completeOrder` -> `OnPaid` on the same objects. The plans are an ordered list (a
+JavaScript object's insertion order, the `pending:<phone>` entries among them), and each struct lists its members in the order flow.ts first sets them, so a TypeScript store
+read and written back is the same bytes (the plans shop of `testdata/store-vectors.json.gz`). A member flow.ts sets to `undefined` is left out; an empty list stays `[]`.
+
+**How the assistant's lines are written** (the outgoing check, 22 Nov). The Orders skill writes no words: every line is the shared runtime's packed words, filled through one
+`assistant.Writer`. The open orders' list is `open_list.none`, `open_list.head` (the count in `{n}`), `open_list.row` (`{who}`, `{what}` and `{case}` as the key's own literals,
+the order's total in `{inr}`) and `open_list.more`; the big order's card is `card.answer.big_order` (who and what as literals, the amount in `{inr}`); Orders' cancel and refund
+cards are `card.cancel.paid@orders`, `card.cancel.free@orders` and `card.refund@orders` (words.ts SKILL_ASK: an advance, not a deposit), and its two refusals
+`refusal.already_back@orders` and `refusal.cancel_first@orders` (SKILL_REFUSAL); the help and "didn't get that" lines for an Orders shop's kinds end in `@orders`, and the
+morning line's part is `morning.open` (`{n}`). All are rendered by go/scripts/gen_words.ts (`ordersWords`) from the real `write()`, `cardQuestion()` and `morningFacts()`, and
+the generator proves each key's words pass the check with exactly the facts it notes. The plan rows' "Monthly plans" and "N meals tomorrow, lunch" go in as literals, as
+assistant.ts writes them through `w.lit`.
+
+**The shared runtime's Orders profile** (internal/runtime `assistantopen.go`, and small additions in assistant.go, assistantkit.go, morning.go; internal/assistant reading.go and
+words.go): `AssistantHooks.Orders` and `OwnerReading.Orders` (the kinds and the router's reading of an Orders shop: the listings-only kinds and `open_orders`), the
+`OpenSkill` interface ("open orders", the morning line's count), a skill's own wording of a card or a refusal (`skillKey`: the key's `@<skill>` form when the pack has it) and
+`PublicFace` (character.ts publicFace). A Bookings or listings-only shop takes none of these branches.

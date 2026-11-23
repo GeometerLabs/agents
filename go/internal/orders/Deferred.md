@@ -1,13 +1,5 @@
 # internal/orders: what is not here yet, and why
 
-## Left to the next parts of wave W4
-
-* **The plans** (`src/plans/flow.ts`, `ledger.ts`): `Store.Plans` is raw JSON; only `PlanMealsInSlot` reads it (a read-only view of the parts a slot's count needs). G3 types it.
-* **The assistant** (`src/assistant.ts`, the Orders skill): the page head's character (`Kit.OfferCharacter`) and the owner page's `app` view (`Kit.OwnerApp`) are hooks, nil
-  until G3 fills them; the views are then a shop-without-assistant's.
-* **The monthly report and the daily settlement read**: `internal/ordersreport` is ready; its wiring (runtime.json `report`, `NewMonthlyJob` over `Settings.Tree()`, the record and
-  the orders) is G3's, as books.go says.
-
 ## Not in the shared runtime yet
 
 * **The daily compaction** (core.ts calls `kit.compactStore`): the Go runtime has no hook for a template's store. `Kit.CompactStore` is written and tested (`TestCompactStore`);
@@ -29,13 +21,6 @@ the next clean-up, with both templates' settings vectors as its proof.
 
 ## Left by the agent (G2), and why
 
-* **The plans and the assistant** run through two seams (`agent_seams.go`: `newPlans`, `assistantFor`), nil until G3 fills them. Until then a plan's period payment that is
-  recorded ends `runtime.Unported` (it is never confirmed as an ordinary order), messages about a plan are read as ordinary words, and a shop with an `assistant` block answers its
-  owner with the fixed commands only (its talk box and cards are said as "a shop without the assistant"). The owner's morning line goes at the end of `AfterTick` (G3's).
-* **The owner's Stock page** (`/internal/channel/owner-stock`, owner.contract.test.ts "the shop's stock count", 2 tests): the shared runtime answers 404 for every template
-  (runtime/kitserver.go lists the route with the listings shop's) and its Stock view offers only listings as items to count, so an Orders shop has no page to start a count from.
-  The agent's side (reconcileStock, the shelf count in `availability`, the low mark's line; all in `stock_calls.go`) is ported; the route needs a hook in internal/runtime (the
-  template's menu items as the candidates), a change to existing shared code that is the lead's (or stream W5's) to make.
 * **A chat guest's hold-to-talk**: `onMessage` takes a chat recording when `runtime.ChatTurn` hands one in, but the Orders Kit does not offer `runtime.ChatVoiceKit` yet (Bookings
   does not either), so the chat's voice button is off on Go.
 * **The owner's once-a-day notice that customers' talk stopped** (conversation.ts capNotice, `CustomerTalkResult.NoticeDay`) is not sent, as in internal/bookings.
@@ -52,3 +37,15 @@ the next clean-up, with both templates' settings vectors as its proof.
 The owner's route (push.ts pushMessaging) and a page's outbox (outbox.ts channelMessaging) in `agent_say.go`, the watched services (`agent_watch.go`), the AI mode's lines
 (`agent_mode.go`), the terms' adapters (`agent_owner.go`) and the `report` block's reader with the report's messaging adapters (`agent_after.go`) are internal/bookings' code,
 copied because a template may not import another. Each is template-free and belongs in internal/runtime (or internal/report); both templates would then call the one copy.
+
+## Left by the plans and the assistant (G3), and why
+
+* **No vectors for the Orders skill's talk sources** (`Facts`, the owner's talk's numbers): Bookings proves its own against the TypeScript (gen_talk_facts_vectors.ts); Orders'
+  are ported word for word but not yet proved by a generated file. They are data for the model, never shown as they are, and the talk's reply is checked against them.
+* **The skill's routing words for customers** (assistant.ts `routing.words`, `buttonPrefixes`, `liveCaseOf`): the shared Go runtime has no routing of a customer's message to a
+  skill (internal/bookings has none either); only `refs` (`Owns`) is used.
+* **The plans' record lines' inputs** are Go maps, so their members are written sorted where TypeScript writes them in the literal's order (as every line G2 writes).
+* **A plan type or a plan's slot no longer in the settings**: flow.ts throws (`planTypeOf(...)!`, `slotOf(...)!`); Go names the plan by its type id and leaves the plan alone
+  (no renewal, no slot window). The settings check refuses such a file, so only a hand-edited store can show it.
+* **The page head's character** (`Kit.OfferCharacter`) has no contract test; it is publicCharacter's two members (the name when given, the public face) over the same reads as
+  the owner's mood.
