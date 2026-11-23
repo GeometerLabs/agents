@@ -39,16 +39,34 @@ func parentChatHash(ref string) string { return sha("parent-chat:" + ref) }
 func dateOf(d zone.Date) LocalDate { return LocalDate{d.Year, d.Month, d.Day} }
 func zdate(d LocalDate) zone.Date  { return zone.Date{Year: d.Year, Month: d.Month, Day: d.Day} }
 
-func (a *Agent) midnight(d LocalDate) int64 {
-	return zone.ZonedToMs(zdate(d), 0, 0, a.settings.Timezone)
-}
+func (a *Agent) midnight(d LocalDate) int64 { return dueMsOf(a.settings, d) }
 
-func (a *Agent) reminderMoments(date LocalDate) []int64 {
-	out := make([]int64, len(a.settings.Reminders.DaysFromDue))
-	for i, dd := range a.settings.Reminders.DaysFromDue {
-		out[i] = zone.ZonedToMs(zone.AddDays(zdate(date), int(dd)), int(a.settings.Reminders.Hour), 0, a.settings.Timezone)
+func (a *Agent) reminderMoments(date LocalDate) []int64 { return reminderMomentsOf(a.settings, date) }
+
+// The month's schedule as pure rules: due.ts dueMsOf, reminderMomentsOf, lateFeeFrom and backDueReminderAt, held to the TypeScript's by go/scripts/gen_fees_vectors.ts
+// (testdata/rules-vectors.json, rules_test.go).
+
+// dueMsOf is due.ts dueMsOf: the start of the due day in the centre's time zone.
+func dueMsOf(s *Settings, d LocalDate) int64 { return zone.ZonedToMs(zdate(d), 0, 0, s.Timezone) }
+
+// reminderMomentsOf is due.ts reminderMomentsOf: each reminder day from the due day, at the reminder hour, in the centre's time zone.
+func reminderMomentsOf(s *Settings, date LocalDate) []int64 {
+	out := make([]int64, len(s.Reminders.DaysFromDue))
+	for i, dd := range s.Reminders.DaysFromDue {
+		out[i] = zone.ZonedToMs(zone.AddDays(zdate(date), int(dd)), int(s.Reminders.Hour), 0, s.Timezone)
 	}
 	return out
+}
+
+// lateFeeFrom is due.ts lateFeeFrom: the start of the day after the due date and the grace days.
+func lateFeeFrom(s *Settings, dueDate LocalDate) int64 {
+	return zone.ZonedToMs(zone.AddDays(zdate(dueDate), int(s.Due.GraceDays)+1), 0, 0, s.Timezone)
+}
+
+// backDueReminderAt is due.ts backDueReminderAt: today at the reminder hour, or now if that hour has passed.
+func backDueReminderAt(s *Settings, now int64) int64 {
+	today := zone.LocalParts(now, s.Timezone)
+	return max(now, zone.ZonedToMs(today.Date, int(s.Reminders.Hour), 0, s.Timezone))
 }
 
 func monthKey(year, month int) string { return fmt.Sprintf("%d-%02d", year, month) }
@@ -122,8 +140,7 @@ func (a *Agent) openMonthlyFees() {
 			date := LocalDate{y, m, int(a.settings.Due.Day)}
 			d := a.store.Register(a.newDue(st, lang, back.Month, date, a.midnight(date), back.AmountInr))
 			d.BackDue = true
-			at := max(now, zone.ZonedToMs(today.Date, int(a.settings.Reminders.Hour), 0, tz))
-			d.Reminders = []bookings.Reminder{{AtMs: at}}
+			d.Reminders = []bookings.Reminder{{AtMs: backDueReminderAt(a.settings, now)}}
 			a.post(accounting.MoneyEvent{Kind: "fee_charged", Case: strp(d.ID), AmountPaise: d.FeeInr * 100}, func(m map[string]string) {
 				a.log(d, d.Customer, "open_fee", "confirmed", map[string]any{"month": back.Month, "feeInr": d.FeeInr, "backDue": true}, logMore{
 					refs:  merge(map[string]string{"month": back.Month, "amountPaise": itoa(d.FeeInr * 100), "backDue": "true"}, m),
@@ -194,7 +211,7 @@ func (a *Agent) addLateFee(d *Due) error {
 	if a.store.Customer(d.Customer).OptedOut {
 		return nil
 	}
-	after := zone.ZonedToMs(zone.AddDays(zdate(d.DueDate), int(s.Due.GraceDays)+1), 0, 0, s.Timezone)
+	after := lateFeeFrom(s, d.DueDate)
 	if a.now() < after {
 		return nil
 	}
@@ -464,6 +481,7 @@ func (a *Agent) onTick() error {
 		a.remindOwedRefunds(now)
 	}
 	a.closeLinksAtStop()
+	a.readSettlements(now) // yesterday's settlement rows, once a day (agent_settlements.go)
 	working := a.takesNewWork()
 	if working {
 		a.openMonthlyFees()

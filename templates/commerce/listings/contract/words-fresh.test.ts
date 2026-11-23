@@ -213,6 +213,13 @@ test("the Go Fees words were made from the TypeScript words as they are now", as
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+// the Fees runtime's pure rules (go/internal/fees/testdata/rules-vectors.json.gz: the month's fee and schedule, the limits, the class-access rule, the settings' sentences), made
+// by go/scripts/gen_fees_vectors.ts (23 Nov 2026, go-fees-gaps-23nov)
+test("words-fresh: the Fees rules vectors (go/internal/fees) equal a fresh run of the TypeScript", async () => {
+  const rules = await import("../../../../go/scripts/gen_fees_vectors.ts");
+  assert.deepEqual(rules.staleFiles(rules.OUT), [], "the Fees rules vectors are out of date: run  node go/scripts/gen_fees_vectors.ts  and commit the result");
+});
+
 // the Fees monthly report (go/internal/feesreport): its words and its test vectors, made by go/scripts/gen_fees_report_words.ts and gen_fees_report_vectors.ts
 test("words-fresh: the Fees monthly report's generated Go data (go/internal/feesreport: words, vectors) equals a fresh render of the TypeScript", async () => {
   const reportWords = await import("../../../../go/scripts/gen_fees_report_words.ts");
