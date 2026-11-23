@@ -371,3 +371,60 @@ func TestSlug(t *testing.T) {
 		}
 	}
 }
+
+// A 403 is told apart by what its body carries (24 Nov 2026, as modules/push/test/push.test.ts): Guard's rule refusal has Guard's `guard` object and no reason_code, its limit adds
+// reason_code, and only the push service's own 403 (no guard object) forgets the phone. A 410 still does.
+func TestForbiddenFromGuardOrFromThePushService(t *testing.T) {
+	st, _ := Open(filepath.Join(t.TempDir(), File))
+	defer st.Close()
+	var mu sync.Mutex
+	status, body, calls := http.StatusForbidden, "", 0
+	guard := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		calls++
+		s, b := status, body
+		mu.Unlock()
+		w.WriteHeader(s)
+		_, _ = w.Write([]byte(b))
+	}))
+	defer guard.Close()
+	now := int64(1_000_000)
+	snd := NewSender(SenderOptions{Store: st, Guard: &Guard{BaseURL: guard.URL}, Subject: func() string { return "https://pages.example/glow" }, Now: func() int64 { return now }})
+	p := New(st, snd, "Glow Pets", func() int64 { return now }, true, "")
+	_, _, sub := browser(t)
+	_ = p.Subscribe("owner", sub, "own", "")
+	set := func(s int, b string) { mu.Lock(); status, body = s, b; mu.Unlock() }
+	for _, c := range []struct{ name, body string }{
+		{"a rule refusal (no reason_code)", `{"error":"refused by the Guard","guard":{"decision":"deny","code":"refused_by_policy","sent":"no","retry":"no"}}`},
+		{"a limit", `{"error":"refused by the Guard","guard":{"decision":"deny","code":"refused_by_policy","reason_code":"limit_exceeded"}}`},
+	} {
+		set(403, c.body)
+		before := calls
+		_, _ = p.Owner("x", "")
+		snd.Pass()
+		snd.Pass()
+		if n := p.OwnerPhones(); n != 1 {
+			t.Fatalf("%s: the phone must keep its subscription, %d left", c.name, n)
+		}
+		if calls-before != 1 {
+			t.Fatalf("%s: tried %d times, want once (a refusal is not retried)", c.name, calls-before)
+		}
+	}
+	if due, _ := st.Due(now+24*3600_000, 20); len(due) != 0 {
+		t.Fatal("refused pushes are never due again")
+	}
+	set(403, `{"error":"forbidden"}`)
+	_, _ = p.Owner("y", "")
+	snd.Pass()
+	if n := p.OwnerPhones(); n != 0 {
+		t.Fatalf("the push service's own 403 forgets the phone, %d left", n)
+	}
+	_, _, s2 := browser(t)
+	_ = p.Subscribe("owner", s2, "own", "")
+	set(410, "")
+	_, _ = p.Owner("z", "")
+	snd.Pass()
+	if n := p.OwnerPhones(); n != 0 {
+		t.Fatalf("a 410 still forgets the phone, %d left", n)
+	}
+}

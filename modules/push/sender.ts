@@ -34,6 +34,19 @@ export const fitNotification = (text: string, max = 300): string => {
   return [...one].length <= max ? one : `${[...one].slice(0, max - 1).join("")}…`;
 };
 
+/**
+ * Whether a 403's body is the push Guard's own, and what to log. Guard marks every answer with a `guard` object whose `decision` and `code` are words: a rule refusal is
+ * { decision: "deny", code: "refused_by_policy" } with no reason_code, a limit adds reason_code "limit_exceeded". The push service's own 403 has neither, so only that one
+ * drops the subscription. A bare reason_code still counts, as before. (go/internal/push/sender.go guardRefusal does the same.)
+ */
+function guardRefusal(text: string): string | undefined {
+  try {
+    const g = (JSON.parse(text) as { guard?: { decision?: unknown; code?: unknown; reason_code?: unknown } } | null)?.guard;
+    if (g && typeof g === "object" && typeof g.decision === "string" && typeof g.code === "string") return typeof g.reason_code === "string" && g.reason_code ? g.reason_code : g.code;
+  } catch { /* not JSON: the text check below */ }
+  return /"reason_code"\s*:\s*"([a-z_]+)"/u.exec(text)?.[1];
+}
+
 export function createPushSender(o: { store: PushStore; guard: PushGuard | undefined; subject: () => string | undefined; clock: Clock; relay?: PushRelay; log?: (line: string) => void; fetchImpl?: typeof fetch; everyMs?: number }) {
   const log = o.log ?? (() => undefined);
   const fetchImpl = o.fetchImpl ?? fetch;
@@ -70,12 +83,12 @@ export function createPushSender(o: { store: PushStore; guard: PushGuard | undef
       });
       status = r.status;
       const text = await r.text().catch(() => "");
-      reason = /"reason_code"\s*:\s*"([a-z_]+)"/u.exec(text)?.[1];
+      reason = guardRefusal(text);
     } catch { status = 0; }
     const at = o.clock.now();
     if (status >= 200 && status < 300) return o.store.settle(w.id, "sent", at, status);
     if (status === 404 || status === 410) { o.store.drop(w.sub.id, "gone", at); return o.store.settle(w.id, "gone", at, status); }
-    // Guard's refusal (its answer names a reason): its rules or a daily count. Not tried again (the count is the point); the owner's app still lists what waits.
+    // Guard's refusal (its answer carries Guard's `guard` object, with or without a reason_code): its rules or a daily count. Not tried again (the count is the point); the owner's app still lists what waits.
     if (status === 403 && reason) { log(`A push was refused by the push Guard (${reason}).`); return o.store.settle(w.id, "refused", at, status); }
     // the push service's own 401 or 403: the subscription was made for another key (the shop's server restored, or set up again). The phone subscribes again
     // when its page is opened next (pages.ts compares the keys); this one is forgotten
