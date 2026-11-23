@@ -1,11 +1,13 @@
 package stockorders
 
 // The Stock orders vectors (testdata/vectors.json, made by go/scripts/gen_stockorders_vectors.ts by RUNNING the TypeScript): every message in four languages from real facts must
-// be written here exactly as render writes it and pass the outgoing check as it does there; the owner's words must be read as readOwnerText and quantityIn read them.
+// be written here exactly as render writes it and pass the outgoing check as it does there; every message must go out as the same WhatsApp template (or the generic name) with the same
+// parameters; the owner's words must be read as readOwnerText and quantityIn read them.
 
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -20,6 +22,10 @@ func TestStockOrdersVectors(t *testing.T) {
 		Messages []struct {
 			Language, ID, Text, Check string
 		} `json:"messages"`
+		Templates []struct {
+			Language, ID, Name string
+			Parameters         []string
+		} `json:"templates"`
 		Readings []struct {
 			Text    string         `json:"text"`
 			Reading map[string]any `json:"reading"`
@@ -68,6 +74,18 @@ func TestStockOrdersVectors(t *testing.T) {
 		}
 		if v := matches(got, f).Verdict; v != m.Check {
 			t.Fatalf("%s %s: the outgoing check says %s, the TypeScript's %s (%s)", m.Language, m.ID, v, m.Check, matches(got, f).Reason)
+		}
+	}
+	// which WhatsApp template carries each message (meta-templates.ts templateMessage): its own, with its values, or the generic name with none
+	for _, m := range file.Templates {
+		f := factsOf(m.Language)
+		text, err := render(m.ID, f)
+		if err != nil {
+			t.Fatalf("%s %s: %v", m.Language, m.ID, err)
+		}
+		got := templateMessage([]string{m.ID}, f, text, "generic")
+		if got.Name != m.Name || strings.Join(got.Parameters, "\x00") != strings.Join(m.Parameters, "\x00") {
+			t.Fatalf("%s %s: template %q %q, the TypeScript's %q %q", m.Language, m.ID, got.Name, got.Parameters, m.Name, m.Parameters)
 		}
 	}
 	for _, x := range file.Readings {

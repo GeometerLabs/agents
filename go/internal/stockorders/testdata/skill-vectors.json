@@ -1,0 +1,5254 @@
+{
+ "cases": [
+  {
+   "lang": "en",
+   "settings": {
+    "name": "Glow Unisex Salon",
+    "address": "12 Temple Road, Thrissur",
+    "timezone": "Asia/Kolkata",
+    "languages": [
+     "en",
+     "hi"
+    ],
+    "owner": {
+     "whatsapp": "+919812300001",
+     "language": "en"
+    },
+    "items": [
+     {
+      "id": "hair-colour",
+      "names": {
+       "en": [
+        "hair colour",
+        "hair color",
+        "colour"
+       ],
+       "hi": [
+        "हेयर कलर",
+        "कलर"
+       ],
+       "ml": [
+        "ഹെയർ കളർ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಲರ್"
+       ]
+      }
+     },
+     {
+      "id": "shampoo",
+      "names": {
+       "en": [
+        "shampoo"
+       ],
+       "hi": [
+        "शैम्पू"
+       ],
+       "ml": [
+        "ഷാംപൂ"
+       ],
+       "kn": [
+        "ಶಾಂಪೂ"
+       ]
+      }
+     },
+     {
+      "id": "hair-oil",
+      "names": {
+       "en": [
+        "hair oil",
+        "oil"
+       ],
+       "hi": [
+        "हेयर ऑयल",
+        "तेल"
+       ],
+       "ml": [
+        "ഹെയർ ഓയിൽ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಆಯಿಲ್"
+       ]
+      }
+     },
+     {
+      "id": "towel",
+      "names": {
+       "en": [
+        "towel",
+        "towels"
+       ],
+       "hi": [
+        "तौलिया"
+       ],
+       "ml": [
+        "ടവൽ"
+       ],
+       "kn": [
+        "ಟವೆಲ್"
+       ]
+      }
+     }
+    ],
+    "units": [
+     {
+      "id": "box",
+      "names": {
+       "en": [
+        "box"
+       ],
+       "hi": [
+        "डिब्बा",
+        "बॉक्स"
+       ],
+       "ml": [
+        "ബോക്സ്"
+       ],
+       "kn": [
+        "ಬಾಕ್ಸ್"
+       ]
+      }
+     },
+     {
+      "id": "piece",
+      "names": {
+       "en": [
+        "piece",
+        "pc"
+       ],
+       "hi": [
+        "पीस",
+        "नग"
+       ],
+       "ml": [
+        "എണ്ണം"
+       ],
+       "kn": [
+        "ತುಂಡು"
+       ]
+      }
+     },
+     {
+      "id": "bottle",
+      "names": {
+       "en": [
+        "bottle"
+       ],
+       "hi": [
+        "बोतल"
+       ],
+       "ml": [
+        "കുപ്പി"
+       ],
+       "kn": [
+        "ಬಾಟಲ್"
+       ]
+      }
+     }
+    ],
+    "suppliers": [
+     {
+      "id": "ravi-traders",
+      "name": "Ravi Traders",
+      "aliases": [
+       "ravi"
+      ],
+      "whatsapp": "+919876500001",
+      "language": "hi",
+      "approved": true
+     },
+     {
+      "id": "meena-beauty",
+      "name": "Meena Beauty Supplies",
+      "aliases": [
+       "meena"
+      ],
+      "whatsapp": "+919876500002",
+      "language": "en",
+      "approved": true
+     },
+     {
+      "id": "kumar-wholesale",
+      "name": "Kumar Wholesale",
+      "aliases": [
+       "kumar"
+      ],
+      "whatsapp": "+919876500003",
+      "language": "en",
+      "approved": false
+     }
+    ],
+    "catalogue": [
+     {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "box",
+      "priceInr": 450,
+      "reorderQty": 10
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "piece",
+      "priceInr": 40
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "meena-beauty",
+      "unit": "box",
+      "priceInr": 460,
+      "reorderQty": 10
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "kumar-wholesale",
+      "unit": "box",
+      "priceInr": 430
+     },
+     {
+      "item": "shampoo",
+      "supplier": "ravi-traders",
+      "unit": "bottle",
+      "priceInr": 180,
+      "reorderQty": 12
+     },
+     {
+      "item": "shampoo",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 175.5,
+      "reorderQty": 12
+     },
+     {
+      "item": "hair-oil",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 120,
+      "reorderQty": 6
+     },
+     {
+      "item": "towel",
+      "supplier": "meena-beauty",
+      "unit": "piece",
+      "priceInr": 90
+     }
+    ],
+    "limits": {
+     "maxPerOrderInr": 12000,
+     "monthlyBudgetInr": 20000,
+     "maxQuantity": 200
+    },
+    "followUpHours": [
+     4,
+     24
+    ]
+   },
+   "orders": [
+    {
+     "id": "po-1",
+     "requestId": "wamid.1",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 10,
+     "unitPaise": 45000,
+     "totalPaise": 450000,
+     "state": "awaiting_approval",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": []
+    },
+    {
+     "id": "po-2",
+     "requestId": "wamid.2",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 4,
+     "unitPaise": 45000,
+     "totalPaise": 180000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "sentMs": 1795577400000
+    },
+    {
+     "id": "po-3",
+     "requestId": "wamid.3",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~piece",
+     "item": "hair-colour",
+     "unit": "piece",
+     "qty": 5,
+     "unitPaise": 4000,
+     "totalPaise": 20000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "accepted",
+     "receipt": "part",
+     "receivedQty": 2,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-4",
+     "requestId": "wamid.4",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 3,
+     "unitPaise": 46000,
+     "totalPaise": 138000,
+     "state": "send_failed",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-5",
+     "requestId": "wamid.5",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 6,
+     "unitPaise": 43000,
+     "totalPaise": 258000,
+     "state": "send_blocked",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-6",
+     "requestId": "wamid.6",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 2,
+     "unitPaise": 45000,
+     "totalPaise": 90000,
+     "state": "send_unknown",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "silentToldMs": 1795580999000
+    },
+    {
+     "id": "po-7",
+     "requestId": "wamid.7",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 7,
+     "unitPaise": 46000,
+     "totalPaise": 322000,
+     "state": "approved",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-8",
+     "requestId": "wamid.8",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 1,
+     "unitPaise": 45000,
+     "totalPaise": 45000,
+     "state": "cancelled",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-9",
+     "requestId": "wamid.9",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 8,
+     "unitPaise": 45000,
+     "totalPaise": 360000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "accepted",
+     "receipt": "full",
+     "receivedQty": 8,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-10",
+     "requestId": "wamid.10",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 2,
+     "unitPaise": 46000,
+     "totalPaise": 92000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "wrong_item",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-11",
+     "requestId": "wamid.11",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~piece",
+     "item": "hair-colour",
+     "unit": "piece",
+     "qty": 9,
+     "unitPaise": 4000,
+     "totalPaise": 36000,
+     "state": "supplier_declined",
+     "createdMs": 1795494600000,
+     "ack": "declined",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-12",
+     "requestId": "wamid.12",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 12,
+     "unitPaise": 43000,
+     "totalPaise": 516000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-10"
+    },
+    {
+     "id": "po-13",
+     "requestId": "wamid.13",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 1,
+     "unitPaise": 43000,
+     "totalPaise": 43000,
+     "state": "awaiting_approval",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": []
+    },
+    {
+     "id": "po-14",
+     "requestId": "wamid.14",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 3,
+     "unitPaise": 45000,
+     "totalPaise": 135000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "silentToldMs": 1795580995000
+    }
+   ],
+   "nowMs": 1795581000000,
+   "facts": [
+    {
+     "id": "r:budget",
+     "kind": "record",
+     "text": "This month's supplier orders reserved ₹15,950 of the ₹20,000 budget. The most one order may be worth is ₹12,000.",
+     "amountsInr": [
+      15950,
+      20000,
+      12000
+     ]
+    },
+    {
+     "id": "r:orders",
+     "kind": "record",
+     "text": "Supplier orders still to arrive: 8. Waiting for the owner's yes: 2. Not answered by the supplier: 7."
+    }
+   ],
+   "publicContext": [
+    {
+     "phone": "+919876500001",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-2",
+        "kind": "record",
+        "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-2"
+        ]
+       },
+       {
+        "id": "r:po-3",
+        "kind": "record",
+        "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
+        "literals": [
+         "po-3"
+        ]
+       },
+       {
+        "id": "r:po-6",
+        "kind": "record",
+        "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-6"
+        ]
+       },
+       {
+        "id": "r:po-14",
+        "kind": "record",
+        "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-14"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+91 98765 00002",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-4",
+        "kind": "record",
+        "text": "Order po-4 to this supplier: 3 box hair colour.",
+        "literals": [
+         "po-4"
+        ]
+       },
+       {
+        "id": "r:po-7",
+        "kind": "record",
+        "text": "Order po-7 to this supplier: 7 box hair colour.",
+        "literals": [
+         "po-7"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+919876500003",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-5",
+        "kind": "record",
+        "text": "Order po-5 to this supplier: 6 box hair colour.",
+        "literals": [
+         "po-5"
+        ]
+       },
+       {
+        "id": "r:po-12",
+        "kind": "record",
+        "text": "Order po-12 to this supplier: 12 box hair colour.",
+        "literals": [
+         "po-12"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+919811199999",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       }
+      ],
+      "links": []
+     }
+    }
+   ],
+   "open": [
+    {
+     "case": "po-1",
+     "who": "Ravi Traders",
+     "what": "10 box hair colour",
+     "amountPaise": 450000,
+     "state": "awaiting_approval"
+    },
+    {
+     "case": "po-2",
+     "who": "Ravi Traders",
+     "what": "4 box hair colour",
+     "amountPaise": 180000,
+     "state": "sent"
+    },
+    {
+     "case": "po-3",
+     "who": "Ravi Traders",
+     "what": "5 piece hair colour",
+     "amountPaise": 20000,
+     "state": "sent"
+    },
+    {
+     "case": "po-4",
+     "who": "Meena Beauty Supplies",
+     "what": "3 box hair colour",
+     "amountPaise": 138000,
+     "state": "send_failed"
+    },
+    {
+     "case": "po-5",
+     "who": "Kumar Wholesale",
+     "what": "6 box hair colour",
+     "amountPaise": 258000,
+     "state": "send_blocked"
+    },
+    {
+     "case": "po-6",
+     "who": "Ravi Traders",
+     "what": "2 box hair colour",
+     "amountPaise": 90000,
+     "state": "send_unknown"
+    },
+    {
+     "case": "po-7",
+     "who": "Meena Beauty Supplies",
+     "what": "7 box hair colour",
+     "amountPaise": 322000,
+     "state": "approved"
+    },
+    {
+     "case": "po-12",
+     "who": "Kumar Wholesale",
+     "what": "12 box hair colour",
+     "amountPaise": 516000,
+     "state": "sent"
+    },
+    {
+     "case": "po-13",
+     "who": "Kumar Wholesale",
+     "what": "1 box hair colour",
+     "amountPaise": 43000,
+     "state": "awaiting_approval"
+    },
+    {
+     "case": "po-14",
+     "who": "Ravi Traders",
+     "what": "3 box hair colour",
+     "amountPaise": 135000,
+     "state": "sent"
+    }
+   ],
+   "waiting": [
+    {
+     "case": "po-1",
+     "kind": "order_approval",
+     "amountPaise": 450000,
+     "who": "Ravi Traders",
+     "what": "10 box hair colour",
+     "money": true,
+     "yes": "approve",
+     "no": "decline"
+    },
+    {
+     "case": "po-13",
+     "kind": "order_approval",
+     "amountPaise": 43000,
+     "who": "Kumar Wholesale",
+     "what": "1 box hair colour",
+     "money": true,
+     "yes": "approve",
+     "no": "decline"
+    }
+   ],
+   "problems": 4,
+   "prepared": [
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-1",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "supplier": "ravi-traders",
+        "supplierWhatsapp": "+919876500001",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 10,
+        "unitPaise": 45000,
+        "totalPaise": 450000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 box hair colour",
+       "amountPaise": 450000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-1",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "supplier": "ravi-traders",
+        "supplierWhatsapp": "+919876500001",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 10,
+        "unitPaise": 45000,
+        "totalPaise": 450000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 box hair colour",
+       "amountPaise": 450000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "who": "Ravi Traders",
+        "state": "awaiting_approval",
+        "qty": 10,
+        "totalPaise": 450000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 box hair colour",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-2",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-2",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-3",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-3",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-4",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-4",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-4",
+       "fields": {
+        "who": "Meena Beauty Supplies",
+        "state": "send_failed",
+        "qty": 3,
+        "totalPaise": 138000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Meena Beauty Supplies",
+       "what": "3 box hair colour",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-5",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-5",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-5",
+       "fields": {
+        "who": "Kumar Wholesale",
+        "state": "send_blocked",
+        "qty": 6,
+        "totalPaise": 258000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "6 box hair colour",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-6",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-6",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-7",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-7",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "busy"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-8",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-8",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-9",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-9",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-10",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-10",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-11",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-11",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-12",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-12",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-13",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "supplier": "kumar-wholesale",
+        "supplierWhatsapp": "+919876500003",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 1,
+        "unitPaise": 43000,
+        "totalPaise": 43000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 box hair colour",
+       "amountPaise": 43000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-13",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "supplier": "kumar-wholesale",
+        "supplierWhatsapp": "+919876500003",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 1,
+        "unitPaise": 43000,
+        "totalPaise": 43000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 box hair colour",
+       "amountPaise": 43000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "who": "Kumar Wholesale",
+        "state": "awaiting_approval",
+        "qty": 1,
+        "totalPaise": 43000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 box hair colour",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-14",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-14",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-99",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-99",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "limit",
+      "case": "limit:refund_limit"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "settings": {
+    "name": "Glow Unisex Salon",
+    "address": "12 Temple Road, Thrissur",
+    "timezone": "Asia/Kolkata",
+    "languages": [
+     "en",
+     "hi"
+    ],
+    "owner": {
+     "whatsapp": "+919812300001",
+     "language": "hi"
+    },
+    "items": [
+     {
+      "id": "hair-colour",
+      "names": {
+       "en": [
+        "hair colour",
+        "hair color",
+        "colour"
+       ],
+       "hi": [
+        "हेयर कलर",
+        "कलर"
+       ],
+       "ml": [
+        "ഹെയർ കളർ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಲರ್"
+       ]
+      }
+     },
+     {
+      "id": "shampoo",
+      "names": {
+       "en": [
+        "shampoo"
+       ],
+       "hi": [
+        "शैम्पू"
+       ],
+       "ml": [
+        "ഷാംപൂ"
+       ],
+       "kn": [
+        "ಶಾಂಪೂ"
+       ]
+      }
+     },
+     {
+      "id": "hair-oil",
+      "names": {
+       "en": [
+        "hair oil",
+        "oil"
+       ],
+       "hi": [
+        "हेयर ऑयल",
+        "तेल"
+       ],
+       "ml": [
+        "ഹെയർ ഓയിൽ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಆಯಿಲ್"
+       ]
+      }
+     },
+     {
+      "id": "towel",
+      "names": {
+       "en": [
+        "towel",
+        "towels"
+       ],
+       "hi": [
+        "तौलिया"
+       ],
+       "ml": [
+        "ടവൽ"
+       ],
+       "kn": [
+        "ಟವೆಲ್"
+       ]
+      }
+     }
+    ],
+    "units": [
+     {
+      "id": "box",
+      "names": {
+       "en": [
+        "box"
+       ],
+       "hi": [
+        "डिब्बा",
+        "बॉक्स"
+       ],
+       "ml": [
+        "ബോക്സ്"
+       ],
+       "kn": [
+        "ಬಾಕ್ಸ್"
+       ]
+      }
+     },
+     {
+      "id": "piece",
+      "names": {
+       "en": [
+        "piece",
+        "pc"
+       ],
+       "hi": [
+        "पीस",
+        "नग"
+       ],
+       "ml": [
+        "എണ്ണം"
+       ],
+       "kn": [
+        "ತುಂಡು"
+       ]
+      }
+     },
+     {
+      "id": "bottle",
+      "names": {
+       "en": [
+        "bottle"
+       ],
+       "hi": [
+        "बोतल"
+       ],
+       "ml": [
+        "കുപ്പി"
+       ],
+       "kn": [
+        "ಬಾಟಲ್"
+       ]
+      }
+     }
+    ],
+    "suppliers": [
+     {
+      "id": "ravi-traders",
+      "name": "Ravi Traders",
+      "aliases": [
+       "ravi"
+      ],
+      "whatsapp": "+919876500001",
+      "language": "hi",
+      "approved": true
+     },
+     {
+      "id": "meena-beauty",
+      "name": "Meena Beauty Supplies",
+      "aliases": [
+       "meena"
+      ],
+      "whatsapp": "+919876500002",
+      "language": "en",
+      "approved": true
+     },
+     {
+      "id": "kumar-wholesale",
+      "name": "Kumar Wholesale",
+      "aliases": [
+       "kumar"
+      ],
+      "whatsapp": "+919876500003",
+      "language": "en",
+      "approved": false
+     }
+    ],
+    "catalogue": [
+     {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "box",
+      "priceInr": 450,
+      "reorderQty": 10
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "piece",
+      "priceInr": 40
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "meena-beauty",
+      "unit": "box",
+      "priceInr": 460,
+      "reorderQty": 10
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "kumar-wholesale",
+      "unit": "box",
+      "priceInr": 430
+     },
+     {
+      "item": "shampoo",
+      "supplier": "ravi-traders",
+      "unit": "bottle",
+      "priceInr": 180,
+      "reorderQty": 12
+     },
+     {
+      "item": "shampoo",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 175.5,
+      "reorderQty": 12
+     },
+     {
+      "item": "hair-oil",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 120,
+      "reorderQty": 6
+     },
+     {
+      "item": "towel",
+      "supplier": "meena-beauty",
+      "unit": "piece",
+      "priceInr": 90
+     }
+    ],
+    "limits": {
+     "maxPerOrderInr": 12000,
+     "monthlyBudgetInr": 20000,
+     "maxQuantity": 200
+    },
+    "followUpHours": [
+     4,
+     24
+    ]
+   },
+   "orders": [
+    {
+     "id": "po-1",
+     "requestId": "wamid.1",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 10,
+     "unitPaise": 45000,
+     "totalPaise": 450000,
+     "state": "awaiting_approval",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": []
+    },
+    {
+     "id": "po-2",
+     "requestId": "wamid.2",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 4,
+     "unitPaise": 45000,
+     "totalPaise": 180000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "sentMs": 1795577400000
+    },
+    {
+     "id": "po-3",
+     "requestId": "wamid.3",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~piece",
+     "item": "hair-colour",
+     "unit": "piece",
+     "qty": 5,
+     "unitPaise": 4000,
+     "totalPaise": 20000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "accepted",
+     "receipt": "part",
+     "receivedQty": 2,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-4",
+     "requestId": "wamid.4",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 3,
+     "unitPaise": 46000,
+     "totalPaise": 138000,
+     "state": "send_failed",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-5",
+     "requestId": "wamid.5",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 6,
+     "unitPaise": 43000,
+     "totalPaise": 258000,
+     "state": "send_blocked",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-6",
+     "requestId": "wamid.6",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 2,
+     "unitPaise": 45000,
+     "totalPaise": 90000,
+     "state": "send_unknown",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "silentToldMs": 1795580999000
+    },
+    {
+     "id": "po-7",
+     "requestId": "wamid.7",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 7,
+     "unitPaise": 46000,
+     "totalPaise": 322000,
+     "state": "approved",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-8",
+     "requestId": "wamid.8",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 1,
+     "unitPaise": 45000,
+     "totalPaise": 45000,
+     "state": "cancelled",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-9",
+     "requestId": "wamid.9",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 8,
+     "unitPaise": 45000,
+     "totalPaise": 360000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "accepted",
+     "receipt": "full",
+     "receivedQty": 8,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-10",
+     "requestId": "wamid.10",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 2,
+     "unitPaise": 46000,
+     "totalPaise": 92000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "wrong_item",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-11",
+     "requestId": "wamid.11",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~piece",
+     "item": "hair-colour",
+     "unit": "piece",
+     "qty": 9,
+     "unitPaise": 4000,
+     "totalPaise": 36000,
+     "state": "supplier_declined",
+     "createdMs": 1795494600000,
+     "ack": "declined",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-12",
+     "requestId": "wamid.12",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 12,
+     "unitPaise": 43000,
+     "totalPaise": 516000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-10"
+    },
+    {
+     "id": "po-13",
+     "requestId": "wamid.13",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 1,
+     "unitPaise": 43000,
+     "totalPaise": 43000,
+     "state": "awaiting_approval",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": []
+    },
+    {
+     "id": "po-14",
+     "requestId": "wamid.14",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 3,
+     "unitPaise": 45000,
+     "totalPaise": 135000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "silentToldMs": 1795580995000
+    }
+   ],
+   "nowMs": 1795581000000,
+   "facts": [
+    {
+     "id": "r:budget",
+     "kind": "record",
+     "text": "This month's supplier orders reserved ₹15,950 of the ₹20,000 budget. The most one order may be worth is ₹12,000.",
+     "amountsInr": [
+      15950,
+      20000,
+      12000
+     ]
+    },
+    {
+     "id": "r:orders",
+     "kind": "record",
+     "text": "Supplier orders still to arrive: 8. Waiting for the owner's yes: 2. Not answered by the supplier: 7."
+    }
+   ],
+   "publicContext": [
+    {
+     "phone": "+919876500001",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-2",
+        "kind": "record",
+        "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-2"
+        ]
+       },
+       {
+        "id": "r:po-3",
+        "kind": "record",
+        "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
+        "literals": [
+         "po-3"
+        ]
+       },
+       {
+        "id": "r:po-6",
+        "kind": "record",
+        "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-6"
+        ]
+       },
+       {
+        "id": "r:po-14",
+        "kind": "record",
+        "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-14"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+91 98765 00002",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-4",
+        "kind": "record",
+        "text": "Order po-4 to this supplier: 3 box hair colour.",
+        "literals": [
+         "po-4"
+        ]
+       },
+       {
+        "id": "r:po-7",
+        "kind": "record",
+        "text": "Order po-7 to this supplier: 7 box hair colour.",
+        "literals": [
+         "po-7"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+919876500003",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-5",
+        "kind": "record",
+        "text": "Order po-5 to this supplier: 6 box hair colour.",
+        "literals": [
+         "po-5"
+        ]
+       },
+       {
+        "id": "r:po-12",
+        "kind": "record",
+        "text": "Order po-12 to this supplier: 12 box hair colour.",
+        "literals": [
+         "po-12"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+919811199999",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       }
+      ],
+      "links": []
+     }
+    }
+   ],
+   "open": [
+    {
+     "case": "po-1",
+     "who": "Ravi Traders",
+     "what": "10 डिब्बा हेयर कलर",
+     "amountPaise": 450000,
+     "state": "awaiting_approval"
+    },
+    {
+     "case": "po-2",
+     "who": "Ravi Traders",
+     "what": "4 डिब्बा हेयर कलर",
+     "amountPaise": 180000,
+     "state": "sent"
+    },
+    {
+     "case": "po-3",
+     "who": "Ravi Traders",
+     "what": "5 पीस हेयर कलर",
+     "amountPaise": 20000,
+     "state": "sent"
+    },
+    {
+     "case": "po-4",
+     "who": "Meena Beauty Supplies",
+     "what": "3 डिब्बा हेयर कलर",
+     "amountPaise": 138000,
+     "state": "send_failed"
+    },
+    {
+     "case": "po-5",
+     "who": "Kumar Wholesale",
+     "what": "6 डिब्बा हेयर कलर",
+     "amountPaise": 258000,
+     "state": "send_blocked"
+    },
+    {
+     "case": "po-6",
+     "who": "Ravi Traders",
+     "what": "2 डिब्बा हेयर कलर",
+     "amountPaise": 90000,
+     "state": "send_unknown"
+    },
+    {
+     "case": "po-7",
+     "who": "Meena Beauty Supplies",
+     "what": "7 डिब्बा हेयर कलर",
+     "amountPaise": 322000,
+     "state": "approved"
+    },
+    {
+     "case": "po-12",
+     "who": "Kumar Wholesale",
+     "what": "12 डिब्बा हेयर कलर",
+     "amountPaise": 516000,
+     "state": "sent"
+    },
+    {
+     "case": "po-13",
+     "who": "Kumar Wholesale",
+     "what": "1 डिब्बा हेयर कलर",
+     "amountPaise": 43000,
+     "state": "awaiting_approval"
+    },
+    {
+     "case": "po-14",
+     "who": "Ravi Traders",
+     "what": "3 डिब्बा हेयर कलर",
+     "amountPaise": 135000,
+     "state": "sent"
+    }
+   ],
+   "waiting": [
+    {
+     "case": "po-1",
+     "kind": "order_approval",
+     "amountPaise": 450000,
+     "who": "Ravi Traders",
+     "what": "10 डिब्बा हेयर कलर",
+     "money": true,
+     "yes": "approve",
+     "no": "decline"
+    },
+    {
+     "case": "po-13",
+     "kind": "order_approval",
+     "amountPaise": 43000,
+     "who": "Kumar Wholesale",
+     "what": "1 डिब्बा हेयर कलर",
+     "money": true,
+     "yes": "approve",
+     "no": "decline"
+    }
+   ],
+   "problems": 4,
+   "prepared": [
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-1",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "supplier": "ravi-traders",
+        "supplierWhatsapp": "+919876500001",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 10,
+        "unitPaise": 45000,
+        "totalPaise": 450000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 डिब्बा हेयर कलर",
+       "amountPaise": 450000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-1",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "supplier": "ravi-traders",
+        "supplierWhatsapp": "+919876500001",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 10,
+        "unitPaise": 45000,
+        "totalPaise": 450000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 डिब्बा हेयर कलर",
+       "amountPaise": 450000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "who": "Ravi Traders",
+        "state": "awaiting_approval",
+        "qty": 10,
+        "totalPaise": 450000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 डिब्बा हेयर कलर",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-2",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-2",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-3",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-3",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-4",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-4",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-4",
+       "fields": {
+        "who": "Meena Beauty Supplies",
+        "state": "send_failed",
+        "qty": 3,
+        "totalPaise": 138000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Meena Beauty Supplies",
+       "what": "3 डिब्बा हेयर कलर",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-5",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-5",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-5",
+       "fields": {
+        "who": "Kumar Wholesale",
+        "state": "send_blocked",
+        "qty": 6,
+        "totalPaise": 258000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "6 डिब्बा हेयर कलर",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-6",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-6",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-7",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-7",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "busy"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-8",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-8",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-9",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-9",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-10",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-10",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-11",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-11",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-12",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-12",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-13",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "supplier": "kumar-wholesale",
+        "supplierWhatsapp": "+919876500003",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 1,
+        "unitPaise": 43000,
+        "totalPaise": 43000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 डिब्बा हेयर कलर",
+       "amountPaise": 43000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-13",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "supplier": "kumar-wholesale",
+        "supplierWhatsapp": "+919876500003",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 1,
+        "unitPaise": 43000,
+        "totalPaise": 43000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 डिब्बा हेयर कलर",
+       "amountPaise": 43000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "who": "Kumar Wholesale",
+        "state": "awaiting_approval",
+        "qty": 1,
+        "totalPaise": 43000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 डिब्बा हेयर कलर",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-14",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-14",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-99",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-99",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "limit",
+      "case": "limit:refund_limit"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "settings": {
+    "name": "Glow Unisex Salon",
+    "address": "12 Temple Road, Thrissur",
+    "timezone": "Asia/Kolkata",
+    "languages": [
+     "en",
+     "hi"
+    ],
+    "owner": {
+     "whatsapp": "+919812300001",
+     "language": "ml"
+    },
+    "items": [
+     {
+      "id": "hair-colour",
+      "names": {
+       "en": [
+        "hair colour",
+        "hair color",
+        "colour"
+       ],
+       "hi": [
+        "हेयर कलर",
+        "कलर"
+       ],
+       "ml": [
+        "ഹെയർ കളർ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಕಲರ್"
+       ]
+      }
+     },
+     {
+      "id": "shampoo",
+      "names": {
+       "en": [
+        "shampoo"
+       ],
+       "hi": [
+        "शैम्पू"
+       ],
+       "ml": [
+        "ഷാംപൂ"
+       ],
+       "kn": [
+        "ಶಾಂಪೂ"
+       ]
+      }
+     },
+     {
+      "id": "hair-oil",
+      "names": {
+       "en": [
+        "hair oil",
+        "oil"
+       ],
+       "hi": [
+        "हेयर ऑयल",
+        "तेल"
+       ],
+       "ml": [
+        "ഹെയർ ഓയിൽ"
+       ],
+       "kn": [
+        "ಹೇರ್ ಆಯಿಲ್"
+       ]
+      }
+     },
+     {
+      "id": "towel",
+      "names": {
+       "en": [
+        "towel",
+        "towels"
+       ],
+       "hi": [
+        "तौलिया"
+       ],
+       "ml": [
+        "ടവൽ"
+       ],
+       "kn": [
+        "ಟವೆಲ್"
+       ]
+      }
+     }
+    ],
+    "units": [
+     {
+      "id": "box",
+      "names": {
+       "en": [
+        "box"
+       ],
+       "hi": [
+        "डिब्बा",
+        "बॉक्स"
+       ],
+       "ml": [
+        "ബോക്സ്"
+       ],
+       "kn": [
+        "ಬಾಕ್ಸ್"
+       ]
+      }
+     },
+     {
+      "id": "piece",
+      "names": {
+       "en": [
+        "piece",
+        "pc"
+       ],
+       "hi": [
+        "पीस",
+        "नग"
+       ],
+       "ml": [
+        "എണ്ണം"
+       ],
+       "kn": [
+        "ತುಂಡು"
+       ]
+      }
+     },
+     {
+      "id": "bottle",
+      "names": {
+       "en": [
+        "bottle"
+       ],
+       "hi": [
+        "बोतल"
+       ],
+       "ml": [
+        "കുപ്പി"
+       ],
+       "kn": [
+        "ಬಾಟಲ್"
+       ]
+      }
+     }
+    ],
+    "suppliers": [
+     {
+      "id": "ravi-traders",
+      "name": "Ravi Traders",
+      "aliases": [
+       "ravi"
+      ],
+      "whatsapp": "+919876500001",
+      "language": "hi",
+      "approved": true
+     },
+     {
+      "id": "meena-beauty",
+      "name": "Meena Beauty Supplies",
+      "aliases": [
+       "meena"
+      ],
+      "whatsapp": "+919876500002",
+      "language": "en",
+      "approved": true
+     },
+     {
+      "id": "kumar-wholesale",
+      "name": "Kumar Wholesale",
+      "aliases": [
+       "kumar"
+      ],
+      "whatsapp": "+919876500003",
+      "language": "en",
+      "approved": false
+     }
+    ],
+    "catalogue": [
+     {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "box",
+      "priceInr": 450,
+      "reorderQty": 10
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "piece",
+      "priceInr": 40
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "meena-beauty",
+      "unit": "box",
+      "priceInr": 460,
+      "reorderQty": 10
+     },
+     {
+      "item": "hair-colour",
+      "supplier": "kumar-wholesale",
+      "unit": "box",
+      "priceInr": 430
+     },
+     {
+      "item": "shampoo",
+      "supplier": "ravi-traders",
+      "unit": "bottle",
+      "priceInr": 180,
+      "reorderQty": 12
+     },
+     {
+      "item": "shampoo",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 175.5,
+      "reorderQty": 12
+     },
+     {
+      "item": "hair-oil",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 120,
+      "reorderQty": 6
+     },
+     {
+      "item": "towel",
+      "supplier": "meena-beauty",
+      "unit": "piece",
+      "priceInr": 90
+     }
+    ],
+    "limits": {
+     "maxPerOrderInr": 12000,
+     "monthlyBudgetInr": 20000,
+     "maxQuantity": 200
+    },
+    "followUpHours": [
+     4,
+     24
+    ]
+   },
+   "orders": [
+    {
+     "id": "po-1",
+     "requestId": "wamid.1",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 10,
+     "unitPaise": 45000,
+     "totalPaise": 450000,
+     "state": "awaiting_approval",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": []
+    },
+    {
+     "id": "po-2",
+     "requestId": "wamid.2",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 4,
+     "unitPaise": 45000,
+     "totalPaise": 180000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "sentMs": 1795577400000
+    },
+    {
+     "id": "po-3",
+     "requestId": "wamid.3",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~piece",
+     "item": "hair-colour",
+     "unit": "piece",
+     "qty": 5,
+     "unitPaise": 4000,
+     "totalPaise": 20000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "accepted",
+     "receipt": "part",
+     "receivedQty": 2,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-4",
+     "requestId": "wamid.4",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 3,
+     "unitPaise": 46000,
+     "totalPaise": 138000,
+     "state": "send_failed",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-5",
+     "requestId": "wamid.5",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 6,
+     "unitPaise": 43000,
+     "totalPaise": 258000,
+     "state": "send_blocked",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-6",
+     "requestId": "wamid.6",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 2,
+     "unitPaise": 45000,
+     "totalPaise": 90000,
+     "state": "send_unknown",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "silentToldMs": 1795580999000
+    },
+    {
+     "id": "po-7",
+     "requestId": "wamid.7",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 7,
+     "unitPaise": 46000,
+     "totalPaise": 322000,
+     "state": "approved",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-8",
+     "requestId": "wamid.8",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 1,
+     "unitPaise": 45000,
+     "totalPaise": 45000,
+     "state": "cancelled",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-9",
+     "requestId": "wamid.9",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 8,
+     "unitPaise": 45000,
+     "totalPaise": 360000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "accepted",
+     "receipt": "full",
+     "receivedQty": 8,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-10",
+     "requestId": "wamid.10",
+     "lowStock": false,
+     "supplier": "meena-beauty",
+     "line": "hair-colour~meena-beauty~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 2,
+     "unitPaise": 46000,
+     "totalPaise": 92000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "wrong_item",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-11",
+     "requestId": "wamid.11",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~piece",
+     "item": "hair-colour",
+     "unit": "piece",
+     "qty": 9,
+     "unitPaise": 4000,
+     "totalPaise": 36000,
+     "state": "supplier_declined",
+     "createdMs": 1795494600000,
+     "ack": "declined",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11"
+    },
+    {
+     "id": "po-12",
+     "requestId": "wamid.12",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 12,
+     "unitPaise": 43000,
+     "totalPaise": 516000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-10"
+    },
+    {
+     "id": "po-13",
+     "requestId": "wamid.13",
+     "lowStock": false,
+     "supplier": "kumar-wholesale",
+     "line": "hair-colour~kumar-wholesale~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 1,
+     "unitPaise": 43000,
+     "totalPaise": 43000,
+     "state": "awaiting_approval",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": []
+    },
+    {
+     "id": "po-14",
+     "requestId": "wamid.14",
+     "lowStock": false,
+     "supplier": "ravi-traders",
+     "line": "hair-colour~ravi-traders~box",
+     "item": "hair-colour",
+     "unit": "box",
+     "qty": 3,
+     "unitPaise": 45000,
+     "totalPaise": 135000,
+     "state": "sent",
+     "createdMs": 1795494600000,
+     "ack": "none",
+     "receipt": "none",
+     "receivedQty": 0,
+     "asks": [],
+     "approvedMs": 1795573800000,
+     "budgetMonth": "2026-11",
+     "silentToldMs": 1795580995000
+    }
+   ],
+   "nowMs": 1795581000000,
+   "facts": [
+    {
+     "id": "r:budget",
+     "kind": "record",
+     "text": "This month's supplier orders reserved ₹15,950 of the ₹20,000 budget. The most one order may be worth is ₹12,000.",
+     "amountsInr": [
+      15950,
+      20000,
+      12000
+     ]
+    },
+    {
+     "id": "r:orders",
+     "kind": "record",
+     "text": "Supplier orders still to arrive: 8. Waiting for the owner's yes: 2. Not answered by the supplier: 7."
+    }
+   ],
+   "publicContext": [
+    {
+     "phone": "+919876500001",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-2",
+        "kind": "record",
+        "text": "Order po-2 to this supplier: 4 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-2"
+        ]
+       },
+       {
+        "id": "r:po-3",
+        "kind": "record",
+        "text": "Order po-3 to this supplier: 5 पीस हेयर कलर.",
+        "literals": [
+         "po-3"
+        ]
+       },
+       {
+        "id": "r:po-6",
+        "kind": "record",
+        "text": "Order po-6 to this supplier: 2 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-6"
+        ]
+       },
+       {
+        "id": "r:po-14",
+        "kind": "record",
+        "text": "Order po-14 to this supplier: 3 डिब्बा हेयर कलर.",
+        "literals": [
+         "po-14"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+91 98765 00002",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-4",
+        "kind": "record",
+        "text": "Order po-4 to this supplier: 3 box hair colour.",
+        "literals": [
+         "po-4"
+        ]
+       },
+       {
+        "id": "r:po-7",
+        "kind": "record",
+        "text": "Order po-7 to this supplier: 7 box hair colour.",
+        "literals": [
+         "po-7"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+919876500003",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       },
+       {
+        "id": "r:po-5",
+        "kind": "record",
+        "text": "Order po-5 to this supplier: 6 box hair colour.",
+        "literals": [
+         "po-5"
+        ]
+       },
+       {
+        "id": "r:po-12",
+        "kind": "record",
+        "text": "Order po-12 to this supplier: 12 box hair colour.",
+        "literals": [
+         "po-12"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "+919811199999",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       }
+      ],
+      "links": []
+     }
+    },
+    {
+     "phone": "",
+     "sources": {
+      "sources": [
+       {
+        "id": "s:shop",
+        "kind": "setting",
+        "text": "Glow Unisex Salon orders from its suppliers on WhatsApp.",
+        "literals": [
+         "Glow Unisex Salon"
+        ]
+       }
+      ],
+      "links": []
+     }
+    }
+   ],
+   "open": [
+    {
+     "case": "po-1",
+     "who": "Ravi Traders",
+     "what": "10 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 450000,
+     "state": "awaiting_approval"
+    },
+    {
+     "case": "po-2",
+     "who": "Ravi Traders",
+     "what": "4 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 180000,
+     "state": "sent"
+    },
+    {
+     "case": "po-3",
+     "who": "Ravi Traders",
+     "what": "5 എണ്ണം ഹെയർ കളർ",
+     "amountPaise": 20000,
+     "state": "sent"
+    },
+    {
+     "case": "po-4",
+     "who": "Meena Beauty Supplies",
+     "what": "3 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 138000,
+     "state": "send_failed"
+    },
+    {
+     "case": "po-5",
+     "who": "Kumar Wholesale",
+     "what": "6 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 258000,
+     "state": "send_blocked"
+    },
+    {
+     "case": "po-6",
+     "who": "Ravi Traders",
+     "what": "2 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 90000,
+     "state": "send_unknown"
+    },
+    {
+     "case": "po-7",
+     "who": "Meena Beauty Supplies",
+     "what": "7 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 322000,
+     "state": "approved"
+    },
+    {
+     "case": "po-12",
+     "who": "Kumar Wholesale",
+     "what": "12 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 516000,
+     "state": "sent"
+    },
+    {
+     "case": "po-13",
+     "who": "Kumar Wholesale",
+     "what": "1 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 43000,
+     "state": "awaiting_approval"
+    },
+    {
+     "case": "po-14",
+     "who": "Ravi Traders",
+     "what": "3 ബോക്സ് ഹെയർ കളർ",
+     "amountPaise": 135000,
+     "state": "sent"
+    }
+   ],
+   "waiting": [
+    {
+     "case": "po-1",
+     "kind": "order_approval",
+     "amountPaise": 450000,
+     "who": "Ravi Traders",
+     "what": "10 ബോക്സ് ഹെയർ കളർ",
+     "money": true,
+     "yes": "approve",
+     "no": "decline"
+    },
+    {
+     "case": "po-13",
+     "kind": "order_approval",
+     "amountPaise": 43000,
+     "who": "Kumar Wholesale",
+     "what": "1 ബോക്സ് ഹെയർ കളർ",
+     "money": true,
+     "yes": "approve",
+     "no": "decline"
+    }
+   ],
+   "problems": 4,
+   "prepared": [
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-1",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "supplier": "ravi-traders",
+        "supplierWhatsapp": "+919876500001",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 10,
+        "unitPaise": 45000,
+        "totalPaise": 450000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 450000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-1",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "supplier": "ravi-traders",
+        "supplierWhatsapp": "+919876500001",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 10,
+        "unitPaise": 45000,
+        "totalPaise": 450000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 450000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-1",
+       "fields": {
+        "who": "Ravi Traders",
+        "state": "awaiting_approval",
+        "qty": 10,
+        "totalPaise": 450000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Ravi Traders",
+       "what": "10 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-1"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-2",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-2",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-2"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-3",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-3",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-3"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-4",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-4",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-4",
+       "fields": {
+        "who": "Meena Beauty Supplies",
+        "state": "send_failed",
+        "qty": 3,
+        "totalPaise": 138000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Meena Beauty Supplies",
+       "what": "3 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-4"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-5",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-5",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-5",
+       "fields": {
+        "who": "Kumar Wholesale",
+        "state": "send_blocked",
+        "qty": 6,
+        "totalPaise": 258000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "6 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-5"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-6",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-6",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-6"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-7",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-7",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "busy"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-7"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-8",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-8",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-8"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-9",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-9",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-9"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-10",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-10",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-10"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-11",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-11",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-11"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-12",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-12",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-12"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-13",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "supplier": "kumar-wholesale",
+        "supplierWhatsapp": "+919876500003",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 1,
+        "unitPaise": 43000,
+        "totalPaise": 43000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 43000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-13",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "order",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "supplier": "kumar-wholesale",
+        "supplierWhatsapp": "+919876500003",
+        "item": "hair-colour",
+        "unit": "box",
+        "qty": 1,
+        "unitPaise": 43000,
+        "totalPaise": 43000,
+        "currency": "INR",
+        "month": "2026-11"
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 43000
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": true,
+      "action": {
+       "kind": "cancel",
+       "skill": "stock-orders",
+       "case": "po-13",
+       "fields": {
+        "who": "Kumar Wholesale",
+        "state": "awaiting_approval",
+        "qty": 1,
+        "totalPaise": 43000,
+        "amountPaise": 0
+       }
+      },
+      "shown": {
+       "who": "Kumar Wholesale",
+       "what": "1 ബോക്സ് ഹെയർ കളർ",
+       "amountPaise": 0
+      }
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-13"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-14",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-14",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "nothing_waiting"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_live"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-14"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-99",
+      "answer": "yes",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "answer",
+      "case": "po-99",
+      "answer": "no",
+      "itemKind": "order_approval"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "cancel",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "refund",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "message",
+      "case": "po-99"
+     },
+     "result": {
+      "ok": false,
+      "why": "no_case"
+     }
+    },
+    {
+     "proposal": {
+      "kind": "limit",
+      "case": "limit:refund_limit"
+     },
+     "result": {
+      "ok": false,
+      "why": "not_here"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -69,7 +69,7 @@
      ]
     },
     "card": {
-     "text": "मंज़ूरी के लिए ऑर्डर {orderRef}: {qty} × {itemName} ({unitName}), {unitPriceInr} प्रति {unitName}, कुल {totalInr}, {supplierName} से। इस महीने आपके {budgetInr} बजट में से {reservedInr} रखा जा चुका है, इस ऑर्डर के बाद {leftInr} बचेगा। बटन से मंज़ूर करें, या \"yes {code}\" लिखें। मना करने के लिए \"no {code}\" लिखें।",
+     "text": "मंज़ूरी के लिए ऑर्डर {orderRef}: {qty} × {itemName} ({unitName}), {unitPriceInr} प्रति {unitName}, कुल {totalInr}, {supplierName} से। इस महीने आपके {budgetInr} बजट में से {reservedInr} रखा जा चुका है, इस ऑर्डर के बाद {leftInr} बचेगा। बटन से मंज़ूर करें, या yes {code} लिखें। मना करने के लिए no {code} लिखें।",
      "needs": [
       "supplierName",
       "itemName",
@@ -411,7 +411,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "मंज़ूरी के लिए ऑर्डर {ref}: {qty} × {item} ({unit}), {price} प्रति {unit}, कुल {total}, {supplier} से। इस महीने आपके {budget} बजट में से {reserved} रखा जा चुका है, इस ऑर्डर के बाद {left} बचेगा। बटन से मंज़ूर करें, या \"yes {code}\" लिखें। मना करने के लिए \"no {code}\" लिखें।",
+     "body": "मंज़ूरी के लिए ऑर्डर {ref}: {qty} × {item} ({unit}), {price} प्रति {unit}, कुल {total}, {supplier} से। इस महीने आपके {budget} बजट में से {reserved} रखा जा चुका है, इस ऑर्डर के बाद {left} बचेगा। बटन से मंज़ूर करें, या yes {code} लिखें। मना करने के लिए no {code} लिखें।",
      "params": [
       "orderRef",
       "qty",
@@ -477,6 +477,98 @@
       "unitName",
       "totalInr"
      ]
+    },
+    {
+     "name": "stock_owner_supplier_stopped",
+     "usedFor": "owner_supplier_stopped",
+     "audience": "owner",
+     "body": "सप्लायर {supplier} ने और संदेश न भेजने को कहा है, इसलिए मैं उन्हें दोबारा संदेश नहीं भेजूँगा। उनके लिए रुका हुआ ऑर्डर नहीं भेजा जाएगा, मैं बताऊँगा कौन सा।",
+     "params": [
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_card_expired",
+     "usedFor": "card_expired",
+     "audience": "owner",
+     "body": "उस कार्ड का समय ख़त्म हो गया, इसलिए कुछ नहीं भेजा गया। अगर अब भी चाहिए तो फिर कहें।",
+     "params": []
+    },
+    {
+     "name": "stock_owner_order_sent",
+     "usedFor": "sent_ok",
+     "audience": "owner",
+     "body": "ऑर्डर {ref} {supplier} को भेज दिया गया। उन्होंने अभी जवाब नहीं दिया है। चुप रहने पर मैं फिर पूछूँगा।",
+     "params": [
+      "orderRef",
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_order_unconfirmed",
+     "usedFor": "sent_unknown",
+     "audience": "owner",
+     "body": "ऑर्डर {ref} {supplier} तक पहुँचा या नहीं, WhatsApp ने पक्का नहीं बताया। मैं ऑर्डर दोबारा नहीं भेजूँगा। इसके बदले {supplier} से {ref} के बारे में पूछूँगा और आपको बताऊँगा।",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_refused",
+     "usedFor": "send_failed",
+     "audience": "owner",
+     "body": "ऑर्डर {ref} {supplier} को नहीं गया: WhatsApp ने मना कर दिया, इसलिए कुछ नहीं भेजा गया। बजट रखा हुआ है। फिर कोशिश के लिए \"send {ref}\" लिखें, या छोड़ने के लिए \"cancel {ref}\"।",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_held",
+     "usedFor": "send_blocked",
+     "audience": "owner",
+     "body": "ऑर्डर {ref} {supplier} को नहीं भेजा गया: एक जाँच ने रोक दिया, जैसे उन्होंने और संदेश न भेजने को कहा हो। कुछ नहीं गया। बजट छोड़ने के लिए \"cancel {ref}\" लिखें।",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_all",
+     "usedFor": "received_full",
+     "audience": "owner",
+     "body": "पूरा माल आया दर्ज: ऑर्डर {ref}, {qty} × {item} ({unit}), {price} प्रति {unit}, कुल {total}। यह आपका दर्ज किया हुआ है, सप्लायर का नहीं। भुगतान अलग बात है: भुगतान करने पर \"paid {ref}\" लिखें।",
+     "params": [
+      "orderRef",
+      "qty",
+      "itemName",
+      "unitName",
+      "unitPriceInr",
+      "unitName",
+      "totalInr",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_part",
+     "usedFor": "received_part",
+     "audience": "owner",
+     "body": "दर्ज: ऑर्डर {ref} ({item}) के {qty} में से {receivedQty} आए। {moreQty} आना बाकी है। बाकी आने पर \"received {ref} {moreQty}\" लिखें।",
+     "params": [
+      "orderRef",
+      "itemName",
+      "qty",
+      "receivedQty",
+      "moreQty",
+      "orderRef",
+      "moreQty"
+     ]
     }
    ],
    "stock": {
@@ -532,7 +624,7 @@
      ]
     },
     "card": {
-     "text": "Order {orderRef} for your approval: {qty} × {itemName} ({unitName}), {unitPriceInr} per {unitName}, total {totalInr}, from {supplierName}. This month {reservedInr} of your {budgetInr} budget is reserved, so {leftInr} is left after this order. Approve with the button, or reply \"yes {code}\". To decline reply \"no {code}\".",
+     "text": "Order {orderRef} for your approval: {qty} × {itemName} ({unitName}), {unitPriceInr} per {unitName}, total {totalInr}, from {supplierName}. This month {reservedInr} of your {budgetInr} budget is reserved, so {leftInr} is left after this order. Approve with the button, or reply yes {code}. To decline reply no {code}.",
      "needs": [
       "supplierName",
       "itemName",
@@ -874,7 +966,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "Order {ref} for your approval: {qty} × {item} ({unit}), {price} per {unit}, total {total}, from {supplier}. This month {reserved} of your {budget} budget is reserved, so {left} is left after this order. Approve with the button, or reply \"yes {code}\". To decline reply \"no {code}\".",
+     "body": "Order {ref} for your approval: {qty} × {item} ({unit}), {price} per {unit}, total {total}, from {supplier}. This month {reserved} of your {budget} budget is reserved, so {left} is left after this order. Approve with the button, or reply yes {code}. To decline reply no {code}.",
      "params": [
       "orderRef",
       "qty",
@@ -940,6 +1032,98 @@
       "unitName",
       "totalInr"
      ]
+    },
+    {
+     "name": "stock_owner_supplier_stopped",
+     "usedFor": "owner_supplier_stopped",
+     "audience": "owner",
+     "body": "Supplier {supplier} asked for no more messages, so I will not message them again. Any order waiting for them stays unsent, and I will tell you which.",
+     "params": [
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_card_expired",
+     "usedFor": "card_expired",
+     "audience": "owner",
+     "body": "That card ran out, so nothing was sent. Ask me again if you still want it.",
+     "params": []
+    },
+    {
+     "name": "stock_owner_order_sent",
+     "usedFor": "sent_ok",
+     "audience": "owner",
+     "body": "Order {ref} went to {supplier}. They have not answered yet. I will ask again if they stay silent.",
+     "params": [
+      "orderRef",
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_order_unconfirmed",
+     "usedFor": "sent_unknown",
+     "audience": "owner",
+     "body": "Order {ref} may or may not have reached {supplier}: WhatsApp did not confirm it. I will not send the order again. I will ask {supplier} about {ref} instead, and tell you what they say.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_refused",
+     "usedFor": "send_failed",
+     "audience": "owner",
+     "body": "Order {ref} did not go to {supplier}: WhatsApp refused it, so nothing was sent. The budget stays reserved. Reply \"send {ref}\" to try again, or \"cancel {ref}\" to release it.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_held",
+     "usedFor": "send_blocked",
+     "audience": "owner",
+     "body": "Order {ref} was not sent to {supplier}: a check held it back, for example because they asked for no more messages. Nothing went out. Reply \"cancel {ref}\" to release the budget.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_all",
+     "usedFor": "received_full",
+     "audience": "owner",
+     "body": "Marked received, all of it: order {ref}, {qty} × {item} ({unit}), {price} per {unit}, total {total}. This is your mark, not the supplier's. Payment is separate: reply \"paid {ref}\" when you have paid.",
+     "params": [
+      "orderRef",
+      "qty",
+      "itemName",
+      "unitName",
+      "unitPriceInr",
+      "unitName",
+      "totalInr",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_part",
+     "usedFor": "received_part",
+     "audience": "owner",
+     "body": "Marked: {receivedQty} of {qty} received for order {ref} ({item}). {moreQty} still to come. Reply \"received {ref} {moreQty}\" when the rest arrives.",
+     "params": [
+      "receivedQty",
+      "qty",
+      "orderRef",
+      "itemName",
+      "moreQty",
+      "orderRef",
+      "moreQty"
+     ]
     }
    ],
    "stock": {
@@ -995,7 +1179,7 @@
      ]
     },
     "card": {
-     "text": "അനുമതിക്കായി ഓർഡർ {orderRef}: {qty} × {itemName} ({unitName}), ഒരു {unitName}-ന് {unitPriceInr}, ആകെ {totalInr}, {supplierName}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budgetInr} ബജറ്റിൽ {reservedInr} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {leftInr} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ \"yes {code}\" എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ \"no {code}\" എന്ന് നൽകൂ.",
+     "text": "അനുമതിക്കായി ഓർഡർ {orderRef}: {qty} × {itemName} ({unitName}), ഒരു {unitName}-ന് {unitPriceInr}, ആകെ {totalInr}, {supplierName}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budgetInr} ബജറ്റിൽ {reservedInr} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {leftInr} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes {code} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no {code} എന്ന് നൽകൂ.",
      "needs": [
       "supplierName",
       "itemName",
@@ -1337,7 +1521,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "അനുമതിക്കായി ഓർഡർ {ref}: {qty} × {item} ({unit}), ഒരു {unit}-ന് {price}, ആകെ {total}, {supplier}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budget} ബജറ്റിൽ {reserved} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {left} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ \"yes {code}\" എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ \"no {code}\" എന്ന് നൽകൂ.",
+     "body": "അനുമതിക്കായി ഓർഡർ {ref}: {qty} × {item} ({unit}), ഒരു {unit}-ന് {price}, ആകെ {total}, {supplier}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budget} ബജറ്റിൽ {reserved} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {left} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes {code} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no {code} എന്ന് നൽകൂ.",
      "params": [
       "orderRef",
       "qty",
@@ -1403,6 +1587,98 @@
       "unitPriceInr",
       "totalInr"
      ]
+    },
+    {
+     "name": "stock_owner_supplier_stopped",
+     "usedFor": "owner_supplier_stopped",
+     "audience": "owner",
+     "body": "വിതരണക്കാരൻ {supplier} ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞു, അതിനാൽ ഞാൻ അവർക്ക് വീണ്ടും സന്ദേശം അയയ്ക്കില്ല. അവർക്കുള്ള ഓർഡർ അയയ്ക്കാതെ കിടക്കും, ഏതെന്ന് ഞാൻ പറയാം.",
+     "params": [
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_card_expired",
+     "usedFor": "card_expired",
+     "audience": "owner",
+     "body": "ആ കാർഡിന്റെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും അയച്ചില്ല. ഇപ്പോഴും വേണമെങ്കിൽ വീണ്ടും പറയൂ.",
+     "params": []
+    },
+    {
+     "name": "stock_owner_order_sent",
+     "usedFor": "sent_ok",
+     "audience": "owner",
+     "body": "ഓർഡർ {ref} {supplier}-ന് അയച്ചു. അവർ ഇതുവരെ മറുപടി തന്നിട്ടില്ല. മിണ്ടാതിരുന്നാൽ ഞാൻ വീണ്ടും ചോദിക്കും.",
+     "params": [
+      "orderRef",
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_order_unconfirmed",
+     "usedFor": "sent_unknown",
+     "audience": "owner",
+     "body": "ഓർഡർ {ref} {supplier}-ൽ എത്തിയോ എന്ന് WhatsApp ഉറപ്പിച്ചില്ല. ഞാൻ ഓർഡർ വീണ്ടും അയയ്ക്കില്ല. പകരം {supplier}-നോട് {ref}-നെക്കുറിച്ച് ചോദിച്ച് അവർ പറയുന്നത് നിങ്ങളെ അറിയിക്കും.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_refused",
+     "usedFor": "send_failed",
+     "audience": "owner",
+     "body": "ഓർഡർ {ref} {supplier}-ന് പോയില്ല: WhatsApp നിരസിച്ചു, അതിനാൽ ഒന്നും അയച്ചില്ല. ബജറ്റ് മാറ്റിവച്ചതായി തുടരുന്നു. വീണ്ടും ശ്രമിക്കാൻ \"send {ref}\" എന്നും ഒഴിവാക്കാൻ \"cancel {ref}\" എന്നും നൽകൂ.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_held",
+     "usedFor": "send_blocked",
+     "audience": "owner",
+     "body": "ഓർഡർ {ref} {supplier}-ന് അയച്ചില്ല: ഒരു പരിശോധന തടഞ്ഞു, ഉദാഹരണത്തിന് അവർ ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞതിനാൽ. ഒന്നും പോയില്ല. ബജറ്റ് വിടുവിക്കാൻ \"cancel {ref}\" എന്ന് നൽകൂ.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_all",
+     "usedFor": "received_full",
+     "audience": "owner",
+     "body": "മുഴുവൻ സാധനവും കിട്ടി എന്ന് രേഖപ്പെടുത്തി: ഓർഡർ {ref}, {qty} × {item} ({unit}), ഒരു {unit}-ന് {price}, ആകെ {total}. ഇത് നിങ്ങളുടെ രേഖപ്പെടുത്തലാണ്, വിതരണക്കാരന്റേതല്ല. പണമടയ്ക്കൽ വേറെയാണ്: അടച്ചാൽ \"paid {ref}\" എന്ന് നൽകൂ.",
+     "params": [
+      "orderRef",
+      "qty",
+      "itemName",
+      "unitName",
+      "unitName",
+      "unitPriceInr",
+      "totalInr",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_part",
+     "usedFor": "received_part",
+     "audience": "owner",
+     "body": "രേഖപ്പെടുത്തി: ഓർഡർ {ref} ({item}) ലെ {qty}-ൽ {receivedQty} കിട്ടി. {moreQty} വരാനുണ്ട്. ബാക്കി വരുമ്പോൾ \"received {ref} {moreQty}\" എന്ന് നൽകൂ.",
+     "params": [
+      "orderRef",
+      "itemName",
+      "qty",
+      "receivedQty",
+      "moreQty",
+      "orderRef",
+      "moreQty"
+     ]
     }
    ],
    "stock": {
@@ -1458,7 +1734,7 @@
      ]
     },
     "card": {
-     "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {orderRef}: {qty} × {itemName} ({unitName}), ಒಂದು {unitName}ಗೆ {unitPriceInr}, ಒಟ್ಟು {totalInr}, {supplierName} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budgetInr} ಬಜೆಟ್‌ನಲ್ಲಿ {reservedInr} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {leftInr} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ \"yes {code}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ \"no {code}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+     "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {orderRef}: {qty} × {itemName} ({unitName}), ಒಂದು {unitName}ಗೆ {unitPriceInr}, ಒಟ್ಟು {totalInr}, {supplierName} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budgetInr} ಬಜೆಟ್‌ನಲ್ಲಿ {reservedInr} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {leftInr} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes {code} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no {code} ಎಂದು ಉತ್ತರಿಸಿ.",
      "needs": [
       "supplierName",
       "itemName",
@@ -1800,7 +2076,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {ref}: {qty} × {item} ({unit}), ಒಂದು {unit}ಗೆ {price}, ಒಟ್ಟು {total}, {supplier} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budget} ಬಜೆಟ್‌ನಲ್ಲಿ {reserved} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {left} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ \"yes {code}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ \"no {code}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+     "body": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {ref}: {qty} × {item} ({unit}), ಒಂದು {unit}ಗೆ {price}, ಒಟ್ಟು {total}, {supplier} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budget} ಬಜೆಟ್‌ನಲ್ಲಿ {reserved} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {left} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes {code} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no {code} ಎಂದು ಉತ್ತರಿಸಿ.",
      "params": [
       "orderRef",
       "qty",
@@ -1865,6 +2141,98 @@
       "unitName",
       "unitPriceInr",
       "totalInr"
+     ]
+    },
+    {
+     "name": "stock_owner_supplier_stopped",
+     "usedFor": "owner_supplier_stopped",
+     "audience": "owner",
+     "body": "ಪೂರೈಕೆದಾರ {supplier} ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದಿದ್ದಾರೆ, ಹಾಗಾಗಿ ನಾನು ಅವರಿಗೆ ಮತ್ತೆ ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಅವರಿಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಆರ್ಡರ್ ಕಳುಹಿಸಲ್ಪಡದೆ ಉಳಿಯುತ್ತದೆ, ಯಾವುದೆಂದು ತಿಳಿಸುತ್ತೇನೆ.",
+     "params": [
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_card_expired",
+     "usedFor": "card_expired",
+     "audience": "owner",
+     "body": "ಆ ಕಾರ್ಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ, ಹಾಗಾಗಿ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಈಗಲೂ ಬೇಕಿದ್ದರೆ ಮತ್ತೆ ಹೇಳಿ.",
+     "params": []
+    },
+    {
+     "name": "stock_owner_order_sent",
+     "usedFor": "sent_ok",
+     "audience": "owner",
+     "body": "ಆರ್ಡರ್ {ref} ಅನ್ನು {supplier} ಅವರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ. ಅವರು ಇನ್ನೂ ಉತ್ತರಿಸಿಲ್ಲ. ಮೌನವಾಗಿದ್ದರೆ ನಾನು ಮತ್ತೆ ಕೇಳುತ್ತೇನೆ.",
+     "params": [
+      "orderRef",
+      "supplierName"
+     ]
+    },
+    {
+     "name": "stock_owner_order_unconfirmed",
+     "usedFor": "sent_unknown",
+     "audience": "owner",
+     "body": "ಆರ್ಡರ್ {ref} {supplier} ಅವರಿಗೆ ತಲುಪಿತೇ ಎಂದು WhatsApp ಖಚಿತಪಡಿಸಲಿಲ್ಲ. ನಾನು ಆರ್ಡರ್ ಅನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಬದಲಿಗೆ {supplier} ಅವರನ್ನು {ref} ಬಗ್ಗೆ ಕೇಳಿ, ಅವರು ಹೇಳಿದ್ದನ್ನು ನಿಮಗೆ ತಿಳಿಸುತ್ತೇನೆ.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_refused",
+     "usedFor": "send_failed",
+     "audience": "owner",
+     "body": "ಆರ್ಡರ್ {ref} {supplier} ಅವರಿಗೆ ಹೋಗಲಿಲ್ಲ: WhatsApp ನಿರಾಕರಿಸಿತು, ಹಾಗಾಗಿ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಬಜೆಟ್ ಮೀಸಲಾಗಿಯೇ ಇದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು \"send {ref}\" ಎಂದು, ಬಿಡಲು \"cancel {ref}\" ಎಂದು ಬರೆಯಿರಿ.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_order_held",
+     "usedFor": "send_blocked",
+     "audience": "owner",
+     "body": "ಆರ್ಡರ್ {ref} ಅನ್ನು {supplier} ಅವರಿಗೆ ಕಳುಹಿಸಲಿಲ್ಲ: ಒಂದು ಪರಿಶೀಲನೆ ತಡೆಯಿತು, ಉದಾಹರಣೆಗೆ ಅವರು ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದಿದ್ದರೆ. ಏನೂ ಹೋಗಿಲ್ಲ. ಬಜೆಟ್ ಬಿಡುಗಡೆ ಮಾಡಲು \"cancel {ref}\" ಎಂದು ಬರೆಯಿರಿ.",
+     "params": [
+      "orderRef",
+      "supplierName",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_all",
+     "usedFor": "received_full",
+     "audience": "owner",
+     "body": "ಪೂರ್ತಿ ಸರಕು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ {ref}, {qty} × {item} ({unit}), ಒಂದು {unit}ಗೆ {price}, ಒಟ್ಟು {total}. ಇದು ನಿಮ್ಮ ದಾಖಲೆ, ಪೂರೈಕೆದಾರರದ್ದಲ್ಲ. ಪಾವತಿ ಬೇರೆ ವಿಷಯ: ಪಾವತಿಸಿದಾಗ \"paid {ref}\" ಎಂದು ಬರೆಯಿರಿ.",
+     "params": [
+      "orderRef",
+      "qty",
+      "itemName",
+      "unitName",
+      "unitName",
+      "unitPriceInr",
+      "totalInr",
+      "orderRef"
+     ]
+    },
+    {
+     "name": "stock_owner_received_part",
+     "usedFor": "received_part",
+     "audience": "owner",
+     "body": "ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ {ref} ({item}) ನ {qty} ರಲ್ಲಿ {receivedQty} ಬಂದಿದೆ. {moreQty} ಬರಬೇಕಿದೆ. ಉಳಿದದ್ದು ಬಂದಾಗ \"received {ref} {moreQty}\" ಎಂದು ಬರೆಯಿರಿ.",
+     "params": [
+      "orderRef",
+      "itemName",
+      "qty",
+      "receivedQty",
+      "moreQty",
+      "orderRef",
+      "moreQty"
      ]
     }
    ],

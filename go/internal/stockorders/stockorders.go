@@ -30,6 +30,19 @@ type Kit struct {
 	// Report is the monthly report to the owner (report.go); nil when runtime.json has no `report` block: none is made and nothing is sent.
 	Report *MonthlyReport
 	shared *runtime.Settings
+	// PushOwner and OwnerRoute are the owner's alerts by their choice of WhatsApp, push or both (push.ts pushMessaging; runtime.OwnerPush and OwnerRoute, set by the command once the
+	// runtime exists). Nil: WhatsApp alone.
+	PushOwner  func(text string) []string
+	OwnerRoute func(hasWhatsApp bool) string
+	// given are the Guards given up on in this outage (core.ts `givenUp`): tasks no longer wait for them until one answers. Steps run one at a time, so no lock.
+	given map[string]bool
+}
+
+func (k *Kit) givenUp() map[string]bool {
+	if k.given == nil {
+		k.given = map[string]bool{}
+	}
+	return k.given
 }
 
 var (

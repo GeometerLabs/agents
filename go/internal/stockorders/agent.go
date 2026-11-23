@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/bookings"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
@@ -57,12 +58,17 @@ type Agent struct {
 	s    *Settings
 	say  *messaging.Say
 	msg  messaging.Messaging
-	ctx  context.Context
+	// watch is the step's watch over its Guard (internal/bookings' guard-wait.ts watchStep): a task's step waits for a Guard that is down instead of losing the message.
+	watch *bookings.Watch
+	ctx   context.Context
 	asst *runtime.Assistant
 }
 
 func newAgent(k *Kit, c *runtime.StepContext) *Agent {
-	a := &Agent{kit: k, c: c, st: c.State.(*Store), s: k.Settings, ctx: context.Background(), msg: k.WhatsApp}
+	a := &Agent{kit: k, c: c, st: c.State.(*Store), s: k.Settings, ctx: context.Background()}
+	// the owner's alerts by their choice of route (push.ts pushMessaging), every call watched (guard-wait.ts: server/runtime.ts hands the agent the step's watched services)
+	a.watch = bookings.NewWatch(c.Task != "" && !c.LastTry, k.givenUp())
+	a.msg = a.watch.Messaging(bookings.OwnerMessaging(k.WhatsApp, bookings.OwnerRoute{Owner: a.owner, Now: a.now, PushOwner: k.PushOwner, ChooseRoute: k.OwnerRoute}))
 	// runtime-limits.ts apply: a cap or budget the owner tightened is in force for this step (a copy: the file's value is never touched)
 	cp := *a.s
 	if v, ok := c.InForce("order_cap"); ok {
@@ -1613,6 +1619,18 @@ func (a *Agent) askSupplierAgain(o *Order) {
 
 // Handle is agent.ts dispatch for one event.
 func (a *Agent) Handle(ev map[string]any) error {
+	return a.finish(a.handle(ev))
+}
+
+// finish is core.ts step's decision after the agent returned (thrown is what it returned): keep the task waiting for a Guard that is down, end it, give up quietly, or go on and save.
+// The watch and the decision are internal/bookings' (bookings.Watch), shared by every template. Stock orders has no giveUp of its own (agent.ts has none), so a Guard given up on
+// writes nothing more.
+func (a *Agent) finish(thrown error) error {
+	err, _ := a.watch.Decide(a.c.Task, a.c.LastTry, a.kit.givenUp(), thrown, a.st)
+	return err
+}
+
+func (a *Agent) handle(ev map[string]any) error {
 	switch ev["kind"] {
 	case "message":
 		raw, _ := json.Marshal(ev["message"])
@@ -1642,8 +1660,8 @@ func (a *Agent) Tick() error {
 	if a.asst != nil {
 		a.asst.OnTick()
 	}
-	return nil
+	return a.finish(nil)
 }
 
-// GiveUp: Stock orders' steps never wait for a Guard (Deferred.md), so nothing is to be written.
+// GiveUp: agent.ts has no giveUp (core.ts calls it only if there is one), so nothing is to be written when the wait for a Guard is over.
 func (a *Agent) GiveUp(map[string]any, string, bool) error { return nil }

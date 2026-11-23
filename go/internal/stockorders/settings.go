@@ -2,13 +2,14 @@ package stockorders
 
 // A Stock orders shop's settings.json, read and checked: the Go twin of templates/commerce/stock-orders/src/settings.ts (validateSettings and the catalogue's reads). Every problem
 // is said in plain words, all at once and in the TypeScript's order, so a builder can fix the folder without a manual. The sentences are the TypeScript's, copied from
-// src/settings.ts (vectors generated from validateSettings are not made yet: Deferred.md).
+// src/settings.ts and held equal to validateSettings by testdata/settings-vectors.json (go/scripts/gen_stockorders_settings.ts; settings_vectors_test.go).
 //
 // Where Go and JavaScript differ: an object's keys are walked in the file's own order (JSON.parse keeps it; a Go map does not), so `keysIn` reads the order from the raw bytes;
 // `JSON.stringify` of a value in a sentence is jsQuote; a number is written as JavaScript writes it (jsNum).
 //
-// The `assistant` block is read by the shared runtime (Settings.ReadAssistant). Its own sentences (modules/assistant/settings.ts readAssistantSettings) are NOT checked here:
-// they live in internal/bookings unexported; Deferred.md says so.
+// The `assistant` block is checked by the shared reader every template uses (bookings.SettingsReader.Assistant: readAssistantSettings and readCharacter with their sentences, the
+// same code Fees uses), since 23 Nov; the shared runtime reads the part the agent acts on (runtime.Settings.ReadAssistant). A block that is `null` is refused as the TypeScript
+// refuses it (it only skips a block that is left out).
 
 import (
 	"bytes"
@@ -19,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/GeometerLabs/agents/go/internal/bookings"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
@@ -247,9 +249,13 @@ func ReadSettings(raw []byte) (*Settings, []string) {
 	s.Catalogue = r.catalogue(in["catalogue"], s)
 	limitsOK := r.limits(in["limits"], s)
 	s.FollowUpHours = r.followUp(in["followUpHours"])
-	if v, there := in["assistant"]; there && string(v) != "null" {
+	if v, there := in["assistant"]; there {
+		var block any
+		_ = json.Unmarshal(v, &block)
+		shared := bookings.NewSettingsReader(raw)
+		s.assistantTree = shared.Assistant(block, true, "/assistant")
+		r.errs = append(r.errs, shared.Errors()...)
 		s.Assistant = true
-		s.assistantTree = assistantTree(v)
 	}
 	if len(r.errs) == 0 && limitsOK {
 		for _, l := range s.Catalogue {
