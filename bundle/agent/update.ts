@@ -53,7 +53,7 @@ export async function updateAgent(ctx: Context, name: string, dryRun: boolean): 
   if (after.total === 0) return heldBack(`No situation could be run at ${target}: ${a.result.notRun.map((s) => `${s.title} (${s.reason})`).join("; ") || "none ran"}.${running ? ` Keep running ${running}.` : ""}`, base);
 
   // a situation that held before and fails now, or is not run now, holds the agent back; one that failed both times does not (it is no worse off), and a new one that fails does
-  const diff = compare(before ?? { held: 0, total: 0, situations: [] }, after);
+  const diff = compare(before ?? { held: 0, total: 0, situations: [], notRun: [] }, after);
   if (diff.failing.length > 0 || diff.notChecked.length > 0) {
     const said = [
       `Held ${after.held} of ${after.total} at ${target}${before ? `; ${before.held} of ${before.total} held at ${running}` : ""}.`,
@@ -65,7 +65,12 @@ export async function updateAgent(ctx: Context, name: string, dryRun: boolean): 
   }
   // the two runs started the same code when the command never says which version it wants: the comparison then shows nothing
   const sameCode = running !== undefined && !run.includes("{version}") && !/GEOMETER_AGENT_VERSION/u.test(run);
-  const note = sameCode ? `Note: the run command does not use {version} or $GEOMETER_AGENT_VERSION, so both crash tests started the same code.` : undefined;
+  // a situation the new version lists as not run, with its reason, is not a loss; it is said, not hidden
+  const notes = [
+    sameCode ? `Note: the run command does not use {version} or $GEOMETER_AGENT_VERSION, so both crash tests started the same code.` : "",
+    diff.notRunNow.length > 0 ? `Not run at ${target} (not counted as a loss): ${diff.notRunNow.map((n) => `${n.title}: ${n.reason}`).join("; ")}.` : "",
+  ].filter(Boolean);
+  const note = notes.length > 0 ? notes.join(" ") : undefined;
   if (!dryRun) recordService(ctx, name, a.result, issueGoLive(ctx, name, a.result).code);
   return { status: "moved", at, ...base, ...(note ? { reason: note } : {}) };
 }

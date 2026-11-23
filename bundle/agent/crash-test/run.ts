@@ -148,9 +148,10 @@ export function crashTestText(result: CrashResult, settingsName: string, options
   });
 }
 
-/** The same result as the update reads a hand check's: how many held, and each situation's first failed check. */
+/** The same result as the update reads a hand check's: how many held, each situation's first failed check, and the situations listed as not run with their reasons (an update does not count those as a loss). */
 export function readOfCrash(result: CrashResult): HandCheckRead {
   return {
+    notRun: result.notRun.map((s) => ({ title: s.title, reason: s.reason })),
     held: result.held, total: result.total,
     situations: result.situations.map((s) => {
       const first = s.checks.find((c) => !c.passed);
