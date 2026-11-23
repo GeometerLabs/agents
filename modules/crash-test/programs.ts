@@ -46,3 +46,6 @@ export function goSkip(name: string): string | undefined {
   return existsSync(join(goProgramsDir(), name)) ? undefined : `the Go program ${name} is not built (cd go && go build -o bin/ ./cmd/${name}), and every situation runs on it`;
 }
 
+
+/** The version each program said it serves, once a hand-check shop of it started (go-shop.ts; runOnProgram names it in the run's `program`). */
+export const servedVersions = new Map<string, string>();

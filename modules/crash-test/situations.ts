@@ -2,7 +2,7 @@
 // RECORDS: what the payments service holds, what the messaging outbox holds. It never judges from what the agent said it did. The situations themselves are each
 // template's (Bookings: a calendar that saves nothing; Fees: a payment event that arrives twice). The frame is the same, and so is the hand check that prints it.
 // Since 24 Nov 2026 each situation runs on the shop's own Go program (modules/crash-test/go-shop.ts): every world a situation opens is closed when it ends.
-import { goProgram } from "./programs.ts";
+import { goProgram, servedVersions } from "./programs.ts";
 import type { ProgramRan } from "./programs.ts";
 
 // Every world a situation opens is closed when the situation ends (runSituation below calls closeOpened; go-world.ts registers each world), so no shop and no stand-in outlives it,
@@ -70,7 +70,9 @@ export async function runSituation(situation: Situation): Promise<SituationResul
 export async function runOnProgram<Settings>(name: string, version: string, build: () => { situations: Situation[]; skipped: Skipped[] }, settings: Settings): Promise<HandCheckRun<Settings>> {
   const program = goProgram(name);
   if (!program.ok) return { results: [], skipped: [{ id: "all", title: "Every situation", reason: program.reason }], settings };
-  return { ...(await runAllSituations(build(), settings)), program: { name, version, sha256: program.sha256 } };
+  const run = await runAllSituations(build(), settings);
+  // the version the program said it serves (go-shop.ts), which a template folder kept beside a server may not share
+  return { ...run, program: { name, version: servedVersions.get(name) ?? version, sha256: program.sha256 } };
 }
 
 /** Run every built situation in order. */

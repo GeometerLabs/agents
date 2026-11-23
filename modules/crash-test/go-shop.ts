@@ -29,7 +29,7 @@ import { makeTestClockFile } from "../test/contract/test-clock-file.ts";
 export type { Answer };
 export { goProgram, goProgramsDir, goSkip } from "./programs.ts";
 export type { ProgramRan } from "./programs.ts";
-import { goProgramsDir } from "./programs.ts";
+import { goProgramsDir, servedVersions } from "./programs.ts";
 
 /** A service the shop reaches over HTTP: a stand-in on this machine (and the credential it presents, for a payments Guard). */
 export interface ServiceAt { baseUrl: string; agentToken?: string; [member: string]: unknown }
@@ -134,7 +134,8 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   const page = `https://pages.example/${o.slug}`;
   writeFileSync(join(client, "pages.json"), JSON.stringify({ schema: 1, base: page, ownerBase: "https://pages.example/owner", slug: o.slug, url: page }));
   for (const [name, value] of Object.entries(o.files ?? {})) writeFileSync(join(client, name), JSON.stringify(value));
-  writeFileSync(join(client, "pathway.lock"), `${o.pathway}@${o.version}\n`); // written last, as the deployer does
+  let version = o.version;
+  writeFileSync(join(client, "pathway.lock"), `${o.pathway}@${version}\n`); // written last, as the deployer does
 
   const file = makeTestClockFile(join(root, "clock"));
   file.advance(o.at - Date.now());
@@ -149,7 +150,18 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   };
   let running: RuntimeProcess | undefined;
   const start = async (): Promise<void> => { running = await startRuntimeProcess(o.program, ["--client", client], env, url, `the hand check's ${o.pathway} shop in ${root}`, printed); };
-  try { await start(); } catch (e) {
+  try {
+    try { await start(); } catch (e) {
+      // the program serves one version of its template and refuses a folder pinned to another (runtime.LoadClientKit). The hand check runs the program that is here, so the
+      // folder is pinned to the version it serves (its own sentence names it: a version folder kept beside a server may be older or newer than the program), and it starts again
+      const served = /this runtime is ([a-z][a-z0-9-]*)@(\S+?)\. It will not start/u.exec(printed.text);
+      if (!served || served[1] !== o.pathway || served[2] === version) throw e;
+      version = served[2];
+      writeFileSync(join(client, "pathway.lock"), `${o.pathway}@${version}\n`);
+      await start();
+    }
+    servedVersions.set(o.pathway, version);
+  } catch (e) {
     rmSync(root, { recursive: true, force: true });
     throw e;
   }
