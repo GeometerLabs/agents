@@ -443,8 +443,11 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     // The panel writes the desired state, the secrets inbox and stop requests; it reads the results and the exports; it keeps its own data. It sees NONE of the
     // server's other folders (not secrets/, not state/, not generated/), has no Docker socket, and its network holds only the Guards' agent ports, where it
     // presents its own agent (`panel-<shop>`: three reads and nothing else). Its keys are in secrets/panel/, 0600, readable by the user it runs as.
+    // On-demand panel (panel/ondemand.ts): it starts asleep (a small listener that answers /healthz itself) and exits with 0 after 15 idle minutes. `unless-stopped` restarts
+    // a container whatever its exit code, so the sleep is followed by a fresh asleep start within a second; it is set here by name so nobody changes the panel's policy to
+    // `on-failure` (which would leave a slept panel down). The health check is the listener's own /healthz, so it passes asleep and awake, and it never counts as use.
     add("panel", {
-      image: server.appImage, user: features.panel.user, init: true, ...hardened, command: nodeCommand("panel", "bundle/panel/main.ts"),
+      image: server.appImage, user: features.panel.user, init: true, ...hardened, restart: "unless-stopped", command: nodeCommand("panel", "bundle/panel/main.ts"),
       environment: {
         PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl(server), PANEL_TRUST_PROXY: "1",
         PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_TEMPLATES_DIR: "/app/templates", PANEL_PERSON_KEYS_DIR: "/run/secrets/person-keys",

@@ -71,7 +71,7 @@ test("every Node process of the server (six services and the panel) can be impor
   const to = temp();
   try {
     buildAppJs(APP, to, APP_FOLDERS);
-    const entries = ["inbox", "relay", "refresher", "push", "ops", "door"].map((s) => `bundle/services/${s}.js`).concat("bundle/panel/server.js");
+    const entries = ["inbox", "relay", "refresher", "push", "ops", "door"].map((s) => `bundle/services/${s}.js`).concat("bundle/panel/server.js", "bundle/panel/ondemand.js");
     // importing runs no server: each service starts only under import.meta.main. The panel's main.js starts the program whenever it is imported (it has no such guard), so the test
     // imports server.js, the file main.js builds the panel from (it reaches the same pages, sign-in and setup code), and checks that main.js exists and is stripped.
     const code = `const files = ${JSON.stringify(entries.map((e) => join(to, e)))}; for (const f of files) await import(f);`;
@@ -84,7 +84,7 @@ test("every Node process of the server (six services and the panel) can be impor
 });
 
 const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/licence", home: "/srv/home" };
-const compose = (extra: Record<string, unknown> = {}) => composeServer(serverConfig({ panel: { enabled: true }, pages: { domain: "pages.example", extra: [] }, fleet: { url: "https://fleet.example", deploymentId: "d" } } as never), { ...dirs, ...extra } as never, [
+const compose = (extra: Record<string, unknown> = {}) => composeServer(serverConfig({ panel: { enabled: true, mode: "hosted" }, fleet: { url: "https://fleet.example", keyFile: "fleet.key" }, pages: { domain: "pages.example", extraDomains: [] } } as never), { ...dirs, ...extra } as never, [
   { name: "glow-salon", index: 1, pathwayDir: "/repo/templates/commerce/bookings", guards: [] },
 ], { panel: { user: "501:20" }, goImage: "geo-go:1" });
 const cmd = (c: ReturnType<typeof compose>, s: string): string[] => c.services[s].block.command as string[];

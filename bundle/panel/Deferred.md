@@ -132,3 +132,8 @@ Not built, or built only as far as said. The first block needs another part of t
 - **The trade of a shop set up before presets, or edited here, cannot be set.** Only a new shop takes a trade; an edit keeps what is in the meta. Revisit when: Operators ask to name an old shop's trade. Done when: the shop's page has a small form for it, with the same cleaning (`cleanTrade`).
 - **Example prices are in rupees and in one region's habits.** A preset's prices and times are examples the Operator must check; the first step says so. Revisit when: Operators outside the first pilot areas. Done when: presets are tuned by region or a builder adds their own.
 - **Hindi, Malayalam and Kannada are machine-written** for the first screen, the eight trades' names and every example name (review sheets, ids `preset.*`). The committed `REVIEW-*.md` sheets are behind the words until `node bundle/panel/review-sheet.ts <lang>` is run for each (the lead regenerates them after the merge, with the other streams' words).
+
+## On-demand panel (24 Nov 2026)
+- A wrong data key or an unreadable folder used to stop the panel at start (the container showed unhealthy); asleep it shows when the first request loads it (503 to the person, the reason in the log). A cheap check of the key file at start would restore it.
+- A request that reaches Caddy in the second between the exit of a sleep and the restart gets a 502. Only a request in that second; a `lb_try_duration` on the panel's route in the Caddyfile would hide it, left out because it changes the generated Caddyfile (and its golden file) for a one-second window.
+- The login limiter stays in memory; the sleep is never shorter than its 15-minute window so a sleep forgets nothing that still counted.
