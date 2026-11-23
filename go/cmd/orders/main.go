@@ -14,6 +14,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -180,6 +181,13 @@ func run(folder string) error {
 			return nil
 		}
 		return sn.Stock
+	}
+	// item 11e/11i: with the shop's assistant on, the owner's read carries the app's view, and the page's head the character in the mood the public sees now, both over the
+	// Orders skill read-only and the last saved state's assistant part (server/runtime.ts channel.owner and channel.offer)
+	kit.OwnerApp = kit.AppView
+	kit.OfferCharacter = func(st *orders.Store) json.RawMessage {
+		_, sn, _ := rt.KitState()
+		return kit.PublicCharacter(st, sn)
 	}
 	var acc *access.Access
 	if channelToken != "" {

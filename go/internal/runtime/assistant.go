@@ -229,11 +229,11 @@ func (c *conv) cardQuestion(w *assistant.Writer, skill, kind, itemKind, ref stri
 	inr := assistant.INR(sh.AmountPaise)
 	switch {
 	case kind == "cancel" && sh.AmountPaise > 0:
-		return w.Say("card.cancel.paid", "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
+		return w.Say(skillKey(w.Pack(), "card.cancel.paid", skill), "ref", ref, "who", sh.Who, "what", sh.What, "inr", inr)
 	case kind == "cancel":
-		return w.Say("card.cancel.free", "ref", ref, "who", sh.Who, "what", sh.What)
+		return w.Say(skillKey(w.Pack(), "card.cancel.free", skill), "ref", ref, "who", sh.Who, "what", sh.What)
 	case kind == "refund":
-		return w.Say("card.refund", "ref", ref, "who", sh.Who, "inr", inr)
+		return w.Say(skillKey(w.Pack(), "card.refund", skill), "ref", ref, "who", sh.Who, "inr", inr)
 	case kind == "message":
 		return w.Say("card.message", "ref", ref, "who", sh.Who, "words", sh.Words)
 	}
@@ -291,6 +291,9 @@ func (c *conv) refusal(why, ref, who string) {
 	key := "refusal." + why
 	if !c.pack.Has(key) {
 		key = "refusal.not_here"
+	}
+	if s := c.skillOf(ref); s != nil {
+		key = skillKey(c.pack, key, s.Name()) // words.ts SKILL_REFUSAL: the skill's own wording where it has one
 	}
 	if who == "" {
 		who = ref
@@ -651,6 +654,8 @@ func (c *conv) readIntent(text, key string) {
 		c.tellText("day_list", c.dayList(w, d, rows, c.isClosedDay(d)), w.Facts(), "", nil)
 	case "waiting":
 		c.showWaiting()
+	case "open_orders":
+		c.openOrders()
 	case "money":
 		c.money(read.Date)
 	case "close_day", "reopen_day":
@@ -691,10 +696,13 @@ func (c *conv) readIntent(text, key string) {
 	}
 }
 
-// profile is the packed words' suffix for this shop's kinds ("" for a listings-only shop, "@bookings" for a Bookings shop).
+// profile is the packed words' suffix for this shop's kinds ("" for a listings-only shop, "@bookings" for a Bookings shop, "@orders" for an Orders shop).
 func (c *conv) profile() string {
 	if c.reading.Bookings {
 		return "@bookings"
+	}
+	if c.reading.Orders {
+		return "@orders"
 	}
 	return ""
 }

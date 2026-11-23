@@ -50,7 +50,7 @@ func (a *Agent) AfterTick(save func() error) {
 	}); err != nil {
 		a.c.Log("The owner's licence notice could not be sent: " + err.Error())
 	}
-	// in the licence's final stop the shop sends nothing more, so no report goes
+	// in the licence's final stop the shop sends nothing more, so no report and no morning line go
 	if a.c.Licence() == "stopped" {
 		return
 	}
@@ -59,7 +59,10 @@ func (a *Agent) AfterTick(save func() error) {
 			a.kit.reportFailed(err, a.now(), a.c.Log)
 		}
 	}
-	// the owner's morning line (morning.ts) goes here, after the report, with the same save (G3's)
+	// item 11e: the owner's morning line (morning.ts), after the report, with the same save so its claim is on disk before it goes; the skill reads the store, read-only
+	if err := a.c.Morning(runtime.MorningContext{Skill: &ordersSkill{a: a}, Messaging: a.ownerMessaging(a.kit.Ports.WhatsApp), Save: save}); err != nil {
+		a.c.Log("The owner's morning line could not be made: " + err.Error())
+	}
 }
 
 // licenceMessage is licence.ts createOrdersLicenceNotice's `message`: the wind-down's or the final stop's words in the owner's language, naming the Operator, with how many orders

@@ -133,8 +133,10 @@ type MoveSkill interface {
 type AssistantHooks struct {
 	// Skill is the template's own skill.
 	Skill OwnerSkill
-	// Bookings: the shop's kinds are a Bookings shop's (the router's reading and the help lines for them).
+	// Bookings: the shop's kinds are a Bookings shop's (the router's reading and the help lines for them). Orders: an Orders shop's (the open orders besides; its skill is an
+	// OpenSkill, assistantopen.go).
 	Bookings bool
+	Orders   bool
 	// Messaging is the agent's own (its owner route included): the assistant's say goes through it.
 	Messaging messaging.Messaging
 	// Log writes a record line for a case of the template (caseID "" or one that is not the template's: no case), as the agent's own log does.
@@ -170,7 +172,7 @@ func (c *StepContext) Assistant(h AssistantHooks) *Assistant {
 	cv := c.rt.assistantFor(c.Snap, c.Rec, c.Now())
 	cv.hooks = &h
 	cv.toPage = false
-	cv.reading = assistant.OwnerReading{Bookings: h.Bookings}
+	cv.reading = assistant.OwnerReading{Bookings: h.Bookings, Orders: h.Orders}
 	cv.skills = []OwnerSkill{h.Skill}
 	if lim := cv.limitsSkill(); lim != nil {
 		cv.skills = append(cv.skills, lim)
@@ -282,7 +284,10 @@ func (c *conv) onPage(fn func()) {
 
 // idOf is the words.ts message id a packed key belongs to (the record's `templates` names it as `assistant_<id>`).
 func idOf(key string) string {
-	id := strings.TrimSuffix(key, "@bookings")
+	id := key
+	if i := strings.IndexByte(id, '@'); i >= 0 { // a profile's or a skill's own words ("@bookings", "@orders") are the same message
+		id = id[:i]
+	}
 	if i := strings.IndexByte(id, '.'); i >= 0 {
 		id = id[:i]
 	}
