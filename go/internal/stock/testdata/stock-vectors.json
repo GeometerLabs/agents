@@ -4095,8 +4095,7 @@
         "line": "supply:towel",
         "crossing": 1,
         "count": 2,
-        "atMs": 86400000001,
-        "asked": 2
+        "atMs": 86400000001
        }
       ]
      },

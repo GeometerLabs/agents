@@ -15,9 +15,9 @@ describe("the shop's assistant", () => {
   contract("\"what needs me\" while an order waits keeps its card; one yes makes one order message, and the same yes again nothing", async () => {
     const s = await made.boot({ settings: { assistant: {} } });
     await s.ownerSays("order 10 boxes of hair colour from Ravi Traders");
-    const code = s.code();
     await s.ownerSays("what needs me");
     assert.equal(s.order("po-1").state, "awaiting_approval");
+    const code = s.code(); // the newest card for the order (the assistant's answer to "what needs me" may replace the agent's own: one live card per order)
     await s.ownerSays(`yes ${code}`);
     assert.equal(s.order("po-1").state, "sent");
     await s.ownerSays(`yes ${code}`);

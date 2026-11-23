@@ -158,6 +158,7 @@ test("words-fresh: the assistant's lines and their outgoing check (go/internal/r
 
 test("words-fresh: what the owner's talk on a Bookings shop is given (go/internal/bookings/testdata/talk-facts-vectors.json) equals a fresh render of the TypeScript skill and prompt", () => {
   assert.equal(talkFactsVectors.stale(), false, "the talk facts vectors are out of date: run  node go/scripts/gen_talk_facts_vectors.ts  and commit the result");
+});
 
 test("words-fresh: the stock vectors the Go stock count is proved on (go/internal/stock/testdata) equal a fresh run of modules/stock/stock.ts", async () => {
   const stockVectors = await import("../../../../go/scripts/gen_stock_vectors.ts");
