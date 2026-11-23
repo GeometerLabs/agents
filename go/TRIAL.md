@@ -812,3 +812,9 @@ whose absence registers none of shared.contract.test.ts's 8 (shared-harness.ts h
 198 + words-fresh's two new checks. The TypeScript unit tests that import the Bookings stand-in (approvals-guard-binary, understanding, ai-mode, buttons, model-eval, e2e,
 report-whatsapp, standins): 110 of 110 after it approves the assistant's templates. After the whole run, the chat guest's case was added to talk.contract.test.ts and the file run again on both runtimes:
 6 of 6 on TypeScript and 6 of 6 on Go, so the Bookings contract is 149 on each (148 measured whole, plus this one run on its own file).
+
+**go-w2-tsfix-22nov, final run after merging main 6c16bbf5 (stream A), 23 Nov, once through the heat lock:** every generator `--check` fresh (none needed writing
+after the merge); `go build`, `go vet ./...`, `go test ./...` pass (30 packages); Bookings contract 151 of 151 on TypeScript and 151 of 151 on Go (the forged status time and the
+held buttons cases included); listings contract 200 of 200; the changed modules' unit tests 296 of 296; Orders' and Fees' accounting-figures, Fees' classes and the channels tests
+68 of 68; Bookings' unit tests 947 of 949 (one skipped; `sample-report.test.ts` fails the same way at the base ead21fd8, the same code 192V-X9KH: the committed sample predates
+main's 21 Nov price list, so it is not this stream's).
