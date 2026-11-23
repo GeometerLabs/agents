@@ -109,30 +109,8 @@ func run(folder string) error {
 		return err
 	}
 	// item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push alone for a shop with no WhatsApp: push.ts ownerRoute)
-	ports.PushOwner = func(text string) []string {
-		p := rt.Push()
-		if p == nil || !p.On {
-			return nil
-		}
-		ids, _ := p.Owner(text, "")
-		return ids
-	}
-	ports.OwnerRoute = func(hasWhatsApp bool) string {
-		phones := 0
-		p := rt.Push()
-		if p != nil && p.On {
-			phones = p.OwnerPhones()
-		}
-		switch {
-		case !hasWhatsApp && phones > 0:
-			return "push"
-		case !hasWhatsApp:
-			return "none"
-		case phones == 0:
-			return "whatsapp"
-		}
-		return p.Choice()
-	}
+	ports.PushOwner = func(text string) []string { return rt.OwnerPush(text) } // the one shared owner route (runtime/ownerroute.go); rt is made later, so a closure
+	ports.OwnerRoute = func(hasWhatsApp bool) string { return rt.OwnerRoute(hasWhatsApp) }
 	// the books (go-bk-books-19nov's adapters): the money lines' accounting and the settlement read; the monthly report runs after the beat's step (agent_after.go)
 	sr, _ := ports.Payments.(payments.SettlementReader)
 	ports.Books = bookings.NewBooks(bookings.BooksPorts{Messaging: ports.WhatsApp, Settlements: sr, Capabilities: ports.Capabilities})

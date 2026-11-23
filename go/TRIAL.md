@@ -1148,8 +1148,7 @@ digest from the record, so sealed files stay valid. A report rebuilt for an old 
 `npm run sample:pull`) needs the owner to pull the new `report-2026-11*.{json,html}` and `manifest.json` and deploy; I did not touch public-web.
 **TypeScript findings.** (a) Bookings' `record.digest` is over the month's rows; Orders, Fees and Stock orders digest the whole record: left alone, worth a decision. (b) Bookings'
 OwnerText keeps a local `nonEmpty` closure, and Bookings counts by action inside its rows loop: not folded (no behaviour reason, small).
-**Deferred.** Fold `go/cmd/bookings`, `cmd/orders` and `cmd/fees` owner-route code (about 25 lines each) onto `runtime/ownerroute.go` (`Runtime.OwnerPush`, `Runtime.OwnerRoute`) after
-Stream SG's branch merges (the lead's note; SG's file is not on main yet). Not folded, still copies of one thing: `sealWords`, `e`, `fign`, `amountCells`, `pair`, `NotCheckedList`
+**Owner routes folded (after merging main with SG's e4093b05):** `cmd/bookings`, `cmd/orders` and `cmd/fees` use `rt.OwnerPush` and `rt.OwnerRoute` (`runtime/ownerroute.go`); their 25-line copies are deleted. **Deferred.** Not folded, still copies of one thing: `sealWords`, `e`, `fign`, `amountCells`, `pair`, `NotCheckedList`
 and each package's `Fill`/`StringsOf` (they read each package's own generated strings type).
 
 

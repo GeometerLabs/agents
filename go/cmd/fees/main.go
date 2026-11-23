@@ -99,30 +99,8 @@ func run(folder string) error {
 	if err != nil {
 		return err
 	}
-	ports.PushOwner = func(text string) []string {
-		p := rt.Push()
-		if p == nil || !p.On {
-			return nil
-		}
-		ids, _ := p.Owner(text, "")
-		return ids
-	}
-	ports.OwnerRoute = func(hasWhatsApp bool) string {
-		phones := 0
-		p := rt.Push()
-		if p != nil && p.On {
-			phones = p.OwnerPhones()
-		}
-		switch {
-		case !hasWhatsApp && phones > 0:
-			return "push"
-		case !hasWhatsApp:
-			return "none"
-		case phones == 0:
-			return "whatsapp"
-		}
-		return p.Choice()
-	}
+	ports.PushOwner = func(text string) []string { return rt.OwnerPush(text) } // the one shared owner route (runtime/ownerroute.go); rt is made later, so a closure
+	ports.OwnerRoute = func(hasWhatsApp bool) string { return rt.OwnerRoute(hasWhatsApp) }
 	// a UPI centre's QR pictures go into the folder the monthly report's pages are served from (start.ts folderQrImages), under random names; no report block: the words alone
 	if kit.Settings.OwnerMarked() {
 		if rep, ok := client.Config.Raw["report"].(map[string]any); ok {
