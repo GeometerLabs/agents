@@ -150,3 +150,16 @@ test("words-fresh: the voice vectors the Go voice module is proved on (go/intern
   assert.equal(voiceVectors.stale(), false, "the voice vectors are out of date: run  node go/scripts/gen_voice_vectors.ts  and commit the result");
 });
 
+
+test("words-fresh: the Orders shop's generated Go data (go/internal/orders: settings and store vectors, words, reading; go/internal/ordersreport) equals a fresh render of the TypeScript", async () => {
+  const words = await import("../../../../go/scripts/gen_orders_words.ts");
+  assert.deepEqual(words.staleFiles(), [], "an Orders words file is out of date: run  node go/scripts/gen_orders_words.ts  and commit the result");
+  const reading = await import("../../../../go/scripts/gen_orders_reading.ts");
+  assert.deepEqual(await reading.staleFiles(), [], "an Orders reading file is out of date: run  node go/scripts/gen_orders_reading.ts  and commit the result");
+  const settings = await import("../../../../go/scripts/gen_orders_settings.ts");
+  assert.deepEqual(await settings.staleFiles(settings.OUT), [], "the Orders settings and store vectors are out of date: run  node go/scripts/gen_orders_settings.ts  and commit the result");
+  const reportWords = await import("../../../../go/scripts/gen_orders_report_words.ts");
+  assert.deepEqual(reportWords.staleFiles(reportWords.OUT), [], "the Orders report's words are out of date: run  node go/scripts/gen_orders_report_words.ts  and commit the result");
+  const reportVectors = await import("../../../../go/scripts/gen_orders_report_vectors.ts");
+  assert.deepEqual(reportVectors.staleFiles(reportVectors.OUT), [], "the Orders report's vectors are out of date: run  node go/scripts/gen_orders_report_vectors.ts  and commit the result");
+});
