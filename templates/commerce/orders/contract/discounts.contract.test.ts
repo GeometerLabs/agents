@@ -203,6 +203,25 @@ describe("a discount asked without a price", () => {
     assert.deepEqual(discountLines(s), []);
   });
 
+  contract("on, an item with no floor: the menu price is stated once, nothing is decided, and the advance is half the menu total", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "2 curd 10 nov 12:00 pm pickup, any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER), ["price_floor", "quote_and_link"]);
+    assert.deepEqual(await advanceAsked(s), [2000]);
+    assert.deepEqual(discountLines(s), []);
+  });
+
+  contract("on, a card waiting for the owner: \"any discount?\" hears that the owner was asked, and the card is not voided", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 2, 100);
+    const code = codeOf(s);
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER).slice(-1), ["discount_asked"]);
+    assert.equal(codeOf(s), code);
+    assert.equal(discountLines(s).length, 1, "no second decision");
+    assert.deepEqual(await advanceAsked(s), [], "nothing held");
+  });
+
   contract("off: today's answer, and the advance stays half the menu total", async () => {
     const s = await boot();
     await s.inbound(CUSTOMER, "any discount?"); await s.settle();

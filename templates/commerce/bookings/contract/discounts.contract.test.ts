@@ -248,6 +248,13 @@ describe("a discount asked without a price", () => {
     assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.offeredInr]), [["held_for_owner", "350"], ["confirmed", "350"]]);
   });
 
+  contract("on, a service with no floor: the list price is stated once, and nothing is decided", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "any discount on facial?"); await s.settle();
+    assert.match(s.sent(CUSTOMER)[0].text, /Our facial is ₹900\. Sorry, I can't go lower than that\./u);
+    assert.deepEqual(discountLines(s), []);
+  });
+
   contract("off: today's answer, and nothing is decided or recorded as a discount", async () => {
     const s = await boot();
     await s.inbound(CUSTOMER, "any discount?"); await s.settle();
