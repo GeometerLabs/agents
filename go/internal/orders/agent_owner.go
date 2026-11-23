@@ -274,6 +274,12 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 	if m := balanceCmd.FindStringSubmatch(msg.Text); m != nil {
 		return a.onOwnerBalance(strings.ToLower(m[1]), strings.ToLower(m[2]))
 	}
+	// E1: the owner's answer to a price card names the order and the card's code (agent_discounts.go); a shop with no "discounts" block reads it as before
+	if a.settings.Discounts != nil {
+		if m := discountCommand.FindStringSubmatch(msg.Text); m != nil {
+			return a.onDiscountAnswer(strings.ToLower(m[1]), m[2], strings.ToUpper(m[3]))
+		}
+	}
 	// item 11e: the shop's assistant reads what no fixed phrase is (this command is one); a shop without an "assistant" block: exactly as before
 	if !ownerCommand.MatchString(msg.Text) {
 		if as := a.assistantOf(); as != nil {
@@ -299,6 +305,12 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 	var said map[string]string // the record keeps the command in the clear, so a report can count approvals and refusals
 	if command != "" {
 		said = map[string]string{"command": command}
+	}
+	if o != nil && command != "" && a.settings.Discounts != nil && len(o.Pending) == 0 && askedDeal(o) != nil {
+		// E1: a price card waits on this order and its answer needs the card's code: the owner is told the exact words, and nothing is done
+		a.log(o, a.owner(), "owner_decision", "blocked", inputs("command", optS(command)), logMore{refs: said, notes: "a price card waits on this order: its answer names the card's code"})
+		a.tellOwner(o, o.Customer, "owner_discount_use_code", sayOpts{facts: a.dealFacts(*o.deal())})
+		return nil
 	}
 	a.log(o, a.owner(), "owner_decision", "attempted", inputs("command", optS(command), "ref", optS(ref)), logMore{refs: said})
 	if o == nil || command == "" || len(o.Pending) == 0 {

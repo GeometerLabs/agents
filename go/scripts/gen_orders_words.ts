@@ -64,6 +64,7 @@ function probe(language: Language, upi: boolean): MessageFacts {
     mode: "delivery", area: "qzarea", address: "qzaddress", areas: ["qzplaceone", "qzplacetwo"],
     link: "https://qzlink.example/pay", holdMinutes: 8802, windowHours: 8803, maxItems: 8804, orderRef: "qzref", customerPhone: "+919000000001",
     approvalCode: "QZCODE", approvalHours: 8805, approvalsLeft: 8806, payee: "qzpayee", upiCode: "QZUPICODE", partner: "qzpartner", upcomingCount: 8807,
+    offeredInr: 7770008, discountCode: "QZDISCODE",
     plan: { meals: 8808, fromMs: PLAN_FROM, toMs: PLAN_TO },
   };
   if (upi) f.upiId = "qzupi@bank";
@@ -71,24 +72,24 @@ function probe(language: Language, upi: boolean): MessageFacts {
 }
 
 /** Every fact `need()` can ask for (dateMs and upiId are not: a message does not refuse without them). */
-const NEEDED: Fact[] = ["itemsText", "itemName", "priceInr", "leftCount", "totalInr", "advanceInr", "balanceInr", "refundInr", "markedInr", "leftInr", "slotFromMs", "slotToMs", "cutoffMs", "mode", "area", "address", "areas", "link", "holdMinutes", "windowHours", "maxItems", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "payee", "upiCode", "partner", "upcomingCount", "plan", "plan.meals", "plan.fromMs", "plan.toMs"];
+const NEEDED: Fact[] = ["itemsText", "itemName", "priceInr", "leftCount", "totalInr", "advanceInr", "balanceInr", "refundInr", "markedInr", "leftInr", "slotFromMs", "slotToMs", "cutoffMs", "mode", "area", "address", "areas", "link", "holdMinutes", "windowHours", "maxItems", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "payee", "upiCode", "partner", "upcomingCount", "plan", "plan.meals", "plan.fromMs", "plan.toMs", "offeredInr", "discountCode"];
 
 const dateOf = (ms: number, language: Language) => formatDate(localParts(ms, TZ), language);
 const clockOf = (ms: number, language: Language) => formatTime(localParts(ms, TZ), language);
 
 /** The slots, in the order they are looked for: [the probe's text, the slot's name]. Longest first, so a composite is found before the pieces it holds. */
 function slotTable(f: MessageFacts): [string, string][] {
-  const rupees = (k: "priceInr" | "totalInr" | "advanceInr" | "balanceInr" | "refundInr" | "markedInr" | "leftInr"): [string, string] => [formatInr(f[k] as number), k];
+  const rupees = (k: "priceInr" | "totalInr" | "advanceInr" | "balanceInr" | "refundInr" | "markedInr" | "leftInr" | "offeredInr"): [string, string] => [formatInr(f[k] as number), k];
   const t: [string, string][] = [
     [f.menu.map((i) => `${i.name} ${formatInr(i.priceInr)}`).join(", "), "menuList"],
     [when(f), "when"], [cutAt(f), "cutAt"], [how(f), "how"], [rest(f), "rest"], [day(f), "day"],
     [dateOf(PLAN_FROM, f.language), "planFrom"], [dateOf(PLAN_TO, f.language), "planTo"],
     [f.link!, "link"],
-    rupees("priceInr"), rupees("totalInr"), rupees("advanceInr"), rupees("balanceInr"), rupees("refundInr"), rupees("markedInr"), rupees("leftInr"),
+    rupees("priceInr"), rupees("totalInr"), rupees("advanceInr"), rupees("balanceInr"), rupees("refundInr"), rupees("markedInr"), rupees("leftInr"), rupees("offeredInr"),
     [String(f.leftCount), "leftCount"], [String(f.holdMinutes), "holdMinutes"], [String(f.windowHours), "windowHours"], [String(f.maxItems), "maxItems"], [String(f.approvalHours), "approvalHours"],
     [String(f.approvalsLeft), "approvalsLeft"], [String(f.upcomingCount), "upcomingCount"], [String(f.plan!.meals), "meals"],
     [f.itemsText!, "itemsText"], [f.itemName!, "itemName"], [f.address!, "address"], [f.areas!.join(", "), "areas"], [f.orderRef!, "orderRef"], [f.customerPhone!, "customerPhone"],
-    [f.approvalCode!, "approvalCode"], [f.upiCode!, "upiCode"], [f.payee!, "payee"], [f.partner!, "partner"], [f.businessName, "businessName"],
+    [f.approvalCode!, "approvalCode"], [f.discountCode!, "discountCode"], [f.upiCode!, "upiCode"], [f.payee!, "payee"], [f.partner!, "partner"], [f.businessName, "businessName"],
   ];
   if (f.upiId) { t.push([f.upiId, "upiId"]); t.push([payTo(f), "payTo"]); }
   return t.sort((a, b) => b[0].length - a[0].length);
@@ -98,7 +99,7 @@ function slotTable(f: MessageFacts): [string, string][] {
 const FACTS: Record<string, (f: MessageFacts) => Fact[]> = {
   menuList: () => [], businessName: () => [], upiNote: () => [],
   itemsText: () => ["itemsText"], itemName: () => ["itemName"], priceInr: () => ["priceInr"], totalInr: () => ["totalInr"], advanceInr: () => ["advanceInr"], balanceInr: () => ["balanceInr"],
-  refundInr: () => ["refundInr"], markedInr: () => ["markedInr"], leftInr: () => ["leftInr"],
+  refundInr: () => ["refundInr"], markedInr: () => ["markedInr"], leftInr: () => ["leftInr"], offeredInr: () => ["offeredInr"], discountCode: () => ["discountCode"],
   when: () => ["slotFromMs", "slotToMs"], cutAt: () => ["cutoffMs"], day: (f) => (f.dateMs !== undefined ? [] : ["slotFromMs"]),
   how: (f) => (f.mode === "pickup" ? ["mode"] : ["mode", "area"]), rest: () => ["balanceInr", "mode"], payTo: (f) => (f.upiId ? ["link", "payee"] : ["link"]),
   planFrom: () => ["plan", "plan.fromMs"], planTo: () => ["plan", "plan.toMs"], meals: () => ["plan", "plan.meals"],
@@ -324,6 +325,7 @@ function probeless(language: Language): MessageFacts {
     link: "https://rzp.io/i/example", holdMinutes: 15, windowHours: 4, maxItems: 10, orderRef: "o-3", customerPhone: "+919811111111",
     approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, payee: "Annapurna Tiffins", upiCode: "P4XR9T", partner: "Divya, Sri Sai Digital", upcomingCount: 4,
     plan: { meals: 22, fromMs: Date.UTC(2026, 10, 15, 18, 30), toMs: Date.UTC(2026, 11, 14, 18, 30) },
+    offeredInr: 160, discountCode: "Q7RM2X",
   };
 }
 

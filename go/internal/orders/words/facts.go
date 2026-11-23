@@ -92,6 +92,10 @@ type MessageFacts struct {
 	UpcomingCount *int64  `json:"upcomingCount,omitempty"`
 
 	Plan *PlanFacts `json:"plan,omitempty"` // monthly plans: only plan messages carry it
+
+	// E1, the discount authority (24 Nov 2026): the price of one the customer asked for (PriceInr stays the menu price) and the owner's card's code
+	OfferedInr   *int64  `json:"offeredInr,omitempty"`
+	DiscountCode *string `json:"discountCode,omitempty"`
 }
 
 // S makes a pointer to a text: a fact the record has.
@@ -240,6 +244,10 @@ func (f *MessageFacts) value(w *Words, name string) (string, error) {
 		return f.rupees(f.MarkedInr, name)
 	case "leftInr":
 		return f.rupees(f.LeftInr, name)
+	case "offeredInr":
+		return f.rupees(f.OfferedInr, name)
+	case "discountCode":
+		return needS(f.DiscountCode, name)
 	case "leftCount":
 		return count(f.LeftCount, name)
 	case "holdMinutes":

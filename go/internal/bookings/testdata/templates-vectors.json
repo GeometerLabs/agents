@@ -1434,6 +1434,93 @@
   }
  },
  {
+  "area": "render",
+  "name": "hi discount_agreed",
+  "input": {
+   "id": "discount_agreed",
+   "language": "hi"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "hi discount_asked",
+  "input": {
+   "id": "discount_asked",
+   "language": "hi"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "hi discount_approved",
+  "input": {
+   "id": "discount_approved",
+   "language": "hi"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "hi discount_refused",
+  "input": {
+   "id": "discount_refused",
+   "language": "hi"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "hi owner_discount_ask",
+  "input": {
+   "id": "owner_discount_ask",
+   "language": "hi"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "hi owner_discount_use_code",
+  "input": {
+   "id": "owner_discount_use_code",
+   "language": "hi"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "hi owner_discount_stale",
+  "input": {
+   "id": "owner_discount_stale",
+   "language": "hi"
+  },
+  "output": {
+   "text": "यह जवाब ऐसी कीमत वाली माँग का है जो बदल गई है या जिसका जवाब पहले ही दिया जा चुका है, इसलिए कुछ नहीं किया गया।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
   "area": "meta",
   "name": "hi booking_reminder",
   "input": {
@@ -3545,6 +3632,93 @@
   },
   "output": {
    "text": "Sorry, I couldn't finish that: the booking system isn't answering just now. Your message is on the owner's to-do list. Please write again later, or contact Glow Salon directly.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
+  "area": "render",
+  "name": "en discount_agreed",
+  "input": {
+   "id": "discount_agreed",
+   "language": "en"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "en discount_asked",
+  "input": {
+   "id": "discount_asked",
+   "language": "en"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "en discount_approved",
+  "input": {
+   "id": "discount_approved",
+   "language": "en"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "en discount_refused",
+  "input": {
+   "id": "discount_refused",
+   "language": "en"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "en owner_discount_ask",
+  "input": {
+   "id": "owner_discount_ask",
+   "language": "en"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "en owner_discount_use_code",
+  "input": {
+   "id": "owner_discount_use_code",
+   "language": "en"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "en owner_discount_stale",
+  "input": {
+   "id": "owner_discount_stale",
+   "language": "en"
+  },
+  "output": {
+   "text": "That answer is for a price ask that has changed or was already answered, so nothing was done.",
    "check": {
     "ok": true,
     "problems": []
@@ -5670,6 +5844,93 @@
   }
  },
  {
+  "area": "render",
+  "name": "ml discount_agreed",
+  "input": {
+   "id": "discount_agreed",
+   "language": "ml"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "ml discount_asked",
+  "input": {
+   "id": "discount_asked",
+   "language": "ml"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "ml discount_approved",
+  "input": {
+   "id": "discount_approved",
+   "language": "ml"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "ml discount_refused",
+  "input": {
+   "id": "discount_refused",
+   "language": "ml"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "ml owner_discount_ask",
+  "input": {
+   "id": "owner_discount_ask",
+   "language": "ml"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "ml owner_discount_use_code",
+  "input": {
+   "id": "owner_discount_use_code",
+   "language": "ml"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "ml owner_discount_stale",
+  "input": {
+   "id": "owner_discount_stale",
+   "language": "ml"
+  },
+  "output": {
+   "text": "ഈ മറുപടി മാറിപ്പോയതോ ഇതിനകം മറുപടി നൽകിയതോ ആയ ഒരു വില ചോദ്യത്തിനുള്ളതാണ്, അതിനാൽ ഒന്നും ചെയ്തില്ല.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
   "area": "meta",
   "name": "ml booking_reminder",
   "input": {
@@ -7781,6 +8042,93 @@
   },
   "output": {
    "text": "ಕ್ಷಮಿಸಿ, ಇದನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ: ಬುಕಿಂಗ್ ಸಿಸ್ಟಮ್ ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಮೆಸೇಜ್ ಮಾಲೀಕರ ಮಾಡಬೇಕಾದ ಕೆಲಸಗಳ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ಮೇಲೆ ಮತ್ತೆ ಬರೆಯಿರಿ, ಅಥವಾ Glow Salon ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn discount_agreed",
+  "input": {
+   "id": "discount_agreed",
+   "language": "kn"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn discount_asked",
+  "input": {
+   "id": "discount_asked",
+   "language": "kn"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn discount_approved",
+  "input": {
+   "id": "discount_approved",
+   "language": "kn"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn discount_refused",
+  "input": {
+   "id": "discount_refused",
+   "language": "kn"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn owner_discount_ask",
+  "input": {
+   "id": "owner_discount_ask",
+   "language": "kn"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn owner_discount_use_code",
+  "input": {
+   "id": "owner_discount_use_code",
+   "language": "kn"
+  },
+  "output": {
+   "text": null,
+   "check": null
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn owner_discount_stale",
+  "input": {
+   "id": "owner_discount_stale",
+   "language": "kn"
+  },
+  "output": {
+   "text": "ಈ ಉತ್ತರ ಬದಲಾದ ಅಥವಾ ಈಗಾಗಲೇ ಉತ್ತರಿಸಿದ ಬೆಲೆಯ ಕೋರಿಕೆಗೆ ಸಂಬಂಧಿಸಿದ್ದು, ಆದ್ದರಿಂದ ಏನೂ ಮಾಡಲಿಲ್ಲ.",
    "check": {
     "ok": true,
     "problems": []

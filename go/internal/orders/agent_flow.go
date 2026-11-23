@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/orders/reading"
@@ -463,14 +464,21 @@ func (a *Agent) fill(o *Order, in *reading.Intent) bool {
 	return true
 }
 
-// offerPrice is agent.ts offerPrice: a price named is about the first item, one unit; the quote is always the menu price.
-func (a *Agent) offerPrice(o *Order, in *reading.Intent, ctx *flowCtx) {
+// offerPrice is agent.ts offerPrice: a price named is about the first item, one unit; the quote is always the menu price. E1: with a "discounts" block, a price below the
+// menu goes to the discount authority instead (agent_discounts.go), and stop is true when the order now waits for the owner's answer; without one, exactly as before.
+func (a *Agent) offerPrice(o *Order, in *reading.Intent, ctx *flowCtx) (stop bool) {
 	if in.OfferInr == nil || len(o.Lines) == 0 {
-		return
+		return false
 	}
 	item := a.settings.ItemOf(o.Lines[0].ItemID)
 	if item == nil {
-		return
+		return false
+	}
+	if a.settings.Discounts != nil {
+		if *in.OfferInr < item.PriceInr {
+			return a.decideOffer(o, item, *in.OfferInr, ctx)
+		}
+		o.setDeal(nil) // the customer takes the menu price: whatever was asked before is void
 	}
 	d := checkPriceAtOrAboveMenu(ItemName(item, "en"), item.PriceInr, *in.OfferInr)
 	ctx.shown = append(ctx.shown, d)
@@ -478,6 +486,7 @@ func (a *Agent) offerPrice(o *Order, in *reading.Intent, ctx *flowCtx) {
 		ctx.prefix = append(ctx.prefix, "price_floor")
 		ctx.itemID = item.ID
 	}
+	return false
 }
 
 // probeOpen is `fixSlot(settings, probe) && probe.cutoffMs! > now` for a slot on a date: whether its cut-off has not passed.
@@ -608,6 +617,10 @@ func (a *Agent) proceed(o *Order, ctx *flowCtx) error {
 		say1([]string{"too_many_items"}, sayOpts{offer: itemsOffer("too_many_items")})
 		return nil
 	}
+	// E1: a price asked on this order is held to the order as it is now (a changed order is decided again); while the owner's card waits nothing more happens
+	if s.Discounts != nil && a.checkDeal(o, ctx) {
+		return nil
+	}
 	if o.Date == nil {
 		say1([]string{"ask_when"}, sayOpts{})
 		return nil
@@ -684,9 +697,13 @@ func (a *Agent) proceed(o *Order, ctx *flowCtx) error {
 		return nil
 	}
 	total := s.TotalOf(o.Lines)
+	deal := o.deal() // E1: the agreed total, when a price was agreed or approved for this very order (checkDeal held it to the order above)
+	if deal.Live() {
+		total = deal.TotalInr
+	}
 	advance := s.AdvanceFor(total)
 	o.TotalInr, o.AdvanceInr = &total, &advance
-	if over := s.Owner.ApproveOverInr; over > 0 && total > over {
+	if over := s.Owner.ApproveOverInr; over > 0 && total > over && (deal == nil || deal.State != discounts.Approved) { // the owner's yes to the card was to this exact total
 		_ = o.MoveTo(AwaitingOwner)
 		o.Pending = append(o.Pending, NewBigOrder(BigOrder{TotalInr: total, AskedAtMs: now}))
 		a.log(o, phone, "ask_owner", "held_for_owner", map[string]any{"totalInr": total}, logMore{decisions: catD(ctx.shown),
@@ -861,6 +878,7 @@ func (a *Agent) onOrder(phone string, in *reading.Intent) error {
 	lang := a.languageOf(phone, nil)
 	waiting := a.store.LatestOrder(phone, []string{AwaitingAdvance, AwaitingOwner})
 	o := a.store.LatestOrder(phone, []string{Enquiry})
+	var carried *discounts.Deal // E1: the price asked on an order the customer replaced
 	hasDetails := len(in.Items) > 0 || in.Date != nil || in.Time != nil || in.SlotID != "" || len(in.SlotIDs) > 0 || in.Mode != ""
 	if o == nil && waiting != nil {
 		// already holding an order for this customer: a repeat of the same request gets the same link, not a second hold
@@ -884,6 +902,9 @@ func (a *Agent) onOrder(phone string, in *reading.Intent) error {
 		}
 		// the new draft starts from what the customer said now, with the day, the way and the address they had (a change of item or day, say) carried over
 		o = a.store.Register(probe)
+		if a.settings.Discounts != nil {
+			carried = waiting.deal()
+		}
 	} else if o == nil {
 		o = a.store.Register(NewDraft(phone, lang))
 	}
@@ -893,7 +914,15 @@ func (a *Agent) onOrder(phone string, in *reading.Intent) error {
 		return nil
 	}
 	ctx := &flowCtx{}
-	a.offerPrice(o, in, ctx)
+	if a.offerPrice(o, in, ctx) {
+		return nil
+	}
+	if carried != nil && in.OfferInr == nil && o.deal() == nil {
+		// E1: the order the customer changed had a price agreed (or asked): the same price is asked again for the order as it is now, so a change never rides on an old yes
+		if item := a.settings.ItemOf(carried.Item); item != nil {
+			o.setDeal(&discounts.Deal{Item: carried.Item, OfferedInr: carried.OfferedInr, State: "carried"})
+		}
+	}
 	return a.proceed(o, ctx)
 }
 

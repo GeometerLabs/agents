@@ -14,7 +14,7 @@ import (
 // from the record. Unlike Bookings, the customer's number is NOT also grouped.
 func CheckFactsOf(f *MessageFacts) language.Facts {
 	var out language.Facts
-	for _, v := range []*int64{f.PriceInr, f.TotalInr, f.AdvanceInr, f.BalanceInr, f.RefundInr, f.MarkedInr, f.LeftInr} {
+	for _, v := range []*int64{f.PriceInr, f.TotalInr, f.AdvanceInr, f.BalanceInr, f.RefundInr, f.MarkedInr, f.LeftInr, f.OfferedInr} {
 		if v != nil {
 			out.AmountsInr = append(out.AmountsInr, float64(*v))
 		}
@@ -60,7 +60,7 @@ func CheckFactsOf(f *MessageFacts) language.Facts {
 	for _, a := range f.Areas {
 		lits = append(lits, S(a))
 	}
-	lits = append(lits, f.OrderRef, f.CustomerPhone, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner)
+	lits = append(lits, f.OrderRef, f.CustomerPhone, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.DiscountCode)
 	for _, l := range lits {
 		if l != nil {
 			out.Literals = append(out.Literals, *l)
