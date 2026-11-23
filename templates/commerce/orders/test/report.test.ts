@@ -16,7 +16,7 @@ import { envelopeFile, seal, verifyEnvelopeText } from "../../../../modules/repo
 import { verifyCodeLink, verifyLink } from "../../../../modules/report/verify-link.ts";
 import { badgeText } from "../../../../modules/report/text.ts";
 import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
-import { NOT_COUNTED, RULE_IDS, buildOrdersReport } from "../report/data.ts";
+import { NOT_COUNTED, RULE_IDS, buildOrdersReport, entryDigest } from "../report/data.ts";
 import type { OrdersReport } from "../report/data.ts";
 import { at, phone, runBusyMonth } from "../report/example-month.ts";
 import { reportPage } from "../report/html.ts";
@@ -387,4 +387,15 @@ test("a refund a person settled by their word is not money given back: it is cou
     assert.equal(m.template.text, m.text);
   }
   assert.ok(!monthlyReportMessage(seal({ ...none, preparedBy: "Divya" }), "en", { link: "https://reports.example.com/r/x/report-2026-11-en.html" }).text.includes("by their word"));
+});
+
+// The fingerprint of an entry leaves out the number and the note (modules/record/ledger.ts leaves them out of the chain too): a note is free text that can name a person, so a digest
+// of it could be tested by guessing the name. Every other member is in it. The same on the Go side (internal/bookingsreport, internal/feesreport vectors).
+test("an entry's fingerprint leaves out the number and the note, and holds everything else", () => {
+  const entry = { seq: 7, time: "2026-11-12T05:00:00.000Z", conversation: "+919811111111", booking: "x-1", action: "refund", inputsDigest: "0123456789abcdef", outcome: "confirmed", decisions: [], language: "en", notes: "for Rohan Mehta", refs: { a: "1" } } as never as Parameters<typeof entryDigest>[0];
+  const same = entryDigest(entry);
+  assert.equal(entryDigest({ ...entry, conversation: "+919800000000", notes: "something else" }), same);
+  assert.equal(entryDigest({ ...entry, notes: "" }), same);
+  assert.notEqual(entryDigest({ ...entry, outcome: "blocked" }), same);
+  assert.notEqual(entryDigest({ ...entry, refs: { a: "2" } }), same);
 });

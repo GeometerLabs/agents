@@ -11,20 +11,16 @@
 // Where Go and JavaScript differ, and what this file copies:
 //   - `x ?? y` and `=== undefined` are presence (a pointer here), `if (x)` is truthiness (an empty text is false): `e.booking &&` is "not nil and not empty";
 //   - a JavaScript Set kept only for its size is a Go map; the suppliers follow the SHOP'S list (a slice), as the TypeScript's `.map` does;
-//   - `new Date(ms).toISOString()` is isoOf (years 1000 to 9999).
+//   - `new Date(ms).toISOString()` is report.ISOOf (years 1000 to 9999).
 package stockordersreport
 
 import (
-	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
 	"github.com/GeometerLabs/agents/go/internal/report"
-	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
 const formatReport = "geometer-stock-orders-report/1"
@@ -137,25 +133,6 @@ func has(list []string, s string) bool {
 	return false
 }
 
-// isoOf is new Date(ms).toISOString() for a year from 1000 to 9999.
-func isoOf(ms int64) string { return time.UnixMilli(ms).UTC().Format("2006-01-02T15:04:05.000Z") }
-
-type decision struct {
-	RuleID  string `json:"ruleId"`
-	Verdict string `json:"verdict"`
-}
-
-func decisionsOf(e accounting.Entry) []decision {
-	var out []decision
-	for _, raw := range e.Decisions {
-		var d decision
-		if json.Unmarshal(raw, &d) == nil {
-			out = append(out, d)
-		}
-	}
-	return out
-}
-
 // stopsIn is stopsIn: what the limits stopped, one entry at a time. A blocked entry (one with a block decision) is one stop, counted under each rule that blocked it once. A rule this
 // package does not list is counted under "other", so the total is always every blocked entry that carries a block.
 func stopsIn(month []accounting.Entry) (int, map[string]int) {
@@ -169,7 +146,7 @@ func stopsIn(month []accounting.Entry) (int, map[string]int) {
 			continue
 		}
 		rules := map[string]bool{}
-		for _, d := range decisionsOf(e) {
+		for _, d := range report.DecisionsOf(e) {
 			if d.Verdict == "block" {
 				id := d.RuleID
 				if !has(RuleIDs(), id) {
@@ -233,20 +210,8 @@ func BuildStockReport(in Input) (*Report, error) {
 	if !has(Sources(), in.Source) {
 		return nil, fmt.Errorf("Say what the numbers were counted from: %s.", strings.Join(Sources(), ", "))
 	}
-	// nothing after the period can matter; a time that does not parse is NaN, and NaN < to is false
-	var all []accounting.Entry
-	for _, e := range in.Entries {
-		if t, ok := accounting.ParseISO(e.Time); ok && t < to {
-			all = append(all, e)
-		}
-	}
-	sort.SliceStable(all, func(i, j int) bool { return all[i].Seq < all[j].Seq })
-	var month []accounting.Entry
-	for _, e := range all {
-		if t, _ := accounting.ParseISO(e.Time); t >= from {
-			month = append(month, e)
-		}
-	}
+	// nothing after the period can matter; a time that does not parse is NaN, and NaN < to is false (report.SplitMonth)
+	all, month := report.SplitMonth(in.Entries, from, to)
 	inMonth := func(ms *int64) bool { return ms != nil && *ms >= from && *ms < to }
 
 	r := &Report{}
@@ -318,16 +283,10 @@ func BuildStockReport(in Input) (*Report, error) {
 	}
 
 	// ---- the record itself: the counts by action and outcome, and a digest of the WHOLE record (not the month's), never carrying a conversation's number ----
-	r.Record.ByAction = map[string]map[string]int{}
-	for _, e := range month {
-		if r.Record.ByAction[e.Action] == nil {
-			r.Record.ByAction[e.Action] = map[string]int{}
-		}
-		r.Record.ByAction[e.Action][e.Outcome]++
-	}
+	r.Record.ByAction = report.CountByAction(month)
 	digests := make([]any, 0, len(all))
 	for _, e := range all {
-		digests = append(digests, bookingsreport.EntryDigest(e))
+		digests = append(digests, report.EntryDigest(e))
 	}
 	r.Record.Entries, r.Record.Digest = len(month), report.DigestOf(digests)
 	r.Stopped.Total, r.Stopped.ByRule = stopsIn(month)
@@ -337,26 +296,15 @@ func BuildStockReport(in Input) (*Report, error) {
 		}
 	}
 
-	first := zone.LocalParts(from, shop.Timezone)
-	last := zone.LocalParts(to-1, shop.Timezone)
-	firstDay, lastDay := first.Date, last.Date
-	next := zone.Date{Year: firstDay.Year, Month: firstDay.Month + 1, Day: 1}
-	if firstDay.Month == 12 {
-		next = zone.Date{Year: firstDay.Year + 1, Month: 1, Day: 1}
-	}
-	wholeMonth := zone.ZonedToMs(zone.Date{Year: firstDay.Year, Month: firstDay.Month, Day: 1}, 0, 0, shop.Timezone) == from && zone.ZonedToMs(next, 0, 0, shop.Timezone) == to
-	r.Period = report.ReportPeriod{FirstDay: firstDay, LastDay: lastDay}
-	if wholeMonth {
-		r.Period.Month = &report.YearMonth{Year: firstDay.Year, Month: firstDay.Month}
-	}
-	r.From, r.To = isoOf(from), isoOf(to)
+	r.Period = report.PeriodOfRange(from, to, shop.Timezone)
+	r.From, r.To = report.ISOOf(from), report.ISOOf(to)
 
 	r.Pathway = DefaultPathway()
 	r.Source = in.Source
 	r.ShopName, r.TimeZone, r.Languages, r.OwnerLang = shop.Name, shop.Timezone, append([]string{}, shop.Languages...), shop.OwnerLanguage
 	r.PreparedBy = in.PreparedBy
 	r.Innovator = in.Innovator
-	r.MadeAt = isoOf(in.MadeAt)
+	r.MadeAt = report.ISOOf(in.MadeAt)
 	r.PolicyDig = PolicyDigest(in.Settings)
 	r.NotCounted = append([]string{}, NotCounted()...)
 	r.NotTested = NotTestedForReport(goLive)

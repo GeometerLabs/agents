@@ -12,36 +12,23 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/report"
-	"github.com/GeometerLabs/agents/go/internal/zone"
 )
-
-// whenText is `${formatDate(d, language)} ${d.year}`.
-func whenText(d zone.Date, lang string) string {
-	return fmt.Sprintf("%s %d", language.Formats(lang).Date(d.Year, d.Month, d.Day), d.Year)
-}
-
-// GoLiveLines is goLiveLines: what a monthly document says about the go-live checks, as sentences in the shop's language: no certificate was given, one was given and could not be
-// trusted, or one was read and says what its checks ran on (with its date, the counts it states, and the key that signed it). Never a grade.
-func GoLiveLines(g report.GoLiveFinding, lang string) []string {
-	s := StringsOf(lang)
-	switch g.Status {
-	case "none":
-		return []string{s.GoLive.None}
-	case "untrusted":
-		return []string{s.GoLive.Untrusted}
-	case "own":
-		return []string{Fill(s.GoLive.Own, whenText(g.IssuedOn, lang)), certHeld(s, g.Held, g.Total, g.Failed, g.NotTested), Fill(s.GoLive.SignedWith, g.SignedBy)}
-	case "example":
-		return []string{Fill(s.GoLive.Example, whenText(g.IssuedOn, lang)), Fill(s.GoLive.SignedWith, g.SignedBy)}
-	}
-	return []string{Fill(s.GoLive.Different, whenText(g.IssuedOn, lang)), Fill(s.GoLive.SignedWith, g.SignedBy)} // "different"
-}
 
 // certHeld is cert.held(held, total, failed, notTested).
 func certHeld(s *Strings, held, total, failed, notTested int) string {
 	return Fill(s.Cert.Held, strconv.Itoa(held), strconv.Itoa(total), strconv.Itoa(failed), strconv.Itoa(notTested))
+}
+
+// GoLiveLines is goLiveLines: what a monthly document says about the go-live checks, as sentences in the shop's language (report.GoLiveLines over this template's words).
+func GoLiveLines(g report.GoLiveFinding, lang string) []string {
+	s := StringsOf(lang)
+	return report.GoLiveLines(g, goLiveWords(s), lang)
+}
+
+// goLiveWords is the part of the strings the go-live sentences and block use.
+func goLiveWords(s *Strings) report.GoLiveWords {
+	return report.GoLiveWords{None: s.GoLive.None, Untrusted: s.GoLive.Untrusted, Own: s.GoLive.Own, Example: s.GoLive.Example, Different: s.GoLive.Different, SignedWith: s.GoLive.SignedWith, Held: s.Cert.Held}
 }
 
 // NotCheckedList is notCheckedList: what was not checked, as the owner's short form names it: the items an owner would expect, then how many more the full report lists.

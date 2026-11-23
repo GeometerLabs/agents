@@ -40,7 +40,7 @@ type MonthlyCertificate struct {
 func BuildMonthlyCertificate(sr SealedReport, issuedAt int64) *MonthlyCertificate {
 	r := sr.Doc
 	day := zone.LocalParts(issuedAt, r.TimeZone)
-	c := &MonthlyCertificate{Pathway: r.Pathway, Source: r.Source, ShopName: r.ShopName, TimeZone: r.TimeZone, PreparedBy: r.PreparedBy, IssuedAt: isoOf(issuedAt), IssuedOn: day.Date,
+	c := &MonthlyCertificate{Pathway: r.Pathway, Source: r.Source, ShopName: r.ShopName, TimeZone: r.TimeZone, PreparedBy: r.PreparedBy, IssuedAt: report.ISOOf(issuedAt), IssuedOn: day.Date,
 		Report: r, ReportDigest: sr.Envelope.Digest, ReportCode: sr.Envelope.Code}
 	c.Counted.BookingsMade, c.Counted.Cancelled = r.Bookings.Made, r.Bookings.Cancelled
 	c.Counted.DepositsPaise, c.Counted.RefundsPaise = r.Money.Deposits.Paise, r.Money.Refunds.Paise
@@ -58,13 +58,13 @@ func (c *MonthlyCertificate) Tree() map[string]any {
 	n := c.Counted
 	out := map[string]any{
 		"format": formatMonthlyCertificate, "pathway": map[string]any{"name": c.Pathway.Name, "version": c.Pathway.Version}, "source": c.Source,
-		"shop": map[string]any{"name": c.ShopName, "timeZone": c.TimeZone}, "preparedBy": strTree(c.PreparedBy), "issuedAt": c.IssuedAt, "issuedOn": dateTree(c.IssuedOn),
+		"shop": map[string]any{"name": c.ShopName, "timeZone": c.TimeZone}, "preparedBy": report.StrTree(c.PreparedBy), "issuedAt": c.IssuedAt, "issuedOn": report.DateTree(c.IssuedOn),
 		"period": periodTree(r),
 		"counted": map[string]any{"bookingsMade": n.BookingsMade, "cancelled": n.Cancelled, "depositsPaise": n.DepositsPaise, "refundsPaise": n.RefundsPaise, "stopped": n.Stopped,
 			"unconfirmedOpen": n.UnconfirmedOpen, "asked": n.Asked, "approved": n.Approved, "denied": n.Denied},
 		"record":       map[string]any{"entries": r.Record.Entries, "digest": r.Record.Digest},
 		"report":       map[string]any{"digest": c.ReportDigest, "code": c.ReportCode},
-		"policyDigest": r.PolicyDig, "notCounted": stringsTree(r.NotCounted), "notTested": stringsTree(r.NotTested), "goLive": GoLiveTree(r.GoLive), "anchor": r.Anchor.Tree(),
+		"policyDigest": r.PolicyDig, "notCounted": report.StringsTree(r.NotCounted), "notTested": report.StringsTree(r.NotTested), "goLive": GoLiveTree(r.GoLive), "anchor": r.Anchor.Tree(),
 	}
 	if r.Innovator {
 		out["innovator"] = true
@@ -162,7 +162,7 @@ func MonthlySection(sc SealedCertificate, lang, check string) (string, error) {
 		i := strings.LastIndex(p, ": ")
 		rows = append(rows, []string{e(p[:i]), e(p[i+2:])})
 	}
-	extra := [][2]string{{s.Page.AgentVersion, c.Pathway.Name + " " + c.Pathway.Version}, {s.Cert.Date, whenText(c.IssuedOn, lang)}}
+	extra := [][2]string{{s.Page.AgentVersion, c.Pathway.Name + " " + c.Pathway.Version}, {s.Cert.Date, report.WhenText(c.IssuedOn, lang)}}
 	if c.PreparedBy != nil && *c.PreparedBy != "" {
 		extra = append(extra, [2]string{s.Page.SetUpBy, *c.PreparedBy})
 	}

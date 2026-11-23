@@ -9,7 +9,6 @@ package bookingsreport
 import (
 	"crypto/ed25519"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -44,21 +43,6 @@ func sealBlock(s *Strings, e report.Envelope, extra [][2]string, check string) (
 	return report.SealBlock(sealWords(s), e, extra, check)
 }
 
-// GoLiveBlock is goLiveBlock: the go-live checks, in sentences: green when a go-live certificate shows they ran on this shop's own settings, amber for everything else.
-func GoLiveBlock(g report.GoLiveFinding, lang string) string {
-	class := "warn"
-	if g.Status == "own" {
-		class = "note"
-	}
-	var b strings.Builder
-	b.WriteString(`<div class="` + class + `">`)
-	for _, line := range GoLiveLines(g, lang) {
-		b.WriteString("<p>" + report.Esc(line) + "</p>")
-	}
-	b.WriteString("</div>")
-	return b.String()
-}
-
 // costText is costText: micro-rupees (1,000,000 = one rupee) as rupees to the paisa, rounded up, so a small cost shows as it is and never as 0.
 func costText(micro int64) string {
 	return report.Rupees(ceilDiv(micro, 10_000))
@@ -74,6 +58,11 @@ func ceilDiv(a, b int64) int64 {
 }
 
 func e(s string) string { return report.Esc(s) }
+
+// GoLiveBlock is goLiveBlock (report.GoLiveBlock over this template's words).
+func GoLiveBlock(g report.GoLiveFinding, lang string) string {
+	return report.GoLiveBlock(g, goLiveWords(StringsOf(lang)), lang)
+}
 
 func fign(n int) string { return report.Fig(strconv.Itoa(n)) }
 
@@ -206,38 +195,7 @@ func ReportSection(sr SealedReport, lang, check string) (string, error) {
 		missingHTML = `<div class="warn"><p><b>` + e(p.MissingHeading) + "</b></p><ul>" + missing.String() + "</ul></div>"
 	}
 
-	// the by-action table: actions and outcomes in UTF-16 order, as sort() with no comparator
-	var actions []string
-	outcomeSet := map[string]bool{}
-	for a, outs := range r.Record.ByAction {
-		actions = append(actions, a)
-		for o := range outs {
-			outcomeSet[o] = true
-		}
-	}
-	var outcomes []string
-	for o := range outcomeSet {
-		outcomes = append(outcomes, o)
-	}
-	sort.Slice(actions, func(i, j int) bool { return report.LessUTF16(actions[i], actions[j]) })
-	sort.Slice(outcomes, func(i, j int) bool { return report.LessUTF16(outcomes[i], outcomes[j]) })
-	actionHead := []report.TableHead{{Text: p.ColAction}}
-	for _, o := range outcomes {
-		actionHead = append(actionHead, report.TableHead{Text: o, N: true})
-	}
-	var actionRows [][]string
-	for _, a := range actions {
-		row := []string{"<code>" + e(a) + "</code>"}
-		for _, o := range outcomes {
-			if n, ok := r.Record.ByAction[a][o]; ok {
-				row = append(row, strconv.Itoa(n))
-			} else {
-				row = append(row, "")
-			}
-		}
-		actionRows = append(actionRows, row)
-	}
-	byAction := report.Table(actionHead, actionRows)
+	byAction := report.ByActionTable(r.Record.ByAction, p.ColAction) // actions and outcomes in UTF-16 order, as sort() with no comparator
 
 	var entryRows [][]string
 	for _, x := range r.Record.Rows {

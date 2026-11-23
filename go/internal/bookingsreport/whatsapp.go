@@ -15,19 +15,14 @@ package bookingsreport
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/report"
 )
 
 // reportSlots is REPORT_SLOTS: the values in a report message, in the order they come in the wording.
 var reportSlots = []string{"title", "made", "deposits", "stopped", "price", "double", "asked", "approved", "saidNo", "notConfirmed", "notChecked", "code", "link", "check", "builder"}
-
-var slotRe = regexp.MustCompile(`\{([A-Za-z]+)\}`)
-var metaSlotRe = regexp.MustCompile(`\{\{([0-9]+)\}\}`)
 
 // ReportTemplateNames is REPORT_TEMPLATE_NAMES: every report template name, for a provider to approve.
 func ReportTemplateNames() []string {
@@ -36,35 +31,6 @@ func ReportTemplateNames() []string {
 		out = append(out, t.Name)
 	}
 	return out
-}
-
-// metaBody is metaBody: the body as Meta wants it: {slot} turned into {{1}}, {{2}} ... in order.
-func metaBody(body string) string {
-	n := 0
-	return slotRe.ReplaceAllStringFunc(body, func(string) string { n++; return "{{" + strconv.Itoa(n) + "}}" })
-}
-
-// fillBody is fillBody: a Meta body ({{1}} ...) filled with its parameters: what the customer will read. A number with no parameter is empty.
-func fillBody(meta string, parameters []string) string {
-	return metaSlotRe.ReplaceAllStringFunc(meta, func(m string) string {
-		n, _ := strconv.Atoi(m[2 : len(m)-2])
-		if n >= 1 && n <= len(parameters) {
-			return parameters[n-1]
-		}
-		return ""
-	})
-}
-
-// reportSlotsOf is reportSlotsOf: the values a body names, in order. A name this file does not know is a mistake in the wording, and says so.
-func reportSlotsOf(body string) ([]string, error) {
-	var out []string
-	for _, m := range slotRe.FindAllStringSubmatch(body, -1) {
-		if !has(reportSlots, m[1]) {
-			return nil, fmt.Errorf("The report template body has an unknown value {%s}.", m[1])
-		}
-		out = append(out, m[1])
-	}
-	return out, nil
 }
 
 // Extras is ReportExtras: the report's check code, the address of the full page, the check link, who set the agent up, and (B75) the words for refunds people settled by their word
@@ -95,20 +61,6 @@ func reportValues(r *MonthlyReport, lang string, x Extras) map[string]string {
 	}
 }
 
-// reportParameters is reportParameters: the parameters of a template body in the order its {{1}}, {{2}} ... take them. A value is one line: Meta refuses a line break, a tab or a run of
-// spaces in one.
-func reportParameters(body string, values map[string]string) ([]string, error) {
-	slots, err := reportSlotsOf(body)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]string, len(slots))
-	for i, sl := range slots {
-		out[i] = report.OneLine(values[sl])
-	}
-	return out, nil
-}
-
 // ReportMessage is what the owner is sent: the whole message as plain text (and what the template reads as when filled), and the same words as the approved template with its values.
 type ReportMessage struct {
 	Text     string
@@ -131,38 +83,19 @@ func MonthlyReportMessage(sr SealedReport, lang, link, check string) (ReportMess
 			break
 		}
 	}
-	body := tpl.Bodies[lang]
-	extras := Extras{Code: sr.Envelope.Code, Link: link, Builder: *r.PreparedBy}
-	var fillErr error
-	fill := func(check, settled string) string {
-		x := extras
-		x.Check, x.Settled = check, settled
-		params, err := reportParameters(body, reportValues(r, lang, x))
-		if err != nil {
-			fillErr = err
-		}
-		return fillBody(metaBody(body), params)
-	}
-	// B75: refunds people settled by their word, each person named if the message still fits with the shortest check link; otherwise without the names (the full report names them).
-	// Chosen before the link, so a long month gives up the longer link before it gives up who settled what.
 	s := StringsOf(lang)
-	settled, _ := report.SettledByWordWords(r.Money.SettledByWord, lang, func(n int) string { return Fill(s.More, strconv.Itoa(n)) },
-		func(words string) bool {
-			return language.UTF16Len(fill(report.VerifyCodeLink(sr.Envelope.Code), words)) <= report.WhatsAppBodyLimit
-		})
-	chosen, err := report.MessageCheckLink(func(c string) string { return fill(c, settled) }, sr.Envelope.Digest, sr.Envelope.Code, check)
+	// B75: refunds people settled by their word, each person named if the message still fits with the shortest check link; otherwise without the names (the full report names them);
+	// chosen before the link (report.BuildMessage)
+	text, params, err := report.BuildMessage(report.MessageSpec{
+		Body: tpl.Bodies[lang], Slots: reportSlots,
+		Values: func(c, settled string) map[string]string {
+			return reportValues(r, lang, Extras{Code: sr.Envelope.Code, Link: link, Builder: *r.PreparedBy, Check: c, Settled: settled})
+		},
+		Digest: sr.Envelope.Digest, Code: sr.Envelope.Code, SummaryLink: check,
+		Settled: r.Money.SettledByWord, Language: lang, More: func(n int) string { return Fill(s.More, strconv.Itoa(n)) },
+	})
 	if err != nil {
 		return ReportMessage{}, err
 	}
-	x := extras
-	x.Check, x.Settled = chosen, settled
-	parameters, err := reportParameters(body, reportValues(r, lang, x))
-	if err == nil {
-		err = fillErr
-	}
-	if err != nil {
-		return ReportMessage{}, err
-	}
-	text := fillBody(metaBody(body), parameters)
-	return ReportMessage{Text: text, Template: report.Template{Name: tpl.Name, Language: lang, Text: text, Parameters: parameters}}, nil
+	return ReportMessage{Text: text, Template: report.Template{Name: tpl.Name, Language: lang, Text: text, Parameters: params}}, nil
 }

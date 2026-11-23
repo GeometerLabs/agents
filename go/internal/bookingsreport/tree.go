@@ -4,26 +4,8 @@
 package bookingsreport
 
 import (
-	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/report"
-	"github.com/GeometerLabs/agents/go/internal/zone"
 )
-
-func amountTree(a accounting.Amount) map[string]any {
-	return map[string]any{"count": a.Count, "paise": a.Paise}
-}
-
-func dateTree(d zone.Date) map[string]any {
-	return map[string]any{"year": d.Year, "month": d.Month, "day": d.Day}
-}
-
-func stringsTree(l []string) []any {
-	out := make([]any, len(l))
-	for i, s := range l {
-		out[i] = s
-	}
-	return out
-}
 
 func intsTree(l []int) []any {
 	out := make([]any, len(l))
@@ -47,20 +29,14 @@ func GoLiveTree(g report.GoLiveFinding) map[string]any {
 	if g.Status == "none" || g.Status == "untrusted" {
 		return out
 	}
-	out["code"], out["signedBy"], out["issuedOn"] = g.Code, g.SignedBy, dateTree(g.IssuedOn)
+	out["code"], out["signedBy"], out["issuedOn"] = g.Code, g.SignedBy, report.DateTree(g.IssuedOn)
 	if g.Status == "own" {
 		out["held"], out["total"], out["failed"], out["notRun"], out["notTested"] = g.Held, g.Total, g.Failed, g.NotRun, g.NotTested
 	}
 	return out
 }
 
-func periodTree(r *MonthlyReport) map[string]any {
-	var month any
-	if r.Period.Month != nil {
-		month = map[string]any{"year": r.Period.Month.Year, "month": r.Period.Month.Month}
-	}
-	return map[string]any{"from": r.From, "to": r.To, "firstDay": dateTree(r.Period.FirstDay), "lastDay": dateTree(r.Period.LastDay), "month": month}
-}
+func periodTree(r *MonthlyReport) map[string]any { return report.PeriodTree(r.Period, r.From, r.To) }
 
 func sideTree(s Side) map[string]any {
 	by := make(map[string]any, len(s.ByLanguage))
@@ -72,20 +48,13 @@ func sideTree(s Side) map[string]any {
 
 // Tree is the report as the tree that is sealed.
 func (r *MonthlyReport) Tree() map[string]any {
-	byAction := map[string]any{}
-	for a, outcomes := range r.Record.ByAction {
-		m := map[string]any{}
-		for o, n := range outcomes {
-			m[o] = n
-		}
-		byAction[a] = m
-	}
+	byAction := report.ByActionTree(r.Record.ByAction)
 	recordRows := make([]any, len(r.Record.Rows))
 	for i, x := range r.Record.Rows {
-		recordRows[i] = map[string]any{"seq": x.Seq, "time": x.Time, "action": x.Action, "outcome": x.Outcome, "booking": strTree(x.Booking), "inputsDigest": x.InputsDigest, "digest": x.Digest}
+		recordRows[i] = map[string]any{"seq": x.Seq, "time": x.Time, "action": x.Action, "outcome": x.Outcome, "booking": report.StrTree(x.Booking), "inputsDigest": x.InputsDigest, "digest": x.Digest}
 	}
-	refunds := map[string]any{"count": r.Money.Refunds.Count, "paise": r.Money.Refunds.Paise, "ofDeposits": amountTree(r.Money.Refunds.OfDeposits), "ofSecondPayments": amountTree(r.Money.Refunds.OfSecondPayments)}
-	money := map[string]any{"deposits": amountTree(r.Money.Deposits), "refunds": refunds}
+	refunds := map[string]any{"count": r.Money.Refunds.Count, "paise": r.Money.Refunds.Paise, "ofDeposits": report.AmountTree(r.Money.Refunds.OfDeposits), "ofSecondPayments": report.AmountTree(r.Money.Refunds.OfSecondPayments)}
+	money := map[string]any{"deposits": report.AmountTree(r.Money.Deposits), "refunds": refunds}
 	if len(r.Money.SettledByWord) > 0 {
 		rows := make([]any, len(r.Money.SettledByWord))
 		for i, w := range r.Money.SettledByWord {
@@ -94,7 +63,7 @@ func (r *MonthlyReport) Tree() map[string]any {
 		money["settledByWord"] = rows
 	}
 	if r.Money.BooksOnly != nil {
-		money["booksOnly"] = jsonTree(r.Money.BooksOnly)
+		money["booksOnly"] = report.JSONTree(r.Money.BooksOnly)
 	}
 	byRule := map[string]any{}
 	for k, v := range r.Stopped.ByRule {
@@ -102,7 +71,7 @@ func (r *MonthlyReport) Tree() map[string]any {
 	}
 	unconfirmedRows := make([]any, len(r.Unconfirmed.Rows))
 	for i, x := range r.Unconfirmed.Rows {
-		row := map[string]any{"seq": x.Seq, "action": x.Action, "outcome": x.Outcome, "booking": strTree(x.Booking), "settledLater": x.SettledLater}
+		row := map[string]any{"seq": x.Seq, "action": x.Action, "outcome": x.Outcome, "booking": report.StrTree(x.Booking), "settledLater": x.SettledLater}
 		if x.SettledByWord != nil {
 			row["settledByWord"] = *x.SettledByWord
 		}
@@ -110,16 +79,16 @@ func (r *MonthlyReport) Tree() map[string]any {
 	}
 	list := make([]any, len(r.Work.List))
 	for i, j := range r.Work.List {
-		list[i] = map[string]any{"booking": j.Booking, "state": j.State, "why": strTree(j.Why), "seqs": intsTree(j.Seqs)}
+		list[i] = map[string]any{"booking": j.Booking, "state": j.State, "why": report.StrTree(j.Why), "seqs": intsTree(j.Seqs)}
 	}
 	work := map[string]any{"list": list, "jobs": r.Work.Jobs, "completed": r.Work.Completed, "abandoned": r.Work.Abandoned, "unresolved": r.Work.Unresolved, "settledByPerson": r.Work.SettledByPerson,
-		"costMicroInr": int64Tree(r.Work.CostMicroInr), "costBasis": strTree(r.Work.CostBasis), "costPerCompletedMicroInr": int64Tree(r.Work.CostPerCompletedMicroInr), "noUnitCost": strTree(r.Work.NoUnitCost)}
+		"costMicroInr": int64Tree(r.Work.CostMicroInr), "costBasis": report.StrTree(r.Work.CostBasis), "costPerCompletedMicroInr": int64Tree(r.Work.CostPerCompletedMicroInr), "noUnitCost": report.StrTree(r.Work.NoUnitCost)}
 	out := map[string]any{
 		"format":       formatMonthly,
 		"pathway":      map[string]any{"name": r.Pathway.Name, "version": r.Pathway.Version},
 		"source":       r.Source,
-		"shop":         map[string]any{"name": r.ShopName, "timeZone": r.TimeZone, "languages": stringsTree(r.Languages), "ownerLanguage": r.OwnerLang},
-		"preparedBy":   strTree(r.PreparedBy),
+		"shop":         map[string]any{"name": r.ShopName, "timeZone": r.TimeZone, "languages": report.StringsTree(r.Languages), "ownerLanguage": r.OwnerLang},
+		"preparedBy":   report.StrTree(r.PreparedBy),
 		"period":       periodTree(r),
 		"madeAt":       r.MadeAt,
 		"policyDigest": r.PolicyDig,
@@ -133,8 +102,8 @@ func (r *MonthlyReport) Tree() map[string]any {
 		"atReportTime": map[string]any{"waitingForOwner": r.AtReportTime.WaitingForOwner, "paidNotBooked": r.AtReportTime.PaidNotBooked},
 		"work":         work,
 		"missing":      map[string]any{"depositAmounts": r.Missing.DepositAmounts, "refundAmounts": r.Missing.RefundAmounts, "ownerCommands": r.Missing.OwnerCommands, "messageTargets": r.Missing.MessageTargets},
-		"notCounted":   stringsTree(r.NotCounted),
-		"notTested":    stringsTree(r.NotTested),
+		"notCounted":   report.StringsTree(r.NotCounted),
+		"notTested":    report.StringsTree(r.NotTested),
 		"goLive":       GoLiveTree(r.GoLive),
 		"anchor":       r.Anchor.Tree(),
 	}
@@ -145,7 +114,7 @@ func (r *MonthlyReport) Tree() map[string]any {
 		out["paidBy"] = r.PaidBy
 	}
 	if r.Accounting != nil {
-		out["accounting"] = jsonTree(r.Accounting)
+		out["accounting"] = report.JSONTree(r.Accounting)
 	}
 	return out
 }

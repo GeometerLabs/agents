@@ -10,9 +10,7 @@ package stockordersreport
 import (
 	"crypto/ed25519"
 	"fmt"
-	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/language"
@@ -39,57 +37,12 @@ func sealWords(s *Strings) report.SealWords {
 
 func e(s string) string { return report.Esc(s) }
 
-func fign(n int) string { return report.Fig(strconv.Itoa(n)) }
-
-// GoLiveBlock is goLiveBlock: the go-live checks, in sentences: green when a go-live certificate shows they ran on this shop's own settings, amber for everything else.
+// GoLiveBlock is goLiveBlock (report.GoLiveBlock over this template's words).
 func GoLiveBlock(g report.GoLiveFinding, lang string) string {
-	class := "warn"
-	if g.Status == "own" {
-		class = "note"
-	}
-	var b strings.Builder
-	b.WriteString(`<div class="` + class + `">`)
-	for _, line := range GoLiveLines(g, lang) {
-		b.WriteString("<p>" + e(line) + "</p>")
-	}
-	b.WriteString("</div>")
-	return b.String()
+	return report.GoLiveBlock(g, goLiveWords(StringsOf(lang)), lang)
 }
 
-// byActionTable is the "Show what we did" table: the counts by action and outcome, the actions and the outcomes in UTF-16 order (as `sort()` with no comparator).
-func byActionTable(byAction map[string]map[string]int, actionWord string) string {
-	var actions []string
-	outcomeSet := map[string]bool{}
-	for a, outs := range byAction {
-		actions = append(actions, a)
-		for o := range outs {
-			outcomeSet[o] = true
-		}
-	}
-	var outcomes []string
-	for o := range outcomeSet {
-		outcomes = append(outcomes, o)
-	}
-	sort.Slice(actions, func(i, j int) bool { return report.LessUTF16(actions[i], actions[j]) })
-	sort.Slice(outcomes, func(i, j int) bool { return report.LessUTF16(outcomes[i], outcomes[j]) })
-	head := []report.TableHead{{Text: actionWord}}
-	for _, o := range outcomes {
-		head = append(head, report.TableHead{Text: o, N: true})
-	}
-	var rows [][]string
-	for _, a := range actions {
-		row := []string{"<code>" + e(a) + "</code>"}
-		for _, o := range outcomes {
-			if n, ok := byAction[a][o]; ok {
-				row = append(row, strconv.Itoa(n))
-			} else {
-				row = append(row, "")
-			}
-		}
-		rows = append(rows, row)
-	}
-	return report.Table(head, rows)
-}
+func fign(n int) string { return report.Fig(strconv.Itoa(n)) }
 
 // ReportSection is reportSection: one language's section of the report page. check is the report's signed summary link, "" for a report that is not signed.
 func ReportSection(sr SealedReport, lang, check string) (string, error) {
@@ -193,7 +146,7 @@ func ReportSection(sr SealedReport, lang, check string) (string, error) {
 ` + seal + `
 <p class="small">` + e(s.HelpLine) + `</p>
 <details><summary>` + e(p.ShowWhatWeDid) + `</summary>
-<h2>` + e(p.ByActionHeading) + "</h2>" + byActionTable(r.Record.ByAction, p.Action) + `
+<h2>` + e(p.ByActionHeading) + "</h2>" + report.ByActionTable(r.Record.ByAction, p.Action) + `
 </details>
 </section>`, nil
 }

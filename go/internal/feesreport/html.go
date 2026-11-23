@@ -11,7 +11,6 @@ import (
 	"crypto/ed25519"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/accounting/render"
@@ -39,22 +38,12 @@ func sealWords(s *Strings) report.SealWords {
 
 func e(s string) string { return report.Esc(s) }
 
-func fign(n int) string { return report.Fig(strconv.Itoa(n)) }
-
-// GoLiveBlock is goLiveBlock: the go-live checks, in sentences: green when a go-live certificate shows they ran on this centre's own settings, amber for everything else.
+// GoLiveBlock is goLiveBlock (report.GoLiveBlock over this template's words).
 func GoLiveBlock(g report.GoLiveFinding, lang string) string {
-	class := "warn"
-	if g.Status == "own" {
-		class = "note"
-	}
-	var b strings.Builder
-	b.WriteString(`<div class="` + class + `">`)
-	for _, line := range GoLiveLines(g, lang) {
-		b.WriteString("<p>" + e(line) + "</p>")
-	}
-	b.WriteString("</div>")
-	return b.String()
+	return report.GoLiveBlock(g, goLiveWords(StringsOf(lang)), lang)
 }
+
+func fign(n int) string { return report.Fig(strconv.Itoa(n)) }
 
 func amountCells(a accounting.Amount) []string {
 	return []string{report.Fig(strconv.Itoa(a.Count)), report.Fig(report.Rupees(a.Paise))}

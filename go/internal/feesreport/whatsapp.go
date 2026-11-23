@@ -36,10 +36,10 @@ func reportValues(r *Report, lang string, x Extras) map[string]string {
 		oldDues = oldDuesLabel + ": " + report.Rupees(r.Money.OldDues.Paise)
 	}
 	return map[string]string{
-		"title":     strings.Join(nonEmpty(report.OneLine(r.ShopName), report.PeriodLabel(r.Period, lang), sourceTag(s, r)), " · "),
-		"collected": strings.Join(nonEmpty(report.Rupees(r.Money.Collected.Paise), oldDues), " · "),
+		"title":     strings.Join(report.NonEmpty(report.OneLine(r.ShopName), report.PeriodLabel(r.Period, lang), sourceTag(s, r)), " · "),
+		"collected": strings.Join(report.NonEmpty(report.Rupees(r.Money.Collected.Paise), oldDues), " · "),
 		// what the payment service confirmed given back, then what a person settled by their word (B75), which is never counted in it
-		"givenBack": strings.Join(nonEmpty(report.Rupees(r.Money.GivenBack.Paise), x.Settled), " · "),
+		"givenBack": strings.Join(report.NonEmpty(report.Rupees(r.Money.GivenBack.Paise), x.Settled), " · "),
 		"pending":   stillToCollectText(r, s),
 		"reminders": strconv.Itoa(r.Reminders.Sent), "takenOff": report.Rupees(r.Waivers.Total.Paise),
 		"asked": strconv.Itoa(r.Owner.Asked), "approved": strconv.Itoa(r.Owner.Approved), "saidNo": strconv.Itoa(r.Owner.Denied), "stopped": strconv.Itoa(r.Stopped.Total),

@@ -3,39 +3,19 @@
 // strings, bools, nil and []any: exactly what report.CanonicalJSON writes. The go-live finding's tree and the anchor's are Bookings' (the same shared types).
 package stockordersreport
 
-import "github.com/GeometerLabs/agents/go/internal/bookingsreport"
-
-func stringsTree(l []string) []any {
-	out := make([]any, len(l))
-	for i, s := range l {
-		out[i] = s
-	}
-	return out
-}
-
-func dateTree(year, month, day int) map[string]any {
-	return map[string]any{"year": year, "month": month, "day": day}
-}
+import (
+	"github.com/GeometerLabs/agents/go/internal/bookingsreport"
+	"github.com/GeometerLabs/agents/go/internal/report"
+)
 
 // Tree is the report as the tree that is sealed.
 func (r *Report) Tree() map[string]any {
-	byAction := map[string]any{}
-	for a, outcomes := range r.Record.ByAction {
-		m := map[string]any{}
-		for o, n := range outcomes {
-			m[o] = n
-		}
-		byAction[a] = m
-	}
-	var month, preparedBy any
-	if r.Period.Month != nil {
-		month = map[string]any{"year": r.Period.Month.Year, "month": r.Period.Month.Month}
-	}
+	byAction := report.ByActionTree(r.Record.ByAction)
+	var preparedBy any
 	if r.PreparedBy != nil {
 		preparedBy = *r.PreparedBy
 	}
-	period := map[string]any{"from": r.From, "to": r.To, "firstDay": dateTree(r.Period.FirstDay.Year, r.Period.FirstDay.Month, r.Period.FirstDay.Day),
-		"lastDay": dateTree(r.Period.LastDay.Year, r.Period.LastDay.Month, r.Period.LastDay.Day), "month": month}
+	period := report.PeriodTree(r.Period, r.From, r.To)
 	suppliers := make([]any, len(r.Suppliers))
 	for i, s := range r.Suppliers {
 		suppliers[i] = map[string]any{"id": s.ID, "name": s.Name, "placed": s.Placed, "acknowledged": s.Acknowledged, "receivedFull": s.ReceivedFull, "partReceived": s.PartReceived,
@@ -50,7 +30,7 @@ func (r *Report) Tree() map[string]any {
 		"format":       formatReport,
 		"pathway":      map[string]any{"name": r.Pathway.Name, "version": r.Pathway.Version},
 		"source":       r.Source,
-		"shop":         map[string]any{"name": r.ShopName, "timeZone": r.TimeZone, "languages": stringsTree(r.Languages), "ownerLanguage": r.OwnerLang},
+		"shop":         map[string]any{"name": r.ShopName, "timeZone": r.TimeZone, "languages": report.StringsTree(r.Languages), "ownerLanguage": r.OwnerLang},
 		"preparedBy":   preparedBy,
 		"period":       period,
 		"madeAt":       r.MadeAt,
@@ -64,8 +44,8 @@ func (r *Report) Tree() map[string]any {
 		"suppliers":         suppliers,
 		"stopped":           map[string]any{"total": r.Stopped.Total, "byRule": byRule},
 		"unconfirmed":       map[string]any{"open": r.UnconfirmedOpen},
-		"notCounted":        stringsTree(r.NotCounted),
-		"notTested":         stringsTree(r.NotTested),
+		"notCounted":        report.StringsTree(r.NotCounted),
+		"notTested":         report.StringsTree(r.NotTested),
 		"goLive":            bookingsreport.GoLiveTree(r.GoLive),
 		"anchor":            r.Anchor.Tree(),
 	}

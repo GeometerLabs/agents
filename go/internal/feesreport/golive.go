@@ -5,9 +5,6 @@
 package feesreport
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/GeometerLabs/agents/go/internal/report"
 )
 
@@ -21,14 +18,8 @@ func ReadGoLiveCertificate(text string, s Settings) report.GoLiveReading {
 	return report.ReadGoLiveText(text, GoLiveSubject(s))
 }
 
-// ReadGoLive reads the go-live certificate file a monthly report is given (the CLI's `readGoLive(path, settings)`). An empty path is "none given".
+// ReadGoLive is cli.ts readGoLive(path, settings): the go-live certificate for a monthly report. An empty path is "none given" (the reading itself is report.ReadGoLiveFile, the same for
+// every template).
 func ReadGoLive(path string, s Settings) report.GoLiveReading {
-	if path == "" {
-		return report.NoGoLive("centre")
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return report.UntrustedGoLive(fmt.Sprintf("I cannot read %s", path), "centre")
-	}
-	return ReadGoLiveCertificate(string(raw), s)
+	return report.ReadGoLiveFile(path, "centre", func() report.GoLiveSubject { return GoLiveSubject(s) })
 }
