@@ -5,7 +5,8 @@ package runtime
 // push, voice) stay in server.go and answer the same for every shop. The order of the checks (method, credential, body) is http.ts's, route by route, because a caller sees it.
 //
 // The routes of a listings shop (listings, listing-photo, shop-feed, shop-check, shop-card, owner-listing, owner-stock, owner-photo) are 404 for a template with none, and so are
-// a Fees centre's (parent, material): the contract holds a port to that so it does not grow them.
+// a Fees centre's (parent, material) for a template whose channel does not read them (kitparent.go: the optional ParentReader and MaterialReader): the contract holds a port to that so
+// it does not grow them.
 
 import (
 	"net/http"
@@ -111,7 +112,7 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 	ch := rt.o.Kit.Channel()
 	switch path {
 	case "/internal/channel/listings", "/internal/channel/listing-photo", "/internal/channel/shop-feed", "/internal/channel/shop-check", "/internal/channel/shop-card",
-		"/internal/channel/owner-listing", "/internal/channel/owner-photo", "/internal/channel/material":
+		"/internal/channel/owner-listing", "/internal/channel/owner-photo":
 		return true, nothing
 	case "/internal/channel/owner-stock":
 		// the owner's Stock page for a template whose shop counts stock (kitstock.go StockKit); 404 for the others, as before
@@ -119,6 +120,36 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 			return true, nothing
 		}
 		return true, s.ownerStockRoute(w, r)
+	case "/internal/channel/material":
+		mr, has := ch.(MaterialReader) // kitparent.go: a Fees centre with Classes; any other shop has none (404)
+		if ch == nil || !has {
+			return true, nothing
+		}
+		if err := only(r, "GET"); err != nil {
+			return true, err
+		}
+		q := r.URL.Query()
+		link, batch := q.Get("link"), q.Get("batch")
+		file, hasFile := q["file"]
+		if !HandleHash.MatchString(link) {
+			send(w, 400, errBody("link is the link's hash: 64 hex digits."))
+			return true, nil
+		}
+		if !materialBatchRe.MatchString(batch) || (hasFile && !materialFileRe.MatchString(file[0])) {
+			send(w, 400, errBody("batch is a batch id and file a file id (12 hex digits)."))
+			return true, nil
+		}
+		fileID := ""
+		if hasFile {
+			fileID = file[0]
+		}
+		st, _, _ := rt.KitState()
+		if v := mr.Material(st, link, batch, fileID); v != nil {
+			send(w, 200, v)
+		} else {
+			send(w, 404, errBody("Nothing is open here."))
+		}
+		return true, nil
 	case "/internal/channel/parent":
 		if err := only(r, "GET"); err != nil {
 			return true, err
@@ -126,6 +157,13 @@ func (s *Server) kitChannelRoute(w http.ResponseWriter, r *http.Request, path st
 		if !HandleHash.MatchString(r.URL.Query().Get("link")) {
 			send(w, 400, errBody("link is the link's hash: 64 hex digits."))
 			return true, nil
+		}
+		if pr, has := ch.(ParentReader); has { // kitparent.go: a Fees centre
+			st, _, _ := rt.KitState()
+			if v := pr.Parent(st, r.URL.Query().Get("link")); v != nil {
+				send(w, 200, v)
+				return true, nil
+			}
 		}
 		send(w, 404, errBody("No parent has this link."))
 		return true, nil

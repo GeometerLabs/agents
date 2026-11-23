@@ -193,3 +193,15 @@ test("words-fresh: the stock count's own words (go/internal/stock/words.json, mo
   const stockWords = await import("../../../../go/scripts/gen_stock_words.ts");
   assert.deepEqual(stockWords.staleFiles(stockWords.OUT), [], "the stock words are out of date: run  node go/scripts/gen_stock_words.ts  and commit the result");
 });
+
+// wave 3 (Fees): the Fees and Classes words the Go Fees runtime says (go/internal/fees/words/*.json.gz), made by go/scripts/gen_fees_words.ts from templates/education/fees
+test("the Go Fees words were made from the TypeScript words as they are now", async () => {
+  const fees = await import("../../../../go/scripts/gen_fees_words.ts");
+  assert.deepEqual(fees.staleFiles(), [], "a Fees words file is out of date: run  node go/scripts/gen_fees_words.ts  and commit the result");
+  const dir = mkdtempSync(join(tmpdir(), "fees-words-fresh-"));
+  try {
+    const files = fees.generate();
+    const name = "go/internal/fees/words/en.json.gz";
+    assert.deepEqual(fees.staleFiles(dir, new Map([[name, files.get(name)!]])), [name], "the check is not vacuous");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
