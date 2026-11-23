@@ -73,7 +73,7 @@ export function generate(): string {
     }
     return {
       lang, settings: raw, orders: [...store.orders.values()], nowMs: NOW,
-      facts: skill.facts!(NOW), publicContext: PHONES.map((phone) => ({ phone, sources: skill.publicContext!(phone, NOW) })),
+      facts: skill.facts!(NOW), publicContext: PHONES.map((phone) => ({ phone, sources: skill.publicContext!(phone, NOW).sources })),
       open: skill.open!(), waiting: skill.waiting!(), problems: skill.problems!(), prepared,
     };
   });
