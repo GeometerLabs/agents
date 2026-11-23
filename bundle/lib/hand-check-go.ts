@@ -86,7 +86,9 @@ async function child(): Promise<HandCheckOutcome> {
   try { raw = JSON.parse(readFileSync(args.settings, "utf8")); } catch (e) { return { ok: false, reason: `The shop's settings could not be read (${(e as Error).message}).` }; }
   const checked = kind.validateSettings(raw);
   if (!checked.ok) return { ok: false, reason: `The shop's settings need fixing first: ${checked.errors.join(" ")}` };
-  const run = await kind.papers.runOn(checked.settings);
+  const run = (await kind.papers.runOn(checked.settings)) as { results: unknown[]; skipped: { reason: string }[] };
+  // nothing could run (the program is not here, or the settings express no situation): the reason, so the gate refuses and the page says why; never a summary of nothing
+  if (run.results.length === 0) return { ok: false, reason: [...new Set(run.skipped.map((s) => s.reason))].join(" ") || "No situation could be run on these settings." };
   return { ok: true, summary: kind.papers.summariseRun(run) };
 }
 
