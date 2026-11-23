@@ -6111,7 +6111,7 @@
    }
   },
   {
-   "name": "buttons refused with a Guard refusal (403): the same words go as text",
+   "name": "buttons failing with a Guard refusal (403) are not sent again as text",
    "spec": {
     "args": {
      "booking": "b-1",
@@ -6196,7 +6196,7 @@
    },
    "say": {
     "result": {
-     "value": true
+     "value": false
     },
     "trace": [
      {
@@ -6221,20 +6221,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -6260,9 +6251,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -6272,7 +6262,7 @@
    },
    "outcome": {
     "result": {
-     "value": "accepted"
+     "value": "not_sent"
     },
     "trace": [
      {
@@ -6297,20 +6287,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -6336,9 +6317,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -6348,7 +6328,7 @@
    }
   },
   {
-   "name": "buttons refused with a Guard hold (202): the same words go as text",
+   "name": "buttons failing with a Guard hold (202) are not sent again as text",
    "spec": {
     "args": {
      "booking": "b-1",
@@ -6438,7 +6418,7 @@
    },
    "say": {
     "result": {
-     "value": true
+     "value": false
     },
     "trace": [
      {
@@ -6463,20 +6443,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -6502,9 +6473,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "held by the Guard: refund-needs-owner: above the threshold: a person must approve this exact call",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -6514,7 +6484,7 @@
    },
    "outcome": {
     "result": {
-     "value": "accepted"
+     "value": "not_sent"
     },
     "trace": [
      {
@@ -6539,20 +6509,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -6578,9 +6539,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "held by the Guard: refund-needs-owner: above the threshold: a person must approve this exact call",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -6590,7 +6550,7 @@
    }
   },
   {
-   "name": "buttons refused with a Guard conflict: the same words go as text",
+   "name": "buttons failing with a Guard conflict are not sent again as text",
    "spec": {
     "args": {
      "booking": "b-1",
@@ -6675,7 +6635,7 @@
    },
    "say": {
     "result": {
-     "value": true
+     "value": false
     },
     "trace": [
      {
@@ -6700,20 +6660,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -6739,9 +6690,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -6751,7 +6701,7 @@
    },
    "outcome": {
     "result": {
-     "value": "accepted"
+     "value": "not_sent"
     },
     "trace": [
      {
@@ -6776,20 +6726,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -6815,9 +6756,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -6827,7 +6767,7 @@
    }
   },
   {
-   "name": "buttons refused with a Guard denial: the same words go as text",
+   "name": "buttons failing with a Guard denial are not sent again as text",
    "spec": {
     "args": {
      "booking": "b-1",
@@ -6918,7 +6858,7 @@
    },
    "say": {
     "result": {
-     "value": true
+     "value": false
     },
     "trace": [
      {
@@ -6943,20 +6883,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -6982,9 +6913,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -6994,7 +6924,7 @@
    },
    "outcome": {
     "result": {
-     "value": "accepted"
+     "value": "not_sent"
     },
     "trace": [
      {
@@ -7019,20 +6949,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -7058,9 +6979,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -7070,7 +6990,7 @@
    }
   },
   {
-   "name": "buttons refused with already done by a person: the same words go as text",
+   "name": "buttons failing with already done by a person are not sent again as text",
    "spec": {
     "args": {
      "booking": "b-1",
@@ -7161,7 +7081,7 @@
    },
    "say": {
     "result": {
-     "value": true
+     "value": false
     },
     "trace": [
      {
@@ -7186,20 +7106,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -7225,9 +7136,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -7237,7 +7147,7 @@
    },
    "outcome": {
     "result": {
-     "value": "accepted"
+     "value": "not_sent"
     },
     "trace": [
      {
@@ -7262,20 +7172,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -7301,9 +7202,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "refused by the Guard: intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -7313,7 +7213,7 @@
    }
   },
   {
-   "name": "buttons refused with unauthenticated: the same words go as text",
+   "name": "buttons failing with unauthenticated are not sent again as text",
    "spec": {
     "args": {
      "booking": "b-1",
@@ -7396,7 +7296,7 @@
    },
    "say": {
     "result": {
-     "value": true
+     "value": false
     },
     "trace": [
      {
@@ -7421,20 +7321,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -7460,9 +7351,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "authentication required: a per-agent credential issued by this Guard",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"
@@ -7472,7 +7362,7 @@
    },
    "outcome": {
     "result": {
-     "value": "accepted"
+     "value": "not_sent"
     },
     "trace": [
      {
@@ -7497,20 +7387,11 @@
       }
      },
      {
-      "call": "sendText",
-      "to": "+919811111111",
-      "text": "Shall I book it?"
-     },
-     {
-      "call": "getMessage",
-      "id": "wamid.out_1"
-     },
-     {
       "call": "log",
       "booking": "b-1",
       "phone": "+919811111111",
       "action": "send_message",
-      "outcome": "confirmed",
+      "outcome": "failed",
       "inputs": {
        "to": "customer",
        "templates": [
@@ -7536,9 +7417,8 @@
          "reason": "Every amount is in the record."
         }
        ],
+       "notes": "authentication required: a per-agent credential issued by this Guard",
        "refs": {
-        "messageId": "wamid.out_1",
-        "templates": "ask",
         "to": "customer"
        },
        "language": "en"

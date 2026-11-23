@@ -5,7 +5,7 @@ import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { createWorld, CUSTOMER, glowSalon, OTHER_CUSTOMER } from "../src/harness.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
-import { ApiError } from "../../../../modules/core/faults.ts";
+import { ApiError, GuardHeldError, GuardRefusedError } from "../../../../modules/core/faults.ts";
 import { createWhatsAppMessaging, interactiveBody } from "../../../../modules/messaging/whatsapp.ts";
 import { parseWhatsAppWebhook } from "../../../../modules/messaging/webhooks.ts";
 import { clip, interactiveProblem, interactiveText } from "../../../../modules/language/interactive.ts";
@@ -314,6 +314,18 @@ test("where buttons cannot go, the same words go as plain text: no provider supp
   await late.advance(25 * 60); // the hold ends, the payments record is read, and by then the customer's window has closed
   assert.equal(lastOf(late).kind, "template", "outside the window a message goes as its template, with no buttons");
   assert.ok(lastOf(late).interactive === undefined && /You're booked!/.test(lastOf(late).text));
+});
+
+test("buttons held or refused by the shop's Guard are not sent again as plain text (a hold may still send them once approved; a refusal is Guard's no to the message)", async () => {
+  // Found in the Go port (22 Nov): say.ts fell back to text after every ApiError under 500, Guard's 202 hold and 403 refusal included. The Go twin: say-vectors.json.
+  const call = { method: "POST", path: "/messages" };
+  for (const e of [new GuardHeldError(202, "held for the owner", { decision: "hold", code: "held_for_approval", sent: "no", retry: "after_approval" }, call, "apr_1", null), new GuardRefusedError(403, "a rule said no", { decision: "deny", code: "refused_by_policy", sent: "no", retry: "no" }, call, "rule", "no-links")]) {
+    const w = createWorld();
+    w.messaging.sendInteractive = async () => { throw e; };
+    await w.say("hello");
+    assert.equal(w.messaging.sentTo(CUSTOMER).length, 0, e.name);
+    assert.equal(w.record.entries().filter((x) => x.action === "send_message").at(-1)!.outcome, "failed", e.name);
+  }
 });
 
 test("a tapped time that has since been taken is refused like a typed one, and the customer gets another list", async () => {

@@ -134,14 +134,14 @@ func (f *Fake) IsOptedOut(number string) bool {
 	return f.optedOut[number]
 }
 
-// Receive is a person sending us a message (this opens their window). "STOP" is `text.trim().toUpperCase() === "STOP"`: JavaScript's trim and FULL case mapping (the ligature "ﬆ" upper-cases
-// to "ST", so "ﬆop" is STOP in JavaScript, and strings.ToUpper would miss it).
+// Receive is a person sending us a message (this opens their window). "STOP" is `/^stop$/i.test(text.trim())` (messaging.ts since 22 Nov): JavaScript's trim, and ASCII letters only
+// compared without case (strings.EqualFold would fold "ſ" and "K" to ASCII; the old toUpperCase made "ﬆop" STOP, which the agent's own reading never was).
 func (f *Fake) Receive(from, text string, o ReceiveOptions) InboundMessage {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	now := f.clock()
 	f.lastInbound[from] = now
-	if toUpper(trimJS(text)) == "STOP" {
+	if isASCIIStop(trimJS(text)) {
 		f.optedOut[from] = true
 	}
 	var id string
@@ -355,4 +355,17 @@ func (s *StandIn) IsWindowOpen(ctx context.Context, to string) (bool, error) {
 // GetMessage is the fake's.
 func (s *StandIn) GetMessage(ctx context.Context, id string) (*OutboundMessage, error) {
 	return s.fake.GetMessage(ctx, id)
+}
+
+// isASCIIStop is /^stop$/i without the u flag: four letters, each the ASCII s, t, o, p in either case. Nothing outside ASCII matches.
+func isASCIIStop(s string) bool {
+	if len(s) != 4 {
+		return false
+	}
+	for i, want := range []byte("stop") {
+		if c := s[i]; c != want && c != want-'a'+'A' {
+			return false
+		}
+	}
+	return true
 }

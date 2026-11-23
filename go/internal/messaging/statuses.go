@@ -13,7 +13,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"regexp"
 	"strconv"
 )
@@ -154,13 +153,10 @@ func notesFor(s MessageStatus, listed, matched bool) string {
 // reliedOn is registry.ts reliedOn: was a message one the shop counted on? One about a case, or one to the owner or another approver.
 func reliedOn(to string, hasCase bool) bool { return to == "owner" || to == "approver" || hasCase }
 
-// ErrInvalidTime is JavaScript's RangeError "Invalid time value", which `new Date(ms).toISOString()` throws for a time outside the Date range. The TypeScript lets it escape, so a failed
-// status with a timestamp past year 275760 makes recordMessageStatus throw (a bug of the TypeScript, copied and reported rather than fixed).
-var ErrInvalidTime = errors.New("Invalid time value")
-
 // RecordMessageStatus writes one record line for a report: action `message_status`, outcome "confirmed" for delivered and read (WhatsApp's own word that it arrived) and "failed" for failed.
 // It copies the case and the conversation from the line that sent the message, so a failure about a booking sits with that booking. The same report twice (a provider retrying, or
-// Gupshup's ids in another order) writes one line. It returns the line and true, or false when it was already there.
+// Gupshup's ids in another order) writes one line. It returns the line and true, or false when it was already there. The error is always nil (kept for callers): since 22 Nov a time
+// outside the Date range is left out of the line on both sides, where the TypeScript's toISOString() used to throw.
 func RecordMessageStatus(rec Record, s MessageStatus, ctx StatusContext) (Entry, bool, error) {
 	entries := rec.Entries()
 	found, foundID, has := FindSentEntry(entries, s.IDs, ctx.RecordKey)
@@ -219,11 +215,9 @@ func RecordMessageStatus(rec Record, s MessageStatus, ctx StatusContext) (Entry,
 		refs["sent"] = strconv.Itoa(sent.Seq)
 	}
 	if s.Timestamp > 0 {
-		iso, ok := isoString(s.Timestamp)
-		if !ok {
-			return Entry{}, false, ErrInvalidTime
+		if iso, ok := isoString(s.Timestamp); ok { // statuses.ts: past ±8.64e15 ms the time is left out
+			refs["reportedAt"] = iso
 		}
-		refs["reportedAt"] = iso
 	}
 	if s.Error != nil && s.Error.Code != nil {
 		refs["errorCode"] = strconv.FormatInt(*s.Error.Code, 10)

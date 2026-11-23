@@ -2007,11 +2007,50 @@
     }
    },
    "ctx": {},
-   "captured": null,
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 1
+     }
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed (code 1): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "customer",
+     "sent": "1",
+     "errorCode": "1"
+    }
+   },
    "result": {
-    "thrown": {
-     "name": "RangeError",
-     "message": "Invalid time value"
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "0f7ae1fa048c571b",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed (code 1): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "customer",
+      "sent": "1",
+      "errorCode": "1"
+     }
     }
    }
   },
@@ -2117,11 +2156,45 @@
     "timestamp": 8640000000000001
    },
    "ctx": {},
-   "captured": null,
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1"
+    }
+   },
    "result": {
-    "thrown": {
-     "name": "RangeError",
-     "message": "Invalid time value"
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1"
+     }
     }
    }
   },

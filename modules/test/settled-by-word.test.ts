@@ -42,6 +42,7 @@ test("who settled it reads as the person: Guard's operator: prefix goes, one lin
   assert.equal(settledWho("ravi"), "ravi");
   assert.equal(settledWho("operator:asha\n  k"), "asha k");
   assert.equal(settledWho(`operator:${"x".repeat(60)}`), `${"x".repeat(39)}…`);
+  assert.equal(settledWho(`operator:${"x".repeat(38)}😀😀`), `${"x".repeat(38)}…`, "never half an emoji (22 Nov: slice(0, 39) left a lone surrogate)");
   assert.equal(SETTLED_BY_WORD.en("ravi"), "Settled by ravi, by their word");
   for (const language of LANGUAGES) assert.ok(SETTLED_BY_WORD[language]("ravi").includes("ravi") && SETTLED_BY_SOMEONE[language].length > 0, language);
 });

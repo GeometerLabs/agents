@@ -110,6 +110,16 @@ export function languageOfScript(text: string): Language {
 }
 
 /** The text a customer typed, made easy to match: plain() and lower case. */
+/**
+ * The first `units` UTF-16 units of `text`, as `slice(0, units)`, but never half a character: a cut through a surrogate pair drops the half (found in the Go port,
+ * 22 Nov 2026: settledWho and the owner's talk history left a lone surrogate, half an emoji, in a paper and a model prompt). Go's language.UTF16Slice is the twin.
+ */
+export function sliceUnits(text: string, units: number): string {
+  const cut = text.slice(0, units);
+  const last = cut.charCodeAt(cut.length - 1);
+  return cut.length > 0 && cut.length < text.length && last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
+}
+
 export function canon(text: string): string {
   return plain(text).toLowerCase();
 }

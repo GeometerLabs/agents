@@ -100,7 +100,8 @@ function tally(lines: readonly Line[], kind: Line["kind"], side: "debitPaise" | 
   let paise = 0;
   for (const l of lines) {
     const at = Date.parse(l.at);
-    if (l.kind !== kind || !MONEY_ACCOUNTS.has(l.account) || l[side] === 0 || at < range.fromMs || at >= range.toMs || !keep(l)) continue;
+    // a time that does not parse (NaN) is in no range: both comparisons are false for NaN, so it is refused by name, as net() refuses it
+    if (l.kind !== kind || !MONEY_ACCOUNTS.has(l.account) || l[side] === 0 || Number.isNaN(at) || at < range.fromMs || at >= range.toMs || !keep(l)) continue;
     paise += l[side];
     seqs.add(l.seq);
   }

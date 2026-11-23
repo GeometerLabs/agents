@@ -254,7 +254,10 @@ export class Journal {
     const kind = kindText as MoneyKind;
     const r = e.refs;
     const doc = r[MONEY_REFS.doc];
-    const amount = kind === "correction" || kind === "refund_cancelled" ? 0 : paise(r[MONEY_REFS.amount]);
+    // A correction and a cancellation move what the books already hold, and so does a refund owed that the owner keeps (post.ts writes no amount for
+    // `{ kind: "kept", owed }`: the amount is the refund's open part). Requiring one there made every such line a problem unless the template happened to add it.
+    const keptOwed = kind === "kept" && r[MONEY_REFS.owed] !== undefined;
+    const amount = kind === "correction" || kind === "refund_cancelled" || keptOwed ? 0 : paise(r[MONEY_REFS.amount]);
     const need = (k: keyof typeof MONEY_REFS): string => {
       const v = r[MONEY_REFS[k]];
       if (v === undefined || v === "") throw new Error(`a ${kind} line has no ${MONEY_REFS[k]}`);

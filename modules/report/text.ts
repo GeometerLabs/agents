@@ -1,6 +1,6 @@
 // The small helpers every report's text uses: which languages a choice means, amounts in rupees, and one-line text.
 import type { LocalDate } from "../core/time.ts";
-import { MONTH_NAMES, formatDate, formatInr } from "../language/format.ts";
+import { MONTH_NAMES, formatDate, formatInr, sliceUnits } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 
 /** "both" is Hindi and English, one message after the other. */
@@ -60,7 +60,7 @@ export const SETTLED_BY_SOMEONE: Record<Language, string> = {
  */
 export function settledWho(by: string): string {
   const who = oneLine(by.replace(/^operator:/u, "")) || oneLine(by);
-  return who.length > 40 ? `${who.slice(0, 39)}\u2026` : who;
+  return who.length > 40 ? `${sliceUnits(who, 39)}\u2026` : who; // never half an emoji (sliceUnits)
 }
 
 /**
