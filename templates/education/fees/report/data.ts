@@ -53,7 +53,7 @@ export type FeeRuleId = (typeof RULE_IDS)[number];
 
 /** The entries a rule's "block" is counted at (a rule is checked at more than one place, and an entry that merely carries its decision is not a stop). */
 const MESSAGES = ["send_message", "voice_note_reply"];
-const STOP_SITES: Record<FeeRuleId, readonly string[]> = {
+export const STOP_SITES: Record<FeeRuleId, readonly string[]> = {
   "no-reminder-once-paid": MESSAGES,
   "reminder-cap": MESSAGES,
   "waiver-limit": ["waiver_request", "owner_decision", "ask_owner"],
@@ -79,7 +79,7 @@ export const NOT_COUNTED: readonly NotCountedId[] = ["cash-and-transfers", "read
  * B71 part 2: a UPI centre's report names no gateway. Two lines said what the record holds in a gateway's words ("only Razorpay payments", "in Razorpay or WhatsApp");
  * a UPI centre gets its own words for them. A gateway centre's lines, and so its report's bytes, are as they were.
  */
-const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "cash-and-transfers": "cash-and-transfers-upi", "outside-agent": "outside-agent-upi" };
+export const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "cash-and-transfers": "cash-and-transfers-upi", "outside-agent": "outside-agent-upi" };
 
 /** The templates whose message is a fee reminder, and the ones that are receipts, by the name the record keeps in `refs.templates`. */
 export const REMINDER_TEMPLATES: readonly string[] = ["fee_reminder", "fee_reminder_family", "fee_reminder_family_page", "fee_overdue", "fee_overdue_late"];
