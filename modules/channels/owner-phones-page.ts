@@ -4,7 +4,7 @@
 // Operator's printed card stops working), and cancel the Operator's request to remove every phone.
 //
 // Used by front.ts (GET <base>/phones, POST <base>/phones/remove|dismiss|cancel|codes|add) with the runtime's answers (backend.phones). Every rule is the runtime's
-// (modules/runtime/http.ts "owner-phones"); this file only draws what the runtime says. Plain forms, no script, so the strictest content policy applies. Hindi, Malayalam
+// (go/internal/runtime "owner-phones"); this file only draws what the runtime says. Plain forms, no script, so the strictest content policy applies. Hindi, Malayalam
 // and Kannada are machine-written and are on the review sheets (bundle/panel/review.ts, ids "phones.*").
 import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";

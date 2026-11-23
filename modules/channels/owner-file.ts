@@ -1,5 +1,5 @@
 // The owner's file, the shared part (block S, "Get my shop's file", 18 Nov 2026): what the server hands the shop's runtime, and what the runtime says about it. Used by the
-// deployer (bundle/lib/owner-file.ts), which makes the file with the owner profile and copies two files into the shop's client folder, by the runtime (runtime/owner-file.ts),
+// deployer (bundle/lib/owner-file.ts), which makes the file with the owner profile and copies two files into the shop's client folder, by the runtime (go/internal/runtime),
 // which checks them and serves the bytes to the owner's SESSION once, and by the owner's page, which shows the state.
 //
 //   owner-file.json     {"schema":1,"ask":"ask_...","id":"<token>","name":"<shop>-shop-file-20261118.tar.gz","bytes":N,"sha256":"...","madeAt","expiresAt"}

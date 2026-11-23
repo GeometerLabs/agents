@@ -11,6 +11,9 @@ A WhatsApp agent for the owner. The owner writes "order 10 boxes of hair colour 
 ## Run it
 
 ```sh
+(cd go && go build -o bin/stock-orders ./cmd/stock-orders)                    # the shop runtime: the Go program since 0.2.0 (24 Nov 2026; go/TRIAL.md)
+INTERNAL_TOKEN_FILE=token.txt go/bin/stock-orders --client templates/commerce/stock-orders/clients/glow-salon.example   # one shop, as the deployer runs it
+node --test templates/commerce/stock-orders/contract/         # the runtime's contract, on the Go program (it skips, saying so, without go/bin/stock-orders)
 node --test templates/commerce/stock-orders/test/                      # the tests (not run in the stream that wrote them: see Explanation.md)
 node templates/commerce/stock-orders/scripts/hand-check.ts             # the hand check on Glow Unisex Salon; add --details, or --settings shop.json
 node templates/commerce/stock-orders/scripts/whatsapp-templates.ts     # rewrites whatsapp-templates.json, the list to submit to Meta
@@ -68,9 +71,9 @@ English, Hindi, Malayalam and Kannada. All messages are fixed templates; every i
 | `src/agent.ts`, `src/order.ts` | The agent (one event in, done, back) and the order, its states and the budget worked out from the orders |
 | `src/limits.ts`, `src/settings.ts`, `src/reading.ts` | The pure limits, the settings and their checks, the rule reader |
 | `src/assistant.ts`, `src/channel.ts`, `src/chat-limits.ts`, `src/guard-limits.ts` | The shop's assistant skill (open orders, what waits, the talk's reads; its acts are the agent's own approve, decline and cancel), the owner's page items, the two limits the owner may tighten by a tap, the numbers Guard lets a message go to |
-| `server/` | The runtime: start, config, services, the saved store and its snapshot, on `modules/runtime` |
+| `server/` | What the deployer and the panel read of a shop's folder: config, the saved store's SCHEMA_VERSION and its snapshot. The runtime is the Go program `go/cmd/stock-orders` (`go/internal/stockorders`) since 0.2.0 |
 | `report/` | The monthly report (orders placed, answered, received, part or wrong, budget used; "paid" only when the owner marked it) and the go-live certificate |
-| `clients/glow-salon.example/` | An example shop folder to start the server on (`node server/main.ts --client ...`) |
+| `clients/glow-salon.example/` | An example shop folder to start the runtime on (`go/bin/stock-orders --client ...`, after `go build -o bin/ ./cmd/stock-orders` in go/) |
 | `src/language/` | The messages in four languages, the button labels, the Meta template list, the outgoing check's facts |
 | `src/harness.ts` | The agent on the in-memory fakes, with a clock you move |
 | `crash-test/`, `scripts/` | The situations, the plan that picks them from any shop's settings, the not-tested list, the hand check, the generators |
@@ -92,7 +95,7 @@ Modules it imports: `assistant/` (the approval card, cards.ts, state.ts), `core/
 
 <!-- modules it uses: made by modules/module-map.ts from the imports; run `node modules/module-map.ts --write` -->
 
-The shared modules Stock orders uses, from its code's own imports: [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`ondc/`](../../../modules/README.md#what-is-here), [`push/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`stock/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here).
+The shared modules Stock orders uses, from its code's own imports: [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`ondc/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`stock/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here).
 
 What each one does and what a template hands it: the table in [modules/README.md](../../../modules/README.md#what-is-here). A new template uses the same modules the same way.
 

@@ -6,12 +6,14 @@ files it writes** (agent.db). It follows the Bookings contract (`templates/comme
 process starter, the HTTP caller) are shared from `modules/test/contract/`.
 
 ```
-STOCK_ORDERS_IMPL=ts node --test --test-concurrency=1 templates/commerce/stock-orders/contract/        # the TypeScript runtime (the default)
-STOCK_ORDERS_IMPL=go STOCK_ORDERS_GO_BIN=go/bin/stock-orders node --test --test-concurrency=1 templates/commerce/stock-orders/contract/
+(cd go && go build -o bin/stock-orders ./cmd/stock-orders)
+node --test --test-concurrency=1 templates/commerce/stock-orders/contract/        # the Go program go/bin/stock-orders (or STOCK_ORDERS_GO_BIN)
 ```
 
-On `go` without the binary every test is skipped with "no Go Stock orders runtime yet (wave 2)". `cross-restart.test.ts` needs both runtimes and is skipped without the Go binary.
-Nothing here is TypeScript only.
+Since 24 Nov 2026 the shop runs on the Go program only: the TypeScript runtime this contract was written against was deleted (decision 61; go/TRIAL.md, "The switch"),
+so `STOCK_ORDERS_IMPL=ts` is gone (`STOCK_ORDERS_IMPL` may still say go; anything else stops the run). Without the binary every test is skipped and says why. Nothing here is
+TypeScript only. `cross-restart.test.ts` is a Go-to-Go restart on one folder (it ran the two runtimes in turn until then), and `differential.test.ts` holds the
+hand check's TypeScript world (src/harness.ts; Stock orders has no demo page) to the Go shop on the hand check's paths.
 
 ## The two kinds of shop
 
@@ -36,7 +38,8 @@ Nothing here is TypeScript only.
 | `assistant.contract.test.ts` | A | guards | with an `assistant` block: "what needs me" keeps the order's card (one approval, one message), the assistant's card for the order pressed on the page, a rule about the budget making a limit card and the tighter budget in force |
 | `record.contract.test.ts` | D | guards | agent.db's format and the append-only record, the saved state member for member, the owner's words only as a keyed digest, a restore moving the counter on by 100000 |
 | `gaps.contract.test.ts` | G | guards, one fakes | the behaviours only a TypeScript unit test checked before the deletion (23 Nov): the owner told outside their window by a template of its own (a reorder card, the send's ending, a receipt from the page, a supplier's STOP, a lost reply), the order cap and the budget keeping their bounds, the low-stock question (which supplier, waiting behind another question, three asks then left alone), the WhatsApp Guard down while the owner writes, the send-once intent's own fields |
-| `cross-restart.test.ts` | | guards | the TypeScript and Go runtimes in turn on one folder, both ways |
+| `cross-restart.test.ts` | | guards | a Go-to-Go restart on one folder (the TypeScript and Go runtimes in turn until 24 Nov 2026) |
+| `differential.test.ts` | | guards | the hand check's TypeScript world and the Go shop on the hand check's paths (Stock orders has no demo page), every WhatsApp message compared whole |
 
 ## What the harness imports, and a deletion wave must keep
 

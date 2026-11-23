@@ -1,7 +1,7 @@
 // "Get my shop's file" on the server's side (block S, 18 Nov 2026): the deployer's part. On every pass it looks at each shop's exported record for the owner's ask
 // (modules/approvals/leave.ts: `owner_file_asked`), has the file built with the OWNER profile (bundle/export/build.ts) by whoever can read the shop's files and the papers (the
 // panel's container, or this process when the server has no panel), and copies it into THAT SHOP'S OWN client folder (generated/shops/<shop>/client/owner-file.*), where its
-// runtime serves it to the owner's session once (modules/runtime/owner-file.ts). The runtime never reads another shop's files, and nobody here reads the owner's session.
+// runtime serves it to the owner's session once (go/internal/runtime). The runtime never reads another shop's files, and nobody here reads the owner's session.
 //
 //   asked      the record has `owner_file_asked` (the owner's words, from WhatsApp or the app) that this server has not answered yet
 //   made       the file is in the client folder for 72 hours; status/leave/<shop>.json says so (no file content in it) for the Operator's panel

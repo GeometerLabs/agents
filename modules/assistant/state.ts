@@ -1,5 +1,5 @@
 // The assistant's own part of a shop's store (item 11e, decision 43). It is plain JSON, kept by the template under `assistant` and written by its snapshot codec as an
-// "optional-object" (modules/runtime/snapshot.ts). So it is saved in the same step, in one transaction, with the cases an act changes (modules/runtime/core.ts).
+// "optional-object" (modules/runtime/snapshot.ts). So it is saved in the same step, in one transaction, with the cases an act changes (go/internal/runtime).
 // Used by cards.ts, conversation.ts and morning.ts; each template's store and codec carry it.
 //
 // What it holds: the cards (an exact action waiting for the owner's tap, and the last few closed ones), the actions the owner said no to (a no is final for 24 hours),

@@ -77,6 +77,10 @@ The shared code is about 900 lines longer than the code it replaced: the hooks (
 
 ## The second cut: the server (B16, Fees live)
 
+**Since 24 Nov 2026 the shops run on the Go programs** (decision 61; `go/TRIAL.md`, "The switch"): the TypeScript server this section describes (`runtime/core.ts`, `http.ts`,
+`start.ts`, `main.ts`, `ticker.ts`, each template's `server/runtime.ts` and the rest) is deleted; what stays of `runtime/` is what the deployer, the bundle's services, the
+generators and the contract harnesses read (modules/README.md). The design below is the one the Go runtime copies (go/internal/runtime).
+
 Fees needed to run as a server, and Bookings' server was the only one. The same rule applied (moved, not copied; a module imports no template), in the two commits above: first the move with no change in behaviour, then Fees on top.
 
 | Was in `templates/commerce/bookings` | Now | What stayed, and the hook |

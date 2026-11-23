@@ -34,7 +34,7 @@ export type IncomingEvent =
   | ChannelEvent
   // Item 11f: the runtime's own HTTP layer says an owner's session started or ended, for the record. Never from outside: neither token can send it.
   | OwnerAccessEvent
-  // W2: a link a chat guest asked for, to send to the number they gave (modules/channels/chat-link-send.ts). Made only by the runtime's HTTP layer; the core runs it, never the agent.
+  // W2: a link a chat guest asked for, to send to the number they gave (go/internal/runtime). Made only by the runtime's HTTP layer; the core runs it, never the agent.
   | ChatLinkEvent
   // "Limits, tightened by a tap" (modules/limits/runtime-limits.ts): the deployer's word that Guard has a changed limit (or that it failed), and the owner's own limits page
   // behind their passkey. Like an owner_access, never from outside: only the runtime's own HTTP layer makes them, and the core, not the agent, runs them.

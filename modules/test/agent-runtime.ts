@@ -40,7 +40,7 @@ export function inProcessRuntimeClient(runtime: AgentRuntime, context: (receipt:
   };
 }
 
-/** The runtime's refund counts over a template's cases (a booking, an order, a fee): what modules/runtime/core.ts countRefunds gave. */
+/** The runtime's refund counts over a template's cases (a booking, an order, a fee): what go/internal/runtime countRefunds gave. */
 export function countRefunds(cases: Iterable<{ pending: { kind: string }[]; refundIssues?: RefundIssue[] }>): RefundCounts {
   const counts: RefundCounts = { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } };
   for (const c of cases) {

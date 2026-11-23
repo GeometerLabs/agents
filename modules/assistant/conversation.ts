@@ -1,7 +1,7 @@
 // The owner's conversation with the shop's assistant (item 11e): the owner asks (a day's list, who owes, open orders, what needs me, money in) and asks for things to be
 // done (close or reopen a day, cancel, refund, message a customer, answer what waits), in their own words, typed or as a voice note, in four languages. A template's
 // agent calls `onOwnerMessage` where it used to answer "I didn't understand", after every fixed phrase has had its turn, and `onTick` on the clock's beat. It runs
-// inside the agent's step, so whatever it changes is saved with the step, whole or not at all (modules/runtime/core.ts). The design: modules/Explanation.md, "The shop's assistant".
+// inside the agent's step, so whatever it changes is saved with the step, whole or not at all (go/internal/runtime). The design: modules/Explanation.md, "The shop's assistant".
 //
 // The rules it keeps:
 //  - money or a limit, and a message to a customer, come back as a CARD (cards.ts) and are done only on its tap; nothing changes before the tap;

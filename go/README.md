@@ -1,9 +1,14 @@
-# Go runtime for a listings-only shop
+# Go runtimes of the shops
 
 A listings-only shop is the smallest kind: it only shows what it has (`templates/commerce/listings`). This folder is **the shop's runtime written in Go**, begun as a trial of whether code
 that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The trial's results, wave 1a (the rest of the listings shop) and wave 1 merged (with the
 owner control) are in [TRIAL.md](TRIAL.md). The deployer runs it (wave 1b): a template folder that says `"runtime": "go"` in `template.json` (listings 0.2.0) is run from the programs' image, which the server builds from its own checkout (see "On a server" below). `cmd/listings` runs ONE shop and `cmd/listings-shared` runs every shop of a server in one process; since 19 Nov 2026 they are the only listings runtime (the TypeScript
 `server/main.ts`, `shared-main.ts` and the shared pool they replaced are deleted: TRIAL.md, "Waves 1b and 1c finished").
+
+**Since 24 Nov 2026 every shop runs on Go** (`go-switch-24nov`, TRIAL.md "The switch: Bookings, Orders, Fees and Stock orders on Go"): Bookings, Orders, Fees and Stock orders
+0.2.0 say `"runtime": "go"` in `template.json`, the programs' image holds all seven programs (`bundle/lib/go-build.ts` `GO_PROGRAMS`), and their TypeScript server runtimes
+are deleted. A shop pinned to an older version still runs on Node from a kept checkout beside the server (the last commit that carries the Node runtimes is 6a51bf7a).
+The public demos stay TypeScript (each template's `src/harness.ts`), held to the Go shops by each contract's `differential.test.ts`.
 
 What stays TypeScript: the front (`modules/channels/front.ts`, with the shops' own MCP endpoints), the deployer, the panel. They call this runtime over HTTP and cannot tell which one answered;
 the **contract** in `templates/commerce/listings/contract/` is what both must pass.
@@ -19,10 +24,11 @@ cd go
 go build -o bin/listings ./cmd/listings                 # 23.3 MB; with -ldflags "-s -w" 16.4 MB (19 Nov, wave 1 merged)
 go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags "-s -w" 16.8 MB
 go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, "Waves 1b and 1c finished")
-go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (wave 2, in progress: TRIAL.md "Wave 2: the Bookings runtime")
-go build -o bin/orders ./cmd/orders                     # one Orders shop (wave W4: TRIAL.md "Wave W4: Orders on Go")
-go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (wave 2, go-w5-stock-22nov: TRIAL.md)
-go build -o bin/fees ./cmd/fees                         # one Fees (and Classes) centre (wave 3, in progress: TRIAL.md "Wave 3: Fees")
+go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (0.2.0 on)
+go build -o bin/orders ./cmd/orders                     # one Orders shop (0.2.0 on)
+go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (0.2.0 on)
+go build -o bin/fees ./cmd/fees                         # one Fees (and Classes) centre (0.2.0 on)
+go build -o bin/ ./cmd/...                              # all seven, as the server's image has them
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -42,8 +48,10 @@ The contracts (from the repository root; build the binaries first, the shared-pr
 ```
 node --test --test-concurrency=1 templates/commerce/listings/contract/    # the listings shop (go/bin/listings and go/bin/listings-shared, or LISTINGS_GO_BIN)
 node --test --test-concurrency=1 modules/discovery/contract/    # the directory (go/bin/directory, or DIRECTORY_GO_BIN)
-BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/  # Bookings (wave 2)
-FEES_IMPL=go FEES_GO_BIN=go/bin/fees node --test --test-concurrency=1 templates/education/fees/contract/  # Fees and Classes (wave 3)
+node --test --test-concurrency=1 templates/commerce/bookings/contract/        # Bookings (go/bin/bookings, or BOOKINGS_GO_BIN); differential.test.ts holds the demo to it
+node --test --test-concurrency=1 templates/commerce/orders/contract/          # Orders (go/bin/orders, or ORDERS_GO_BIN)
+node --test --test-concurrency=1 templates/education/fees/contract/           # Fees and Classes (go/bin/fees, or FEES_GO_BIN)
+node --test --test-concurrency=1 templates/commerce/stock-orders/contract/    # Stock orders (go/bin/stock-orders, or STOCK_ORDERS_GO_BIN)
 ```
 
 The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
@@ -169,5 +177,5 @@ Indirect modules come in with those four (for example `golang.org/x/crypto`, `gi
 * Every file starts with what it is and why. A choice that is not obvious says why. Where Go and JavaScript differ (UTF-16 lengths, the whitespace `\s` matches, regular expressions
   with no look-behind, `Math.round`) the comment says which TypeScript behaviour it copies.
 * The shop's state is the TypeScript runtime's JSON, field for field. What this runtime does not model (the limit changes, of which only `id`, `state` and `told` are read, any member a later version adds, and any member of a note it does not know)
-  is carried through as raw JSON, so a shop that goes back to the TypeScript runtime loses nothing. The shop's memory is modelled field for field (internal/memory).
+  is carried through as raw JSON, so a shop that goes back to an older version (a TypeScript runtime from a kept checkout) loses nothing. The shop's memory is modelled field for field (internal/memory).
 * No home-folder paths, no keys; the binary's path in tests comes from `LISTINGS_GO_BIN` or `go/bin/listings`.

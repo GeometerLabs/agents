@@ -1,4 +1,4 @@
-// The CONTRACT of the owner's morning line in a listings-only shop (modules/assistant/morning.ts, run on the beat as modules/runtime/core.ts `daily`) and the licence's final stop that
+// The CONTRACT of the owner's morning line in a listings-only shop (go/internal/assistant, run on the beat as go/internal/runtime `daily`) and the licence's final stop that
 // gates it (modules/licence/rules.ts, client/licence.json): with push on, a phone with alerts on and something waiting for the owner, one line a day goes to the phone in the
 // owner's language, claimed in the record before it goes and ended after; never twice; never in the final stop; silent with nothing to say. What a shop did (its record's morning
 // lines, the push Guard's calls opened with the phone's own key) is compared with the GOLDEN answers (golden.ts, golden/morning.contract.json): until 19 Nov 2026 a TypeScript shop
@@ -125,7 +125,7 @@ describe("the owner's morning line", { skip: SKIP }, () => {
   });
 });
 
-// Voice (modules/voice, modules/runtime/http.ts): a listings-only shop has no voice service for its assistant and no chat, so the owner's page shows no record button (`listen`
+// Voice (modules/voice, go/internal/runtime): a listings-only shop has no voice service for its assistant and no chat, so the owner's page shows no record button (`listen`
 // false) and both voice routes say voice is off, after the method and, for the owner's, the owner's credential. Nothing is held or saved.
 describe("voice, as a listings-only shop has it: off", { skip: SKIP }, () => {
   test("the voice routes answer as TypeScript's did (the golden answers); nothing is saved", async () => {

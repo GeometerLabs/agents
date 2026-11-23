@@ -1,5 +1,5 @@
 // The owner's recordings from their page (integration of items 11d and 11e: the owner app's hold-to-record), held by the shop's runtime in MEMORY ONLY until the
-// step that listens to them runs. Used by a template's runtime (templates/commerce/bookings/server/runtime.ts): the runtime's HTTP layer puts a recording here and
+// step that listens to them runs. Used by a template's runtime (go/internal/bookings, the Go runtime): the runtime's HTTP layer puts a recording here and
 // saves an `owner_message` event that carries only this drop's reference (modules/channels/events.ts), never the audio; the agent's step takes the audio from here and
 // hands it to the voice service (modules/voice). So a recording is never written to disk, never in the saved events and never in the record, the same promise as a
 // WhatsApp voice note's. A restart forgets what was waiting: the owner is then asked to type it.

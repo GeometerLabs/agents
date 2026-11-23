@@ -1,4 +1,4 @@
-// Item 11h: what Fees' part of the shop page and the owner's page may READ, built from the centre's saved state and settings. Used by the runtime (server/runtime.ts,
+// Item 11h: what Fees' part of the shop page and the owner's page may READ, built from the centre's saved state and settings. Used by the runtime (go/internal/fees, the Go runtime,
 // the channel kit) for the reads, by the agent (src/agent.ts) to find the parent a link belongs to and to check that an owner's press matches what waits now, and by
 // the assistant's skill (src/assistant.ts), so "what needs me", the owner's page and the mood list the same things.
 //
@@ -106,7 +106,7 @@ export function parentView(settings: Settings, store: Store, linkHash: string): 
   const open = mine.filter((d) => d.state === "open").sort((a, b) => a.dueMs - b.dueMs);
   const settled = mine.filter((d) => d.state !== "open").sort((a, b) => b.dueMs - a.dueMs).slice(0, SETTLED_SHOWN);
   return {
-    // batch 3: the parent's stable ref (not the link, which is made again after a restart): what their page's alerts are keyed by (modules/runtime/http.ts)
+    // batch 3: the parent's stable ref (not the link, which is made again after a restart): what their page's alerts are keyed by (go/internal/runtime)
     ref: parentRef(parent),
     students: settings.students.filter((s) => s.parent === parent).map((s) => ({ name: s.name, batch: batchNames(settings, s.batchId) })),
     dues: [...open, ...settled].map((d) => feeLine(settings, store, d)),

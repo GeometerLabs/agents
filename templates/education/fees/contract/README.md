@@ -6,12 +6,14 @@ the same tests. Every test makes the centre's folder in a temp directory exactly
 generic pieces come from `modules/test/contract/`, and the Guards' recording proxy is the Bookings contract's own `recorder` (`guards.ts`).
 
 ```
-FEES_IMPL=ts node --test --test-concurrency=1 templates/education/fees/contract/        # the TypeScript runtime (the default)
-FEES_IMPL=go FEES_GO_BIN=go/bin/fees node --test --test-concurrency=1 templates/education/fees/contract/
+(cd go && go build -o bin/fees ./cmd/fees)
+node --test --test-concurrency=1 templates/education/fees/contract/        # the Go program go/bin/fees (or FEES_GO_BIN)
 ```
 
-On `go`, when the binary is not there, every test is skipped with the reason "no Go Fees runtime yet (wave 3)". Any other value of `FEES_IMPL` stops the run. Nothing here is
-TypeScript only. `cross-restart.test.ts` runs both runtimes on one folder and is skipped without the Go binary.
+Since 24 Nov 2026 the shop runs on the Go program only: the TypeScript runtime this contract was written against was deleted (decision 61; go/TRIAL.md, "The switch"),
+so `FEES_IMPL=ts` is gone (`FEES_IMPL` may still say go; anything else stops the run). Without the binary every test is skipped and says why. Nothing here is
+TypeScript only. `cross-restart.test.ts` is a Go-to-Go restart on one folder (it ran the two runtimes in turn until then), and `differential.test.ts` holds the
+public demo's TypeScript world (src/harness.ts) to the Go shop on the demo's own paths.
 
 ## What a Fees centre is, for a port
 
@@ -40,7 +42,8 @@ attendance question, the missed-class notes, doubts waiting) and, after it, the 
 | `classes.contract.test.ts` | Classes: the class link and consent, the attendance and the missed-class note, a fee past its grace days, doubts, the reading material |
 | `chat.contract.test.ts` | the centre's public chat |
 | `record.contract.test.ts` | the store file, the saved state's members, what never leaves the centre (numbers, words, students' names) |
-| `cross-restart.test.ts` | the TypeScript and Go runtimes in turn on one folder, both ways |
+| `cross-restart.test.ts` | a Go-to-Go restart on one folder (the TypeScript and Go runtimes in turn until 24 Nov 2026) |
+| `differential.test.ts` | (fakes and guards) the public demo's TypeScript world and the Go shop on the demo's own paths, every WhatsApp message compared whole |
 
 ## Two kinds of centre
 

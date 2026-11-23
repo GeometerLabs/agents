@@ -72,7 +72,7 @@ export const CHANNEL_LIMITS = {
 } as const;
 
 /**
- * What a channel keeps of conversations that ended before `beforeMs` (the shop's retention, modules/runtime/core.ts) is taken off: their messages, and the requests
+ * What a channel keeps of conversations that ended before `beforeMs` (the shop's retention, go/internal/runtime) is taken off: their messages, and the requests
  * themselves once they were refused or their booking ended (with the number they carried). A request whose booking is still going stays, so its page still opens and
  * its number still counts for the per-number limits. The record is never touched. Returns how many it changed.
  */

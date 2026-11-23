@@ -1312,3 +1312,71 @@ Bookings on Go still has no handover code (agent_flow.go TODO); ownerwords.go is
 - `go vet ./...` clean; `go test -count=1 ./...` passes (internal/fees now has rules_test.go: five tests over the TypeScript-made vectors).
 - Every go/scripts generator with `--check` is fresh; words-fresh 25 of 25.
 - The TypeScript unit tests these changes touch (fees assistant-money, voice-notes, family-and-joining, agent, recovery, classes; modules/assistant/test): 174 of 174.
+
+## The switch: Bookings, Orders, Fees and Stock orders on Go (24 Nov 2026, `go-switch-24nov`)
+
+**The switch.** The four templates are 0.2.0 and their `template.json` says `"runtime": "go"` with its program (`bookings`, `orders`, `fees`, `stock-orders`); the Go `Version`
+constants say 0.2.0, and `GO_PROGRAMS` (bundle/lib/go-build.ts) builds all seven programs into the one image (`bundle/test/go-runtime.test.ts` names the seven and checks the
+compile command and the image's context, with no image built). A shop moves to Go only when it takes 0.2.0 (`geometer update`); a shop pinned to an older version runs on
+Node from a kept checkout beside the server, exactly as before. **The last commit that carries the Node runtimes is 6a51bf7a**: a kept 0.1.0 checkout comes from there. The
+version is in the papers, so the report words and vectors of the four templates and the Bookings vectors were generated again, and the Bookings sample report was made
+again (new digests and code: public-web's copy, `npm run sample:pull`, is behind until it pulls). Bundle and panel tests that pinned the checkout at 0.1.0 pin 0.2.0; the
+update, rollback and kept-version tests move to 0.3.0; the update-to-Go tests start a shop on a kept Node 0.1.0 and move it to today's 0.2.0.
+
+**The demos held to the Go shops** (`contract/differential.test.ts` in each template, one comparer in `modules/test/contract/demo-differential.ts`): the public demo's own
+world (src/harness.ts createWorld, what demo/ and modules/demo/quick.ts run) and a Go shop as a separate process walk the demo's own paths step by step, and every WhatsApp
+message to the customer and the owner is compared whole (kind, template, words, the ids and titles of buttons and list rows) after each step; a step that sends nobody
+anything fails, and a changed word is shown to be a difference. Normalised are only things random per run (a payment link's id, a page link's handle, the owner's UPI code,
+an approval card's code). Results, all passing on Go: **Bookings 4** (the four languages: the chips, the deposit paid once and twice, a pick from the list, cancelling, Talk
+to the owner, yes), **Orders 4** (the menu, a menu tap, the order chip re-dated to the day after tomorrow on both sides, I have paid, the owner's received, Talk to the
+owner, a cancel), **Fees 8** (the first morning on the demo's own clock and centre: a fakes Go centre's printed reminders against the demo's world; and the visitor's
+steps on a guards centre: a reminder's link paid, I already paid, STOP; the second walk uses an earlier unpaid month for the demo parent's child and is skipped, saying
+so, before 06:00 in India), **Stock orders 4** (no demo page: the hand check's paths, a reorder, its approval, the supplier's OK, two refusals, a unit picked). No
+difference between a demo and its Go shop was found, so no template's deletion was stopped.
+
+**Not compared with the demos (listed here as the differential headers promise):** the WORDS sent when time passes (Bookings: the hold that lapses, reminders, done, held by
+go/internal/bookings/testdata/scenarios-vectors.json and flow.contract; Orders: the lapsed hold, the reminder before the slot, done; Fees: the later reminders and the late
+fee; Stock orders: the supplier asked again, the month turning over). A guards shop cannot take the test clock and a fakes shop keeps no outbox to read, so each contract
+walks those on the Go shop through the record and the pages, not the words. Also not walked: Bookings' owner approve/deny (the demo's shop never holds a refund above the
+limit; money.contract walks it).
+
+**Deleted (TypeScript: -14,102 / +988 lines since 6a51bf7a; 88 files, 11,907 lines, of which 42 code files 5,104 and 46 test files 6,803; the rest trimmed from kept tests):**
+- each template's `server/` main, start, runtime, services (and Bookings' events, tasks, ticker, server re-exports; licence for Bookings, Orders, Fees; Fees' materials),
+  `src/adapters/live/index.ts` of Orders, Fees and Stock orders, `scripts/local-stack.ts` of Bookings, Orders and Fees with `test/full-chain.test.ts`, `test/runtime-kit.ts`;
+- modules: `runtime/` core, http, start, main, ticker, owner-file; `assistant/` morning, understanding (and the functions of `app/view.ts`, whose OwnerAppView shape the
+  front reads stays); `channels/` chat-identity-http, chat-link-send; `licence/notice.ts`; `terms/reader.ts`; `runtime/test-clock.ts` keeps only its two names;
+- the unit tests of exactly those files. Bookings (the class-a rows of contract/README.md, each with the contract file that holds it): accounting-pages, approvals-runtime,
+  channels, chat, guard-outage, last-slot, limits-runtime, money-clarity, owner-signin, restored, runtime, server, start, ticker, unknown-outcome, without-whatsapp;
+  Orders: accounting-pages, channels, chat, guard-outage, last-item, money-clarity, runtime-imports; Fees: accounting-pages, channels, chat, chat-parent, guard-outage,
+  money-clarity, parent-push, runtime-imports; Stock orders: runtime, runtime-imports (runtime-imports checked the Node container's two mounts, which a Go shop has not);
+  modules: morning, owner-file, owner-signin-told, limits-http, shop-protocol-http, chat-identity-front; bundle: terms. From files that also test kept code only the tests
+  that needed the runtime went (Bookings ai-mode, capacity, config, licence, recovery, report-monthly, report-monthly-config, store, voice-note, assistant; Orders runtime;
+  Fees classes, licence, runtime; Stock orders send-once; modules app, intents, chat-identity, owner-signin, statuses, guard-wait, runtime, terms; bundle fees-shop,
+  owner-file, self-hosted-model).
+
+**Kept, and why:** `server/config.ts` (the deployer's runtime-config check, `pinnedRuntimeCheck`; `PATHWAY` moved here, the panel reads it), `server/snapshot.ts` (the panel
+and the bundle read stores), `server/store.ts` (`geometer update` reads `SCHEMA_VERSION` from it by path, `savedDataLayout`: without it a move would lose its saved-data
+layout check), all of `src/` (the demos' engine, and what the panel, the hand checks and the generators read), report code, crash-test, scripts the tests name, every
+generator, the inbox and relay (they run as the bundle's services), and in modules what the deployer, the bundle's services, the generators and the harnesses read
+(runtime config, store, snapshot, events, tasks, guard-wait, services, restored, shop-key, shop-protocol). Stock orders keeps `report/certificate.ts` and the hand check.
+
+**Tests that kept running on another fixture:** the approvals relay's tests (Bookings approvals-relay, -card, -group, and approvals-guard-binary of Bookings, Orders and Fees
+against the real geo-guard, and bundle approvals-group) needed "a runtime" for the relay to call. Their runtime is now the template's own agent driven in process
+(`modules/test/agent-runtime.ts`: each event once by the runtime's event key, a beat on demand, the refund counts /status gave, and the relay's two calls answered from the
+agent's store); the Go runtime's side of those two calls is held by each contract (limits-approvals, money). All 42 relay tests and every real-Guard test pass. The
+live adapters' glue (Bookings `src/adapters/live/index.ts`) moved to `test/helpers/live-adapters.ts`: only the stand-in, dev-forwarder, inbox end-to-end and Guard-answer
+tests use it now. The Orders reading vectors harvest strings from the tests; the 693 phrases of the deleted tests are kept in
+`go/scripts/vectors/orders-reading-kept-phrases.json`, so the vectors are unchanged.
+
+**The contracts:** each harness drops `<TEMPLATE>_IMPL=ts` and the TypeScript start (the variable may still say go; without the binary every test is skipped and says so);
+each cross-restart test (TypeScript then Go, and back) is a Go-to-Go restart.
+
+**Found (reported, not changed):** `templates/commerce/bookings/test/chat.test.ts` hung on this machine on main as well (deleted with the runtime); the Orders contract's
+"a bakery that takes the whole order up front" fails when run after 18:00 in India (its guards shop orders for a day whose cut-off has passed: a time-of-day dependence of
+the test, not of the shop); the three approvals-guard-binary tests name the monorepo's geo-guard by a home-folder path when GEO_GUARD_BIN is not set (as before).
+
+**Not done:** the inbox end-to-end through a whole local stack (the deleted local-stack/full-chain ran stand-ins, inbox, runtime, stub Guard and relay in one process; their
+refund and restart cases are in the contracts' L and R, and e2e.test.ts still runs the inbox against the stand-ins), the chat identity front against the runtime's routes
+(chat-identity-front.test.ts; the runtime side is the contracts' C). bundle/Deferred.md has each with what would close it. The two tests of bundle self-hosted-model that
+priced a self-hosted model's call on the TypeScript runtime are a Bookings contract case now (chat.contract.test.ts: priced at the builder's rate, 0 kept as 0, no rate
+no price), passing on Go.

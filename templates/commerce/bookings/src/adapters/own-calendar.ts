@@ -1,6 +1,6 @@
 // The shop's own booking list as a Calendar (B72, 12 Nov 2026). A Bookings shop that has no Google Calendar (settings "calendar": {"module": "own"}) still goes through
 // the same agent code: this object answers the Calendar calls from a list kept INSIDE the shop's own saved state (store.ownCalendar), so it is saved and restored with the
-// bookings and never forgets on a restart (the fake calendar does). Used by: server/runtime.ts (createAgent), and the agent's owner day list.
+// bookings and never forgets on a restart (the fake calendar does). Used by: go/internal/bookings, the Go runtime (createAgent), and the agent's owner day list.
 //
 // What "confirmed" means here, said plainly: the agent reads its write back from this list, so a booking is "booked" when the shop's own record holds it. There is no second
 // system that could disagree. The record's notes say "the shop's own booking list" so nobody reads it as Google's word. Limits, approvals and the record are unchanged:

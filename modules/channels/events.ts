@@ -1,5 +1,5 @@
 // The two events the public front (modules/channels/front.ts) may hand a template's runtime, and their check. They come in through the runtime's own channel endpoint
-// (modules/runtime/http.ts, /internal/channel/events) with the channel's own token, never through /internal/events: the inbox's token can submit a WhatsApp message
+// (go/internal/runtime, /internal/channel/events) with the channel's own token, never through /internal/events: the inbox's token can submit a WhatsApp message
 // from the owner's number, the channel token can submit only these.
 //
 //   channel_request   a customer, or an AI assistant for its user, asks to book, to order (item 11h), to cancel, or says they paid; or a parent, on their private
@@ -102,7 +102,7 @@ export type ChannelEvent = ChannelRequest | OwnerAction | OwnerSigninEvent | Own
 
 /**
  * The task key of a request that STARTS something with its own handle: a booking, an order (item 11h), or a parent's press that made a confirmation page. One task per
- * handle, however often it is sent; and the runtime reads this key to say "pending" for a handle whose step has not run yet (modules/runtime/core.ts). The name
+ * handle, however often it is sent; and the runtime reads this key to say "pending" for a handle whose step has not run yet (go/internal/runtime). The name
  * stays `channel_book:` for every kind, so a task saved before item 11h is still found.
  */
 export const channelStartKey = (handleHash: string): string => `channel_book:${handleHash}`;
