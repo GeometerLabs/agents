@@ -138,6 +138,11 @@ export interface AgentDeploy {
 export interface Dirs {
   /** The agents repository (read-only in containers). */
   app: string;
+  /**
+   * The folder the deployer filled with the checkout's TypeScript already stripped to JavaScript (lib/strip-app.ts), beside the `.ts` files. When it is given, the server's Node
+   * processes mount it as /app and run the `.js` files (no stripping at every start); left out, they mount `app` and run the `.ts` files, as before.
+   */
+  appJs?: string;
   generated: string;
   secrets: string;
   status: string;
@@ -214,6 +219,15 @@ export function yaml(value: Y, indent = 0): string {
 // ---- the services ----------------------------------------------------------------------------------------------------------------------------
 
 type Service = Record<string, Y | undefined>;
+/**
+ * The server's Node processes' memory settings, in ONE place (24 Nov 2026, stream N1). Every `node(...)` service and the panel start as `node <these flags> <file>`.
+ *  - `--max-semi-space-size=1` (MB): V8's young generation defaults to up to 16 MB x 3 and grows with traffic; these services answer small requests, so 1 MB costs a little
+ *    more scavenging (measured: answer times unchanged) and saves tens of MB of resident memory per process.
+ *  - `--max-old-space-size=<MB>`: a ceiling per service, from the measured heap of a busy service plus head-room (bundle/Explanation.md has the table). A process that reached it
+ *    would be restarted by `restart: unless-stopped` instead of growing until the kernel kills the whole container group; the numbers are several times the measured use.
+ */
+export const NODE_SEMI_SPACE_MB = 1;
+export const NODE_OLD_SPACE_MB: Readonly<Record<"inbox" | "relay" | "refresher" | "push" | "ops" | "door" | "panel", number>> = { inbox: 96, relay: 96, refresher: 64, push: 64, ops: 96, door: 96, panel: 160 };
 const hardened = { restart: "unless-stopped", read_only: true, cap_drop: ["ALL"], security_opt: ["no-new-privileges:true"], tmpfs: ["/tmp"] };
 /** Follow-up 2: the volume the refresher writes renewed Gupshup app tokens into (one sub-folder per shop), and where it is inside the refresher. */
 export const GUPSHUP_AUTH_VOLUME = "gupshup-auth";
@@ -276,6 +290,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   const shopNets = [...shops.map((s) => names.net(s.name)), ...(sharedShops.length > 0 ? [SHARED.net] : [])];
   const secretDir = (name: string) => `${dirs.secrets}/${name}`;
   const node = (command: string[], extra: Service): Service => ({ image: server.appImage, user: nodeUser, init: true, ...hardened, command, ...extra });
+  // One of the server's own Node processes: the memory flags above, and the stripped `.js` file when the deployer made one (dirs.appJs), else the `.ts` file as before.
+  const nodeCommand = (service: keyof typeof NODE_OLD_SPACE_MB, entry: string, ...args: string[]): string[] => ["node", `--max-semi-space-size=${NODE_SEMI_SPACE_MB}`, `--max-old-space-size=${NODE_OLD_SPACE_MB[service]}`, `/app/${dirs.appJs ? entry.replace(/\.ts$/u, ".js") : entry}`, ...args];
   // a Go program: the same hardening and the same user, in the image of the programs alone (no node, no shell). A shop on Go needs the image named, or there is nothing to run.
   const goProgram = (command: string[], extra: Service): Service => {
     if (!features.goImage) throw new Error("A shop or the directory runs on a Go program but no image of the Go programs was given (lib/go-build.ts goImageFor).");
@@ -380,16 +396,16 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   if (allShops.length > 0) guard(modelGuard, [...shopNets, ...(assistantOn ? [ASSISTANT_NETWORK] : [])], net.adminIp(undefined, "model"), []);
 
   // -- the shared services
-  const appVolume = `${dirs.app}:/app:ro`;
+  const appVolume = `${dirs.appJs ?? dirs.app}:/app:ro`;
   // block S phase B2: on `pages` the inbox is also the courier of each shop's signed "my feed changed" notice to the directory (services/notices.ts): it is the one service on both the runtimes'
   // doors' network (admin) and the directory's (pages), so a runtime that cannot call out still gets its notice there, and no network rule changes.
-  add("inbox", node(["node", "/app/bundle/services/inbox.ts"], {
+  add("inbox", node(nodeCommand("inbox", "bundle/services/inbox.ts"), {
     environment: { CONFIG: "/etc/geometer/inbox.json", PORT: String(INBOX_PORT), HOST: "0.0.0.0" },
     volumes: [appVolume, `${dirs.generated}/inbox:/etc/geometer:ro`, `${secretDir("inbox")}:/run/secrets:ro`],
     networks: { front: {}, admin: {}, ...(server.pages && server.fleet ? { [PAGES_NETWORK]: {} } : {}) }, healthcheck: healthWget(INBOX_PORT, "/healthz"),
   }), [`${dirs.generated}/inbox/inbox.json`]);
   // DESK_PORT: the owner-marked desk (B71 part 2), served by the relay's process on a port of its own, for the agents' desk Guards (they reach it over `admin`)
-  add("relay", node(["node", "/app/bundle/services/relay.ts"], {
+  add("relay", node(nodeCommand("relay", "bundle/services/relay.ts"), {
     environment: { CONFIG: "/etc/geometer/relay.json", PORT: String(RELAY_PORT), HOST: "0.0.0.0", ...(agents.some((a) => a.guards.some((g) => OWNER_MARKED_KINDS.includes(g.kind))) ? { DESK_PORT: String(DESK_PORT) } : {}) },
     volumes: [appVolume, `${dirs.generated}/relay:/etc/geometer:ro`, `${secretDir("relay")}:/run/secrets:ro`, `${RELAY_STATE_VOLUME}:/home/node`],
     networks: { front: {}, admin: {} }, healthcheck: healthWget(RELAY_PORT, "/healthz"),
@@ -397,7 +413,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // follow-up 2: with a renewed Gupshup shop the refresher also writes its app tokens (gupshup-auth), and its first start may take a minute or two (Gupshup's limit of
   // mints a minute), so it is given longer before it counts as unhealthy. A server with none keeps exactly the block it had.
   const gupshupRenewed = shops.some((s) => s.gupshupRenewed);
-  add("refresher", node(["node", "/app/bundle/services/refresher.ts"], {
+  add("refresher", node(nodeCommand("refresher", "bundle/services/refresher.ts"), {
     environment: { CONFIG: "/etc/geometer/refresher.json", PORT: String(REFRESHER_PORT), HOST: "0.0.0.0" },
     volumes: [appVolume, `${dirs.generated}/refresher:/etc/geometer:ro`, `${secretDir("refresher")}:/run/secrets:ro`, "google-auth:/home/node", ...(gupshupRenewed ? [`${GUPSHUP_AUTH_VOLUME}:${REFRESHER_GUPSHUP_DIR}`] : [])],
     networks: { admin: {}, egress: {} }, healthcheck: { ...healthWget(REFRESHER_PORT, "/healthz"), start_period: gupshupRenewed ? "180s" : "30s" },
@@ -408,7 +424,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // W3: with `pushRelay` in geometer.json the sender also signs for the Streetlist app's phones (services/push-relay.ts): the private key is a file in secrets/push/ the owner makes
   // with `node bundle/services/push-relay.ts make-key`, mounted read-only here; the shops it signs for are this server's. Without `pushRelay` nothing about it changes.
   const relayOn = server.pages !== undefined && server.pushRelay !== undefined;
-  if (shops.length > 0) add(PUSH_SERVICE, node(["node", "/app/bundle/services/push.ts"], {
+  if (shops.length > 0) add(PUSH_SERVICE, node(nodeCommand("push", "bundle/services/push.ts"), {
     environment: {
       PORT: String(PUSH_PORT), HOST: "0.0.0.0", ...(pushOverride ? { PUSH_SERVICE_OVERRIDE: `${pushOverride.tls ? "https" : "http"}://${pushOverride.host}` } : {}),
       ...(relayOn ? { PUSH_RELAY_KEY_FILE: "/run/secrets/streetlist_vapid.json", PUSH_RELAY_SHOPS: shops.map((s) => s.name).join(","), PUSH_RELAY_SUBJECT: `https://${server.pages!.domain}` } : {}),
@@ -416,7 +432,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     volumes: [appVolume, ...(relayOn ? [`${secretDir("push")}:/run/secrets:ro`] : [])],
     networks: { [PUSH_NETWORK]: {}, egress: {} }, healthcheck: healthWget(PUSH_PORT, "/healthz"),
   }));
-  add("ops", node(["node", "/app/bundle/services/ops.ts", "run"], {
+  add("ops", node(nodeCommand("ops", "bundle/services/ops.ts", "run"), {
     environment: { CONFIG: "/etc/geometer/ops.json" },
     // ops writes only the fleet folder, as the user who runs the deployer (like the panel), so the deployer and the panel can read what it writes
     volumes: [appVolume, `${dirs.generated}/ops:/etc/geometer:ro`, `${secretDir("ops")}:/run/secrets:ro`, `${dirs.status}:${OPS_STATUS_DIR}:ro`, `${dirs.fleet}:${OPS_FLEET_DIR}`],
@@ -428,7 +444,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     // server's other folders (not secrets/, not state/, not generated/), has no Docker socket, and its network holds only the Guards' agent ports, where it
     // presents its own agent (`panel-<shop>`: three reads and nothing else). Its keys are in secrets/panel/, 0600, readable by the user it runs as.
     add("panel", {
-      image: server.appImage, user: features.panel.user, init: true, ...hardened, command: ["node", "/app/bundle/panel/main.ts"],
+      image: server.appImage, user: features.panel.user, init: true, ...hardened, command: nodeCommand("panel", "bundle/panel/main.ts"),
       environment: {
         PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl(server), PANEL_TRUST_PROXY: "1",
         PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_TEMPLATES_DIR: "/app/templates", PANEL_PERSON_KEYS_DIR: "/run/secrets/person-keys",
@@ -443,7 +459,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // item 11f: the pages domain's front door, only where geometer.json names a pages domain and fleet is known (it asks fleet where each slug lives)
   const door = hasDirectory(server);
   if (door) {
-    add("door", node(["node", "/app/bundle/services/door.ts"], {
+    add("door", node(nodeCommand("door", "bundle/services/door.ts"), {
       environment: { CONFIG: "/etc/geometer/door.json", PORT: String(DOOR_PORT), INTERNAL_PORT: String(DOOR_INTERNAL_PORT), HOST: "0.0.0.0" },
       volumes: [appVolume, `${dirs.generated}/door:/etc/geometer:ro`],
       networks: { [PAGES_NETWORK]: {}, egress: {} }, healthcheck: healthWget(DOOR_PORT, "/healthz"),

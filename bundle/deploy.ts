@@ -13,6 +13,7 @@ import type { PaymentSettings } from "../modules/payments/providers/index.ts";
 import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { composeServer, hasDirectory } from "./generate/compose.ts";
+import { buildAppJs } from "./lib/strip-app.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
 import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, directoryConfig, doorConfig, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
@@ -49,6 +50,11 @@ export interface Context {
   dir: string;
   /** The agents repository: the bundle's own code and the current pathway. */
   appDir: string;
+  /**
+   * Strip the checkout's TypeScript to JavaScript into <server>/app-js at every deploy and run the server's Node processes from it (lib/strip-app.ts). The real CLI turns it on
+   * (geometer.ts makeContext); a test context leaves it out, so no test pays for the build and the compose text keeps its `.ts` commands.
+   */
+  stripApp?: boolean;
   runner: Runner;
   tool: GuardTool;
   log: (line: string) => void;
@@ -67,7 +73,7 @@ export const composeFile = (dir: string) => join(serverPaths(dir).generated, "co
 // Turns the deployer's context into the folder map the generators take, so they stay pure functions of paths and never reach for the context.
 export function dirsOf(ctx: Context): Dirs {
   const p = serverPaths(ctx.dir);
-  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config, licence: licencePaths(ctx.dir).root, home: p.home };
+  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config, ...(ctx.stripApp ? { appJs: p.appJs } : {}), licence: licencePaths(ctx.dir).root, home: p.home };
 }
 
 /** `docker compose` on this server's generated file. */
@@ -478,6 +484,8 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (server.speech?.enabled) ensureDir(server.speech.modelsDir ?? p.speechModels);
   // wave 1b: the image of the Go programs, named from this checkout's commit; the compose file needs the name only when a shop runs on Go or the server has the directory (wave 1c)
   const goImage = shops.some((sh) => sh.runtime) || hasDirectory(server) ? goImageFor(ctx.appDir) : undefined;
+  // the stripped copy of the checkout the Node processes run from: written before the compose file names it, in place (a running container keeps the folder it was started on)
+  if (ctx.stripApp) { const r = buildAppJs(ctx.appDir, p.appJs); ctx.log(`app: ${r.stripped} files stripped, ${r.written} written, ${r.unchanged} unchanged, ${r.removed} removed (${p.appJs}).`); }
   const composed = composeServer(server, dirsOf(ctx), shops, { ...(goImage ? { goImage } : {}), opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}), ...(directoryAssistant(server) ? { assistant: true } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
