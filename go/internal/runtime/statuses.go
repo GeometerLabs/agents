@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
+
+	"github.com/GeometerLabs/agents/go/internal/messaging"
 )
 
 // MessageStatusEntry is unfinished/registry.ts MESSAGE_STATUS_ENTRY.
@@ -152,8 +153,12 @@ func recordMessageStatus(rec *Recorder, status map[string]any, ctx statusContext
 	if sentIdx >= 0 {
 		refs["sent"] = fmt.Sprint(entries[sentIdx].Seq)
 	}
-	if ts, _ := status["timestamp"].(float64); ts > 0 {
-		refs["reportedAt"] = time.UnixMilli(int64(ts)).UTC().Format("2006-01-02T15:04:05.000Z")
+	// statuses.ts: a time outside the Date range (past 8.64e15 ms: a forged or broken report) is left out (since 22 Nov; it threw there, and a Go int64 of a float past 2^63 is
+	// undefined); years past 9999 are written as JavaScript writes them (+010000-...)
+	if ts, _ := status["timestamp"].(float64); ts > 0 && ts <= 8.64e15 {
+		if iso, ok := messaging.ISOString(int64(ts)); ok {
+			refs["reportedAt"] = iso
+		}
 	}
 	if hasErr {
 		if c, ok := errObj["code"].(float64); ok {

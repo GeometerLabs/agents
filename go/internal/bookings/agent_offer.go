@@ -28,7 +28,7 @@ const (
 	channelDaysAhead = 30
 )
 
-// ---- the shop's own booking list, made on first use (own-calendar.ts `store.ownCalendar ??= ...` in every call) ------------------------------------------------------
+// ---- the shop's own booking list, made by the first insert (own-calendar.ts: since 22 Nov a read, an update or a delete of a list never made does not make it) --------
 
 type ownCal struct {
 	st  *Store
@@ -45,18 +45,26 @@ func (s *Store) ownList(now func() int64) *calendar.Own {
 	return calendar.NewOwn(s.own, now)
 }
 
-func (o ownCal) Insert(ctx context.Context, e calendar.NewEvent) (calendar.Event, error) { return o.st.ownList(o.now).Insert(ctx, e) }
-func (o ownCal) Get(ctx context.Context, id string) (*calendar.Event, error)              { return o.st.ownList(o.now).Get(ctx, id) }
-func (o ownCal) List(ctx context.Context, q calendar.Query) ([]calendar.Event, error)     { return o.st.ownList(o.now).List(ctx, q) }
-func (o ownCal) Update(ctx context.Context, id string, p calendar.Patch) (calendar.Event, error) {
-	return o.st.ownList(o.now).Update(ctx, id, p)
+// ownRead is the list for every call but insert: the store's own when it exists, else an empty one that is not kept (so it is not written into the saved state).
+func (s *Store) ownRead(now func() int64) *calendar.Own {
+	if s.own == nil && s.OwnCalendar == nil {
+		return calendar.NewOwn(&calendar.OwnState{}, now)
+	}
+	return s.ownList(now)
 }
-func (o ownCal) Delete(ctx context.Context, id string) error { return o.st.ownList(o.now).Delete(ctx, id) }
+
+func (o ownCal) Insert(ctx context.Context, e calendar.NewEvent) (calendar.Event, error) { return o.st.ownList(o.now).Insert(ctx, e) }
+func (o ownCal) Get(ctx context.Context, id string) (*calendar.Event, error)              { return o.st.ownRead(o.now).Get(ctx, id) }
+func (o ownCal) List(ctx context.Context, q calendar.Query) ([]calendar.Event, error)     { return o.st.ownRead(o.now).List(ctx, q) }
+func (o ownCal) Update(ctx context.Context, id string, p calendar.Patch) (calendar.Event, error) {
+	return o.st.ownRead(o.now).Update(ctx, id, p)
+}
+func (o ownCal) Delete(ctx context.Context, id string) error { return o.st.ownRead(o.now).Delete(ctx, id) }
 func (o ownCal) FreeBusy(ctx context.Context, from, to int64) ([]calendar.Busy, error) {
-	return o.st.ownList(o.now).FreeBusy(ctx, from, to)
+	return o.st.ownRead(o.now).FreeBusy(ctx, from, to)
 }
 func (o ownCal) Conflicts(ctx context.Context, start, end int64) ([]calendar.Event, error) {
-	return o.st.ownList(o.now).Conflicts(ctx, start, end)
+	return o.st.ownRead(o.now).Conflicts(ctx, start, end)
 }
 
 // ---- a booking's draft members (booking.ts Booking.date, timePhrase, time, reschedule) -----------------------------------------------------------------------------

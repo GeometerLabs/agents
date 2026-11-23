@@ -65,6 +65,13 @@ test("(a) a good signature and a digest that is this shop's own: the checks ran 
   assert.deepEqual(report(glow, glowRead.finding).notTested, baseList);
 });
 
+test("(a) a UPI shop's certificate, made on its own settings (the UPI example's), is read as its own, never as Glow Salon's example (checked 22 Nov for a reported finding)", () => {
+  const upi = parseSettings(JSON.parse(readFileSync(new URL("../settings/glow-salon-upi.example.json", import.meta.url), "utf8")));
+  assert.notEqual(policyDigest(upi), policyDigest(glow));
+  assert.equal(readGoLiveCertificate(certificateFile(upi, ranOn(upi)), upi).finding.status, "own");
+  assert.equal(readGoLiveCertificate(certificateFile(glow, ranOn(glow)), upi).finding.status, "example");
+});
+
 test("(a) a certificate that states situations it could not run, or that some did not hold, says so only as counts: nothing is added or hidden", () => {
   const skipped = readGoLiveCertificate(certificateFile(bright, ranOn(bright, { held: 30, total: 30, notRun: ["Cancellation after the window", "Late cancellation"] })), bright);
   assert.ok(skipped.finding.status === "own" && skipped.finding.notRun === 2 && skipped.finding.notTested === 15);

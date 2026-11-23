@@ -227,7 +227,9 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
 
     receive(from, text, options = {}) {
       lastInbound.set(from, clock.now());
-      if (text.trim().toUpperCase() === "STOP") optedOut.add(from);
+      // ASCII letters only (a regular expression's /i without the u flag folds no letter outside ASCII to one inside it): toUpperCase() made "ﬆop" (the ligature
+      // upper-cases to "ST") an opt-out, which the agent's own reading (understanding/rules.ts isStop) never was.
+      if (/^stop$/i.test(text.trim())) optedOut.add(from);
       return { id: options.id ?? `wamid.in_${inboundSeq++}`, from, text, timestamp: clock.now(), ...(options.reply ? { reply: options.reply } : {}), ...(options.image ? { image: true as const } : {}), ...(options.voiceNote ? { voiceNote: true as const } : {}), ...(options.media ? { media: options.media } : {}) };
     },
 

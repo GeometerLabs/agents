@@ -234,6 +234,31 @@ test("a day missed is read when the agent next runs (oldest first, at most a wee
   assert.deepEqual([listed.posted, listed.listed], [0, 1]);
 });
 
+test("a read line with no day does not hide the last day read (sort() put undefined last, so the days since were taken as never read)", async () => {
+  const w = booked();
+  const days: number[] = [];
+  const p = { readSettlements: async (d: { day: number }) => { days.push(d.day); return []; } } as unknown as Payments;
+  await job(w, p); // 12 Nov
+  w.record.append({ conversation: PHONE, booking: null, action: SETTLEMENT_ACTIONS.read, inputs: {}, outcome: "confirmed", language: "en", refs: {} });
+  await job(w, p, at(11, 16, 10));
+  assert.deepEqual(days, [12, 13, 14, 15]);
+});
+
+test("a settled row whose post throws after its line is written is not listed as a problem as well (the line itself is the journal's problem); one that throws before is", async () => {
+  const w = booked();
+  const real = w.acc;
+  const throwsAfter = { journal: () => real.journal(), post: (e: MoneyEvent, write: (refs: Record<string, string>) => unknown) => { write({ money: "settled" }); throw new Error("The settled line cannot be read as money."); } };
+  const after = await readSettlementsOnce({ payments: stub([row({})]), accounting: throwsAfter, record: w.record, conversation: PHONE, language: "en", nowMs: NOW, timeZone: TZ });
+  assert.deepEqual([after.posted, after.listed], [0, 0]);
+  assert.equal(w.record.entries().filter((e) => e.action === SETTLEMENT_ACTIONS.row).length, 1);
+  assert.equal(w.record.entries().some((e) => e.action === SETTLEMENT_ACTIONS.listed), false);
+  const v = shop();
+  v.received("b-1", "pay_1", 10_000);
+  const throwsBefore = { journal: () => v.acc.journal(), post: () => { throw new Error("A settlement row of pay_1 cannot be posted."); } };
+  const before = await readSettlementsOnce({ payments: stub([row({})]), accounting: throwsBefore, record: v.record, conversation: PHONE, language: "en", nowMs: NOW, timeZone: TZ });
+  assert.deepEqual([before.posted, before.listed], [0, 1]);
+});
+
 test("the job through the stand-in's wire: payments, a refund and a held row of one real-shaped day", async () => {
   const k = await standinKit({ hold: new Set<string>() });
   try {

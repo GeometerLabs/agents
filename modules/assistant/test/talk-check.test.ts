@@ -84,3 +84,16 @@ test("check 5: only the shop's own link, no phone number, the length cap, the sp
 test("a customer's reply with a safety or guarantee word is refused even with a source that has it nowhere", () => {
   assert.equal(failed(check([{ text: "It is safe and certified.", sources: [] }])), 3);
 });
+
+test("the talk history cuts each line at 300 UTF-16 units and never through an emoji (22 Nov: slice left a lone surrogate in the model's prompt)", async () => {
+  const { historyText } = await import("../talk-prompt.ts");
+  const text = historyText([{ from: "owner", text: `${"a".repeat(299)}😀 more` }]);
+  assert.ok(text.includes(`Owner: ${"a".repeat(299)}\n`), text);
+  assert.equal(/[\ud800-\udfff]/u.test(text.replace(/\p{Extended_Pictographic}/gu, "")), false);
+});
+
+test("a goal written in Devanagari, Malayalam or Kannada is filed as a goal (22 Nov: `\\b` after a word ending in a mark needed an ASCII letter next)", async () => {
+  const { noteFromWords } = await import("../notes.ts");
+  for (const words of ["लक्ष्य: दस बुकिंग", "ലക്ഷ്യം: 20 ബുക്കിംഗ്", "ಗುರಿ 10 ಬುಕಿಂಗ್", "goal: 20 a day", "my goal is more weekday bookings"]) assert.equal(noteFromWords(words).kind, "goal", words);
+  for (const words of ["goals are fine", "ಗುರಿಯು ಬೇರೆ"]) assert.notEqual(noteFromWords(words).kind, "goal", words);
+});

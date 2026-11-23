@@ -73,7 +73,8 @@ const CATCH_UP_DAYS = 7;
 
 /** The days to read: every day after the last one read up to yesterday (at most CATCH_UP_DAYS), or just yesterday when none was ever read. */
 function daysToRead(i: SettlementsInput, yesterday: { year: number; month: number; day: number }): { year: number; month: number; day: number }[] {
-  const last = i.record.entries().filter((e) => e.action === SETTLEMENT_ACTIONS.read).map((e) => e.refs.day).sort().at(-1);
+  // a read line with no day is skipped: sort() puts undefined last, so one such line used to make `last` undefined and the days since the real last read were not read
+  const last = i.record.entries().filter((e) => e.action === SETTLEMENT_ACTIONS.read).map((e) => e.refs.day).filter((d): d is string => d !== undefined).sort().at(-1);
   const out: { year: number; month: number; day: number }[] = [];
   for (let back = 0; back < CATCH_UP_DAYS; back++) {
     const d = addDays(yesterday, -back);
@@ -128,6 +129,7 @@ async function readDay(i: SettlementsInput, day: { year: number; month: number; 
     if (row.onHold || !row.settled) { list("held", row, "the payment service is holding this row; it is not in the bank", known); continue; }
     if (row.settlementId === null || row.utr === null) { list("problem", row, "a settled row with no settlement id or bank reference is not posted", known); continue; }
     if (known === null || paymentId === null) { list("unknown_payment", row, "a payment that did not go through the assistant: left out of the books"); continue; }
+    const before = i.record.entries().length;
     try {
       const done = i.accounting.post(
         { kind: "settled", case: known, settlementId: row.settlementId, utr: row.utr, entityId: row.entityId, rowType: row.type, paymentId, amountPaise: row.amount, feePaise: row.fee, taxPaise: row.tax, creditPaise: row.credit, debitPaise: row.debit, ...(row.settledAt !== null ? { settledAt: row.settledAt } : {}) },
@@ -135,7 +137,9 @@ async function readDay(i: SettlementsInput, day: { year: number; month: number; 
       );
       if (done.posted) posted++;
     } catch (e) {
-      list("problem", row, (e as Error).message, known);
+      // A post that throws BEFORE its write (the fee fits neither reading) is listed. One that throws after it (the read-back) has left the row's own line in the
+      // record, which the journal already lists as a problem: listing it again counted the one row twice.
+      if (i.record.entries().length === before) list("problem", row, (e as Error).message, known);
     }
   }
 

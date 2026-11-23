@@ -65,8 +65,8 @@ func SourceLines(sources []TalkSource) string {
 	return strings.Join(lines, "\n")
 }
 
-// HistoryText is talk-prompt.ts `historyText`: the last six lines of the talk as the user message's preface. `.slice(0, 300)` counts UTF-16 units: a cut through a pair, which
-// JavaScript leaves as a lone surrogate, drops the half character here (a Go string cannot hold one).
+// HistoryText is talk-prompt.ts `historyText`: the last six lines of the talk as the user message's preface, each cut at 300 UTF-16 units; a cut through a pair drops the half
+// character, on both sides since 22 Nov (format.ts sliceUnits; JavaScript's bare slice left a lone surrogate).
 func HistoryText(lines []TalkLine) string {
 	if len(lines) > OwnerHistoryLines {
 		lines = lines[len(lines)-OwnerHistoryLines:]

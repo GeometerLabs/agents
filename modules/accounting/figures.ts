@@ -73,7 +73,12 @@ export function figuresOf(journal: Journal, entries: readonly RecordEntry[], leg
   }
   // the amount an earlier refund line kept for a payment, for a refund line that carries none
   const amountOfPayment = new Map<string, number>();
-  if (options.refundAmountFromPayment) for (const e of entries) if (e.time < toIso && e.action === "refund" && e.refs.paymentId && e.refs.amountPaise) amountOfPayment.set(e.refs.paymentId, Number(e.refs.amountPaise));
+  // Only a whole number of paise, written as the journal writes one, is borrowed: a bare Number() took "1e3", "0x10" or "12.5" (a fraction added to a figure of whole paise).
+  // A later line of the payment whose amount is not one makes the payment's amount unknown, so that refund is counted as missing its amount.
+  if (options.refundAmountFromPayment) for (const e of entries) if (e.time < toIso && e.action === "refund" && e.refs.paymentId && e.refs.amountPaise) {
+    const n = Number(e.refs.amountPaise);
+    if (Number.isSafeInteger(n) && n > 0 && String(n) === e.refs.amountPaise) amountOfPayment.set(e.refs.paymentId, n); else amountOfPayment.delete(e.refs.paymentId);
+  }
   const refundSeen = new Set<string>(); // a refund once, by its id: a line the journal could not read for its amount is deduplicated the same way
   const problems = new Map<number, string>(journal.problems.map((p) => [p.seq, p.why]));
   for (const e of entries) {

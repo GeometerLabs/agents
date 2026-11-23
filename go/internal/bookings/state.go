@@ -151,7 +151,7 @@ type Store struct {
 	Upi, OwnCalendar, CalendarState, Channel json.RawMessage
 	// Unknown is any top-level member a later version adds, kept in the order it was read (written after the known ones).
 	Unknown []runtime.Member
-	// own is `ownCalendar` once a step used the shop's own booking list (agent_offer.go ownCal), and channel the `channel` block once a step changed it (agent_channel.go);
+	// own is `ownCalendar` once a step inserted into the shop's own booking list (a read does not make it, since 22 Nov) (agent_offer.go ownCal), and channel the `channel` block once a step changed it (agent_channel.go);
 	// Members writes each back. nil: the raw member as read is kept.
 	own     *calendar.OwnState
 	channel *runtime.ChannelState

@@ -2960,14 +2960,14 @@
     },
     "refunds": {
      "count": 5,
-     "paise": 37000,
+     "paise": 35000,
      "ofDeposits": {
       "count": 2,
       "paise": 5000
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -2980,7 +2980,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 1
+     "refundAmounts": 3
     },
     "booksOnly": {
      "paidTwice": {
@@ -3018,14 +3018,14 @@
     },
     "refunds": {
      "count": 5,
-     "paise": 37000,
+     "paise": 35000,
      "ofDeposits": {
       "count": 2,
       "paise": 5000
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3038,7 +3038,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 1
+     "refundAmounts": 3
     },
     "booksOnly": {
      "paidTwice": {
@@ -3076,14 +3076,14 @@
     },
     "refunds": {
      "count": 3,
-     "paise": 32000,
+     "paise": 30000,
      "ofDeposits": {
       "count": 0,
       "paise": 0
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3096,7 +3096,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 0
+     "refundAmounts": 2
     },
     "booksOnly": {
      "paidTwice": {
@@ -3302,14 +3302,14 @@
     },
     "refunds": {
      "count": 5,
-     "paise": 37000,
+     "paise": 35000,
      "ofDeposits": {
       "count": 2,
       "paise": 5000
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3322,7 +3322,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 1
+     "refundAmounts": 3
     },
     "booksOnly": {
      "paidTwice": {
@@ -3360,14 +3360,14 @@
     },
     "refunds": {
      "count": 5,
-     "paise": 37000,
+     "paise": 35000,
      "ofDeposits": {
       "count": 2,
       "paise": 5000
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3380,7 +3380,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 1
+     "refundAmounts": 3
     },
     "booksOnly": {
      "paidTwice": {
@@ -3418,14 +3418,14 @@
     },
     "refunds": {
      "count": 3,
-     "paise": 32000,
+     "paise": 30000,
      "ofDeposits": {
       "count": 0,
       "paise": 0
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3438,7 +3438,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 0
+     "refundAmounts": 2
     },
     "booksOnly": {
      "paidTwice": {
@@ -3644,14 +3644,14 @@
     },
     "refunds": {
      "count": 5,
-     "paise": 37000,
+     "paise": 35000,
      "ofDeposits": {
       "count": 2,
       "paise": 5000
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3664,7 +3664,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 1
+     "refundAmounts": 3
     },
     "booksOnly": {
      "paidTwice": {
@@ -3702,14 +3702,14 @@
     },
     "refunds": {
      "count": 5,
-     "paise": 37000,
+     "paise": 35000,
      "ofDeposits": {
       "count": 2,
       "paise": 5000
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3722,7 +3722,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 1
+     "refundAmounts": 3
     },
     "booksOnly": {
      "paidTwice": {
@@ -3760,14 +3760,14 @@
     },
     "refunds": {
      "count": 3,
-     "paise": 32000,
+     "paise": 30000,
      "ofDeposits": {
       "count": 0,
       "paise": 0
      },
      "ofSecondPayments": {
       "count": 3,
-      "paise": 32000
+      "paise": 30000
      }
     },
     "discounts": {
@@ -3780,7 +3780,7 @@
     },
     "missing": {
      "depositAmounts": 8,
-     "refundAmounts": 0
+     "refundAmounts": 2
     },
     "booksOnly": {
      "paidTwice": {
@@ -3851,10 +3851,7 @@
     "entry 35 could not be read as money: the amount \"ten\" is not a whole number of paise above 0"
    ],
    "figures": [],
-   "figuresFromPayment": [
-    "owner marks counted: the books gave back 35000, the rows and booksOnly 37000",
-    "owner marks left out: the books gave back 35000, the rows and booksOnly 37000"
-   ]
+   "figuresFromPayment": []
   },
   {
    "name": "no payment ids",
@@ -4625,10 +4622,7 @@
     "entry 10 could not be read as money: the amount \"1e3\" is not a whole number of paise above 0"
    ],
    "figures": [],
-   "figuresFromPayment": [
-    "owner marks counted: the books gave back 30000, the rows and booksOnly 32000",
-    "owner marks left out: the books gave back 30000, the rows and booksOnly 32000"
-   ]
+   "figuresFromPayment": []
   },
   {
    "name": "first 23 entries",
@@ -5013,10 +5007,7 @@
     "entry 21 could not be read as money: an older refund kept by the owner has no id"
    ],
    "figures": [],
-   "figuresFromPayment": [
-    "owner marks counted: the books gave back 35000, the rows and booksOnly 37000",
-    "owner marks left out: the books gave back 35000, the rows and booksOnly 37000"
-   ]
+   "figuresFromPayment": []
   }
  ],
  "obligations": [],
