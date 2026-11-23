@@ -64,7 +64,9 @@ cmd/fees/                main of ONE Fees (and Classes) centre (wave 3): the sam
 internal/fees/           the Fees template (wave 3): the settings with the TypeScript's sentences, the store field for field, the agent over one step (the month's fees and reminders, the
                          payment record and one link for what is owed, a UPI centre's owner-marked money, waivers, refunds through the shared refunds, the parent's private link and page,
                          the owner's page), the words packed per language (words/*.json.gz and reading.json, made by scripts/gen_fees_words.ts), the reading material, and
-                         agent_assistant.go, Fees as a skill of the shop's assistant (who owes, what waits, cancel and refund by card, the morning line, the app view); read
+                         agent_assistant.go, Fees as a skill of the shop's assistant (who owes, what waits, cancel and refund by card, the morning line, the app view);
+                         agent_approvers.go (B37), agent_settlements.go (the daily settlement read), agent_handover.go (the handover code and the shop terms, over
+                         internal/runtime ownerwords.go, which Bookings and Orders share); rules_test.go holds the pure rules to the TypeScript's vectors; read
                          Explanation.md and Deferred.md
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
 internal/signing/        Ed25519 and RFC 8785 canonical JSON, both ways: the shop's key and the signed feed / answer / notice / Agent Card's JWS (modules/signing), and the reading of them (VerifyDocument, VerifyNotice: the directory's checks)
@@ -128,6 +130,7 @@ scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the T
 scripts/gen_stock_vectors.ts     writes internal/stock/testdata/stock-vectors.json: modules/stock/stock.ts run over six scenarios, every step's answer and state (--check)
 scripts/gen_stockorders_report_words.ts and gen_stockorders_report_vectors.ts write internal/stockordersreport/words/words.json.gz and testdata/vectors.json.gz (the report's words, and the report, page, messages, summaries, go-live readings, files and job run by the TypeScript; each has `--check`, words-fresh runs them)
 scripts/gen_stockorders_words.ts writes internal/stockorders/words.json: Stock orders' messages, templates, labels, state and stock words and the reader's patterns (--check)
+scripts/gen_fees_vectors.ts  writes internal/fees/testdata/rules-vectors.json.gz by running templates/education/fees: the month's fee (every joining rule), the schedule, the limits, the class-access rule, the settings' sentences; `--check` only compares (words-fresh)
 scripts/gen_fees_words.ts  writes internal/fees/words/*.json.gz (every Fees and Classes message, where to pay, a family's line, the WhatsApp templates, the labels) and internal/fees/reading.json (the rule parser's word lists) from templates/education/fees; `--check` only compares (words-fresh)
 scripts/gen_bookings_reading.ts  writes internal/bookings/reading.json: the Bookings rule parser's patterns, the decision model's questions, the model's prompt and schema as templates
 scripts/gen_orders_settings.ts  writes internal/orders/settings_check.json and the settings and store vectors (a store the TypeScript agent wrote, and every read of it); scripts/gen_orders_words.ts, gen_orders_reading.ts, gen_orders_report_words.ts and gen_orders_report_vectors.ts the Orders words, reading and report data; each has `--check`, and words-fresh runs them
