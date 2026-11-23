@@ -151,6 +151,8 @@ export function ownerPage(o: OwnerPageInput): string {
     if (i.kind === "late_refund" && v.kind === "orders") return card("lateCancel", more.lateOrder(who(i.customer, i.channel), what(i), amount), [b("approve", more.giveBack), b("deny", more.keepAdvance, true)]);
     if (i.kind === "late_refund") return card("lateCancel", w.lateRefund(who(i.customer, i.channel), what(i), amount), [b("approve", w.refundIt), b("deny", w.keepIt, true)]);
     if (i.kind === "big_order") return card("bigOrder", more.bigOrder(who(i.customer, i.channel), what(i), amount), [b("approve", more.accept), b("deny", more.refuse, true)]);
+    // E1: a price card (Bookings or Orders): the item, how many, the price asked against the list, and the total; the answer is the owner's "approve"/"deny" with the card's code
+    if (i.kind === "discount" && i.deal) return card("discount", more.discount(who(i.customer, i.channel), i.deal.name, i.deal.qty, formatInr(i.deal.offeredInr), formatInr(i.deal.listInr), formatInr(i.deal.totalInr)), [b("approve", more.agreePrice), b("deny", more.keepPrice, true)]);
     const student = i.customer.name ?? i.customer.phone;
     if (i.kind === "waiver") return card("waiver", more.waiver(student, what(i), amount), [b("approve", more.waiveIt), b("deny", more.dontWaive, true)]);
     if (i.kind === "refund_request") return card("refundAsked", more.refundRequest(student, what(i), amount), [b("approve", more.refundIt), b("deny", more.dontRefund, true)]);

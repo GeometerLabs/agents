@@ -149,3 +149,63 @@ describe("the discount authority, on", () => {
     assert.deepEqual(links(s), [], "and nothing was done");
   });
 });
+
+// The price card on the owner's page (E1 item 2, 24 Nov 2026): the same card as on WhatsApp, with its numbers, answered by a press that the runtime turns into the owner's own
+// "approve b-1 <code>" (go/internal/bookings agent_channel.go onOwnerAction), so one decision path and one count, whichever door the answer comes through.
+type PageItem = { kind: string; case: string; digest: string; actions: string[]; amountPaise: number; deal?: { name: string; qty: number; listInr: number; offeredInr: number; totalInr: number } };
+const pageCard = async (s: Shop): Promise<PageItem | undefined> => ((await s.ownerView()).body.items as PageItem[]).find((i) => i.kind === "discount");
+async function press(s: Shop, item: PageItem, action: "approve" | "deny"): Promise<void> {
+  const a = await s.channelEvents([{ kind: "owner_action", id: `press-${action}-${item.digest.slice(0, 6)}-${s.record().length}`, action, case: item.case, digest: item.digest }], { owner: true });
+  assert.equal(a.status, 200);
+  await s.settle();
+}
+
+describe("the price card on the owner's page", () => {
+  contract("it waits with the service, the list price, the price asked and the total (never its code); Approve there agrees exactly as the WhatsApp yes", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 350);
+    const item = await pageCard(s);
+    assert.ok(item, "the card is on the page");
+    assert.deepEqual([item.case, item.actions, item.amountPaise, item.deal], ["b-1", ["approve", "deny"], 35000, { name: "haircut", qty: 1, listInr: 450, offeredInr: 350, totalInr: 350 }]);
+    assert.doesNotMatch(JSON.stringify(item), new RegExp(codeOf(s), "u"), "the card's code is not on the page");
+    await press(s, item, "approve");
+    assert.deepEqual(links(s).map((l) => l.body.amount), [20000], "the deposit link, once");
+    assert.match(words(s, CUSTOMER), /the owner agreed to ₹350/u);
+    assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.by ?? "", r.refs.totalInr]), [["held_for_owner", "", "350"], ["confirmed", "owner", "350"]]);
+    assert.equal(await pageCard(s), undefined, "answered: the card is gone from the page");
+  });
+
+  contract("Refuse there is the owner's no: the customer is offered the list price", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 350);
+    await press(s, (await pageCard(s))!, "deny");
+    assert.match(words(s, CUSTOMER), /couldn't agree to ₹350\. The lowest for your haircut is ₹450/u);
+    assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.by ?? ""]), [["held_for_owner", ""], ["blocked", "owner"]]);
+  });
+
+  contract("a stale card's press is refused: the ask changed after the page was shown, so the old press does nothing and the new card still waits", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 350);
+    const old = (await pageCard(s))!;
+    await ask(s, 340);
+    const fresh = (await pageCard(s))!;
+    assert.notEqual(fresh.digest, old.digest);
+    assert.equal(fresh.deal?.offeredInr, 340);
+    await press(s, old, "approve");
+    assert.deepEqual(links(s), [], "nothing was agreed or held");
+    assert.equal(discountLines(s).filter((r) => r.outcome === "confirmed").length, 0);
+    assert.ok(s.record().some((r) => r.action === "owner_page_action" && r.outcome === "blocked"), "the press is in the record, refused");
+    assert.deepEqual(await pageCard(s), fresh, "the new card still waits");
+  });
+
+  contract("a WhatsApp yes then a page press for the same card count once", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 350);
+    const shown = (await pageCard(s))!;
+    await s.inbound(OWNER, `approve b-1 ${codeOf(s)}`); await s.settle();
+    await press(s, shown, "approve");
+    assert.deepEqual(links(s).map((l) => l.body.amount), [20000], "one link");
+    assert.equal(discountLines(s).filter((r) => r.outcome === "confirmed").length, 1, "one approval in the record");
+    assert.ok(s.record().some((r) => r.action === "owner_page_action" && r.outcome === "blocked"));
+  });
+});
