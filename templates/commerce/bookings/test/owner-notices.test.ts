@@ -89,7 +89,9 @@ test("every notice the agent sends the owner on its own has a template in all fo
   // the customer says they paid, a refund to send and its reminder, the rest of a part) have their templates.
   // B37 (8 Nov): "your approval is in, N more are needed" answers that person's own "approve <code>" too.
   const repliesToTheOwner = ["owner_unknown_command", "owner_day_bookings", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed", "owner_approval_waiting",
-    "owner_upi_marked", "owner_upi_already", "owner_upi_unknown", "owner_upi_late", "owner_upi_refund_marked", "owner_upi_refund_kept"];
+    "owner_upi_marked", "owner_upi_already", "owner_upi_unknown", "owner_upi_late", "owner_upi_refund_marked", "owner_upi_refund_kept",
+    // E1 (24 Nov 2026): the answers to the owner's own "approve b-3" or "approve b-3 <code>" about a price card; the card itself (owner_discount_ask) has its template
+    "owner_discount_use_code", "owner_discount_stale"];
   const needTemplate = ownerIds.filter((id) => !repliesToTheOwner.includes(id));
   assert.deepEqual(needTemplate.filter((id) => !META_TEMPLATES.some((t) => t.usedFor === id)), [], "an owner notice has no template, so it would be refused outside the window");
   for (const id of needTemplate) {

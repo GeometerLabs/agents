@@ -660,6 +660,114 @@
     ]
   },
   {
+    "name": "owner_discount_ask",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "कीमत पर आपकी मंज़ूरी चाहिए: {{1}} {{2}} के लिए {{3}} माँग रहे हैं (आपकी कीमत {{4}} है)। ठीक {{5}} मानने के लिए \"approve {{6}} {{7}}\" या मना करने के लिए \"deny {{8}} {{9}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+91 98111 11111",
+              "हेयरकट",
+              "₹400",
+              "₹450",
+              "₹400",
+              "b-3",
+              "Q7RM2X",
+              "b-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_ask",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "A price needs your OK: {{1}} asks {{2}} for {{3}} (your price is {{4}}). Reply \"approve {{5}} {{6}}\" to agree to exactly {{7}}, or \"deny {{8}} {{9}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+91 98111 11111",
+              "₹400",
+              "haircut",
+              "₹450",
+              "b-3",
+              "Q7RM2X",
+              "₹400",
+              "b-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_ask",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: {{1}} {{2}}-ന് {{3}} ചോദിക്കുന്നു (നിങ്ങളുടെ വില {{4}}). കൃത്യം {{5}} സമ്മതിക്കാൻ \"approve {{6}} {{7}}\", അല്ലെങ്കിൽ \"deny {{8}} {{9}}\" എന്ന് മറുപടി അയയ്ക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+91 98111 11111",
+              "ഹെയർകട്ട്",
+              "₹400",
+              "₹450",
+              "₹400",
+              "b-3",
+              "Q7RM2X",
+              "b-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_ask",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: {{1}} ಅವರು {{2}} ಗೆ {{3}} ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ {{4}}). ಸರಿಯಾಗಿ {{5}} ಗೆ ಒಪ್ಪಲು \"approve {{6}} {{7}}\", ಇಲ್ಲವಾದರೆ \"deny {{8}} {{9}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+91 98111 11111",
+              "ಹೇರ್ ಕಟ್",
+              "₹400",
+              "₹450",
+              "₹400",
+              "b-3",
+              "Q7RM2X",
+              "b-3",
+              "Q7RM2X"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_late_cancellation",
     "language": "hi",
     "category": "UTILITY",

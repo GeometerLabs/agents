@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/payments"
@@ -327,6 +328,14 @@ func (a *Agent) proceedToHold(b *Booking, prefix []string, shown []Decision) err
 		// E1: the owner's card for this booking's price is out; nothing is held until they answer (a "yes" to the details does not go round the card)
 		a.tellCustomer(b, phone, []string{"discount_asked"}, sayOpts{})
 		return nil
+	}
+	if d := b.deal(); d.Live() && !priceSaid(prefix) {
+		// E1: a price agreed in an earlier message is said again before the quote, which then does not state the list price
+		word := "discount_agreed"
+		if d.State == discounts.Approved {
+			word = "discount_approved"
+		}
+		prefix = append(append([]string{}, prefix...), word)
 	}
 	if !a.takesNewWork() {
 		a.toEnquiry(b) // nothing held, nothing kept for later

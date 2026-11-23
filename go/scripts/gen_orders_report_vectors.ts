@@ -363,6 +363,7 @@ function discountWorld(): RecordEntry[] {
   const refs = (offered: number, discount: number, code: string, by?: string) => ({ refs: { rule: "discount-authority", item: "veg-thali", qty: "1", listInr: "120", offeredInr: String(offered), discountInr: String(discount), totalInr: String(offered), code, ...(by ? { by } : {}) } });
   w.add("2026-11-03T05:00:00Z", "discount", "confirmed", "o-1", refs(110, 10, "ABCDEF", "agent"));
   w.add("2026-11-04T05:00:00Z", "discount", "held_for_owner", "o-2", refs(90, 30, "GHJKMN"));
+  w.add("2026-11-04T06:00:00Z", "owner_decision", "confirmed", null, { refs: { command: "approve", kind: "discount" } }); // counted in the discounts block, not the owner's
   w.add("2026-11-04T06:00:00Z", "discount", "confirmed", "o-2", refs(90, 30, "GHJKMN", "owner"));
   w.add("2026-11-05T05:00:00Z", "discount", "blocked", "o-3", refs(1, 119, "PQRSTU", "rule"));
   w.add("2026-11-06T05:00:00Z", "discount", "held_for_owner", "o-4", refs(80, 40, "VWXYZ2"));

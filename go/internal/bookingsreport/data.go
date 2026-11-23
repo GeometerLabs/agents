@@ -326,7 +326,8 @@ func BuildMonthlyReport(in Input) (*MonthlyReport, error) {
 	}
 	r.Owner.Asked = len(asked)
 	for _, e := range month {
-		if e.Action == "owner_decision" && e.Outcome == "confirmed" {
+		// E1: an answer to a price card is counted in the `discounts` block (given or refused), not here
+		if e.Action == "owner_decision" && e.Outcome == "confirmed" && e.Refs["kind"] != "discount" {
 			switch e.Refs["command"] {
 			case "approve":
 				r.Owner.Approved++

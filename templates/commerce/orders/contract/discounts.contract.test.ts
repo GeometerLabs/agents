@@ -86,6 +86,16 @@ describe("the discount authority, on", () => {
     assert.deepEqual(await advanceAsked(s), [15000], "half of exactly ₹300");
   });
 
+  contract("the report counts: discounts given (rupees), asked of the owner and refused, from the runtime's own record", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 2, 100);
+    await s.inbound(OWNER_NUMBER, `approve o-1 ${codeOf(s)}`); await s.settle();
+    await s.inbound("+919855555555", "2 veg thali 10 nov 12:00 pm pickup for 90"); await s.settle();
+    const { discountsOfMonth } = await import("../../../../modules/limits/discounts.ts");
+    assert.deepEqual(discountsOfMonth(s.record()), { given: { count: 1, paise: 4000 }, asked: 1, refused: 1 }, "₹40 off given by the owner's yes, one asked, one below the floor");
+    assert.ok(s.record().some((l) => l.action === "owner_decision" && l.outcome === "confirmed" && l.refs.kind === "discount"));
+  });
+
   contract("a retry makes no second card; a plain \"approve o-1\" is told the card's words and does nothing", async () => {
     const s = await boot({ settings: ON });
     await ask(s, 2, 100);

@@ -1408,3 +1408,10 @@ The first enhancement after the switch to Go, built once in `internal/discounts`
 - **Record and report.** Each decision is a `discount` line, with its amounts in refs. The report's `discounts` block (given count and paise, asked, refused) is present only when the month has such a line. The page has three rows and the owner's text one line, and the report vectors have a `discounts` case each.
 - **Limits and the assistant.** The two caps are declared limits only for a shop with the block. The owner's talk has a "Discounts this month" source read from the record.
 - **Not done** (Deferred.md): the panel's boxes, the owner's page card, a rule phrase for "discounts this month" without the model, and "offer the cap".
+- **Fixes after the run of record.** A price agreed in an earlier message is said again before the quote, so the list price is never quoted after an agreement; this has a contract case. The report's owner block no longer counts an answer to a price card (`refs.kind: discount`), which the `discounts` block counts instead. `whatsapp-templates.json` gains `owner_discount_ask`, the one new template in every shop's list.
+- **Run of record (24 Nov, merged with main 43852e30).**
+  - `go build/vet/test ./...`: all ok.
+  - Contracts: listings 210/210, directory 36/36, Bookings 173/173 (after the fix), Orders 105/105, Fees 100/100, Stock orders 74/74.
+  - Bundle: 722 pass, 9 skipped (REAL_CADDY). Panel: 259/259.
+  - TypeScript: Bookings 829 pass, 7 skipped; Orders 210 pass, 5 skipped; modules/limits 16/16.
+  - `--check` of every generator touched: fresh.

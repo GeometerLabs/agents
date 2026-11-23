@@ -318,7 +318,8 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   // ---- the owner's part ----
   const asked = new Set(month.filter((e) => e.action === "refund" && e.outcome === "held_for_owner").map((e) => `${e.booking}|${e.refs.paymentId ?? e.seq}`)).size;
   const owner = { asked, approved: 0, denied: 0, retried: 0 };
-  for (const e of month.filter((x) => x.action === "owner_decision" && x.outcome === "confirmed")) {
+  // E1: an answer to a price card is counted in the `discounts` block (given or refused), not here, so "asked" and "approved" stay about the same things
+  for (const e of month.filter((x) => x.action === "owner_decision" && x.outcome === "confirmed" && x.refs.kind !== "discount")) {
     const command = e.refs.command;
     if (command === "approve") owner.approved++;
     else if (command === "deny") owner.denied++;

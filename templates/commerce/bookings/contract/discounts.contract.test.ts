@@ -44,6 +44,38 @@ describe("the discount authority, on", () => {
     assert.equal(s.sent(OWNER).length, 0, "the owner is not asked");
   });
 
+  contract("a price agreed before the time is known: the quote in the later message says the agreed price again and never the list price", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "haircut for 410"); await s.settle();
+    assert.match(words(s, CUSTOMER), /I can do ₹410/u);
+    const before = s.sent(CUSTOMER).length;
+    await s.inbound(CUSTOMER, `haircut on ${dayOf(openStart(s.now(), 3))} at 11am`); await s.settle();
+    const quote = s.sent(CUSTOMER).slice(before).map((m) => m.text).join("\n");
+    assert.match(quote, /I can do ₹410/u);
+    assert.doesNotMatch(quote, /₹450/u, "the list price is not quoted after the agreement");
+    assert.deepEqual(links(s).map((l) => l.body.amount), [20000]);
+    assert.equal(discountLines(s).length, 1, "one decision, recorded once");
+  });
+
+  contract("the report counts: discounts given (rupees), asked of the owner and refused, from the runtime's own record", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 410); // given by the agent, ₹40
+    const r = await boot({ settings: ON });
+    await ask(r, 350);
+    await r.inbound(OWNER, `deny b-1 ${codeOf(r)}`); await r.settle();
+    const counts = (shop: Shop) => {
+      const lines = discountLines(shop);
+      return { given: lines.filter((l) => l.outcome === "confirmed").reduce((n, l) => n + Number(l.refs.discountInr) * 100, 0), asked: lines.filter((l) => l.outcome === "held_for_owner").length, refused: lines.filter((l) => l.outcome === "blocked").length };
+    };
+    assert.deepEqual(counts(s), { given: 4000, asked: 0, refused: 0 });
+    assert.deepEqual(counts(r), { given: 0, asked: 1, refused: 1 });
+    // the report's own count over these lines (modules/limits/discounts.ts, the same as go/internal/discounts Count)
+    const { discountsOfMonth } = await import("../../../../modules/limits/discounts.ts");
+    assert.deepEqual(discountsOfMonth(r.record()), { given: { count: 0, paise: 0 }, asked: 1, refused: 1 });
+    assert.deepEqual(discountsOfMonth(s.record()), { given: { count: 1, paise: 4000 }, asked: 0, refused: 0 });
+    assert.ok(r.record().some((l) => l.action === "owner_decision" && l.outcome === "confirmed" && l.refs.kind === "discount"), "the owner's answer is in the record, named as a price card's");
+  });
+
   contract("exactly the cap (₹45 off) is agreed; one rupee more goes to the owner", async () => {
     const a = await boot({ settings: ON });
     await ask(a, 405);
