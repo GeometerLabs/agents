@@ -69,6 +69,8 @@ type Settings struct {
 	FollowUpHours           []int64
 	// Assistant: the settings have an `assistant` block (the shop's assistant is on).
 	Assistant bool
+	// assistantTree is that block in its checked form (settingstree.go), for the monthly report's digest of the settings.
+	assistantTree map[string]any
 }
 
 var (
@@ -247,6 +249,7 @@ func ReadSettings(raw []byte) (*Settings, []string) {
 	s.FollowUpHours = r.followUp(in["followUpHours"])
 	if v, there := in["assistant"]; there && string(v) != "null" {
 		s.Assistant = true
+		s.assistantTree = assistantTree(v)
 	}
 	if len(r.errs) == 0 && limitsOK {
 		for _, l := range s.Catalogue {

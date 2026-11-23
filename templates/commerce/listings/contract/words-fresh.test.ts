@@ -189,6 +189,13 @@ test("words-fresh: the Stock orders vectors (go/internal/stockorders/testdata) e
   assert.equal(stockOrdersVectors.stale(), false, "the Stock orders vectors are out of date: run  node go/scripts/gen_stockorders_vectors.ts  and commit the result");
 });
 
+test("words-fresh: the Stock orders monthly report's words and test vectors (go/internal/stockordersreport) equal a fresh run of the TypeScript", async () => {
+  const reportWords = await import("../../../../go/scripts/gen_stockorders_report_words.ts");
+  assert.deepEqual(reportWords.staleFiles(reportWords.OUT), [], "the Stock orders report's words are out of date: run  node go/scripts/gen_stockorders_report_words.ts  and commit the result");
+  const reportVectors = await import("../../../../go/scripts/gen_stockorders_report_vectors.ts");
+  assert.deepEqual(reportVectors.staleFiles(reportVectors.OUT), [], "the Stock orders report's vectors are out of date: run  node go/scripts/gen_stockorders_report_vectors.ts  and commit the result");
+});
+
 test("words-fresh: the stock count's own words (go/internal/stock/words.json, modules/stock/words.ts STOCK_LINE_WORDS) equal a fresh render of the TypeScript", async () => {
   const stockWords = await import("../../../../go/scripts/gen_stock_words.ts");
   assert.deepEqual(stockWords.staleFiles(stockWords.OUT), [], "the stock words are out of date: run  node go/scripts/gen_stock_words.ts  and commit the result");
@@ -204,4 +211,12 @@ test("the Go Fees words were made from the TypeScript words as they are now", as
     const name = "go/internal/fees/words/en.json.gz";
     assert.deepEqual(fees.staleFiles(dir, new Map([[name, files.get(name)!]])), [name], "the check is not vacuous");
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// the Fees monthly report (go/internal/feesreport): its words and its test vectors, made by go/scripts/gen_fees_report_words.ts and gen_fees_report_vectors.ts
+test("words-fresh: the Fees monthly report's generated Go data (go/internal/feesreport: words, vectors) equals a fresh render of the TypeScript", async () => {
+  const reportWords = await import("../../../../go/scripts/gen_fees_report_words.ts");
+  assert.deepEqual(reportWords.staleFiles(reportWords.OUT), [], "the Fees report's words are out of date: run  node go/scripts/gen_fees_report_words.ts  and commit the result");
+  const reportVectors = await import("../../../../go/scripts/gen_fees_report_vectors.ts");
+  assert.deepEqual(reportVectors.staleFiles(reportVectors.OUT), [], "the Fees report's vectors are out of date: run  node go/scripts/gen_fees_report_vectors.ts  and commit the result");
 });

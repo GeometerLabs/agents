@@ -969,6 +969,41 @@ then brought it to 73 of 73.
 - A possible Bookings bug, int date values from `bookings/parser.go` where the readers take float64, is not a bug. Both ways in (`readIntent` with and without the router)
   end in `coerce`, which writes the intent to JSON and reads it back, so every number is float64 before `fill` reads it.
 
+## Branch go-fees-report-23nov: the Fees monthly report (Stream FR, 23 Nov 2026)
+
+The Fees monthly report ("the monthly report" contract test, the last Fees test that failed on Go besides the assistant's two) is `internal/feesreport`, the Go twin of
+`templates/education/fees/report/`. Read `internal/feesreport/Explanation.md` and `Deferred.md`.
+
+**Built.**
+- `internal/feesreport`: data (money from the books with old dues apart, waivers by who gave them, fees as they stand, reminders and receipts by template, stops at their sites, Classes
+  counts), the sealed tree, the page, the owner's text (six lines with Classes), the WhatsApp message and its four templates, the signed summary (layout 4, 7 with old dues), the go-live
+  reading, the files `writeFeesReport` writes, and the monthly job.
+- `internal/report/reportkit.go`: the parts every template's report shares (tree helpers, the month's slice, the period, the by-action table, the message mechanics, the random token).
+  `ordersreport` and `bookingsreport` keep their private copies for now (Deferred).
+- `internal/reportwire`: the runtime.json `report` block, the messaging adapter, the job on a beat, the failure told once an hour (new; Bookings and Orders carry copies).
+- `internal/fees/report.go` (new file), and three small edits to shared Fees files: a `Report` field on `Kit` (fees.go), the report after the licence notice in `AfterTick`
+  (agent_after.go, in Orders' order: notice, return when stopped, report), and `cmd/fees/main.go` (reads the block, lists the report templates for the stand-in).
+- Students' names: the report is given fees as `Due{Month, State, Payments, BalancePaise}` and settings with each student reduced to `{}`; the record is digested without notes or numbers.
+  `names_test.go` scans everything Go makes for each name and number of 34 cases; the contract test reads every file of the report folder on both runtimes.
+- TypeScript: `UPI_NOT_COUNTED` and `STOP_SITES` in `report/data.ts` are exported (nothing else changed there) for the words generator.
+
+**Not done, and why:** see `internal/feesreport/Deferred.md` (the CLI's pieces, the sample message and the Meta list, the fold of Bookings and Orders onto the shared pieces).
+
+## go-so-report-23nov (23 Nov 2026): the Stock orders monthly report on Go (stream SR)
+
+**Built.** `internal/stockordersreport` (Explanation.md, Deferred.md there): the Go twin of `templates/commerce/stock-orders/report/` over the shared `internal/report`, proved on vectors
+made by running the TypeScript (`scripts/gen_stockorders_report_words.ts`, `gen_stockorders_report_vectors.ts`, both with `--check`, both in words-fresh). Wired into `internal/stockorders` by
+`report.go` (`NewMonthlyReport`, `Agent.AfterTick`, `OrdersOf`) and `settingstree.go` (`Settings.Tree`: the validated settings as the JSON tree the policy digest is of, proved against
+`validateSettings` in `settingstree_test.go`); `cmd/stock-orders` reads runtime.json's `report` block. The owner's morning line over Stock orders now runs after the report
+(`Agent.AfterTick`, the skill's `Waiting` and `Problems`).
+
+**Shared changes (additions only).** `internal/runtime/reportwiring.go`: `ReadReportConfig` (config.ts `readReport`, `reportOptionsReader`, start.ts `monthlyReportSetup`),
+`ReportMessagingOf` (the shop's messaging as the report package takes it, with its faults) and `ReportRecordOf`. Written once so Stock orders is not a third copy; Orders and Bookings
+keep their own (fold them: Deferred.md of `stockordersreport`).
+
+**Not ported:** the go-live certificate's builder (`report/certificate.ts`), which the CLI and the deployer run over the hand check; the runtime only reads a certificate, as Orders'
+does. The deletion step must keep it or port it (Deferred.md). The assistant's talk reads and open list over Stock orders (stockorders/Deferred.md).
+
 ## go-orders-gaps-23nov: Orders gaps before the deletion (23 Nov 2026, stream OG)
 
 Started from agents main 077371a6. The job was to give every Orders money path a test that will survive when the TypeScript runtime (and its unit tests) is deleted, to

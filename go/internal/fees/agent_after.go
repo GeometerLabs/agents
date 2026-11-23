@@ -1,8 +1,8 @@
 package fees
 
 // What rides on the clock's beat AFTER the agent's own work and saves for itself (modules/runtime/core.ts step): the owner's licence notice (server/licence.ts over
-// modules/licence/notice.ts, the shared runtime.RunLicenceNotice), which claims in the record and saves BEFORE it sends, so a restart never sends it twice; then the owner's
-// morning line (agent_assistant.go), which claims and saves the same way. The monthly report is not ported for Fees yet (Deferred.md).
+// modules/licence/notice.ts, the shared runtime.RunLicenceNotice), which claims in the record and saves BEFORE it sends, so a restart never sends it twice; then the monthly
+// report (report.go) and the owner's morning line (agent_assistant.go), which claim and save the same way.
 
 import (
 	"github.com/GeometerLabs/agents/go/internal/bookings"
@@ -12,7 +12,7 @@ import (
 
 var _ runtime.AfterTicker = (*Agent)(nil)
 
-// AfterTick is core.ts's licence notice on a beat. A failure is said in the log and never holds up the beat.
+// AfterTick is core.ts's licence notice, monthly report and morning line on a beat, in that order. A failure is said in the log and never holds up the beat.
 func (a *Agent) AfterTick(save func() error) {
 	var paid *int64
 	if a.c.PaidThrough != nil {
@@ -25,7 +25,14 @@ func (a *Agent) AfterTick(save func() error) {
 	}); err != nil {
 		a.c.Log("The owner's licence notice could not be sent: " + err.Error())
 	}
-	a.morning(owner, save) // item 11e: the owner's morning line (agent_assistant.go), last on the beat
+	// in the licence's final stop the centre sends nothing more, so no report and no morning line go (core.ts step)
+	if a.c.Licence() == "stopped" {
+		return
+	}
+	if a.kit.Report != nil {
+		a.runReport(save) // the monthly report (report.go)
+	}
+	a.morning(owner, save) // item 11e: the owner's morning line (agent_assistant.go), after the report, as Orders' and Stock orders' are
 }
 
 // licenceMessage is server/licence.ts createFeesLicenceNotice's message: the wind-down's or the final stop's words in the owner's language, with who to contact and (the final

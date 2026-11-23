@@ -59,6 +59,8 @@ type Kit struct {
 	shared *runtime.Settings
 	// Licence is the centre's licence now: "" in order, "paused", "stopped" (the runtime's LicenceNow, set once the runtime is made).
 	Licence func() string
+	// Report is the monthly report job (report.go), made once per process from runtime.json's `report` block; nil: the centre has none.
+	Report *MonthlyReport
 	// links are the parents' links this process made (runtime.ts linkMemory, in memory only: the store keeps their hashes).
 	links map[string]string
 	given map[string]bool
