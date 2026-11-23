@@ -18,6 +18,8 @@ import (
 	"sync"
 	"time"
 	"unicode/utf8"
+
+	"github.com/GeometerLabs/agents/go/internal/guard"
 )
 
 // Guard is where the shop's push Guard is and the credential this runtime presents to it (runtime.json services.push).
@@ -95,6 +97,25 @@ func NewSender(o SenderOptions) *Sender {
 
 var reasonCode = regexp.MustCompile(`"reason_code"\s*:\s*"([a-z_]+)"`)
 
+// guardRefusal says whether a 403's body is the push Guard's own and, if so, what to log. Guard marks every answer with a `guard` object whose `decision` and `code` are words (a rule
+// refusal is {decision: deny, code: refused_by_policy} with no reason_code; a limit adds reason_code limit_exceeded). The push service's own 403 has neither, so only that one drops
+// the subscription. The `reason_code` text alone still counts, as before (modules/push/sender.ts guardRefusal does the same).
+func guardRefusal(text []byte) (string, bool) {
+	var body any
+	if json.Unmarshal(text, &body) == nil {
+		if g, ok := guard.GuardObject(body); ok {
+			if g.ReasonCode != "" {
+				return g.ReasonCode, true
+			}
+			return g.Code, true
+		}
+	}
+	if m := reasonCode.FindSubmatch(text); m != nil {
+		return string(m[1]), true
+	}
+	return "", false
+}
+
 // one sends one push through the Guard. The Guard's own answers (403 refused, 502 provider unreachable) and the push service's (201, 404, 410, 413, 429) are told apart.
 func (s *Sender) one(w Waiting) {
 	st, o := s.o.Store, s.o
@@ -145,7 +166,7 @@ func (s *Sender) one(w Waiting) {
 			return
 		}
 	}
-	status, reason := 0, ""
+	status, reason, refusedByGuard := 0, "", false
 	var cb bytes.Buffer
 	cenc := json.NewEncoder(&cb)
 	cenc.SetEscapeHTML(false)
@@ -161,9 +182,7 @@ func (s *Sender) one(w Waiting) {
 			status = resp.StatusCode
 			text, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
 			resp.Body.Close()
-			if m := reasonCode.FindSubmatch(text); m != nil {
-				reason = string(m[1])
-			}
+			reason, refusedByGuard = guardRefusal(text)
 		}
 	}
 	at := o.Now()
@@ -173,8 +192,8 @@ func (s *Sender) one(w Waiting) {
 	case status == 404 || status == 410:
 		_ = st.Drop(w.Sub.ID, "gone", at)
 		_ = st.Settle(w.ID, "gone", at, status)
-	case status == 403 && reason != "":
-		// Guard's refusal (its answer names a reason): its rules or a daily count. Not tried again (the count is the point); the owner's app still lists what waits.
+	case status == 403 && refusedByGuard:
+		// Guard's refusal (its answer carries Guard's `guard` object, with or without a reason_code): its rules or a daily count. Not tried again (the count is the point); the owner's app still lists what waits.
 		o.Log("A push was refused by the push Guard (" + reason + ").")
 		_ = st.Settle(w.ID, "refused", at, status)
 	case status == 401 || status == 403:

@@ -27,17 +27,20 @@ function setup(answer: (call: PushCall, route: string) => number = () => 201) {
   const store = openPushStore(join(dir, "push.sqlite"));
   const clock = fakeClock(T0);
   const calls: { route: string; call: PushCall; auth?: string }[] = [];
+  const box = { forbidden: "limit" as "limit" | "rule" | "service" };
   const fetchImpl = (async (url: string, init: RequestInit) => {
     const route = new URL(url).pathname;
     const call = JSON.parse(String(init.body)) as PushCall;
     calls.push({ route, call, auth: (init.headers as Record<string, string>).authorization });
     const status = answer(call, route);
-    return new Response(status === 403 ? JSON.stringify({ error: "refused by the Guard", guard: { reason_code: "limit_exceeded" } }) : "{}", { status });
+    // a 403 is the Guard's limit (reason_code), the Guard's plain rule refusal (decision and code only, no reason_code: what Guard really sends) or the push service's own (no guard object)
+    const forbidden = { limit: { error: "refused by the Guard", guard: { decision: "deny", code: "refused_by_policy", reason_code: "limit_exceeded" } }, rule: { error: "refused by the Guard: host not on the list", guard: { decision: "deny", code: "refused_by_policy", sent: "no", retry: "no" } }, service: { error: "forbidden" } }[box.forbidden];
+    return new Response(status === 403 ? JSON.stringify(forbidden) : "{}", { status });
     // (a 401 here is the push service's own: the subscription's key is not the shop's)
   }) as unknown as typeof fetch;
   const sender = createPushSender({ store, guard: { baseUrl: "http://g-glow-push:8080", agentToken: "agent-token" }, subject: () => "https://pages.example/glow", clock, fetchImpl });
   const push = createPush({ store, sender, shopName: "Glow", clock, on: true });
-  return { store, sender, push, clock, calls, done: () => { store.close(); rmSync(dir, { recursive: true, force: true }); } };
+  return { store, sender, push, clock, calls, box, done: () => { store.close(); rmSync(dir, { recursive: true, force: true }); } };
 }
 
 test("a subscription is taken only at a push service the Guard allows, with a real P-256 key and a 16-byte secret", () => {
@@ -195,5 +198,21 @@ test("a push service's own 401 (the phone subscribed with another key: a restore
     s.push.owner("x"); await s.sender.pass();
     assert.equal(s.push.ownerPhones(), 0);
     assert.deepEqual(s.store.counts(T0), { gone: 1 });
+  } finally { s.done(); }
+});
+
+test("a 403 from the push Guard's rules (no reason_code) only refuses: the phone keeps its subscription and the push is not tried again; the push service's own 403 still forgets it", async () => {
+  const s = setup(() => 403); try {
+    s.box.forbidden = "rule";
+    const phone = browser(); s.push.subscribe("owner", phone.sub);
+    s.push.owner("rule"); await s.sender.pass();
+    s.clock.advance(60 * 60_000); await s.sender.pass();
+    assert.equal(s.push.ownerPhones(), 1, "Guard's rule said no: the subscription stays");
+    assert.equal(s.calls.length, 1, "not tried again");
+    assert.deepEqual(s.store.counts(T0), { refused: 1 });
+
+    s.box.forbidden = "service";
+    s.push.owner("service"); await s.sender.pass();
+    assert.equal(s.push.ownerPhones(), 0, "the push service's own 403: the key is wrong, the phone is forgotten");
   } finally { s.done(); }
 });
