@@ -9,8 +9,9 @@ import { validateSettings } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
 import { FEES_SERVICES, loadClientFolder, pathwayVersion as versionOf, readRuntimeConfig } from "../../../../modules/runtime/config.ts";
 import type { ClientFolder as SharedClientFolder, RuntimeConfig as SharedRuntimeConfig } from "../../../../modules/runtime/config.ts";
-import { PATHWAY } from "./runtime.ts";
 
+/** The template's name, as a shop's pathway.lock names it (`orders@<version>`). Here, not in the runtime, because the deployer and the panel read it (the runtime is Go since 0.2.0). */
+export const PATHWAY = "orders";
 export { ClientError, aiOverrideReader, parseLock, reportOptionsReader, validName } from "../../../../modules/runtime/config.ts";
 export type { AllowanceConfig, DecisionConfig, ParserConfig, ReportConfig } from "../../../../modules/runtime/config.ts";
 

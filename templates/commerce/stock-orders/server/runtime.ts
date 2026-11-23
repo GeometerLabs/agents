@@ -32,7 +32,8 @@ import { ownerAppView } from "../../../../modules/assistant/app/view.ts";
 import { ownerView } from "../src/channel.ts";
 import { SKILL } from "../src/order.ts";
 
-export const PATHWAY = "stock-orders";
+import { PATHWAY } from "./config.ts";
+export { PATHWAY };
 export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 

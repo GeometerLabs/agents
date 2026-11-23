@@ -35,7 +35,8 @@ import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import { documentsOf, exportFilesOf, orderOffer, orderView, ownerView } from "../src/channel.ts";
 import type { Order } from "../src/order.ts";
 
-export const PATHWAY = "orders";
+import { PATHWAY } from "./config.ts";
+export { PATHWAY };
 export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 

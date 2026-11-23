@@ -40,7 +40,8 @@ import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { bookingsSkill } from "../src/assistant.ts";
 import type { DurableStore } from "./store.ts";
 
-export const PATHWAY = "bookings";
+import { PATHWAY } from "./config.ts";
+export { PATHWAY };
 export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 

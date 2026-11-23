@@ -14,7 +14,7 @@ import type { DocumentsKey } from "../accounting/case-documents.ts";
 import type { Document } from "../accounting/documents.ts";
 import type { ExportFile } from "../accounting/export.ts";
 import type { MoneyView } from "../accounting/owner-money.ts";
-import type { ChatRead } from "../runtime/core.ts";
+import type { ChatRead } from "./chat.ts";
 
 /**
  * Who is acting as the owner: the panel-made private link (item 11d), or a session the runtime made from a one-time WhatsApp link (item 11f). A bare string is a

@@ -41,7 +41,8 @@ import { documentsOf, exportFilesOf, feeConfirmView, feesOffer, ownerView, paren
 import { materialView } from "../src/classes/view.ts";
 import type { Materials } from "./materials.ts";
 
-export const PATHWAY = "fees";
+import { PATHWAY } from "./config.ts";
+export { PATHWAY };
 export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 

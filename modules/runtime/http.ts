@@ -74,6 +74,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { checkEvents, checkRecovery } from "./events.ts";
+import { DEFAULT_PORT } from "./config.ts";
 import { CHAT_LIMITS, createRate } from "../channels/chat.ts";
 import { checkOwnerLimit, checkSettled } from "../limits/runtime-limits.ts";
 import type { LimitsView } from "../limits/runtime-limits.ts";
@@ -119,7 +120,7 @@ export interface ServedRuntime {
 }
 
 export const MAX_BODY_BYTES = 256 * 1024;
-export const DEFAULT_PORT = 8780;
+export { DEFAULT_PORT };
 
 export interface ServerOptions {
   /** The internal bearer token, already read from its file. */

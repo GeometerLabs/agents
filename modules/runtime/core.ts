@@ -46,7 +46,7 @@ import { chatConversationOf } from "../channels/conversation.ts";
 import type { LimitsKit, LimitsView } from "../limits/runtime-limits.ts";
 import { channelStartKey, chatTaskKey } from "../channels/events.ts";
 import { chatAnswered, chatDay, chatKnown, chatThread } from "../channels/chat.ts";
-import type { ChatThread } from "../channels/chat.ts";
+import type { ChatRead, ChatThread } from "../channels/chat.ts";
 import type { ChannelState } from "../channels/state.ts";
 import type { StatusContext } from "../messaging/statuses.ts";
 import type { DocumentsKey } from "../accounting/case-documents.ts";
@@ -328,15 +328,8 @@ export interface RuntimeChannel {
   };
 }
 
-/** What the page reads of a chat: the thread, how the latest send stands, the character's small-talk personality (settings.assistant.character) and whether hold-to-talk is on. The signboard's paint is not here: it travels in the shop's pages file (pages-file.ts). */
-export interface ChatRead extends ChatThread {
-  send?: "pending" | "done" | "failed";
-  personality?: string;
-  /** Hold-to-talk is on (the shop has a voice service): the page draws the button; without it there is none, not a hidden one. */
-  listen?: true;
-}
 
-export type { InboundMessage, Language };
+export type { ChatRead, InboundMessage, Language };
 
 // Wires agent, store and runner once for all templates so 'saved whole or not at all' is enforced in one place, not per template.
 export function createRuntimeCore<Store extends { ai?: AiState }, Settings extends { timezone: string }, Context>(options: RuntimeCoreOptions<Store, Settings, Context>): Runtime<BaseStatus & Record<string, unknown>, Context> {

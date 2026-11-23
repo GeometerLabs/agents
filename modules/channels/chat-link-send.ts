@@ -24,7 +24,8 @@ import type { ChannelState } from "./state.ts";
 import { CHAT_LINK_TEMPLATES } from "./words-chat-identity.ts";
 
 /** The runtime's own event for a link to send. Never from outside: the front's channel token can send only the channel events. */
-export interface ChatLinkEvent { kind: "chat_link"; id: string; what: "recover" | "links" | "confirm"; language: Language; /** recover, confirm: the number (digits). */ phone?: string; /** links, confirm: the thread's hash. */ handle?: string }
+export type { ChatLinkEvent } from "../runtime/events.ts";
+import type { ChatLinkEvent } from "../runtime/events.ts";
 
 export interface ChatLinksSetup { identity: ChatIdentity; pages: () => PagesFile | undefined; shopName: string; clock: Clock; log?: (line: string) => void }
 
