@@ -1,17 +1,18 @@
-// The TypeScript runtime and the Go runtime IN TURN on one Stock orders folder, both ways: agent.db (its tables, the record, the queue, the saved state member for member) is the
-// same, so a shop can move between the two runtimes and lose nothing (decision 61). It needs BOTH runtimes, so without the Go binary (go/bin/stock-orders, or STOCK_ORDERS_GO_BIN)
-// it is skipped and says so; with it, it runs whatever STOCK_ORDERS_IMPL says.
+// A shop stopped and started again on one folder: the store file (agent.db, its tables, the record, the queue) and the files beside it carry everything over, and the
+// shop goes on from where it stopped. Until 24 Nov 2026 this ran the TypeScript runtime and the Go runtime in turn, both ways (decision 61: a shop could move between them
+// and lose nothing); the TypeScript runtime was deleted then, so it is the Go program twice. Without the Go binary (go/bin/stock-orders, or STOCK_ORDERS_GO_BIN) it is skipped and
+// says so.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { BOTH, RAVI, makeShop, orderAndApprove } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 
-const SKIP = BOTH ? undefined : "no Go Stock orders runtime yet (wave 2): this test runs both runtimes on one folder";
+const SKIP = BOTH ? undefined : "the Go Stock orders program is not built (go build -o go/bin/ ./cmd/stock-orders, or set STOCK_ORDERS_GO_BIN)";
 const made: Shop[] = [];
 after(async () => { for (const s of made) { await s.stop(); await s.cleanup(); } });
 
-for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
-  test(`a shop started on ${first} and moved to ${second} keeps its orders, its card, its record and its counter, and goes on`, { skip: SKIP }, async () => {
+for (const [first, second] of [["go", "go"]] as const) {
+  test(`a shop started on ${first} and started again on ${second} keeps its orders, its card, its record and its counter, and goes on`, { skip: SKIP }, async () => {
     const s = await makeShop(); made.push(s);
     await s.start(first);
     await orderAndApprove(s);
