@@ -102,6 +102,8 @@ func run(folder string) error {
 	}
 	ports.PushOwner = func(text string) []string { return rt.OwnerPush(text) } // the one shared owner route (runtime/ownerroute.go); rt is made later, so a closure
 	ports.OwnerRoute = func(hasWhatsApp bool) string { return rt.OwnerRoute(hasWhatsApp) }
+	// 24 Nov 2026: a page's message also goes to the phones that allowed alerts on that page (runtime/push.go CustomerPush, through the shop's push Guard)
+	ports.PushCustomer = func(conversation, text string) { rt.CustomerPush(conversation, text) }
 	// a UPI centre's QR pictures go into the folder the monthly report's pages are served from (start.ts folderQrImages), under random names; no report block: the words alone
 	if kit.Settings.OwnerMarked() {
 		if rep, ok := client.Config.Raw["report"].(map[string]any); ok {

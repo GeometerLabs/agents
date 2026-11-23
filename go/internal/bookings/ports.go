@@ -42,6 +42,9 @@ type Ports struct {
 	// "whatsapp", "push" or "both" (push.ts ownerRoute).
 	PushOwner  func(text string) []string
 	OwnerRoute func(hasWhatsApp bool) string
+	// PushCustomer is push.ts `customer` (24 Nov 2026): the words kept for a page's conversation also go to the phones that allowed alerts on that page (runtime.CustomerPush). nil:
+	// no push. It never fails the message.
+	PushCustomer func(conversation, text string)
 	// Books are the shop's books (books.go NewBooks): every money line is posted through the step's accounting over the record (accounting.ts bookingsAccounting). nil: the line
 	// is written with no money fields.
 	Books *Books
