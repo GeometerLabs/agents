@@ -9,7 +9,8 @@
 // Ways in: an invitation then a passphrase (both modes); a reset link for a forgotten passphrase (both modes, made on the command line); and, on Geometer's
 // Operator server only, a local Operator's geometer.dev sign-in (fleet-signin.ts, plan decision 53). A shop OWNER never signs in here: owners use their own view's
 // setup QR and passkey.
-import { createServer } from "node:http";
+import { panelServer } from "./ondemand.ts";
+import { LOGIN_WINDOW_MS } from "./ratelimit.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -139,8 +140,12 @@ export function openStores(config: PanelConfig) {
   return { paths, vault, store, secret };
 }
 
-// Starts the panel's HTTP server. `deps` lets tests replace the clock, network and runtimes; it returns a handle to stop it.
-export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Promise<RunningPanel> {
+/** One request answered: what the panel's server (or the on-demand launcher, ondemand.ts) calls for every request. */
+export type PanelHandler = (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+
+// Builds everything the panel needs (stores, accounts, the routes) and returns the function that answers one request. Split from the listening so the
+// launcher (ondemand.ts) can load this file only when the first request comes. `deps` lets tests replace the clock, network and runtimes.
+export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHandler {
   const log = deps.log ?? ((line: string) => process.stderr.write(`${line}\n`));
   const now = () => (config.now ?? Date.now)();
   const { paths, store, secret } = openStores(config);
@@ -166,8 +171,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const hasPage = (kind: string | undefined): boolean => kind === "bookings" || kind === "orders" || kind === "fees" || kind === "stock-orders" || kind === "listings";
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
-  const loginByAddress = createLimiter(20, 15 * 60_000, now);
-  const loginByName = createLimiter(5, 15 * 60_000, now);
+  const loginByAddress = createLimiter(20, LOGIN_WINDOW_MS, now);
+  const loginByName = createLimiter(5, LOGIN_WINDOW_MS, now);
   const templates = () => discoverTemplates(config.templatesDir);
   // the trades of the first set-up question (presets.ts): data files next to the panel, read once; a broken one stops the panel here, naming the file
   const presets = loadPresets(PRESETS_DIR, ["bookings", ...Object.keys(SETUPS)]);
@@ -1247,8 +1252,12 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     }
   }
 
-  const server = createServer((req, res) => { void handle(req, res); });
-  server.requestTimeout = 15_000; server.headersTimeout = 10_000; server.keepAliveTimeout = 5_000; server.maxHeadersCount = 60;
+  return handle;
+}
+
+/** Starts the panel's HTTP server at once, fully loaded (what the tests use; `main.ts serve` starts it on demand instead, ondemand.ts). Returns a handle to stop it. */
+export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Promise<RunningPanel> {
+  const server = panelServer(panelHandler(config, deps));
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(config.port, config.host, () => {

@@ -1,5 +1,8 @@
 // A login rate limit that counts failures, not attempts, in a sliding window. Once a key has failed `max` times inside the window it is blocked
 // even for the right passphrase, until its oldest failure ages out; a success clears only that key. In memory: a restart forgets it (Deferred.md).
+/** How long a failed sign-in counts against a person (the panel's two limiters). The panel does not sleep for less than this: a restart forgets the counts (see ondemand.ts). */
+export const LOGIN_WINDOW_MS = 15 * 60_000;
+
 export interface Limiter {
   /** Seconds until the key may try again; 0 when it may try now. */
   blocked(key: string): number;

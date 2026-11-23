@@ -103,6 +103,13 @@ test("a runtime mounts its template and the shared modules from the folders of w
   assert.deepEqual(mountsOf("/srv/server/pathways/bookings@0.1.0"), ["/srv/server/pathways/bookings@0.1.0:/pathway:ro", "/srv/server/modules:/modules:ro"]);
 });
 
+test("the panel sleeps when idle (panel/ondemand.ts): a restart policy that brings it back after a clean exit, and a health check its small listener answers", () => {
+  const block = two().services.panel.block as Record<string, any>;
+  assert.equal(block.restart, "unless-stopped", "restarts whatever the exit code (on-failure would leave a slept panel down)");
+  assert.deepEqual(block.healthcheck.test.slice(-1), ["http://127.0.0.1:8790/healthz"]);
+  assert.deepEqual(block.command, ["node", "--max-semi-space-size=1", "--max-old-space-size=160", "/app/bundle/panel/main.ts"]);
+});
+
 test("the panel is told where the domain folders of the templates are, in the app folder it mounts", () => {
   const c = two();
   const env = c.services.panel.block.environment as Record<string, string>;

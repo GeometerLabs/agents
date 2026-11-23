@@ -1443,3 +1443,40 @@ none (Node carried its own list). A person's commands: `docker exec <directory> 
 generator read, and `types.ts`) are deleted; the tests that need it moved to `bundle/test/go-runtime.test.ts`, `modules/discovery/contract/` and `go/internal/directory`.
 
 **Old images.** `geometer update` and `geometer go-build` remove `geo-go:<tag>` images nothing needs: kept are this checkout's, the image of every container (running or stopped) and every image the deployed compose file names; `update --dry-run` lists them without removing.
+
+## The panel starts when it is used (24 Nov 2026, stream N2)
+
+The panel is used for minutes a day but held about 170 MB all day. `panel/main.ts serve` now starts asleep (`panel/ondemand.ts`): a small listener opens the panel's port and answers `/healthz` itself; the first other request loads the full panel (`import("./server.ts")`, then `panelHandler`), answers, and every later request goes straight to it. After `PANEL_IDLE_MINUTES` (default 15, `0` = never; never under 15, the sign-in limiter's window, because a restart forgets its failure counts) with no request it stops taking connections, lets the requests in flight finish, and exits 0. `compose.ts` gives the panel `restart: unless-stopped` by name, which restarts after any exit code, so it comes back asleep within a second; its health check is the listener's `/healthz`, which passes asleep and awake and does not count as use (or the check every 10 seconds would keep it awake). The command-line jobs of `main.ts` (invite, reset, export...) load what they use when they run.
+
+Nothing is lost by a sleep: a sign-in is a signed cookie (key derived from the data key, or a file), accounts, invitations, half-done setups (`drafts/`), the vault and every written file are in the panel's data folder; the owner's passkeys belong to each shop's runtime. Tested in `panel/test/ondemand.test.ts` (a cookie, a half-done setup and an invitation made before a sleep work after it).
+
+Measured on this Mac, Node 26, one run each (`ps -o rss=`, panel on an empty server folder, port on 127.0.0.1):
+
+| | before (today's panel) | after (asleep) | after, woken |
+|---|---|---|---|
+| RSS | 168 MB | 98 MB | 164 MB |
+| First page (`/login`) | 6 ms (already loaded) | 533 ms (loads the panel) | 1 ms after |
+
+Of the 98 MB asleep, 50 MB is bare Node and about 26 MB is Node stripping the types of `.ts` at start (the N1 stream's pre-stripped `.js` removes that part).
+
+## The server's Node processes, cheaper (stream N1, 24 Nov 2026)
+
+**What changed.** (1) The deployer strips the checkout's TypeScript to JavaScript once per deploy (`lib/strip-app.ts`, Node's own `module.stripTypeScriptTypes`, no download) into `<server>/app-js`, which the six services and the panel mount as `/app` and run as `.js`. The app image is the stock `node:26-alpine` with the checkout mounted (there is no image build in this repository), so the build step is the deployer's, not an image layer. The output has a `.js` beside every `.ts` (the `.ts` stays for `docker compose exec ... node /app/bundle/panel/main.ts export` and the other command-line jobs), copies every other file (JSON, CSS, `templates/`), leaves tests out, and rewrites only relative import specifiers, static and dynamic (`./x.ts` to `./x.js`). Types are blanked with spaces (mode "strip"), so every line and column is unchanged and NO source map is shipped: it would carry only the identity mapping. A rebuild writes only changed files in place (a running container keeps its folder) and costs one walk of the tree when nothing changed (about 0.1 s; a first build 0.9 s for 769 files, 35 MB). A test context does not build (`Context.stripApp`), so the compose text there keeps `.ts`. (2) One table, `NODE_OLD_SPACE_MB`, and `NODE_SEMI_SPACE_MB` in `generate/compose.ts`, give every process `node --max-semi-space-size=1 --max-old-space-size=<MB> <file>`. (3) Lazy loading was measured and not done (below). (4) Pointer compression: `Deferred.md`.
+
+**Heap ceilings.** Measured live heap after load and a full gc: inbox 8 MB, relay 16, refresher 4, push 3, ops 1, door 4, the awake panel 20. Ceilings: inbox 96, relay 96, ops 96, door 96, refresher 64, push 64, panel 160: four to ten times the measured heap, so a busy day does not meet them, while a leak ends in one restart (`restart: unless-stopped`) instead of a growing container. The old-space limit reserves no memory.
+
+**Measured** (this Mac, Node 26.10, one run each, `ps -o rss=` after 2.5 s idle and after 1050 requests; request answer time p50 / p95 in ms over 1000 requests, one at a time, on loopback):
+
+| process | request | idle before | idle after | after load before | after load after | answer before | answer after |
+|---|---|---|---|---|---|---|---|
+| inbox | signed WhatsApp webhook | 126 MB | 80 | 199 | 131 | 0.45 / 0.88 | 0.48 / 0.83 |
+| relay | GET /healthz | 155 | 97 | 160 | 105 | 0.12 / 0.21 | 0.13 / 0.21 |
+| refresher | GET /healthz | 110 | 68 | 117 | 82 | 0.11 / 0.25 | 0.11 / 0.21 |
+| push | GET /healthz | 100 | 68 | 108 | 79 | 0.11 / 0.24 | 0.12 / 0.19 |
+| door | GET / (home page) | 115 | 70 | 123 | 81 | 0.10 / 0.21 | 0.11 / 0.19 |
+| ops | (no HTTP, heartbeat) | 110 | 66 | n/a | n/a | n/a | n/a |
+| panel (awake) | GET /login | 172 | 103 | 185 | 113 | 0.34 / 0.50 | 0.37 / 0.54 |
+
+Sum of idle: 892 MB to 552 MB (-340 MB). Of the saving, stripping alone gives about 40 MB a process (inbox 126 to 87, door 115 to 72, panel 172 to 125) and the semi-space flag the rest (inbox 87 to 79, relay 112 to 97, panel 125 to 104, and 15 to 60 MB less after load). Start time to first answer: 130 to 600 ms before, 110 to 430 ms after. Answer times are unchanged (differences of 0.03 ms are noise): the smaller young generation does more scavenges, which cost microseconds on heaps this small. The harness is not in the repository (it started the real service files with minimal configs and a stub runtime); the panel's idle-asleep figure is stream N2's.
+
+**Lazy loading, measured.** The heap each rarely used import adds, with the shared graph already loaded: `character/render` (DiceBear) 0.7 MB, `panel/papers` 0.3, `panel/server-setup` 0.0, `panel/presets` 0.0, the Hindi, Malayalam and Kannada word tables 0.3 to 0.5 each alone and 0.0 after the shared words, each further template's approvals relay 0.0 to 1 MB (the shared module is the cost). The big numbers (the panel's 17 MB, the relay's 16 MB, the inbox's `front`) are one shared graph every path needs. Nothing saves several MB, so no import was made lazy (each would turn a synchronous function into an async one for under 1 MB). The panel's real saving is stream N2's: it does not load that graph while asleep.
