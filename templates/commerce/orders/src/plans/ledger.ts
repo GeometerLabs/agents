@@ -124,14 +124,12 @@ export function mealsOn(state: PlansState | undefined, key: string, slotId: stri
   return n;
 }
 
-/** The meals for a slot on a date, for the slot's capacity (src/order.ts ordersInSlot). `except` leaves one plan out (the one being checked). */
-export function planMealsInSlot(state: PlansState | undefined, date: LocalDate, slotId: string, nowMs: number, except = ""): number {
-  if (!state) return 0;
-  const key = keyOf(date);
-  let n = mealsOn(state, key, slotId, nowMs);
-  const own = state.plans[except];
-  if (own && own.slotId === slotId) { const p = periodOfDay(own, key); if (p && holdsPlaces(p, nowMs) && (p.days[key] === "due" || p.days[key] === "delivered")) n--; }
-  return n;
+/**
+ * The meals for a slot on a date, for the slot's capacity (src/order.ts ordersInSlot). 23 Nov 2026: its `except` (one plan left out) is gone. No caller ever passed one,
+ * and it took the plan's meal off without asking whether the plan had lapsed, which mealsOn had not counted.
+ */
+export function planMealsInSlot(state: PlansState | undefined, date: LocalDate, slotId: string, nowMs: number): number {
+  return state ? mealsOn(state, keyOf(date), slotId, nowMs) : 0;
 }
 
 // ---- what the customer asks: skip, pause, resume, cancel --------------------------------------------------------------------

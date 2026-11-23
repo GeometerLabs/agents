@@ -99,7 +99,7 @@ func (st *Store) OrdersInSlot(date LocalDate, slotID string, nowMs int64, except
 			n++
 		}
 	}
-	return n + st.PlanMealsInSlot(date, slotID, nowMs, "")
+	return n + st.PlanMealsInSlot(date, slotID, nowMs)
 }
 
 // ---- the plans' meals in a slot (plans/ledger.ts planMealsInSlot) ----------------------------------------------------------------------------------------------------------
@@ -115,20 +115,15 @@ func KeyOf(d LocalDate) string {
 	return strconv.Itoa(d.Year) + "-" + pad(d.Month) + "-" + pad(d.Day)
 }
 
-// PlanMealsInSlot is plans/ledger.ts planMealsInSlot: the plans' meals for a slot on a date (mealsOn: a lapsed plan makes none), `except` one plan left out. It reads the typed
-// plans block (plans_state.go), the same object a step's plans change, so a meal taken in this step counts at once.
-func (st *Store) PlanMealsInSlot(date LocalDate, slotID string, nowMs int64, except string) int {
+// PlanMealsInSlot is plans/ledger.ts planMealsInSlot: the plans' meals for a slot on a date (mealsOn: a lapsed plan makes none). It reads the typed plans block
+// (plans_state.go), the same object a step's plans change, so a meal taken in this step counts at once. Its `except` (one plan left out) went on 23 Nov 2026 on both sides: no
+// caller passed one, and it took off the meal of a lapsed plan that mealsOn had not counted.
+func (st *Store) PlanMealsInSlot(date LocalDate, slotID string, nowMs int64) int {
 	ps := st.PlansState(false)
 	if ps == nil {
 		return 0
 	}
-	key := KeyOf(date)
-	n := ps.mealsOn(key, slotID, nowMs)
-	// the plan being checked, taken off (as the TypeScript does, without asking whether it is lapsed)
-	if own := ps.Get(except); own != nil && own.SlotID == slotID && own.mealCounts(key, nowMs) {
-		n--
-	}
-	return n
+	return ps.mealsOn(KeyOf(date), slotID, nowMs)
 }
 
 // ---- the slot, the cut-off and what a message may say ----------------------------------------------------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 import { LANGUAGES } from "../../../../../modules/language/languages.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import type { DatePhrase, TimePhrase } from "../../../../../modules/language/dates.ts";
+import { isDatePhrase, isTimePhrase } from "../../../../../modules/language/dates.ts";
 import { isObj } from "../../../../../modules/understanding/model.ts";
 import type { IntentParser as Parser, ParseOptionsBase, ParseResult as Result } from "../../../../../modules/understanding/model.ts";
 import type { MenuItem } from "../settings.ts";
@@ -70,8 +71,9 @@ export function coerceIntent(raw: unknown, context: ParseContext): Intent | null
     }
     intent.items = lines;
   }
-  if (raw.date !== undefined) intent.date = raw.date as DatePhrase;
-  if (raw.time !== undefined) intent.time = raw.time as TimePhrase;
+  // 23 Nov 2026: a date and a time are checked for the shapes dates.ts makes (as Bookings' are), never copied as they came: a model's answer is untrusted
+  if (raw.date !== undefined) { if (!isDatePhrase(raw.date)) return null; intent.date = raw.date; }
+  if (raw.time !== undefined) { if (!isTimePhrase(raw.time)) return null; intent.time = raw.time; }
   if (raw.slotId !== undefined) { if (typeof raw.slotId !== "string" || !/^[a-z0-9-]{1,60}$/u.test(raw.slotId)) return null; intent.slotId = raw.slotId; }
   if (raw.slotIds !== undefined) { if (!Array.isArray(raw.slotIds) || !raw.slotIds.every((x) => typeof x === "string" && /^[a-z0-9-]{1,60}$/u.test(x))) return null; intent.slotIds = raw.slotIds as string[]; }
   if (raw.mode !== undefined) { if (raw.mode !== "pickup" && raw.mode !== "delivery") return null; intent.mode = raw.mode; }
