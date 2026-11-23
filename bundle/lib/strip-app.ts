@@ -25,8 +25,13 @@ export const APP_FOLDERS: readonly string[] = ["bundle", "modules", "companies",
 const MANIFEST = ".strip-manifest.json";
 /** Bump to make every file be stripped again (a change to how this file rewrites). */
 const MANIFEST_VERSION = 1;
-/** A folder or file the output does not need: tests (never imported by a service) and the checkout's own noise. */
-const skipped = (name: string, isDir: boolean): boolean => (isDir ? name === "test" || name === "tests" || name === "node_modules" || name === ".git" : /\.test\.ts$/u.test(name) || name === ".DS_Store" || /\.d\.ts$/u.test(name));
+/**
+ * Folders that are named like tests but that a service imports, kept: modules/test holds the shared process starter, the test clock's file and the fake model that the panel's
+ * go-live hand check runs each situation with (modules/crash-test/go-shop.ts, go-world.ts; 24 Nov 2026). The unit test of this file proves the panel's graph is whole.
+ */
+const KEPT_TEST_FOLDERS: readonly string[] = [join("modules", "test")];
+/** A folder or file the output does not need: tests (never imported by a service) and the checkout's own noise. `rel` is the folder's path in the checkout. */
+const skipped = (name: string, isDir: boolean, rel: string): boolean => (isDir ? (name === "test" || name === "tests" || name === "node_modules" || name === ".git") && !KEPT_TEST_FOLDERS.includes(rel) : /\.test\.ts$/u.test(name) || name === ".DS_Store" || /\.d\.ts$/u.test(name));
 
 /** `./x.ts` to `./x.js` in the specifier of an import, an export-from, a side-effect import and a dynamic import(); nothing else in the text is touched. */
 export function rewriteSpecifiers(code: string): string {
@@ -42,8 +47,8 @@ export interface StripResult { written: number; removed: number; unchanged: numb
 
 function* walk(root: string, dir: string): Generator<string> {
   for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
-    if (skipped(e.name, e.isDirectory())) continue;
     const rel = join(dir, e.name);
+    if (skipped(e.name, e.isDirectory(), rel)) continue;
     if (e.isDirectory()) yield* walk(root, rel);
     else if (e.isFile()) yield rel;
   }
