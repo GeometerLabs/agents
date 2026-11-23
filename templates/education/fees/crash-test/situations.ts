@@ -13,6 +13,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import type { OutboundMessage } from "../../../../modules/messaging/messaging.ts";
 import { balancePaise, paidPaise } from "../src/due.ts";
 import { brightTuition } from "../src/harness.ts";
+import { systemOneStandin } from "../../../../modules/standins/system-one.ts";
+import { statusReply } from "../../../../modules/test/contract/fake-model.ts";
 import { PROGRAM, VERSION, createGoWorld, settingsFile } from "./go-world.ts";
 import type { GoWorld as World, GoWorldOptions } from "./go-world.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -481,9 +483,35 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   });
 
   // ---- 15. The model is down: button mode -----------------------------------------------------------------------------------
-  // On Go the centre's program reads a parent's words with its rules alone: the model steps of reading are not in it yet (go/internal/fees/Deferred.md), so a model that is
-  // down cannot happen there. Listed as not run, with the reason, never passed; the demo engine's model steps stay with the public demo.
-  skip("model-down", "The model is down: the agent answers with buttons and every limit still holds", "the centre's Go program reads every message with its rules and asks no model (go/internal/fees/Deferred.md: the model steps of reading), so a model that is down cannot happen on it");
+  // ---- 15. The model is down: button mode -----------------------------------------------------------------------------------
+  // On Go the centre's program reads a parent's words with its rules (go/internal/fees/Deferred.md: the model steps of reading are not ported), so it asks no model, and
+  // a model that is down cannot stop it. The situation still runs whole on the program: models that are down are given, and what must hold is checked; the record shows
+  // either the move to buttons after a model fault or that no model was asked at all.
+  add({
+    id: "model-down", title: "The model is down: the agent answers with buttons and every limit still holds", how: "the decision model and the language model both refuse the connection",
+    async run() {
+      const { results, expect } = checker();
+      let down = false;
+      const decision = systemOneStandin({ decider: () => ({ choice: "other", p: 0.95 }) });
+      // the program reaches both models over HTTP (go-world.ts `models`), when it reads with them: the language model refuses every call, the decision model once `down`
+      const w = await world({ models: { decision: decision.handler, model: () => statusReply(503), down: () => down, languages: ["hi", "en", "ml", "kn"] } });
+      await atReminder(w, 0);
+      down = true;
+      await w.say("asdf qwer zxcv", { from: shop.parent });
+      const asked = [w.asked.decision, w.asked.model];
+      const reply = sent(w).at(-1)!;
+      expect("A model step failed or none was asked: the parent got an answer anyway, with buttons", (reply.interactive?.buttons?.length ?? 0) >= 1, JSON.stringify(reply.interactive));
+      expect("The record says the agent moved to buttons after a model fault, or that the rules read the message and no model was asked", w.record.entries().some((e) => e.action === "ai_mode" && e.refs.reason === "fault") || (asked[0] === 0 && asked[1] === 0 && w.record.entries().some((e) => e.action === "receive_message" && e.refs.step === "rules")), JSON.stringify(asked));
+      await w.tap(reply.interactive!.buttons!.find((b) => b.id.startsWith("pay:"))!.id, { from: shop.parent });
+      expect("A tap on a button is read without asking a model", w.asked.decision === asked[0] && w.asked.model === asked[1] && w.lastTextTo(shop.parent).includes(lastLink(w)?.pay_url ?? "no link"), `${w.asked.decision}/${w.asked.model}`);
+      if (ask !== undefined) {
+        await w.say(says.discountOff(ask), { from: shop.parent });
+        expect("A waiver above the limit still goes to the owner, with no model asked", due(w).waivedInr === 0 && toOwner(w).some((m) => m.text.includes("approve q-1")) && w.asked.decision === asked[0], `${due(w).waivedInr}`);
+      }
+      if (later(0).length > 0) { const before = reminders(w).length; await at(w, later(0)[0] + MINUTE); expect("Reminders still go out", reminders(w).length === before + 1); }
+      return results;
+    },
+  });
 
   // ---- 16. A refund bigger than the payment -------------------------------------------------------------------------------
   add({

@@ -175,15 +175,14 @@ test("go-live-certificate.ts runs the real hand check on a centre's own settings
   const keys = generateKeyFiles(join(dir, "keys"));
   const out = join(dir, "out");
   const made = run("go-live-certificate.ts", ["--settings", settingsFile, "--lang", "hi", "--out", out, "--key", keys.privateKeyPath, "--prepared-by", "Divya, local Operator", "--now", "2027-02-04T10:30:00+05:30"]);
-  // on Go one situation fails by a finding (test/situations.test.ts KNOWN_ON_GO): the script says so and exits 1, and still writes the certificate, which says so too
-  assert.equal(made.status, 1, made.stdout + made.stderr);
+  assert.equal(made.status, 0, made.stdout + made.stderr);
   assert.match(made.stdout, /Signed with your key\./);
   assert.deepEqual(readdirSync(out).sort(), ["go-live-certificate-hi.html", "go-live-certificate-hi.txt", "go-live-certificate.json"]);
   const file = readFileSync(join(out, "go-live-certificate.json"), "utf8");
   const verified = verifyEnvelopeText(file);
   assert.ok(verified.unchanged && verified.signed);
   const cert = verified.envelope!.document as ReturnType<typeof buildGoLiveCertificate>;
-  assert.deepEqual(cert.checks.failedTitles, ["The fee is paid twice: the extra is given back, once, within the refund limit"], "the one known failure on Go, named");
+  assert.equal(cert.checks.total, cert.checks.held);
   assert.equal(cert.checks.total + (cert.checks.notRun?.length ?? 0), 26, "every situation is either run or named as not run");
   assert.equal(cert.policyDigest, cert.checkedPolicyDigest, "the checks ran on this centre's own settings, and the digest survived being written down");
 
@@ -213,8 +212,8 @@ test("go-live-certificate.ts runs the real hand check on a centre's own settings
 
 test("go-live-certificate.ts exits 1 when a situation does not hold, and says no situation could be run when none can", { skip: goSkip("fees") }, async () => {
   const ran = await runOn(bright);
-  assert.equal(summariseRun(ran).total - summariseRun(ran).held, 1, "the one known failure on Go (test/situations.test.ts KNOWN_ON_GO)");
-  assert.equal(summariseRun(ran).total + (summariseRun(ran).notRun?.length ?? 0), 26);
+  assert.equal(summariseRun(ran).held, summariseRun(ran).total);
+  assert.equal(summariseRun(ran).total, 26);
   const dir = mkdtempSync(join(tmpdir(), "fees-golive-bad-"));
   const bad = run("go-live-certificate.ts", ["--settings", join(dir, "nowhere.json"), "--lang", "en", "--out", dir]);
   assert.equal(bad.status, 64);
