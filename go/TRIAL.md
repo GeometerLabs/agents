@@ -833,7 +833,9 @@ an `AfterSaver` is called after the step's save on every step and beat (core.ts 
 the owner's Stock page (its items after the shop's listings) and its `owner_stock` events run in the step (Bookings is not one: 404 and dropped, as before);
 `Snap.EnsureAssistant`, `Snap.EnsureStock`, `StepContext.LooksLikeLimitRule`.
 
-**On Go: 58 of 59** (`STOCK_ORDERS_IMPL=go STOCK_ORDERS_GO_BIN=go/bin/stock-orders node --test --test-concurrency=1 templates/commerce/stock-orders/contract/`, through the
+**End of the stream (main with streams A and B merged in, one pass through the heat lock):** the contract is now 62 tests (the assistant's three added): TypeScript **62 of 62**, Go **61 of 62** (only the monthly report, not ported); listings contract on Go 203 of 203 (words-fresh with the three Stock orders checks); `go vet ./...` clean, `go test ./...` 31 packages ok, none failing; Bookings on Go 149 of 149 after stream A's merge (not run again after stream B's).
+
+**Earlier, on Go: 58 of 59** (`STOCK_ORDERS_IMPL=go STOCK_ORDERS_GO_BIN=go/bin/stock-orders node --test --test-concurrency=1 templates/commerce/stock-orders/contract/`, through the
 heat lock), the cross-restart pair included (a shop moved TypeScript to Go and Go to TypeScript keeps its orders field for field, its open card, its record and its counter).
 The one that fails is the monthly report: `report/` is not ported (Deferred.md of internal/stockorders), so a Go shop with a `report` block makes none.
 
