@@ -11,15 +11,15 @@ import { COMMON_ID, COMMON_LABELS, LIMITS, clip } from "../../../../../modules/l
 import type { Choice, CommonLabels } from "../../../../../modules/language/interactive.ts";
 import type { Intent } from "../adapters/model.ts";
 
-/** `received` and `refundSent` are the owner's UPI buttons (B33): "Received ₹1,500" and "Refund sent". */
-export interface Labels extends CommonLabels { pay: string; paid: string; received: string; refundSent: string }
+/** `received` and `refundSent` are the owner's UPI buttons (B33): "Received ₹1,500" and "Refund sent". `creditAsk` is the credit book's owner button "Ask Ramesh" (the tap before a first message); `creditBook` names a credit account's entry where a batch's name would go (the owner's page). */
+export interface Labels extends CommonLabels { pay: string; paid: string; received: string; refundSent: string; creditAsk: string; creditBook: string }
 
 /** Machine-written; the Malayalam and Kannada must be read by a native speaker before a real centre sees them (REVIEW-ml.md, REVIEW-kn.md). No number appears in any label. */
 export const LABELS: Record<Language, Labels> = {
-  en: { ...COMMON_LABELS.en, pay: "Pay now", paid: "I have paid", received: "Received", refundSent: "Refund sent" },
-  hi: { ...COMMON_LABELS.hi, pay: "अभी भुगतान करें", paid: "मैंने भर दिया", received: "मिल गया", refundSent: "रिफंड भेज दिया" },
-  ml: { ...COMMON_LABELS.ml, pay: "ഇപ്പോൾ അടയ്ക്കാം", paid: "അടച്ചുകഴിഞ്ഞു", received: "കിട്ടി", refundSent: "റീഫണ്ട് അയച്ചു" },
-  kn: { ...COMMON_LABELS.kn, pay: "ಈಗ ಪಾವತಿಸಿ", paid: "ಪಾವತಿಸಿದ್ದೇನೆ", received: "ಬಂದಿದೆ", refundSent: "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" },
+  en: { ...COMMON_LABELS.en, pay: "Pay now", paid: "I have paid", received: "Received", refundSent: "Refund sent", creditAsk: "Ask", creditBook: "Credit book" },
+  hi: { ...COMMON_LABELS.hi, pay: "अभी भुगतान करें", paid: "मैंने भर दिया", received: "मिल गया", refundSent: "रिफंड भेज दिया", creditAsk: "पूछें", creditBook: "उधार खाता" },
+  ml: { ...COMMON_LABELS.ml, pay: "ഇപ്പോൾ അടയ്ക്കാം", paid: "അടച്ചുകഴിഞ്ഞു", received: "കിട്ടി", refundSent: "റീഫണ്ട് അയച്ചു", creditAsk: "ചോദിക്കൂ", creditBook: "കടം കണക്ക്" },
+  kn: { ...COMMON_LABELS.kn, pay: "ಈಗ ಪಾವತಿಸಿ", paid: "ಪಾವತಿಸಿದ್ದೇನೆ", received: "ಬಂದಿದೆ", refundSent: "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ", creditAsk: "ಕೇಳಿ", creditBook: "ಸಾಲದ ಲೆಕ್ಕ" },
 };
 
 export const ID = { ...COMMON_ID, pay: "pay", paid: "paid" } as const;

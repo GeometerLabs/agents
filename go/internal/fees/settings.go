@@ -86,6 +86,8 @@ type Settings struct {
 	Approvers map[string]any
 	Assistant map[string]any
 	Classes   *Classes
+	// Credit is the credit book (credit_settings.go); nil: the centre is exactly the Fees centre it was, and no credit code runs for it.
+	Credit *CreditBook
 }
 
 // OwnerMarked: a UPI centre, whose owner marks payments received (B33).
@@ -111,8 +113,11 @@ func BatchName(b *Batch, lang string) string {
 	return b.ID
 }
 
-// HighestDueInr is settings.ts highestDueInr: the dearest batch's fee with the late fee on top.
+// HighestDueInr is settings.ts highestDueInr: the dearest batch's fee with the late fee on top; in a credit book, the most one account may show.
 func (s *Settings) HighestDueInr() int64 {
+	if s.Credit != nil {
+		return s.Credit.MaxPerPersonInr
+	}
 	var most int64
 	for _, b := range s.Batches {
 		most = max(most, b.MonthlyFeeInr)
@@ -186,7 +191,8 @@ func whole(r *bookings.SettingsReader, v any, label string, minV, maxV int64, wh
 func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 	r := bookings.NewSettingsReader(raw)
 	s := &Settings{JoiningMidMonth: "usual"}
-	r.UnknownKeys(in, "", []string{"name", "address", "timezone", "languages", "batches", "students", "due", "joiningMidMonth", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant", "classes"}, "the settings")
+	r.UnknownKeys(in, "", []string{"name", "address", "timezone", "languages", "batches", "students", "due", "joiningMidMonth", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant", "classes", "creditBook"}, "the settings")
+	credit := hasKey(in, "creditBook") // settings.ts `input.creditBook !== undefined`: no batches, no students, no due day to ask for
 	name, ok := in["name"].(string)
 	if !ok || language.TrimJS(name) == "" {
 		r.Add(`Add the centre's name ("name").`)
@@ -210,10 +216,14 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 		s.Timezone, s.Loc = tz, loc
 	}
 	s.Languages = readLanguages(r, in["languages"])
-	s.Batches = readBatches(r, in["batches"], s.Languages)
+	if !credit {
+		s.Batches = readBatches(r, in["batches"], s.Languages)
+	}
 	ownerOK := readOwner(r, in["owner"], s)
 	_ = ownerOK
-	s.Students = readStudents(r, in["students"], s.Batches, s.Languages, s.Owner.Whatsapp)
+	if !credit {
+		s.Students = readStudents(r, in["students"], s.Batches, s.Languages, s.Owner.Whatsapp)
+	}
 	if j, given := in["joiningMidMonth"]; given && j != nil {
 		js, _ := j.(string)
 		if !contains(JoiningRules, js) {
@@ -232,7 +242,11 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 			cheapest = b.MonthlyFeeInr
 		}
 	}
-	readDue(r, in["due"], s)
+	if credit && !hasKey(in, "due") {
+		s.Due.Day, s.Due.GraceDays = 1, 0
+	} else {
+		readDue(r, in["due"], s)
+	}
 	if lf, given := in["lateFeeInr"]; given {
 		maxLate, why := int64(1_000_000), ""
 		if cheapest >= 0 {
@@ -269,7 +283,10 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 		}
 	}
 	s.Assistant = r.Assistant(in["assistant"], hasKey(in, "assistant"), "/assistant")
-	s.Classes = readClasses(r, in["classes"], hasKey(in, "classes"), s.Batches)
+	if !credit {
+		s.Classes = readClasses(r, in["classes"], hasKey(in, "classes"), s.Batches)
+	}
+	s.Credit = readCreditBook(r, in, s.Languages, s.Owner.Whatsapp)
 	return s, r.Errors()
 }
 

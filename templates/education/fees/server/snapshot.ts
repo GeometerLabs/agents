@@ -29,6 +29,8 @@ const codec = snapshotCodec<Store>(1, [
   { name: "classes", kind: "optional-object" },
   // W1: the chat on the centre's page (the guests' threads, the centre's messages to them); a centre nobody has chatted with never has it, so its snapshot is as it was
   { name: "channel", kind: "optional-object" },
+  // the credit book (src/credit/state.ts): who is in the book and where each first question stands. A centre without the credit book never has it, so its snapshot is as it was
+  { name: "credit", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

@@ -173,7 +173,8 @@ const BOOKINGS: KeepSpec = {
 
 /** Fees (fees.ts). Not owned, so kept: `joiningMidMonth`, a student's `joined`, `backDues` and `adult`, a student's own language, a batch's other names, the Classes block's lead minutes and file limit. */
 const FEES: KeepSpec = {
-  owned: ["name", "address", "languages", "batches", "students", "due", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "classes"],
+  // "creditBook" (24 Nov 2026): the credit book's form writes the whole block (fees.ts); a Fees centre never has one
+  owned: ["name", "address", "languages", "batches", "students", "due", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "classes", "creditBook"],
   // the Classes block: the form owns the timetable and the old-dues switch; the lead minutes and the file limit stay as saved
   objects: { classes: ["timetable", "oldDuesStopLink"] },
   lists: {

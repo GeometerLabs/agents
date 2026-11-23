@@ -176,6 +176,23 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 		return nil
 	case "cash", "bank":
 		return a.onOwnerCash(ev)
+	case "credit_ask":
+		// the credit book: the owner's tap on their page that sends the first question, bound to the account as the page showed it (credit.go)
+		var acc *CreditAccount
+		if a.credit() {
+			for _, r := range creditRows(a.store) {
+				if r.Ref == caseID && r.Digest == digest && r.Askable {
+					acc = a.store.creditOf(false).byRef(caseID)
+				}
+			}
+		}
+		if acc == nil {
+			a.pageAction(nil, "blocked", action, "the account is not as the owner's page showed it (already asked, paid, or changed since): nothing was sent", map[string]any{"case": caseID})
+			return nil
+		}
+		a.pageAction(a.openCreditDue(acc), "confirmed", action, "pressed by the owner on their page: the first question to this customer", map[string]any{"case": caseID})
+		a.creditAsk(acc)
+		return nil
 	case "present", "absent", "answered":
 		done, err := a.classesPageAction(action, caseID, digest)
 		if err != nil {
@@ -245,6 +262,16 @@ func (a *Agent) onOwnerCash(ev map[string]any) error {
 	if action == "bank" {
 		via = "bank"
 	}
+	return a.recordCash(d, amount, via, "page", func() {
+		a.pageAction(d, "confirmed", action, "the owner marked this fee paid in cash (or by a transfer the agent cannot see) on their private page", map[string]any{"case": caseID})
+	})
+}
+
+// recordCash is the owner's mark of money paid by hand (cash, or a bank transfer the agent cannot see) on an open fee: a payment on no link and no payments service, recorded
+// as "marked paid by owner", never as a confirmed payment; then what the record shows is settled as for any payment. `where` is where the owner marked it: "page" (the cash
+// list on their page, agent.ts onOwnerCash) or "words" (the credit book's "Ramesh paid 1,000", credit.go). `before` writes the line that comes first (the page's press).
+func (a *Agent) recordCash(d *Due, amount int64, via, where string, before func()) error {
+	balance := balancePaise(d)
 	n := 1
 	for _, p := range d.Payments {
 		if p.LinkID == CashLink {
@@ -253,9 +280,15 @@ func (a *Agent) onOwnerCash(ev map[string]any) error {
 	}
 	c := CountedPayment{ID: "cash-" + d.ID + "-" + itoa(int64(n)), AmountPaise: amount, LinkID: CashLink}
 	d.Payments = append(d.Payments, c)
-	a.pageAction(d, "confirmed", action, "the owner marked this fee paid in cash (or by a transfer the agent cannot see) on their private page", map[string]any{"case": caseID})
+	if before != nil {
+		before()
+	}
+	notes := "marked paid by owner: paid by hand (cash or a bank transfer), from the owner's own page; no payments service holds it"
+	if where == "words" {
+		notes = "marked paid by owner: paid at the counter, in the owner's own words to the credit book; no payments service holds it"
+	}
 	a.post(accounting.MoneyEvent{Kind: "received", Case: strp(d.ID), PaymentID: c.ID, AmountPaise: amount, Method: accounting.Method(via), Evidence: "owner_mark", For: "fee"}, func(m map[string]string) {
-		a.log(d, a.owner(), ActMarked, "confirmed", map[string]any{"via": via, "amountPaise": amount}, logMore{refs: merge(map[string]string{"paymentId": c.ID, "amountPaise": itoa(amount), "markedBy": "owner", "via": via}, m), notes: "marked paid by owner: paid by hand (cash or a bank transfer), from the owner's own page; no payments service holds it"})
+		a.log(d, a.owner(), ActMarked, "confirmed", map[string]any{"via": via, "amountPaise": amount}, logMore{refs: merge(map[string]string{"paymentId": c.ID, "amountPaise": itoa(amount), "markedBy": "owner", "via": via}, m), notes: notes})
 	})
 	if amount < balance {
 		if _, err := a.currentLink(d); err != nil {
@@ -275,6 +308,12 @@ func (a *Agent) onOwnerCash(ev map[string]any) error {
 // centre without one reads nothing. A recording is heard by no one on Go for Fees (Deferred.md): the owner is asked to type it, as with voice off.
 func (a *Agent) onOwnerPageMessage(ev map[string]any) error {
 	_, voice := ev["voice"]
+	// the credit book's words typed on the owner's page are read as on WhatsApp, before (and without) the assistant (credit.go); the answer goes to the owner as the WhatsApp one does
+	if text, _ := ev["text"].(string); a.credit() && !voice && text != "" {
+		if taken, err := a.creditOwnerText(text, ""); err != nil || taken {
+			return err
+		}
+	}
 	as := a.assistantOf()
 	if as == nil {
 		a.log(nil, a.owner(), "owner_page_message", "blocked", map[string]any{"voice": voice}, logMore{refs: map[string]string{"channel": "owner_page"}, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read"})

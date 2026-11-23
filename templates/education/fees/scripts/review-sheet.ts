@@ -9,6 +9,7 @@ import { pathToFileURL } from "node:url";
 import { SAYS } from "../crash-test/says.ts";
 import { FEE_WORDS, parseIntent } from "../src/adapters/rule-parser.ts";
 import { CLASS_WORDS } from "../src/classes/parse.ts";
+import { CREDIT_WORDS } from "../src/credit/words.ts";
 import type { Intent } from "../src/adapters/model.ts";
 import { brightTuition } from "../src/harness.ts";
 import { LABELS } from "../src/language/interactive.ts";
@@ -130,6 +131,64 @@ const WHEN: Record<TemplateId, string> = {
   fee_paused: "The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later",
   owner_licence_paused: "The one notice to the owner when the centre's licence winds down: online fee payment is paused, who to contact. Never about money",
   owner_licence_stopped: "The one notice to the owner at the licence's final stop: the partner's service has ended, what is still open, and that hello@geometer.dev will connect the owner with another local partner",
+  // the credit book (src/credit/words.ts): an adult about their own account, and the owner's book
+  credit_consent_ask: "Credit book: the first message to a customer, sent only after the owner taps Ask: what the book shows, and may reminders go on WhatsApp? Buttons Yes / No",
+  credit_consent_yes: "Credit book: the customer said yes to reminders",
+  credit_reminder: "Credit book: a reminder to a customer who said yes: what is still to pay on their own account, and the payment link",
+  credit_received: "Credit book: a payment recorded (the payment record or the owner's mark) that clears the account",
+  credit_part_received: "Credit book: a payment recorded that leaves something to pay",
+  credit_pay_link: "Credit book: the customer asked to pay: the link for what is owed",
+  credit_already_paid: "Credit book: the customer says they paid and the record shows the account paid",
+  credit_claim_partial: "Credit book: the customer says they paid and the record shows part",
+  credit_claim_not_found: "Credit book: the customer says they paid and the record shows nothing yet (the owner is asked to check)",
+  credit_upi_claim: "Credit book, UPI shop: the customer says they paid; the owner will confirm",
+  credit_menu: "Credit book: a greeting from a customer who said yes: what is owed, with buttons",
+  credit_discount_to_owner: "Credit book: the customer asked for a discount; the owner is told (nothing is changed)",
+  credit_request_waiting: "Credit book: the owner was already asked about this account",
+  credit_refund_asked: "Credit book: the customer asked for money back; the owner is asked",
+  credit_refund_too_much: "Credit book: the customer asked for more back than they paid",
+  credit_refund_none: "Credit book: the customer asked for money back and no payment is on record",
+  credit_upi_qr_caption: "Credit book, UPI shop: the words under the QR picture",
+  credit_upi_refund_owed: "Credit book, UPI shop: the owner will send money back by UPI",
+  credit_upi_refund_sent: "Credit book, UPI shop: the owner marked the refund sent",
+  credit_chat_public: "Credit book: the answer in the shop page's public chat (no account is ever read there)",
+  credit_paused: "Credit book: online payment is paused (the shop's licence)",
+  credit_wait_over: "Credit book: a service did not answer in time; the message is on the owner's to-do list",
+  owner_credit_added: "Credit book: the owner wrote \"Ramesh owes 2400\" for a customer not asked yet: written, with the Ask button",
+  owner_credit_added_known: "Credit book: the owner's entry, written (the customer was already asked)",
+  owner_credit_need_number: "Credit book: the owner wrote an entry for a name the book does not know: send the number",
+  owner_credit_asked: "Credit book: after the owner's tap, the first question went to the customer",
+  owner_credit_already_asked: "Credit book: the owner tapped Ask again; the customer was already asked",
+  owner_credit_already_yes: "Credit book: the owner tapped Ask; the customer already said yes",
+  owner_credit_stopped: "Credit book: the owner tapped Ask; the customer had sent STOP",
+  owner_credit_yes: "Credit book: the customer said yes to reminders (sent unasked)",
+  owner_credit_paid: "Credit book: the owner wrote \"Ramesh paid 1000\": noted as the owner's mark, what is still owed",
+  owner_credit_cleared: "Credit book: the owner's mark clears the account",
+  owner_credit_paid_too_much: "Credit book: the owner marked more than is owed (nothing written)",
+  owner_credit_nothing_owed: "Credit book: the owner asked about someone who owes nothing",
+  owner_credit_unknown_person: "Credit book: the owner wrote \"paid\" for a name not in the book",
+  owner_credit_too_much: "Credit book: the entry would take the account above the most one account may show (nothing written)",
+  owner_credit_list: "Credit book: the owner asked \"who owes\": the list, largest first",
+  owner_credit_list_empty: "Credit book: the owner asked \"who owes\" and nobody owes anything",
+  owner_credit_number_owner: "Credit book: the number given is the owner's own",
+  owner_credit_number_taken: "Credit book: the number given is already another person's account",
+  owner_credit_help: "Credit book: words the book could not read whole (or a number in a message it could not place): how to write an entry",
+  owner_credit_wrote: "Credit book: a customer wrote before saying yes; nothing was sent to them (sent unasked)",
+  owner_credit_claim: "Credit book, gateway shop: a customer says they paid and the record shows less",
+  owner_credit_upi_claim: "Credit book, UPI shop: a customer says they paid; check the UPI app and tap Received",
+  owner_credit_upi_expected: "Credit book, UPI shop: a customer was asked to pay by UPI; tap Received when it shows",
+  owner_credit_upi_marked: "Credit book, UPI shop: the owner marked a UPI payment received",
+  owner_credit_upi_part: "Credit book, UPI shop: the owner marked part received",
+  owner_credit_link_failed: "Credit book: the payment link could not be made",
+  owner_credit_discount_note: "Credit book: a customer asked for a discount",
+  owner_credit_refund_request: "Credit book: a customer asks for money back; approve or deny",
+  owner_credit_overpayment: "Credit book: a customer paid more than was owed; the extra goes back",
+  owner_credit_opted_out: "Credit book: a customer sent STOP (or said no to reminders)",
+  owner_credit_wants_to_talk: "Credit book: a customer wants to talk to the owner",
+  owner_credit_request_stale: "Credit book: the account changed since the owner was asked; nothing was applied",
+  owner_credit_upi_refund_owed: "Credit book, UPI shop: a refund the owner must send by UPI",
+  owner_credit_upi_refund_reminder: "Credit book, UPI shop: a refund the owner still owes",
+  owner_credit_upi_refund_marked: "Credit book, UPI shop: the owner marked a refund sent",
 };
 
 /** Parent sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */
@@ -225,6 +284,7 @@ export function reviewSheet(language: ReviewLanguage): string {
   const labelRows: [keyof typeof english, string][] = [
     ["yes", "Button: yes, that is right"], ["no", "Button: no, that is wrong"], ["owner", "Button: talk to the centre's owner"],
     ["pay", "Button under a reminder: send the payment link for this fee"], ["paid", "Button under a reminder: I have paid (the payment record is looked at, and answers)"],
+    ["creditAsk", "Credit book, the owner's button: ask this customer (the name follows) whether reminders on WhatsApp are fine"], ["creditBook", "Credit book: what a credit account's entry is called on the owner's page"],
   ];
   out.push(table(["Id", "Where it is shown", `Text (${name})`, "Meaning (English)", REVIEWER], labelRows.map(([key, where]) => [`\`${key}\``, where, LABELS[language][key], english[key], ""])), "");
 
@@ -252,6 +312,13 @@ export function reviewSheet(language: ReviewLanguage): string {
     feeRow("Classes: when is the next class, the timetable, the class link", "next class, timetable, class link", CLASS_WORDS.next),
     feeRow("Classes: the reading material (notes, worksheet, PDF)", "notes, material, worksheet", CLASS_WORDS.material),
     feeRow("Classes: a doubt for the teacher (the agent never answers it)", "doubt", CLASS_WORDS.doubt),
+    // the credit book: the OWNER's words (a shop with the creditBook block only reads these)
+    feeRow("Credit book, the owner: someone owes an amount (\"Ramesh owes 2400\")", "owes", CREDIT_WORDS.owes),
+    feeRow("Credit book, the owner: someone who is already in the book still owes (\"remaining\"), or a new person with their number", "baki, remaining", CREDIT_WORDS.owesWeak),
+    feeRow("Credit book, the owner: someone paid at the counter (the owner's mark)", "paid", CREDIT_WORDS.paid),
+    feeRow("Credit book, the owner: the list of who owes what", "who owes", CREDIT_WORDS.list),
+    feeRow("Credit book, the owner: ask a customer about reminders", "ask", CREDIT_WORDS.ask),
+    feeRow("Credit book, the owner: words left out of a name (\"ने\", \"rs\")", "rs, ne", CREDIT_WORDS.filler),
   ];
   // the shared word lists (yes, no, stop, rupee, ...) have no Hindi entry (Hindi is read by the parser's own lists, listed above), as in the Orders sheet
   if (language !== "hi") {

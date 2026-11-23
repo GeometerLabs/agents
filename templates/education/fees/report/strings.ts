@@ -24,6 +24,8 @@ export interface Strings {
   label: { collected: string; oldDuesCollected: string; stillToCollect: string; givenBack: string; takenOff: string; wasAsked: string; approved: string; saidNo: string; remindersSent: string; stoppedByLimits: string; notChecked: string; students: string };
   /** Classes (the Fees add-on): the lines of a centre that has them, each "label: number". Counted from the record; never a word about learning. */
   classes: { held: string; linksSent: string; attendance: string; missedNotes: string; doubts: string };
+  /** The credit book (the Fees adult variant): its lines, each "label: value". Counted from the record; "after a reminder" never says the reminder caused the payment. */
+  credit: { owedAtStart: string; collectedAfterReminder: string; remindersSent: string; remindersAfterPaid: string; /** "(3 accounts)" where a Fees centre says "(3 students)" */ accounts: string };
   /** What each limit that stopped something is called. */
   stop: Record<string, string>;
   handRun: string;
@@ -46,6 +48,8 @@ export interface Strings {
     paidRule: string; /** B71 part 2: a UPI centre's rule (no gateway named). */ paidRuleUpi: string; fees(items: string): string; due(day: number, graceDays: number): string; lateFee(amount: string): string; noLateFee: string;
     reminders(days: string, hour: number, most: number): string; partPayments(least: string): string; noPartPayments: string; waiver(amount: string): string; noWaiver: string; refund(amount: string): string;
     students(count: number): string; notAGrade: string; didNotHold: string; handRunLine: string; checkedOn: string;
+    /** The credit book's limits (a shop with the creditBook block), each one phrase. */
+    credit: { firstTap: string; reminders(every: number, hour: number, most: number): string; most(amount: string): string; noDiscount: string; people(count: number): string };
   };
   /**
    * What the monthly report says about the go-live checks: whether a go-live certificate was given, whether it could be trusted, and what its checks ran on. A date is passed in
@@ -68,6 +72,7 @@ export const en: Strings = {
   agent: "Fees agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en, settledByWord: SETTLED_BY_WORD.en, settledBySomeone: SETTLED_BY_SOMEONE.en,
   label: { collected: "Collected", stillToCollect: "Still to collect", oldDuesCollected: "Old dues collected", givenBack: "Given back", takenOff: "Taken off fees", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", remindersSent: "Reminders sent", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", students: "students" },
   classes: { held: "Classes held", linksSent: "Class links sent", attendance: "Students marked", missedNotes: "Missed-class notes sent", doubts: "Doubts handed to the teacher" },
+  credit: { owedAtStart: "Owed to you at the start of the month", collectedAfterReminder: "Paid after a reminder", remindersSent: "Credit reminders sent", remindersAfterPaid: "Reminders after a recorded payment", accounts: "accounts" },
   stop: {
     "no-reminder-once-paid": "Reminders after a payment", "reminder-cap": "More reminders than your cap", "waiver-limit": "Waivers for more than was owed", "fee-link-matches-record": "Links for the wrong amount", "refund-limit": "Refunds above what was paid",
     "one-refund-per-payment": "A second refund of one payment", "paid-only-when-recorded": "\"Paid\" with no payment on record", "message-matches-record": "Messages that did not match the record", "opt-out": "Messages after STOP",
@@ -117,6 +122,7 @@ export const en: Strings = {
     partPayments: (least) => `Part payments are allowed, from ${least}`, noPartPayments: "Part payments are not allowed",
     waiver: (amount) => `Taking off more than ${amount} in all from one student's month only with your OK`, noWaiver: "Every request to take money off a fee goes to you",
     refund: (amount) => `Refunds above ${amount} only with your OK`, students: (count) => `${count} students on the list`,
+    credit: { firstTap: "Nothing goes to a customer before your tap, and reminders only after they say yes", reminders: (e, h, m) => `A reminder at most every ${e} days, at ${h}:00, at most ${m} to one person in a month`, most: (a) => `One account shows at most ${a}`, noDiscount: "Every discount a customer asks about goes to you", people: (n) => `${n} people in the book at setup` },
     notAGrade: "This counts the situations tried. It does not grade the agent.", didNotHold: "Did not hold",
     handRunLine: "Checks were run by hand against stand-in services, not real WhatsApp or payments. Test money only.", checkedOn: "Checks run on",
   },
@@ -144,6 +150,7 @@ export const hi: Strings = {
   agent: "फीस एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi, settledByWord: SETTLED_BY_WORD.hi, settledBySomeone: SETTLED_BY_SOMEONE.hi,
   label: { collected: "जमा हुआ", stillToCollect: "अभी लेना बाकी", oldDuesCollected: "पुराना बकाया जमा हुआ", givenBack: "वापस किया", takenOff: "फीस से घटाया", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", remindersSent: "भेजी गई याद", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", students: "विद्यार्थी" },
   classes: { held: "हुई क्लास", linksSent: "भेजे गए क्लास लिंक", attendance: "उपस्थिति दर्ज", missedNotes: "छूटी क्लास के नोट भेजे", doubts: "शिक्षक को दिए डाउट" },
+  credit: { owedAtStart: "महीने की शुरुआत में आपका बाकी उधार", collectedAfterReminder: "याद के बाद मिले", remindersSent: "भेजी गई उधार की याद", remindersAfterPaid: "दर्ज भुगतान के बाद गई याद", accounts: "खाते" },
   stop: {
     "no-reminder-once-paid": "भुगतान के बाद याद", "reminder-cap": "सीमा से ज़्यादा याद", "waiver-limit": "बकाया से ज़्यादा की छूट", "fee-link-matches-record": "गलत रकम के लिंक", "refund-limit": "भरी रकम से ज़्यादा का रिफंड",
     "one-refund-per-payment": "एक भुगतान का दूसरा रिफंड", "paid-only-when-recorded": "बिना रिकॉर्ड के \"भुगतान हो गया\"", "message-matches-record": "रिकॉर्ड से न मिलने वाले संदेश", "opt-out": "STOP के बाद संदेश",
@@ -192,6 +199,7 @@ export const hi: Strings = {
     partPayments: (least) => `आंशिक भुगतान की अनुमति है, ${least} से`, noPartPayments: "आंशिक भुगतान की अनुमति नहीं है",
     waiver: (amount) => `एक विद्यार्थी के एक महीने में कुल ${amount} से ज़्यादा घटाना सिर्फ़ आपसे पूछकर`, noWaiver: "फीस घटाने की हर माँग आपके पास आती है",
     refund: (amount) => `${amount} से ऊपर का रिफंड आपसे पूछकर`, students: (count) => `सूची में ${count} विद्यार्थी`,
+    credit: { firstTap: "आपके दबाने से पहले ग्राहक को कुछ नहीं जाता, और याद उनके हाँ कहने के बाद ही", reminders: (e, h, m) => `याद ज़्यादा से ज़्यादा हर ${e} दिन, ${h}:00 बजे, एक व्यक्ति को महीने में ज़्यादा से ज़्यादा ${m}`, most: (a) => `एक खाते में ज़्यादा से ज़्यादा ${a}`, noDiscount: "ग्राहक जो भी छूट माँगे, वह आपके पास आती है", people: (n) => `सेटअप पर खाते में ${n} लोग` },
     notAGrade: "यह आज़माई गई स्थितियों की गिनती है। यह एजेंट को अंक या दर्जा नहीं देती।", didNotHold: "जिनमें गड़बड़ हुई",
     handRunLine: "जाँच हाथ से की गई, असली WhatsApp या पेमेंट पर नहीं, बल्कि अभ्यास वाले नकली सिस्टम (stand-in services) पर। सिर्फ़ टेस्ट पैसा।", checkedOn: "जाँच इन पर की गई",
   },
@@ -219,6 +227,7 @@ export const ml: Strings = {
   agent: "ഫീസ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml, settledByWord: SETTLED_BY_WORD.ml, settledBySomeone: SETTLED_BY_SOMEONE.ml,
   label: { collected: "പിരിഞ്ഞത്", stillToCollect: "ഇനിയും പിരിക്കാനുള്ളത്", oldDuesCollected: "പഴയ കുടിശ്ശിക പിരിഞ്ഞത്", givenBack: "തിരികെ നൽകിയത്", takenOff: "ഫീസിൽ നിന്ന് കുറച്ചത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", remindersSent: "അയച്ച ഓർമ്മപ്പെടുത്തലുകൾ", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", students: "വിദ്യാർത്ഥികൾ" },
   classes: { held: "നടന്ന ക്ലാസുകൾ", linksSent: "അയച്ച ക്ലാസ് ലിങ്കുകൾ", attendance: "ഹാജർ രേഖപ്പെടുത്തിയവർ", missedNotes: "അയച്ച ക്ലാസ് മുടക്ക് കുറിപ്പുകൾ", doubts: "അധ്യാപകന് നൽകിയ സംശയങ്ങൾ" },
+  credit: { owedAtStart: "മാസാരംഭത്തിൽ നിങ്ങൾക്ക് കിട്ടാനുണ്ടായിരുന്നത്", collectedAfterReminder: "ഓർമ്മപ്പെടുത്തലിനു ശേഷം കിട്ടിയത്", remindersSent: "അയച്ച കടം ഓർമ്മപ്പെടുത്തലുകൾ", remindersAfterPaid: "രേഖപ്പെടുത്തിയ പേയ്മെന്റിനു ശേഷമുള്ള ഓർമ്മപ്പെടുത്തലുകൾ", accounts: "അക്കൗണ്ടുകൾ" },
   stop: {
     "no-reminder-once-paid": "പണമടച്ചതിനു ശേഷമുള്ള ഓർമ്മപ്പെടുത്തൽ", "reminder-cap": "പരിധിയിൽ കൂടുതൽ ഓർമ്മപ്പെടുത്തൽ", "waiver-limit": "ബാക്കിയുള്ളതിലും കൂടുതലുള്ള ഇളവ്", "fee-link-matches-record": "തെറ്റായ തുകയുടെ ലിങ്ക്", "refund-limit": "അടച്ചതിൽ കൂടുതലുള്ള റീഫണ്ട്",
     "one-refund-per-payment": "ഒരു പേയ്മെന്റിന്റെ രണ്ടാം റീഫണ്ട്", "paid-only-when-recorded": "രേഖയില്ലാത്ത \"അടച്ചു\"", "message-matches-record": "രേഖയുമായി ചേരാത്ത സന്ദേശങ്ങൾ", "opt-out": "STOP-ന് ശേഷമുള്ള സന്ദേശങ്ങൾ",
@@ -267,6 +276,7 @@ export const ml: Strings = {
     partPayments: (least) => `ഭാഗികമായി അടയ്ക്കാം, ${least} മുതൽ`, noPartPayments: "ഭാഗികമായി അടയ്ക്കാൻ അനുവാദമില്ല",
     waiver: (amount) => `ഒരു വിദ്യാർത്ഥിയുടെ ഒരു മാസത്തിൽ ആകെ ${amount}-ൽ കൂടുതൽ കുറയ്ക്കുന്നത് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം`, noWaiver: "ഫീസ് കുറയ്ക്കാനുള്ള ഓരോ അഭ്യർത്ഥനയും നിങ്ങളുടെ അടുത്തേക്ക് വരും",
     refund: (amount) => `${amount}-ന് മുകളിലുള്ള റീഫണ്ട് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം`, students: (count) => `ലിസ്റ്റിൽ ${count} വിദ്യാർത്ഥികൾ`,
+    credit: { firstTap: "നിങ്ങൾ അമർത്തുന്നതിന് മുമ്പ് ഉപഭോക്താവിന് ഒന്നും പോകില്ല, അവർ സമ്മതിച്ചതിനു ശേഷം മാത്രം ഓർമ്മപ്പെടുത്തലുകൾ", reminders: (e, h, m) => `ഓർമ്മപ്പെടുത്തൽ പരമാവധി ഓരോ ${e} ദിവസം, ${h}:00-ന്, ഒരാൾക്ക് മാസത്തിൽ പരമാവധി ${m}`, most: (a) => `ഒരു അക്കൗണ്ടിൽ പരമാവധി ${a}`, noDiscount: "ഉപഭോക്താവ് ചോദിക്കുന്ന ഓരോ കിഴിവും നിങ്ങളുടെ അടുത്തേക്ക് വരും", people: (n) => `സജ്ജീകരണ സമയത്ത് കണക്കിൽ ${n} പേർ` },
     notAGrade: "ഇത് പരീക്ഷിച്ച സാഹചര്യങ്ങളുടെ എണ്ണം മാത്രമാണ്. ഇത് ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല.", didNotHold: "പിഴച്ചവ",
     handRunLine: "പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തത് യഥാർത്ഥ WhatsApp, പേയ്മെന്റ് എന്നിവയിലല്ല, പരിശീലന സംവിധാനങ്ങളിലാണ് (stand-in services). ടെസ്റ്റ് പണം മാത്രം.", checkedOn: "പരിശോധിച്ചത്",
   },
@@ -294,6 +304,7 @@ export const kn: Strings = {
   agent: "ಶುಲ್ಕ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn, settledByWord: SETTLED_BY_WORD.kn, settledBySomeone: SETTLED_BY_SOMEONE.kn,
   label: { collected: "ಸಂಗ್ರಹವಾದದ್ದು", stillToCollect: "ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು", oldDuesCollected: "ಹಳೆಯ ಬಾಕಿ ಸಂಗ್ರಹವಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", takenOff: "ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", remindersSent: "ಕಳುಹಿಸಿದ ನೆನಪುಗಳು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", students: "ವಿದ್ಯಾರ್ಥಿಗಳು" },
   classes: { held: "ನಡೆದ ತರಗತಿಗಳು", linksSent: "ಕಳುಹಿಸಿದ ತರಗತಿ ಲಿಂಕ್‌ಗಳು", attendance: "ಹಾಜರಾತಿ ಗುರುತಿಸಿದವರು", missedNotes: "ಕಳುಹಿಸಿದ ತಪ್ಪಿದ ತರಗತಿ ಟಿಪ್ಪಣಿಗಳು", doubts: "ಶಿಕ್ಷಕರಿಗೆ ನೀಡಿದ ಸಂದೇಹಗಳು" },
+  credit: { owedAtStart: "ತಿಂಗಳ ಆರಂಭದಲ್ಲಿ ನಿಮಗೆ ಬರಬೇಕಿದ್ದದ್ದು", collectedAfterReminder: "ನೆನಪಿನ ನಂತರ ಬಂದದ್ದು", remindersSent: "ಕಳುಹಿಸಿದ ಸಾಲದ ನೆನಪುಗಳು", remindersAfterPaid: "ದಾಖಲಾದ ಪಾವತಿಯ ನಂತರದ ನೆನಪುಗಳು", accounts: "ಖಾತೆಗಳು" },
   stop: {
     "no-reminder-once-paid": "ಪಾವತಿಯ ನಂತರದ ನೆನಪು", "reminder-cap": "ಮಿತಿಗಿಂತ ಹೆಚ್ಚಿನ ನೆನಪು", "waiver-limit": "ಬಾಕಿಗಿಂತ ಹೆಚ್ಚಿನ ರಿಯಾಯಿತಿ", "fee-link-matches-record": "ತಪ್ಪು ಮೊತ್ತದ ಲಿಂಕ್", "refund-limit": "ಪಾವತಿಸಿದ್ದಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್",
     "one-refund-per-payment": "ಒಂದು ಪಾವತಿಯ ಎರಡನೇ ರೀಫಂಡ್", "paid-only-when-recorded": "ದಾಖಲೆ ಇಲ್ಲದ \"ಪಾವತಿಯಾಗಿದೆ\"", "message-matches-record": "ದಾಖಲೆಗೆ ಹೊಂದದ ಸಂದೇಶಗಳು", "opt-out": "STOP ನಂತರದ ಸಂದೇಶಗಳು",
@@ -342,6 +353,7 @@ export const kn: Strings = {
     partPayments: (least) => `ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇದೆ, ${least} ರಿಂದ`, noPartPayments: "ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇಲ್ಲ",
     waiver: (amount) => `ಒಬ್ಬ ವಿದ್ಯಾರ್ಥಿಯ ಒಂದು ತಿಂಗಳಲ್ಲಿ ಒಟ್ಟು ${amount} ಕ್ಕಿಂತ ಹೆಚ್ಚು ಕಡಿಮೆ ಮಾಡುವುದು ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ`, noWaiver: "ಶುಲ್ಕ ಕಡಿಮೆ ಮಾಡುವ ಪ್ರತಿ ಕೋರಿಕೆಯೂ ನಿಮ್ಮ ಬಳಿಗೆ ಬರುತ್ತದೆ",
     refund: (amount) => `${amount} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ`, students: (count) => `ಪಟ್ಟಿಯಲ್ಲಿ ${count} ವಿದ್ಯಾರ್ಥಿಗಳು`,
+    credit: { firstTap: "ನೀವು ಒತ್ತುವ ಮೊದಲು ಗ್ರಾಹಕರಿಗೆ ಏನೂ ಹೋಗುವುದಿಲ್ಲ, ಅವರು ಒಪ್ಪಿದ ನಂತರವೇ ನೆನಪುಗಳು", reminders: (e, h, m) => `ನೆನಪು ಹೆಚ್ಚೆಂದರೆ ಪ್ರತಿ ${e} ದಿನಕ್ಕೊಮ್ಮೆ, ${h}:00 ಕ್ಕೆ, ಒಬ್ಬರಿಗೆ ತಿಂಗಳಲ್ಲಿ ಹೆಚ್ಚೆಂದರೆ ${m}`, most: (a) => `ಒಂದು ಖಾತೆಯಲ್ಲಿ ಹೆಚ್ಚೆಂದರೆ ${a}`, noDiscount: "ಗ್ರಾಹಕರು ಕೇಳುವ ಪ್ರತಿ ರಿಯಾಯಿತಿಯೂ ನಿಮ್ಮ ಬಳಿ ಬರುತ್ತದೆ", people: (n) => `ಹೊಂದಿಸುವಾಗ ಲೆಕ್ಕದಲ್ಲಿ ${n} ಜನ` },
     notAGrade: "ಇದು ಪ್ರಯತ್ನಿಸಿದ ಸಂದರ್ಭಗಳ ಎಣಿಕೆ ಮಾತ್ರ. ಇದು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ.", didNotHold: "ತಪ್ಪಿದವು",
     handRunLine: "ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp ಅಥವಾ ಪಾವತಿಯ ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ (stand-in services). ಟೆಸ್ಟ್ ಹಣ ಮಾತ್ರ.", checkedOn: "ಪರಿಶೀಲನೆ ನಡೆದದ್ದು",
   },

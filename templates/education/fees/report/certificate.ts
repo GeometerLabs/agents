@@ -83,6 +83,8 @@ export interface GoLiveCertificate {
     waiverLimitInr: number; refundLimitInr: number;
     /** B71 part 2: present only for a centre whose payments the owner marks (UPI): its "paid" rule names the owner's mark, not a gateway's record. Left out for a gateway centre, which keeps its bytes. */
     ownerMarks?: true;
+    /** The credit book (a shop with the creditBook block): its own limits; left out for a Fees centre, which keeps its bytes. */
+    credit?: { maxPerPersonInr: number; remindEveryDays: number; people: number };
   };
   /** The centre's settings (without contact details) and the settings the checks actually ran on. They differ only when the checks were not run on this centre's own settings. */
   policyDigest: string;
@@ -110,6 +112,7 @@ export function limitsOf(settings: Settings): Limits {
     partPayments: { allowed: settings.partPayments.allowed, minInr: settings.partPayments.minInr },
     waiverLimitInr: settings.waiver.limitInr, refundLimitInr: settings.refund.limitInr,
     ...(!capabilitiesOf(settings.payment).confirmsAutomatically ? { ownerMarks: true as const } : {}),
+    ...(settings.creditBook ? { credit: { maxPerPersonInr: settings.creditBook.maxPerPersonInr, remindEveryDays: settings.creditBook.remindEveryDays, people: settings.creditBook.people.length } } : {}),
   };
 }
 
@@ -144,6 +147,11 @@ export function limitLines(cert: GoLiveCertificate, language: Language): string[
 /** The same phrases from the limits alone (the panel shows them before any certificate exists). */
 export function limitLinesOf(l: Limits, language: Language): string[] {
   const c = STRINGS[language].cert;
+  // the credit book: no monthly fee, due day, late fee or reminder days to state; its own limits instead
+  if (l.credit) return [
+    l.ownerMarks ? c.paidRuleUpi : c.paidRule, c.credit.firstTap, c.credit.reminders(l.credit.remindEveryDays, l.reminders.hour, l.reminders.maxPerMonth), c.credit.most(formatInr(l.credit.maxPerPersonInr)),
+    l.partPayments.allowed ? c.partPayments(formatInr(l.partPayments.minInr)) : c.noPartPayments, c.credit.noDiscount, c.refund(formatInr(l.refundLimitInr)), c.credit.people(l.credit.people),
+  ];
   const days = l.reminders.daysFromDue.map((d) => (d > 0 ? `+${d}` : String(d))).join(", ");
   return [
     l.ownerMarks ? c.paidRuleUpi : c.paidRule,

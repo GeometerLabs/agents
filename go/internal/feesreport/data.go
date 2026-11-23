@@ -107,7 +107,73 @@ type Report struct {
 	Accounting  *accounting.ReportAccountingData
 	// Classes is nil for a centre without the add-on (the block is then left out of the tree and the page).
 	Classes *ClassesCounts
-	Anchor  *bookingsreport.LedgerHead
+	// Credit is the credit book's counts (data.ts creditCounts), nil for a shop without the `creditBook` block (left out of the tree, the page and the owner's text).
+	Credit *CreditCounts
+	Anchor *bookingsreport.LedgerHead
+}
+
+// CreditCounts is `credit`: what the accounts showed at the month's start, what was paid after a reminder, the credit reminders sent, and those sent when the record already showed
+// the account paid (which must be 0).
+type CreditCounts struct {
+	OwedAtStart, CollectedAfterReminder accounting.Amount
+	RemindersSent, RemindersAfterPaid   int
+}
+
+// creditCounts is data.ts creditCounts over the whole record in its order (seq), by the fee each line is on.
+func creditCounts(all []accounting.Entry, from int64) *CreditCounts {
+	owed := map[string]int64{}
+	reminded := map[string]bool{}
+	out := &CreditCounts{}
+	started := false
+	takeStart := func() {
+		for _, v := range owed {
+			if v > 0 {
+				out.OwedAtStart.Count++
+				out.OwedAtStart.Paise += v
+			}
+		}
+		started = true
+	}
+	for _, e := range all {
+		t, _ := accounting.ParseISO(e.Time)
+		inMonth := t >= from
+		if inMonth && !started {
+			takeStart()
+		}
+		if e.Booking == nil || *e.Booking == "" || e.Outcome != "confirmed" {
+			continue
+		}
+		fee := *e.Booking
+		ref, present := e.Refs["amountPaise"]
+		n := math.NaN()
+		if present {
+			n = accounting.JSNumber(ref)
+		}
+		finite := !math.IsNaN(n) && !math.IsInf(n, 0)
+		_, known := owed[fee]
+		switch {
+		case e.Action == "credit_add" && finite:
+			owed[fee] += int64(n)
+		case !known:
+		case (e.Action == "record_payment" || e.Action == "owner_marked_paid") && finite:
+			owed[fee] -= int64(n)
+			if inMonth && reminded[fee] {
+				addTo(&out.CollectedAfterReminder, ref, present)
+			}
+		case e.Action == "send_message" && e.Refs["to"] == "customer" && has(strings.Split(e.Refs["templates"], "+"), "credit_reminder"):
+			reminded[fee] = true
+			if inMonth {
+				out.RemindersSent++
+				if owed[fee] <= 0 {
+					out.RemindersAfterPaid++
+				}
+			}
+		}
+	}
+	if !started {
+		takeStart()
+	}
+	return out
 }
 
 // ClassesCounts is `classes`: counted from the record. `Held` is classes whose attendance the teacher confirmed; `AttendanceMarked` the students marked in them.
@@ -235,8 +301,18 @@ func BuildFeesReport(in Input) (*Report, error) {
 	// ---- the fees as they stand: the month's own fees, read when the report is made ----
 	start := zone.LocalParts(from, shop.Timezone)
 	key := fmt.Sprintf("%d-%02d", start.Year, start.Month)
+	// a credit book's account runs across months: what is still to collect is every open account, whatever month it opened in (data.ts; a Fees centre: the month's own fees)
+	credit := hasCredit(in.Settings)
 	for _, d := range in.Dues {
 		if d.Month != key {
+			if credit && d.State == "open" {
+				r.Fees.StillOpen++
+				r.Fees.StillToCollect.Count++
+				r.Fees.StillToCollect.Paise += max(0, d.BalancePaise)
+				if d.Payments > 0 {
+					r.Fees.PartlyPaid++
+				}
+			}
 			continue
 		}
 		r.Fees.Opened++
@@ -338,6 +414,10 @@ func BuildFeesReport(in Input) (*Report, error) {
 			}
 		}
 		r.Classes = c
+	}
+	// ---- the credit book: its counts, only for a shop that has it ----
+	if hasCredit(in.Settings) {
+		r.Credit = creditCounts(all, from)
 	}
 
 	stoppedParents := map[string]bool{}

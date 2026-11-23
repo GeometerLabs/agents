@@ -72,7 +72,7 @@ export const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 
 const example = (name: string): Record<string, any> => JSON.parse(readFileSync(join(here, "..", "settings", name), "utf8")) as Record<string, any>;
 /** The three example centres: UPI (the template's own example), Razorpay, and Classes (Razorpay, with a timetable). */
-export const EXAMPLES = { upi: "bright-tuition-upi.example.json", razorpay: "bright-tuition.example.json", classes: "bright-tuition-classes.example.json" } as const;
+export const EXAMPLES = { upi: "bright-tuition-upi.example.json", razorpay: "bright-tuition.example.json", classes: "bright-tuition-classes.example.json", credit: "hardware-credit.example.json" } as const;
 /** The pathway version the TS runtime pins a folder to (package.json), so a folder written here starts on both implementations. */
 export const VERSION = (JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8")) as { version: string }).version;
 
@@ -192,7 +192,8 @@ export async function makeCentre(o: CentreOptions = {}): Promise<Centre> {
   writeFileSync(join(secrets, "channel_token"), channel);
   writeFileSync(join(secrets, "record_key"), hex(32));
   const base = example(EXAMPLES[o.example ?? "upi"]);
-  const given = merge(base, { ...(mode === "guards" ? { ...GUARDS_MONTH, ...withBackDues(base) } : {}), ...(o.settings ?? {}) });
+  // a credit book (the example "credit") has no month to keep out of a guards test and no students: its accounts open at the first beat whatever the day
+  const given = merge(base, { ...(mode === "guards" && !base.creditBook ? { ...GUARDS_MONTH, ...withBackDues(base) } : {}), ...(o.settings ?? {}) });
   writeFileSync(join(client, "settings.json"), JSON.stringify(given));
   const parsed = parseSettings(given);
   const upi = given.payment?.module === "upi";

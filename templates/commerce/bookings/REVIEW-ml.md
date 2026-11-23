@@ -1851,6 +1851,47 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `classes.problems.time` | ക്ലാസ് വരി 2: തുടങ്ങുന്ന സമയം 16:00 പോലെ ആയിരിക്കണം (24 മണിക്കൂർ ക്ലോക്ക്). | Class line 2: the start time must look like 16:00 (24-hour clock). |  |
 | `classes.problems.minutes` | ക്ലാസ് വരി 2: ദൈർഘ്യം 10 മുതൽ 240 വരെ പൂർണ്ണ മിനിറ്റ് ആയിരിക്കണം. | Class line 2: the length must be a whole number of minutes from 10 to 240. |  |
 | `classes.problems.twice` | ക്ലാസ് വരി 2: ഒരേ ബാച്ചും ദിവസവും സമയവും രണ്ടുതവണ എഴുതിയിട്ടുണ്ട്. | Class line 2: the same batch, day and time is written twice. |  |
+| `credit.panel.steps.business` | കടയും ആര് എത്ര തരാനുണ്ട് എന്നതും | The shop and who owes what |  |
+| `credit.panel.steps.rules` | ഓർമ്മപ്പെടുത്തലുകളും പരിധികളും | Reminders and limits |  |
+| `credit.panel.business.name` | കടയുടെ പേര് | Shop name |  |
+| `credit.panel.business.address` | വിലാസം (നിർബന്ധമില്ല) | Address (optional) |  |
+| `credit.panel.business.people` | ഇന്ന് ആര് എത്ര തരാനുണ്ട് | Who owes what today |  |
+| `credit.panel.business.peopleHelp` | ഓരോ വരിയിലും ഒരാൾ: പേര്, WhatsApp നമ്പർ, തരാനുള്ള തുക രൂപയിൽ. ഉദാഹരണം: Ramesh, 98450 12345, 2400. ആരുമില്ലാതെ തുടങ്ങാൻ ഒഴിച്ചിടുക; ഉടമ പിന്നീട് WhatsApp-ൽ ചേർക്കും ("Ramesh owes 2400"). | One person on each line: their name, their WhatsApp number, what they owe in rupees. Example: Ramesh, 98450 12345, 2400. Leave it empty to start with nobody; the owner adds people later on WhatsApp ("Ramesh owes 2400"). |  |
+| `credit.panel.business.numbersNote` | നമ്പറുകൾ കടയുടെ സെർവറിൽ മാത്രം നിൽക്കും. ഇപ്പോൾ ആർക്കും ഒന്നും അയയ്ക്കില്ല: ഉടമ ചോദിക്കൂ അമർത്തുമ്പോൾ മാത്രം ഓരോരുത്തർക്കും ആദ്യ സന്ദേശം, അവർ സമ്മതിച്ചതിനു ശേഷം മാത്രം ഓർമ്മപ്പെടുത്തലുകൾ. | The numbers stay on the shop's server. Nothing is sent to anyone now: each person gets a first message only when the owner taps Ask, and reminders only after they say yes. |  |
+| `credit.panel.rules.every` | ഓർമ്മപ്പെടുത്തൽ പരമാവധി ഓരോ (ദിവസം) | A reminder at most every (days) |  |
+| `credit.panel.rules.everyHelp` | സമ്മതിച്ചവർക്ക് മാത്രം, താഴെയുള്ള മണിക്കൂറിൽ, എന്തെങ്കിലും ബാക്കിയുള്ളപ്പോൾ ഓർമ്മപ്പെടുത്തലുകൾ പോകും. | Reminders go only to people who said yes, at the hour below, while something is owed. |  |
+| `credit.panel.rules.hour` | ഓർമ്മപ്പെടുത്തലിന്റെ മണിക്കൂർ (6 മുതൽ 21) | Reminder hour (6 to 21) |  |
+| `credit.panel.rules.most` | ഒരാൾക്ക് ഒരു മാസത്തിൽ പരമാവധി ഓർമ്മപ്പെടുത്തലുകൾ | Most reminders to one person in a month |  |
+| `credit.panel.rules.maxPerPerson` | ഒരു അക്കൗണ്ടിൽ പരമാവധി (₹) | Most one account may show (₹) |  |
+| `credit.panel.rules.maxPerPersonHelp` | പേയ്മെന്റ് ലിങ്ക് ഒരിക്കലും ഇതിൽ കൂടില്ല. ഇത് കടം എഴുതുന്നത് തടയില്ല; തെറ്റായി ടൈപ്പ് ചെയ്ത തുക തടയും. | A payment link is never for more. It does not stop the owner writing credit; it stops a mistyped amount. |  |
+| `credit.panel.rules.partAllowed` | ഉപഭോക്താക്കൾക്ക് ഭാഗം അടയ്ക്കാം | Customers may pay part |  |
+| `credit.panel.rules.partMin` | ഏറ്റവും കുറഞ്ഞ ഭാഗം (₹) | Least part payment (₹) |  |
+| `credit.panel.rules.refund` | ഏജന്റിന് സ്വയം ചോദിക്കാവുന്ന റീഫണ്ട് (₹) | Refund the agent may ask for on its own (₹) |  |
+| `credit.panel.rules.refundHelp` | ഇതിനു മുകളിൽ ഓരോ റീഫണ്ടും ഉടമ അംഗീകരിക്കണം. | Above this, the owner approves each refund. |  |
+| `credit.panel.rules.firstNote` | കൗണ്ടറിൽ നൽകിയ പണം ഉടമയുടെ അടയാളമാണ് ("Ramesh paid 1000"), ഉറപ്പായ പേയ്മെന്റ് അല്ല. ഉടമ കിട്ടി എന്ന് രേഖപ്പെടുത്തുമ്പോൾ മാത്രം UPI പേയ്മെന്റ് കണക്കാക്കും. | Cash paid at the counter is the owner's mark ("Ramesh paid 1000"), never a confirmed payment. A UPI payment counts only when the owner marks it received. |  |
+| `credit.panel.summary` | കണക്കിൽ 3 പേർ · സജ്ജീകരണ സമയത്ത് ₹10,850 ബാക്കി | 3 people in the book · ₹10,850 owed at setup |  |
+| `credit.panel.problems.tooMany` | ഇവിടെ പരമാവധി 300 പേർ. വലിയ കണക്ക് ഒരു ബിൽഡർ സജ്ജമാക്കും. | At most 300 people here. A bigger book is set up by a builder. |  |
+| `credit.panel.problems.lineBad` | വരി 2: പേര്, WhatsApp നമ്പർ, തുക എന്നിവ കോമ ഇട്ട് എഴുതുക. | Line 2: write the name, the WhatsApp number and the amount, with commas between. |  |
+| `credit.panel.problems.number` | വരി 2: WhatsApp നമ്പർ ശരിയല്ലെന്ന് തോന്നുന്നു. പത്ത് അക്കങ്ങൾ, അല്ലെങ്കിൽ + ഉം രാജ്യ കോഡും എഴുതുക. | Line 2: the WhatsApp number does not look right. Write ten digits, or + and the country code. |  |
+| `credit.panel.problems.amount` | വരി 2: തരാനുള്ള തുക 0-ന് മുകളിൽ പൂർണ്ണ രൂപയിൽ, ഒരു അക്കൗണ്ടിന്റെ പരിധി വരെ ആയിരിക്കണം. | Line 2: what they owe must be whole rupees above 0, at most the most one account may show. |  |
+| `credit.panel.problems.twice` | വരി 2: ഈ പേരോ നമ്പറോ മുമ്പത്തെ വരിയിലുണ്ട്. ഉടമയ്ക്ക് തിരിച്ചറിയാവുന്ന പേര് നൽകുക. | Line 2: this name or number is already on an earlier line. Give each person a name the owner can tell apart. |  |
+| `credit.panel.problems.everyBad` | ഓർമ്മപ്പെടുത്തലിന്റെ ഇടവേള 1 മുതൽ 60 ദിവസം വരെ ആയിരിക്കണം. | How often a reminder may go must be from 1 to 60 days. |  |
+| `credit.panel.problems.hourBad` | ഓർമ്മപ്പെടുത്തലിന്റെ മണിക്കൂർ 6 മുതൽ 21 വരെ ആയിരിക്കണം. | The reminder hour must be from 6 to 21. |  |
+| `credit.panel.problems.mostBad` | മാസത്തിലെ പരമാവധി ഓർമ്മപ്പെടുത്തലുകൾ 1 മുതൽ 12 വരെ ആയിരിക്കണം. | The most reminders in a month must be from 1 to 12. |  |
+| `credit.panel.problems.maxBad` | ഒരു അക്കൗണ്ടിന്റെ പരിധി 1 മുതൽ 10,00,000 വരെ പൂർണ്ണ രൂപ ആയിരിക്കണം. | The most one account may show must be whole rupees from 1 to 10,00,000. |  |
+| `credit.panel.problems.partBad` | ഏറ്റവും കുറഞ്ഞ ഭാഗം 0-ന് മുകളിൽ പൂർണ്ണ രൂപ ആയിരിക്കണം. | The least part payment must be whole rupees above 0. |  |
+| `credit.panel.problems.refundBad` | റീഫണ്ട് പരിധി പൂർണ്ണ രൂപയിൽ ആയിരിക്കണം. | The refund limit must be whole rupees. |  |
+| `credit.owner.title` | കടം കണക്ക് | Credit book |  |
+| `credit.owner.note` | ആര് എത്ര തരാനുണ്ട്. ഈ പട്ടിക നിങ്ങൾ മാത്രം കാണുന്നു. നിങ്ങൾ ചോദിക്കൂ അമർത്തുന്നതുവരെ ഉപഭോക്താവിന് ഒന്നും പോകില്ല, അവർ സമ്മതിച്ചതിനു ശേഷം മാത്രമേ ഓർമ്മപ്പെടുത്തലുകൾ തുടങ്ങൂ. | Who owes what. Only you see this list. Nothing goes to a customer until you tap Ask, and reminders start only after they say yes. |  |
+| `credit.owner.boxLabel` | കണക്കിൽ എഴുതുക | Write in the book |  |
+| `credit.owner.boxExample` | Ramesh owes 2400, അല്ലെങ്കിൽ Ramesh paid 1000 | Ramesh owes 2400, or Ramesh paid 1000 |  |
+| `credit.owner.write` | എഴുതുക | Write |  |
+| `credit.owner.none` | കണക്കിൽ ഇതുവരെ ആരുമില്ല. | Nobody is in the book yet. |  |
+| `credit.owner.ask` | ഓർമ്മപ്പെടുത്തലിനെക്കുറിച്ച് ചോദിക്കൂ | Ask about reminders |  |
+| `credit.owner.state.none` | ഇതുവരെ ചോദിച്ചിട്ടില്ല | Not asked yet |  |
+| `credit.owner.state.asked` | ചോദിച്ചു: സമ്മതത്തിനായി കാത്തിരിക്കുന്നു | Asked: waiting for their yes |  |
+| `credit.owner.state.yes` | ഓർമ്മപ്പെടുത്തലുകൾ ഓണാണ് | Reminders on |  |
+| `credit.owner.state.stopped` | STOP അയച്ചു: സന്ദേശങ്ങളില്ല | Sent STOP: no messages |  |
 | `preset.words.question` | കട എന്ത് ചെയ്യുന്നു? | What does the shop do? |  |
 | `preset.words.other` | മറ്റൊന്ന് | Something else |  |
 | `preset.words.typedLabel` | നിങ്ങളുടെ കട എന്ത് ചെയ്യുന്നു, സ്വന്തം വാക്കുകളിൽ? | What does the shop do, in your own words? |  |
@@ -1886,6 +1927,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.hardware.prefill.menu.4.names` | സീലിംഗ് ഫാൻ കപ്പാസിറ്റർ | Ceiling fan capacitor |  |
 | `preset.hardware.prefill.pickup.1.names` | രാവിലെ | morning |  |
 | `preset.hardware.prefill.pickup.2.names` | വൈകുന്നേരം | evening |  |
+| `preset.hardware-credit.name` | ഹാർഡ്‌വെയർ അല്ലെങ്കിൽ ഇലക്ട്രിക്കൽ കട: കടം കണക്ക് | Hardware or electrical shop: credit book |  |
 | `preset.restock.name` | സപ്ലയർമാരിൽ നിന്ന് കടയ്ക്ക് സ്റ്റോക്ക് ഓർഡർ | Shop restocking from suppliers |  |
 | `preset.restock.prefill.supplier` | എന്റെ സപ്ലയർ | My supplier |  |
 | `preset.restock.prefill.items.1.names` | അരി 25 കിലോ | Rice 25 kg |  |

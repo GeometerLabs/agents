@@ -561,7 +561,7 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   const w = c.w.setup;
   const d = v.draft;
   const own = setupOf(v.template.setup);
-  const title = own && (step === "business" || step === "deposit") ? own.titles(c.w)[step === "business" ? "business" : "rules"] : w.steps[step];
+  const title = own && (step === "business" || step === "deposit") ? own.titles(c.w, d)[step === "business" ? "business" : "rules"] : w.steps[step];
   // a shop that started from a trade (presets.ts): its first form is full of example prices, and says so
   const prefilled = step === "business" && d.trade?.preset && !d.editing ? html`<p class="note">${presetWords(c.w).prefillNote}</p>` : "";
   const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${title}</h1>${errorsBox(c, v.problems)}${prefilled}`;

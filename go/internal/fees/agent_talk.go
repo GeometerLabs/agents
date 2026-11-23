@@ -94,6 +94,10 @@ func (a *Agent) onMessage(m messaging.InboundMessage) error {
 	if c.OptedOut {
 		return nil
 	}
+	// the credit book: someone in the book who has not said yes gets nothing about their account; their yes or no to the first question is read here (credit.go)
+	if taken, err := a.creditCustomer(phone, in); err != nil || taken {
+		return err
+	}
 	switch in.Kind {
 	case "pay":
 		return a.onPay(phone, in)
@@ -237,6 +241,9 @@ func (a *Agent) onDiscount(phone string, in intent) error {
 	if d == nil {
 		a.tellCustomer(nil, phone, []string{"fee_nothing_due"}, sayOpts{})
 		return nil
+	}
+	if isCredit(d) {
+		in.AmountInr = nil // the credit book: every discount a customer asks about goes to the owner as a note, with no amount applied (its waiver limit is 0)
 	}
 	if _, _, err := a.look(d); err != nil {
 		return err
@@ -538,6 +545,16 @@ func (a *Agent) onOwnerMessage(m messaging.InboundMessage) error {
 	}
 	if a.ownerFixedWords(m) { // "move K7M2QX" and the shop terms (agent_handover.go)
 		return nil
+	}
+	// the credit book's words ("Ramesh owes 2,400", the Ask button), by rules alone and before the assistant, so a customer's number never reaches a model (credit.go)
+	if a.credit() && !ownerCommand.MatchString(m.Text) {
+		replyID := ""
+		if m.Reply != nil {
+			replyID = m.Reply.ID
+		}
+		if taken, err := a.creditOwnerText(m.Text, replyID); err != nil || taken {
+			return err
+		}
 	}
 	if a.settings.Classes != nil {
 		taken, err := a.classesTeacher(m)

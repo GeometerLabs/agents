@@ -11,6 +11,7 @@ import { writeOrdersReport } from "../../templates/commerce/orders/report/run.ts
 import type { Exported } from "./activity.ts";
 import { feesMonthlyFromExport, ordersMonthlyFromExport } from "./activity.ts";
 import { applyFeesBusiness, applyFeesRules, buildFeesSettings, feesDraftFromShop, feesLimitLines, newFeesDraft, runtimeForFees } from "./fees.ts";
+import { creditWords } from "./words-credit.ts";
 import { applyOrdersBusiness, applyOrdersRules, buildOrdersSettings, newOrdersDraft, ordersDraftFromShop, ordersLimitLines } from "./orders.ts";
 import type { Built, Draft, StepResult, Body } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
@@ -59,7 +60,7 @@ export interface Setup {
   /** The shop's limits as one sentence each, in the person's language (the certificate's own lines). */
   limitLines(draft: Draft, example: any, language: Language, saved?: any): string[];
   /** The titles of the two forms. */
-  titles(w: Words): { business: string; rules: string };
+  titles(w: Words, draft?: Draft): { business: string; rules: string };
   businessBody(c: Ctx, d: Draft, action: string, back: Raw | string, next: Raw, h: Helpers): Raw;
   rulesBody(c: Ctx, d: Draft, action: string, back: Raw | string, next: Raw, lines: string[], h: Helpers): Raw;
   /** The pieces of the shop page: the settings in plain words, this month's counts when the record is shared, the labels of the live states, and the messages the rules allow. */
@@ -87,7 +88,8 @@ export const SETUPS: Record<string, Setup> = {
   },
   fees: {
     newDraft: newFeesDraft, draftFromShop: feesDraftFromShop, applyBusiness: applyFeesBusiness, applyRules: applyFeesRules, build: buildFeesSettings, runtime: runtimeForFees, limitLines: feesLimitLines,
-    titles: (w) => w.setup.fees.steps, businessBody: feesBusinessBody, rulesBody: feesRulesBody,
+    // a credit book's draft (the variant "creditBook") has its own two titles (words-credit.ts)
+    titles: (w, d) => ((d as { fees?: { credit?: unknown } } | undefined)?.fees?.credit ? creditWords(w).steps : w.setup.fees.steps), businessBody: feesBusinessBody, rulesBody: feesRulesBody,
     pieces: (c, settings, data, month, included, nowMs) => {
       const report = data ? feesMonthlyFromExport(settings, data, month, "live", nowMs) : undefined;
       return { summary: summaryFees(c, settings), ...(report ? { activity: activityFees(c, report) } : {}), states: c.w.shop.feeStates, messages: messageCeiling(c, settings, included) };

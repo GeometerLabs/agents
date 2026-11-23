@@ -11,6 +11,8 @@ import { BACK_DUES_MAX, JOINING_RULES, parseJoined } from "./joining.ts";
 import type { BackDue, JoiningRule } from "./joining.ts";
 import { readClasses } from "./classes/settings.ts";
 import type { ClassesSettings } from "./classes/settings.ts";
+import { readCreditBook } from "./credit/settings.ts";
+import type { CreditBookSettings } from "./credit/settings.ts";
 import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
@@ -95,6 +97,11 @@ export interface Settings {
   classes?: ClassesSettings;
   /** Item 11e: the shop's assistant (the owner's conversation, the morning line, the character; modules/assistant/settings.ts). Left out: no assistant, as before. */
   assistant?: AssistantSettings;
+  /**
+   * The credit book (decision 63, src/credit/): the shop's *khata*, an adult variant of Fees. With it, `batches` and `students` are empty (a credit shop bills no month) and
+   * `due` is not asked for. Left out: the centre is exactly the Fees centre it was, and nothing of src/credit/ runs for it.
+   */
+  creditBook?: CreditBookSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -110,7 +117,9 @@ export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the centre's name, batches, students and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "joiningMidMonth", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant", "classes"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "joiningMidMonth", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant", "classes", "creditBook"], "the settings", errors);
+  // the credit book (src/credit/settings.ts): with it there are no batches, no students and no due day to ask for; what it refuses is said at the end, by its own reader
+  const credit = input.creditBook !== undefined;
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the centre's name (\"name\").");
@@ -120,14 +129,14 @@ export function validateSettings(input: unknown): SettingsResult {
   if (typeof timezone !== "string" || !isValidTimeZone(timezone)) errors.push(`The time zone ${JSON.stringify(timezone)} is not one I know. Use a name like "Asia/Kolkata".`);
 
   const languages = readLanguages(input.languages, errors);
-  const batches = readBatches(input.batches, languages, errors);
+  const batches = credit ? [] : readBatches(input.batches, languages, errors);
   const owner = readOwner(input.owner, errors);
-  const students = readStudents(input.students, batches, languages, owner?.whatsapp, errors);
+  const students = credit ? [] : readStudents(input.students, batches, languages, owner?.whatsapp, errors);
   const joiningMidMonth = input.joiningMidMonth ?? "usual";
   if (!JOINING_RULES.includes(joiningMidMonth as JoiningRule)) errors.push(`The rule for a student who joins mid-month ("joiningMidMonth") must be one of ${JOINING_RULES.map((r) => `"${r}"`).join(", ")}.`);
 
   const cheapest = batches.length > 0 ? Math.min(...batches.map((b) => b.monthlyFeeInr)) : undefined;
-  const due = readDue(input.due, errors);
+  const due = credit && input.due === undefined ? { day: 1, graceDays: 0 } : readDue(input.due, errors);
   const lateFeeInr = input.lateFeeInr === undefined ? 0 : readWhole(input.lateFeeInr, "the late fee (\"lateFeeInr\")", 0, cheapest ?? 1_000_000, errors, cheapest !== undefined ? `a late fee is never more than the cheapest monthly fee (₹${cheapest})` : undefined);
   const reminders = readReminders(input.reminders, errors);
   const partPayments = readPartPayments(input.partPayments, cheapest, errors);
@@ -138,7 +147,8 @@ export function validateSettings(input: unknown): SettingsResult {
   if (approvers) for (const p of approvers.people) if (students.some((s) => s.parent === p.whatsapp)) errors.push(`approvers: ${p.id}'s number is a parent's. A person who approves refunds answers from their own number, not a parent's.`);
 
   const assistant = readAssistantSettings(input.assistant, errors);
-  const classes = readClasses(input.classes, batches, errors);
+  const classes = credit ? undefined : readClasses(input.classes, batches, errors);
+  const creditBook = readCreditBook(input.creditBook, { languages, ownerWhatsapp: owner?.whatsapp, input }, errors);
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, batches, students,
@@ -151,6 +161,7 @@ export function validateSettings(input: unknown): SettingsResult {
   if (approvers) settings.approvers = approvers;
   if (assistant) settings.assistant = assistant;
   if (classes) settings.classes = classes;
+  if (creditBook) settings.creditBook = creditBook;
   return { ok: true, settings };
 }
 
@@ -170,8 +181,8 @@ export function batchName(batch: Batch, language: Language): string {
 
 export const batchOf = (settings: Settings, student: Student): Batch => settings.batches.find((b) => b.id === student.batchId)!;
 
-/** The most any one payment link can be for, in rupees: the dearest batch's fee with the late fee on top. */
-export const highestDueInr = (settings: Settings): number => Math.max(...settings.batches.map((b) => b.monthlyFeeInr)) + settings.lateFeeInr;
+/** The most any one payment link can be for, in rupees: the dearest batch's fee with the late fee on top; in a credit book, the most one account may show. */
+export const highestDueInr = (settings: Settings): number => settings.creditBook ? settings.creditBook.maxPerPersonInr : Math.max(...settings.batches.map((b) => b.monthlyFeeInr)) + settings.lateFeeInr;
 
 /** The least any one payment link can be for, in rupees. A link is made for what is still owed, which can be a rupee. */
 export const LOWEST_LINK_INR = 1;

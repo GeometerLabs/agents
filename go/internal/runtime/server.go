@@ -529,7 +529,7 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) error {
 }
 
 var (
-	ownerActions = []string{"received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash", "bank", "present", "absent", "answered", "got_it", "send_again", "try_now", "cancel_order", "collected"}
+	ownerActions = []string{"received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash", "bank", "present", "absent", "answered", "got_it", "send_again", "try_now", "cancel_order", "collected", "credit_ask"}
 	caseID       = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$`)
 	cardID       = regexp.MustCompile(`^c-\d{1,9}$`)
 	digest32     = regexp.MustCompile(`^[0-9a-f]{32}$`)

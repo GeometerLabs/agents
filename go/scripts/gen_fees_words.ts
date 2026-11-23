@@ -3,7 +3,8 @@
 //                                           `{slot}` where a value of the record goes, how "where to pay" is written (a link, or a UPI link with the centre's UPI ID), one line of a
 //                                           family reminder and of the next-classes answer, the WhatsApp templates (meta-templates.ts) with how each slot is filled, and the
 //                                           button labels (interactive.ts)
-//   go/internal/fees/reading.json           the word lists of the rule parser (rule-parser.ts FEE_WORDS) and of Classes' contact words (classes/parse.ts CLASS_WORDS)
+//   go/internal/fees/reading.json           the word lists of the rule parser (rule-parser.ts FEE_WORDS), of Classes' contact words (classes/parse.ts CLASS_WORDS) and of the
+//                                           owner's credit-book words (credit/words.ts CREDIT_WORDS)
 // Run with node from the repository root:   node go/scripts/gen_fees_words.ts        (add --check to only compare with the committed files)
 //
 // The method is go/scripts/gen_bookings_words.ts's: each template is RENDERED with probe facts and each probe's own text is turned back into a `{slot}`; which facts a message
@@ -22,6 +23,7 @@ import { LABELS } from "../../templates/education/fees/src/language/interactive.
 import { classLines } from "../../templates/education/fees/src/classes/words.ts";
 import { FEE_WORDS } from "../../templates/education/fees/src/adapters/rule-parser.ts";
 import { CLASS_WORDS } from "../../templates/education/fees/src/classes/parse.ts";
+import { CREDIT_WORDS } from "../../templates/education/fees/src/credit/words.ts";
 import { formatDate, formatInr, formatTime } from "../../modules/language/format.ts";
 import { localParts } from "../../modules/core/time.ts";
 import type { MetaTemplate } from "../../modules/language/meta-templates.ts";
@@ -179,7 +181,7 @@ export function generate(): Map<string, string> {
   const out = new Map<string, string>();
   for (const l of LANGUAGES) out.set(`go/internal/fees/words/${l}.json.gz`, JSON.stringify(pack(l)) + "\n");
   // the word lists the rule parser and Classes' contact words read (rule-parser.ts FEE_WORDS, classes/parse.ts CLASS_WORDS), which the Go side builds with language.WordRe as they do
-  out.set("go/internal/fees/reading.json", JSON.stringify({ fee: FEE_WORDS, classes: CLASS_WORDS }, null, 1) + "\n");
+  out.set("go/internal/fees/reading.json", JSON.stringify({ fee: FEE_WORDS, classes: CLASS_WORDS, credit: CREDIT_WORDS }, null, 1) + "\n");
   return out;
 }
 

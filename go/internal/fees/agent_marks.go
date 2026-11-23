@@ -67,7 +67,11 @@ func (a *Agent) qrOf(d *Due) *messaging.SayImage {
 	if r.ImageLink == "" {
 		return nil
 	}
-	return &messaging.SayImage{Link: r.ImageLink, Caption: []string{"fee_upi_qr_caption"}}
+	caption := "fee_upi_qr_caption"
+	if isCredit(d) {
+		caption = "credit_upi_qr_caption" // the credit book: the caption names no student
+	}
+	return &messaging.SayImage{Link: r.ImageLink, Caption: []string{caption}}
 }
 
 // markedRequestMade is agent.ts markedRequestMade: in the record, and the owner told what to look for with the code and the Received button.

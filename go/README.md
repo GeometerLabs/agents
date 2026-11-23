@@ -72,6 +72,8 @@ cmd/fees/                main of ONE Fees (and Classes) centre (wave 3): the sam
 internal/fees/           the Fees template (wave 3): the settings with the TypeScript's sentences, the store field for field, the agent over one step (the month's fees and reminders, the
                          payment record and one link for what is owed, a UPI centre's owner-marked money, waivers, refunds through the shared refunds, the parent's private link and page,
                          the owner's page), the words packed per language (words/*.json.gz and reading.json, made by scripts/gen_fees_words.ts), the reading material, and
+                         credit*.go, the credit book (the creditBook variant, 24 Nov 2026: the owner's words by rules, the first question only after the owner's tap, reminders
+                         only after the customer's yes, cash as the owner's mark, the owner's page rows);
                          agent_assistant.go, Fees as a skill of the shop's assistant (who owes, what waits, cancel and refund by card, the morning line, the app view);
                          agent_approvers.go (B37), agent_settlements.go (the daily settlement read), agent_handover.go (the handover code and the shop terms, over
                          internal/runtime ownerwords.go, which Bookings and Orders share); rules_test.go holds the pure rules to the TypeScript's vectors; read

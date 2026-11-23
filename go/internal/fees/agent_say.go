@@ -52,6 +52,9 @@ type sayOpts struct {
 	gate                                       []Decision
 	talk                                       *talkReply // a talk reply (agent_customertalk.go): rendered as its own words, checked over its own facts
 	phoneShown                                 string     // the label a chat guest is named by in the owner's message (chat-guest.ts guestLabel)
+	// the credit book (credit.go): the account's name when no fee gives it, the owner's list of who owes what (the `roster` literal), the most one account may show (`feeInr`)
+	creditName, roster string
+	feeInr             *int64
 }
 
 type sayExtra struct {
@@ -72,6 +75,7 @@ func dueOf(v any) *Due {
 }
 
 func (a *Agent) args(d *Due, phone, to string, templates []string, o sayOpts) *messaging.SayArgs {
+	templates = a.creditTwin(d, phone, templates, o) // a credit account's messages are an adult's about their own account (credit.go); no change without the credit book
 	args := &messaging.SayArgs{Phone: phone, To: to, Templates: templates, Shown: o.shown, Reminder: o.reminder, Action: o.action, Image: o.image, Extra: &sayExtra{due: d, o: o}}
 	if d != nil {
 		args.Booking = d
@@ -168,6 +172,22 @@ func (a *Agent) factsFor(sa *messaging.SayArgs, lang string) *MessageFacts {
 	}
 	if x.o.cls != nil {
 		x.o.cls.apply(f)
+	}
+	// the credit book: the account's name when no fee gives it (a STOP, a "talk to the owner", an entry not written yet), the owner's list and the account's maximum
+	if a.credit() {
+		if x.o.creditName != "" {
+			f.StudentName = S(x.o.creditName)
+		} else if d == nil {
+			if n := a.creditNameOf(sa.Phone); n != "" {
+				f.StudentName = S(n)
+			}
+		}
+		if x.o.roster != "" {
+			f.Roster = S(x.o.roster)
+		}
+		if x.o.feeInr != nil {
+			f.FeeInr = x.o.feeInr
+		}
 	}
 	return f
 }
@@ -294,13 +314,20 @@ func (a *Agent) sayDeps() messaging.SayDeps {
 			x := extraOf(sa).o
 			var out []messaging.Decision
 			if sa.To == "customer" && sa.Reminder && d != nil {
-				out = append(out, a.checkNoReminderOncePaid(d, x.readOK), checkReminderCap(d.RemindersSent, a.settings.Reminders.MaxPerMonth))
+				sent := d.RemindersSent
+				if acc := a.creditAccountOf(d.Customer); isCredit(d) && acc != nil {
+					sent = a.creditRemindedThisMonth(acc) // a running account: the cap is per calendar month (credit.go)
+				}
+				out = append(out, a.checkNoReminderOncePaid(d, x.readOK), checkReminderCap(sent, a.settings.Reminders.MaxPerMonth))
 			}
-			if d != nil && (contains(sa.Templates, "fee_received") || contains(sa.Templates, "fee_already_paid")) {
+			if d != nil && (contains(sa.Templates, "fee_received") || contains(sa.Templates, "fee_already_paid") || contains(sa.Templates, "credit_received") || contains(sa.Templates, "credit_already_paid")) {
 				out = append(out, a.checkPaidOnlyWhenRecorded(d, true))
 			}
-			if d != nil && contains(sa.Templates, "fee_part_received") {
+			if d != nil && (contains(sa.Templates, "fee_part_received") || contains(sa.Templates, "credit_part_received")) {
 				out = append(out, a.checkPaidOnlyWhenRecorded(d, false))
+			}
+			if g := a.creditGate(sa); g != nil {
+				out = append(out, *g) // the credit book: nothing to a customer before their yes, the first question only after the owner's tap
 			}
 			out = append(out, x.gate...)
 			if a.c.Licence() == "stopped" {

@@ -123,7 +123,7 @@ export function reportValues(report: FeesReport, language: Language, extras: Rep
     collected: [rupees(report.money.collected.paise), report.money.oldDues ? `${moneyLabelOf(report, language)}: ${rupees(report.money.oldDues.paise)}` : ""].filter(Boolean).join(" \u00b7 "),
     // what the payment service confirmed given back, then what a person settled by their word (B75), which is never counted in it
     givenBack: [rupees(report.money.givenBack.paise), extras.settled].filter(Boolean).join(" \u00b7 "),
-    pending: report.fees.stillToCollect.count > 0 ? `${rupees(report.fees.stillToCollect.paise)} (${report.fees.stillToCollect.count} ${s.label.students})` : rupees(0),
+    pending: report.fees.stillToCollect.count > 0 ? `${rupees(report.fees.stillToCollect.paise)} (${report.fees.stillToCollect.count} ${report.credit ? s.credit.accounts : s.label.students})` : rupees(0),
     reminders: String(report.reminders.sent),
     takenOff: rupees(report.waivers.total.paise),
     asked: String(report.owner.asked),

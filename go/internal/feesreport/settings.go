@@ -46,6 +46,17 @@ func PolicyOf(s Settings) map[string]any {
 	out["owner"] = map[string]any{"language": owner}
 	students, _ := s["students"].([]any)
 	out["students"] = len(students)
+	// the credit book's people are counted like the students (data.ts policyOf), whether the tree holds them (as validated) or already their count (fees.Settings.ReportTree)
+	if cb, ok := s["creditBook"].(map[string]any); ok {
+		if people, isList := cb["people"].([]any); isList {
+			cp := make(map[string]any, len(cb))
+			for k, v := range cb {
+				cp[k] = v
+			}
+			cp["people"] = len(people)
+			out["creditBook"] = cp
+		}
+	}
 	return out
 }
 
@@ -95,3 +106,6 @@ func NotTestedForReport(goLive report.GoLiveFinding, sh ShopView) []string {
 
 // hasClasses is `settings.classes` as a condition: the centre has the Classes add-on (the member is there and is not null).
 func hasClasses(s Settings) bool { v, ok := s["classes"]; return ok && v != nil }
+
+// hasCredit is `settings.creditBook` as a condition: the shop keeps the credit book.
+func hasCredit(s Settings) bool { v, ok := s["creditBook"]; return ok && v != nil }

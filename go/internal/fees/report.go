@@ -76,6 +76,10 @@ func (s *Settings) ReportTree() map[string]any {
 		}
 		t["classes"] = map[string]any{"timetable": timetable, "linkLeadMinutes": n(c.LinkLeadMinutes), "materialMaxMb": n(c.MaterialMaxMb), "oldDuesStopLink": c.OldDuesStopLink}
 	}
+	if c := s.Credit; c != nil {
+		// report/data.ts policyOf: the credit book's people are counted like the students, so no name or number is in the tree
+		t["creditBook"] = map[string]any{"maxPerPersonInr": n(c.MaxPerPersonInr), "remindEveryDays": n(c.RemindEveryDays), "people": float64(len(c.People))}
+	}
 	return t
 }
 

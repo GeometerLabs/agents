@@ -80,11 +80,12 @@ const asJson = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 
 // ---- the centres' settings: the example centre (Razorpay), the same centre on UPI, with Classes, another centre, other time zones ----
 const rawFile = (name: string): string => readFileSync(new URL(`settings/${name}`, FEES), "utf8");
-const RAW: Record<string, string> = { gateway: rawFile("bright-tuition.example.json"), upi: rawFile("bright-tuition-upi.example.json"), classes: rawFile("bright-tuition-classes.example.json"), maths: rawFile("maths-circle.example.json") };
+const RAW: Record<string, string> = { gateway: rawFile("bright-tuition.example.json"), upi: rawFile("bright-tuition-upi.example.json"), classes: rawFile("bright-tuition-classes.example.json"), maths: rawFile("maths-circle.example.json"), credit: rawFile("hardware-credit.example.json") };
 const gateway: Settings = brightTuition();
 const upiSettings: Settings = parseSettings(JSON.parse(RAW.upi));
 const classesSettings: Settings = parseSettings(JSON.parse(RAW.classes));
 const maths: Settings = parseSettings(JSON.parse(RAW.maths));
+const creditSettings: Settings = parseSettings(JSON.parse(RAW.credit));
 const rawGateway = JSON.parse(RAW.gateway);
 const RAW_NYC = { ...rawGateway, name: "  Brooklyn Tuition  ", timezone: "America/New_York" };
 const RAW_AUCKLAND = { ...rawGateway, name: "ब्राइट ट्यूशन", timezone: "Pacific/Auckland", owner: { ...rawGateway.owner, language: "hi" } };
@@ -268,6 +269,35 @@ function classesWorld(): { entries: RecordEntry[]; dues: Due[] } {
   return { entries: w.entries(), dues: [due({ id: "f-1", month: "2026-11", state: "open", payments: pays(50000) })] };
 }
 
+/**
+ * A credit book's November (the Fees adult variant): accounts opened in October, owner's marks before and after a reminder, a part payment then a reminder for the rest, a
+ * reminder that went after the record showed the account paid (the counter counts it, so a shop's report would show it), a blocked reminder, and a new account in November.
+ */
+function creditWorld(): { entries: RecordEntry[]; dues: Due[] } {
+  const w = world(creditSettings);
+  const entry = (when: string, fee: string, paise: number, by = "owner", month = "2026-11") =>
+    w.pay(when, { kind: "fee_charged", case: fee, amountPaise: paise }, "credit_add", "confirmed", fee, { refs: { account: `c-${fee.slice(2)}`, amountPaise: String(paise), by, month }, conversation: `9198450${fee.slice(2)}1111` });
+  const mark = (when: string, fee: string, id: string, paise: number, via = "cash") =>
+    w.pay(when, marked(fee, id, paise, via), "owner_marked_paid", "confirmed", fee, { refs: { paymentId: id, amountPaise: String(paise), markedBy: "owner", via } });
+  const remind = (when: string, fee: string, outcome: Outcome = "confirmed") => w.add(when, "send_message", outcome, fee, { language: "kn", refs: { to: "customer", templates: "credit_reminder" } });
+  entry(D(20, 5, 0, 10), "f-1", 240000, "settings", "2026-10");
+  entry(D(22, 5, 0, 10), "f-2", 785000, "settings", "2026-10");
+  mark(D(25, 5, 0, 10), "f-2", "cash-f-2-1", 100000);
+  remind(D(28, 5, 0, 10), "f-1"); // October: not this month's
+  w.add(D(29, 5, 0, 10), "credit_consent", "confirmed", "f-1", { refs: { account: "c-1", step: "yes" } });
+  remind(D(3), "f-1");
+  mark(D(5), "f-1", "cash-f-1-1", 100000); // after a reminder: counted
+  mark(D(6), "f-2", "cash-f-2-2", 685000); // no reminder on f-2 before it: not counted; f-2 is now paid
+  remind(D(7), "f-2"); // after the record showed f-2 paid: counted as a reminder after a recorded payment
+  remind(D(8), "f-1", "blocked");
+  entry(D(10), "f-1", 50000);
+  remind(D(12), "f-1");
+  mark(D(14), "f-1", "upi_1", 190000, "upi"); // the rest: f-1 is paid
+  entry(D(20), "f-3", 60000);
+  w.add(D(21), "credit_add", "blocked", "f-3", { refs: { account: "c-3", amountPaise: "9900000" }, decisions: [block("credit-account-max")] });
+  return { entries: w.entries(), dues: [due({ id: "f-1", month: "2026-10", state: "paid", payments: pays(100000, 190000) }), due({ id: "f-2", month: "2026-10", state: "paid", payments: pays(100000, 685000) }), due({ id: "f-3", month: "2026-11", state: "open", feeInr: 600 }), due({ id: "f-4", month: "2026-10", state: "open", feeInr: 300, payments: pays(10000) })] }; // f-4: an October account still open in November
+}
+
 /** The financial year end: lines either side of 31 March 18:30 UTC (midnight in India), a restore. */
 function fyendWorld(): RecordEntry[] {
   const w = world(gateway, "2027-03-01T00:00:00Z");
@@ -306,11 +336,12 @@ const busyDues: Due[] = [...busy.world.store.dues.values()];
 const rulesW = rulesWorld();
 const upi = upiWorld();
 const classes = classesWorld();
+const credit = creditWorld();
 const fyendEntries = fyendWorld();
 const windDownEntries = windDownWorld();
 const quietEntries = quietWorld();
 /** The centre records the vectors share, written once (a case or a job names one). */
-const RECORDS: Record<string, readonly RecordEntry[]> = { busy: busyEntries, rules: rulesW.entries, upi: upi.entries, classes: classes.entries, fyend: fyendEntries, winddown: windDownEntries, quiet: quietEntries, empty: [] };
+const RECORDS: Record<string, readonly RecordEntry[]> = { busy: busyEntries, rules: rulesW.entries, upi: upi.entries, classes: classes.entries, credit: credit.entries, fyend: fyendEntries, winddown: windDownEntries, quiet: quietEntries, empty: [] };
 const recordRef = (entries: readonly RecordEntry[]): string | RecordEntry[] => Object.entries(RECORDS).find(([, v]) => v === entries)?.[0] ?? asJson(entries);
 
 // ---- the cases ----
@@ -345,6 +376,9 @@ const CASES: Case[] = [
   { ...base, name: "classes-centre", settings: classesSettings, entries: classes.entries, dues: classes.dues, month: "2026-11", preparedBy: "Kavya", innovator: true, tenant: "bright-classes", pages: ["en", "hi", "ml", "kn"] },
   { ...base, name: "classes-unsigned", settings: classesSettings, entries: classes.entries, dues: classes.dues, month: "2026-11", preparedBy: "Kavya", signed: false, pages: ["both"] },
   { ...base, name: "classes-record-without-classes-settings", settings: gateway, entries: classes.entries, dues: classes.dues, month: "2026-11", preparedBy: "Kavya", pages: ["en"] },
+  { ...base, name: "credit-book", settings: creditSettings, entries: credit.entries, dues: credit.dues, month: "2026-11", preparedBy: "Ravi", tenant: "lakshmi-hw", pages: ["en", "kn", "hi", "ml"] },
+  { ...base, name: "credit-book-october", settings: creditSettings, entries: credit.entries, dues: credit.dues, month: "2026-10", preparedBy: "Ravi", signed: false, pages: ["both"] },
+  { ...base, name: "credit-record-without-credit-settings", settings: upiSettings, entries: credit.entries, dues: credit.dues, month: "2026-11", preparedBy: "Ravi", pages: ["en"] },
   { ...base, name: "fyend-march", settings: gateway, entries: fyendEntries, month: "2027-03", preparedBy: "Meena", tenant: "fy-end", pages: ["en", "hi"], madeAt: at(4, 1, 9, 30, 2027) },
   { ...base, name: "fyend-april", settings: gateway, entries: fyendEntries, month: "2027-04", preparedBy: "Meena", tenant: "fy-end", pages: ["en"], madeAt: at(5, 1, 9, 30, 2027) },
   { ...base, name: "wind-down", settings: gateway, entries: windDownEntries, month: "2026-11", preparedBy: "Divya", pages: ["en", "kn"] },
@@ -455,7 +489,7 @@ function goLiveReadings(): unknown {
 // ---- the policy digest and what is not tested ----
 /** A settings file as the owner writes it (raw text), the validated settings the TypeScript digests, and the digest: the Go test reads the TEXT with fees.ReadSettings, builds the tree and digests it. */
 function policies(): unknown {
-  const named: [string, string, Settings][] = [["gateway", RAW.gateway, gateway], ["upi", RAW.upi, upiSettings], ["classes", RAW.classes, classesSettings], ["maths", RAW.maths, maths],
+  const named: [string, string, Settings][] = [["gateway", RAW.gateway, gateway], ["upi", RAW.upi, upiSettings], ["classes", RAW.classes, classesSettings], ["maths", RAW.maths, maths], ["credit", RAW.credit, creditSettings],
     ["newyork", JSON.stringify(RAW_NYC), nyc], ["auckland", JSON.stringify(RAW_AUCKLAND), auckland], ["own-rules", JSON.stringify(RAW_RULES), rules]];
   const rows = named.map(([name, text, s]) => {
     const validated = asJson(s);

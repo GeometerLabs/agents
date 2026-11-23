@@ -1466,6 +1466,48 @@ What was built is in `internal/discounts/Explanation.md` § Before the pilot, an
   - `--check` of every generator: fresh. The three generators without a `--check` (digest, format, rules vectors) were run and changed no file.
 - **Every shop sees one change: the model's prompt and schema.** They gain `askDiscount`, so a model reading sees it. A message the rules read is answered exactly as before.
 
+## credit-book-24nov: the credit book, a Fees adult variant (24 Nov 2026, decision 63)
+
+The shop starter's first job (the *khata* of a hardware, electrical or spares shop), built in Go inside Fees as the settings' `creditBook` block, off by default. What was built
+is in `internal/fees/Explanation.md` § The credit book and `templates/education/fees/README.md` § The credit book; what is left, with the reason, in the Fees Deferred.md.
+
+- **Off by default.** A centre without the block: its settings tree, policy digest, limits, record and report bytes are as they were (the report vectors of every other case are
+  unchanged). Three things every Fees centre sees: the unknown-key sentence lists `creditBook`; the owner page's action list (and its refusal sentence) has `credit_ask`; the
+  WhatsApp template list has the credit book's 17 templates.
+- **Settings** (`src/credit/settings.ts`, Go `credit_settings.go`): `maxPerPersonInr` (the link bound, not E4), `remindEveryDays`, `people` (who owes what at setup); with the
+  block no batches, students, late fee, joining rule, Classes, and a waiver limit of 0. Nine new settings vectors.
+- **The agent** (`credit.go`, `credit_read.go`, `credit_state.go`): one open fee per person (no second ledger); the owner's words by rules in four languages; the first message
+  only after the owner's tap, reminders only after the customer's yes, held for every message by a gate in the say path; cash as the owner's mark (`recordCash`, shared with
+  the page's cash press); reminders every `remindEveryDays`, capped per calendar month; the credit twins of every Fees message an account reaches.
+- **The owner's reader takes only what is its own** (decision 65): a name, "owes" and an amount; "paid", "ask" and the words that also mean "remaining" (बाकी, baki) only
+  for a name already in the book; "who owes"; and a number completing an entry that waits for it. Anything else is left to the assistant (or, one day, another part), except a
+  message with a phone number in it, which gets the book's help line so a customer's number never reaches a model.
+- **After a gap** (the server down, or a reminder held), the next reminder is a full interval from now: never a run of reminders on consecutive beats.
+- **The owner's page** (`modules/channels/owner-credit.ts`): who owes what (names, never numbers), the Ask button bound to the row's digest, a box posted to `/credit`.
+- **The report**: a `credit` block (owed at the month's start, paid after a reminder, credit reminders, reminders after a recorded payment), TypeScript and Go, three vectors;
+  on a credit shop "still to collect" is every open account, whatever month it opened in (a Fees centre's is the month's own fees, as before). The go-live limit lines of a
+  credit shop state its own limits (no due day, late fee or reminder days).
+- **The export** (`bundle/backup/export.ts`) carries the fees (`dues`), never the store's `credit` member: an account's name is scrubbed and its number fingerprinted as a
+  student's and a parent's are, so nothing changed there.
+- **The panel**: the preset "Hardware or electrical shop: credit book" and its two-step form in four languages; the review sheets.
+- **Found:** a gateway (Razorpay) credit shop whose `maxPerPersonInr` is above ₹5,000 is refused by the Guard spec generator (`paymentNumbers`: the default daily refund cap is
+  smaller than the dearest link), so its deployer must raise the cap; a UPI shop (the example, the default) has no payments Guard. The contract's guards harness raises the cap
+  to the dearest amount (every other centre's spec is unchanged). Not a TypeScript bug: the check is right; it is a setting the panel does not offer yet (Deferred.md).
+- **Decision 65, several parts behind one number: what the bundle and panel would need** (not built here): (1) one inbound router per number that hands the owner's message to
+  each part in turn and stops at the first that takes it (the credit reader already answers "not taken" for words that are not its own, and takes "paid" only for a name in the
+  book); (2) one owner page that draws each part's section (the credit section is one self-contained section and route); (3) a customer's number known to two parts: one STOP
+  for the shop, shared (today each part keeps its own customers); (4) one record and one monthly report with each part's block (the credit block is already conditional);
+  (5) the panel's set-up of a shop with two parts (a preset per part today), and one WhatsApp template list for the number (the union of the parts' lists).
+- **Run of record (24 Nov 2026, through the heat lock, the Go programs built in this worktree's go/bin, GEO_GUARD_BIN and GEOMETER_MONOREPO set; on the branch, before the
+  move onto the new main):** `go build/vet ./...` clean, `go test ./...` 40 packages ok; contracts (`node --test --test-concurrency=1 <folder>/`): Fees 111/111 (102 + the
+  credit book's 9), Bookings 178/178, Orders 117/117, Stock orders 74/74, listings 208 pass, 2 skipped, directory 36/36; Fees units 245/245, channels units 218/218, panel
+  268 pass, 1 skipped (the monorepo's price list, not set for that run); bundle 731: 722 pass, 9 skipped (REAL_CADDY); every Fees generator `--check` fresh.
+- **Merged with main 9ccb690d (the pickup hold and the push-refusal fix), merge 9142cebd; run of record on the merged tree (24 Nov 2026, 00:00-01:00 in India):**
+  `go build/vet ./...` clean, `go test ./...` 40 packages ok; contracts: Fees 111: 107 pass, 4 skipped (the differential's visitor walks, which skip before 06:00 in India,
+  saying so), Orders 136/136, Bookings 178/178, Stock orders 74/74, listings 210/210 (words-fresh included); panel 269/269; bundle 731: 722 pass, 9 skipped (REAL_CADDY);
+  every generator's `--check` fresh. One test fixed after the merge: the presets test compared the preset files (by name, "hardware-credit.json" first) with the ids (by id,
+  "hardware" first); both are now sorted the same way.
+
 ## pickup-hold-24nov: "keep one for me", the no-advance pickup hold (24 Nov 2026, stream PH; decision 63, catalogue job 3)
 
 What was built is in `internal/orders/Explanation.md` § "Keep one for me", and what is left is in its `Deferred.md`. It is a settings choice of Orders, `"advance": {"mode": "none"}`, off by default. Every existing contract case passes unchanged.

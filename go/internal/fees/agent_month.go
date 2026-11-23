@@ -280,6 +280,9 @@ func (a *Agent) remind(d *Due) error {
 		}
 		return nil
 	}
+	if isCredit(d) {
+		return a.remindCredit(d, now)
+	}
 	others, err := a.otherOpenFees(d, now)
 	if err != nil {
 		return err
@@ -485,6 +488,9 @@ func (a *Agent) onTick() error {
 	working := a.takesNewWork()
 	if working {
 		a.openMonthlyFees()
+	}
+	if a.credit() {
+		a.creditTick() // the settings' people opened once, and each account with a yes given its next reminder (credit.go)
 	}
 	for _, d := range append([]*Due(nil), a.store.Dues...) {
 		if d.State != Open {

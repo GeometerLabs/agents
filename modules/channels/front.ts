@@ -50,6 +50,7 @@ import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
 import { bookingIcs } from "./ics.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
+import { CREDIT_TEXT_MAX } from "./owner-credit.ts";
 import type { OwnerPageInput } from "./owner-page.ts";
 import { LEAVE_PAGE } from "./words-leave.ts";
 import { WORDS as LIMITS_PAGE_WORDS, ownerLimitsPage } from "./owner-limits-page.ts";
@@ -692,7 +693,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/stock": "GET", "/stock/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST", "/phones": "GET", "/phones/remove": "POST", "/phones/dismiss": "POST", "/phones/cancel": "POST", "/phones/codes": "POST", "/phones/add": "POST", "/phones/alert-stop": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/credit": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/stock": "GET", "/stock/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST", "/phones": "GET", "/phones/remove": "POST", "/phones/dismiss": "POST", "/phones/cancel": "POST", "/phones/codes": "POST", "/phones/add": "POST", "/phones/alert-stop": "POST" };
     // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
     const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
     // block S: the owner's own view of one of their photos, by its id (a draft's, a waiting one): <owner app>/listings/p/<id>
@@ -951,6 +952,18 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       if (r === "refused") return gone();
       await settleTalk(shop, token, before, options.waitMs ?? 3_000);
       return redirect(res, `${base}/?lang=${language}`);
+    }
+    // the credit book (owner-credit.ts): the owner's own words for the book, sent as their words are on WhatsApp; the runtime reads them by rules (never a model) and answers the
+    // owner on their messaging; the page shows the book as it then stands. Only a shop whose view has the book takes it.
+    if (sub === "/credit") {
+      if (!state.view.credit) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      const text = (form.get("text") ?? "").trim();
+      if (text.length === 0 || text.length > CREDIT_TEXT_MAX) return redirect(res, `${base}/?lang=${language}#credit-h`);
+      const r = await shop.backend.submit([{ kind: "owner_message", id: randomUUID(), text }], token);
+      if (r === "refused") return gone();
+      return redirect(res, `${base}/?lang=${language}#credit-h`);
     }
     if (app && sub === "/voice") {
       if (!app.listen || !shop.backend.ownerVoice) return sendJson(res, 404, { error: { code: "not_found", message: "Voice is not on for this shop's assistant." } });

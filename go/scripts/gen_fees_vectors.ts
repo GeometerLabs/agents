@@ -140,6 +140,16 @@ function settingsCases() {
     ["bright-tuition-classes.example.json", "a classes block with an unknown key and a wrong lead time", (s) => { s.classes.when = 1; s.classes.linkLeadMinutes = 0; }],
     ["bright-tuition-classes.example.json", "old dues stop the link", (s) => { s.classes.oldDuesStopLink = true; }],
     ["bright-tuition.example.json", "unknown top-level keys and no name", (s) => { s.colour = "red"; s.name = "  "; }],
+    // the credit book (src/credit/settings.ts): the example as it is, the defaults, and every refusal
+    ["hardware-credit.example.json", "as it is", () => {}],
+    ["hardware-credit.example.json", "an empty block: the defaults and nobody yet", (s) => { s.creditBook = {}; }],
+    ["hardware-credit.example.json", "a Razorpay shop with a due rule given", (s) => { s.payment = { module: "razorpay" }; s.due = { day: 10 }; }],
+    ["hardware-credit.example.json", "a block that is not an object", (s) => { s.creditBook = [1]; }],
+    ["hardware-credit.example.json", "limits out of range and an unknown key", (s) => { s.creditBook.maxPerPersonInr = 0; s.creditBook.remindEveryDays = 61; s.creditBook.colour = 1; }],
+    ["hardware-credit.example.json", "people who are wrong", (s) => { s.creditBook.people.push({ name: "  ramesh ", phone: "+919845044444", amountInr: 10 }, { name: "Ravi 2", phone: s.owner.whatsapp, amountInr: 0.5 }, { name: "Bina", phone: "+919845011111", amountInr: 60000, language: "fr", city: "x" }, "x", { phone: "98450" }); }],
+    ["hardware-credit.example.json", "people that are not a list", (s) => { s.creditBook.people = { name: "Ramesh" }; }],
+    ["hardware-credit.example.json", "what a credit shop has not", (s) => { s.batches = []; s.students = []; s.lateFeeInr = 50; s.joiningMidMonth = "full"; s.classes = {}; s.waiver = { limitInr: 100 }; }],
+    ["hardware-credit.example.json", "a late fee of 0 and a waiver limit of 0", (s) => { s.lateFeeInr = 0; s.waiver = { limitInr: 0 }; }],
   ];
   return muts.map(([file, label, change]) => {
     const s = example(file);
@@ -149,7 +159,7 @@ function settingsCases() {
     return {
       name: `${file}: ${label}`, text,
       ...(v.ok
-        ? { errors: [], checked: { joiningMidMonth: v.settings.joiningMidMonth ?? "usual", payment: v.settings.payment.module, due: v.settings.due, reminders: v.settings.reminders, lateFeeInr: v.settings.lateFeeInr, waiverInr: v.settings.waiver.limitInr, refundInr: v.settings.refund.limitInr, partPayments: v.settings.partPayments, students: v.settings.students.map((x) => ({ name: x.name, batch: x.batchId, language: x.language ?? null, joined: x.joined ?? null, backDues: x.backDues ?? [] })), oldDuesStopLink: v.settings.classes?.oldDuesStopLink ?? null } }
+        ? { errors: [], checked: { joiningMidMonth: v.settings.joiningMidMonth ?? "usual", payment: v.settings.payment.module, due: v.settings.due, reminders: v.settings.reminders, lateFeeInr: v.settings.lateFeeInr, waiverInr: v.settings.waiver.limitInr, refundInr: v.settings.refund.limitInr, partPayments: v.settings.partPayments, students: v.settings.students.map((x) => ({ name: x.name, batch: x.batchId, language: x.language ?? null, joined: x.joined ?? null, backDues: x.backDues ?? [] })), oldDuesStopLink: v.settings.classes?.oldDuesStopLink ?? null, credit: v.settings.creditBook ?? null } }
         : { errors: v.errors }),
     };
   });

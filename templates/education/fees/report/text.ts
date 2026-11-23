@@ -48,7 +48,7 @@ export function ownerText(report: FeesReport, language: Language): string {
   const moneyLine = [
     pair(moneyLabels(language, report.paidBy).collected, rupees(money.collected.paise)),
     money.oldDues ? pair(moneyLabels(language, report.paidBy).oldDuesCollected, rupees(money.oldDues.paise)) : "", // only when an old due was paid this period
-    pair(s.label.stillToCollect, fees.stillToCollect.count > 0 ? `${rupees(fees.stillToCollect.paise)} (${fees.stillToCollect.count} ${s.label.students})` : rupees(0)),
+    pair(s.label.stillToCollect, fees.stillToCollect.count > 0 ? `${rupees(fees.stillToCollect.paise)} (${fees.stillToCollect.count} ${report.credit ? s.credit.accounts : s.label.students})` : rupees(0)),
     money.givenBack.count > 0 ? pair(moneyLabels(language, report.paidBy).givenBack, rupees(money.givenBack.paise)) : "",
   ].filter(Boolean).join(" · ");
   const doneLine = [
@@ -60,6 +60,9 @@ export function ownerText(report: FeesReport, language: Language): string {
   // Classes: one more line, only for a centre that has it (a Fees centre's five lines are as they were)
   const classLine = report.classes ? [pair(s.classes.held, report.classes.held), pair(s.classes.linksSent, report.classes.linksSent), pair(s.classes.attendance, report.classes.attendanceMarked), pair(s.classes.missedNotes, report.classes.missedNotes), pair(s.classes.doubts, report.classes.doubts)].join(" · ") : "";
 
+  // the credit book: one more line, only for a shop that has it: what was owed at the month's start, what came after a reminder, and the reminders after a recorded payment (0)
+  const creditLine = report.credit ? [pair(s.credit.owedAtStart, rupees(report.credit.owedAtStart.paise)), pair(s.credit.collectedAfterReminder, rupees(report.credit.collectedAfterReminder.paise)), pair(s.credit.remindersSent, report.credit.remindersSent), pair(s.credit.remindersAfterPaid, report.credit.remindersAfterPaid)].join(" · ") : "";
+
   const byCount = RULE_IDS.filter((r) => stopped.byRule[r] > 0).sort((a, b) => stopped.byRule[b] - stopped.byRule[a]); // ties keep the rules' own order
   const shown = byCount.slice(0, 3).map((r) => pair(s.stop[r], stopped.byRule[r]));
   const stoppedLine = stopped.total === 0 ? pair(s.label.stoppedByLimits, 0)
@@ -67,7 +70,7 @@ export function ownerText(report: FeesReport, language: Language): string {
 
   const notChecked = `${pair(s.label.notChecked, notCheckedList(report, language))}${language === "hi" ? "।" : "."} ${s.handRun}`;
 
-  return [title, moneyLine, doneLine, ...(classLine ? [classLine] : []), stoppedLine, notChecked].join("\n");
+  return [title, moneyLine, doneLine, ...(classLine ? [classLine] : []), ...(creditLine ? [creditLine] : []), stoppedLine, notChecked].join("\n");
 }
 
 /** The owner's messages for a language choice: one, or two for "both". */

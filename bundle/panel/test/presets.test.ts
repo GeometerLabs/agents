@@ -38,10 +38,12 @@ test("the phone templates a preset may name are Bookings and every row of setups
   assert.deepEqual([...PHONE_TEMPLATES].sort(), ["bookings", ...Object.keys(SETUPS)].sort());
 });
 
-test("the first set is here: salon, clinic, tuition, music or dance or yoga, bakery, sweets, catering, restocking, hardware (keep one for me) and the free listings-only shop; each file is named by its id", () => {
-  assert.deepEqual(presets.map((p) => p.id), ["arts", "bakery", "catering", "clinic", "hardware", "restock", "salon", "shows-only", "sweets", "tuition"]);
-  assert.deepEqual(readdirSync(PRESETS_DIR).filter((f) => f.endsWith(".json")).sort(), presets.map((p) => `${p.id}.json`));
+test("the first set is here: salon, clinic, tuition, music or dance or yoga, bakery, sweets, catering, restocking, hardware (keep one for me), the hardware shop's credit book and the free listings-only shop; each file is named by its id", () => {
+  assert.deepEqual(presets.map((p) => p.id), ["arts", "bakery", "catering", "clinic", "hardware", "hardware-credit", "restock", "salon", "shows-only", "sweets", "tuition"]);
+  // both lists sorted the same way: the files by name sort "hardware-credit.json" before "hardware.json", the presets by id put "hardware" first
+  assert.deepEqual(readdirSync(PRESETS_DIR).filter((f) => f.endsWith(".json")).sort(), presets.map((p) => `${p.id}.json`).sort());
   assert.deepEqual(presets.filter((p) => p.variant === "classes").map((p) => p.id), ["arts", "tuition"], "the two class trades use the Classes part of the Fees form");
+  assert.deepEqual(presets.filter((p) => p.variant === "creditBook").map((p) => p.id), ["hardware-credit"], "the shop starter's credit book (24 Nov 2026) is the Fees form's credit variant");
   assert.equal(presets.some((p) => p.id === "tiffin" || p.id === "hire"), false, "tiffin and equipment hire stay hidden until their form step exists");
   // the pickup hold (24 Nov 2026): the variant "hold" is the advance "none", and one goes only with the other
   assert.deepEqual(presets.filter((p) => p.variant === "hold").map((p) => p.id), ["hardware"]);
@@ -79,6 +81,17 @@ function throughTheSteps(preset: Preset, language: Language) {
     assert.deepEqual(applyListingsBusiness(d, { name: "Test Shop", town: "Thrissur", pincode: "", trade: "" }, w).problems, [], `${preset.id}/${language}`);
     d.primaryLanguage = language; d.ownerLanguage = language;
     return buildListingsSettings(d, example);
+  }
+  if (preset.template === "fees" && preset.variant === "creditBook") {
+    // the credit book: the shop and one person a line, then the reminders and limits; no batch, student or due day is asked
+    const example = must(validateFees(json("education/fees/settings/bright-tuition.example.json")));
+    const d = newFeesDraft("d1", "a1", tpl("fees"), example, NOW);
+    applyPreset(d, preset, language);
+    assert.deepEqual(applyFeesBusiness(d, { name: "Test Hardware", address: "", people: "Ramesh, 98450 11111, 2400\nSuresh Electricals, +919845022222, 7850" }, w).problems, [], `${preset.id}/${language}`);
+    const g = (d as any).fees;
+    assert.deepEqual(applyFeesRules(d, { every: g.credit.every, reminderHour: g.reminderHour, reminderMost: g.reminderMost, most: g.credit.most, partAllowed: "on", partMin: "100", refund: g.refund }, w).problems, [], `${preset.id}/${language}`);
+    d.ownerNumber = owner; d.payment = pay;
+    return buildFeesSettings(d, example);
   }
   if (preset.template === "fees") {
     const example = must(validateFees(json("education/fees/settings/bright-tuition.example.json")));
@@ -121,6 +134,10 @@ test("every preset, in every language, goes through its form's steps and its pre
     const built = throughTheSteps(preset, language) as any;
     assert.ok(built.ok, `${preset.id}/${language}: ${built.errors?.join("; ")}`);
     if (preset.variant === "classes") assert.ok(Object.keys(built.settings.classes.timetable).length > 0, `${preset.id}: the Classes part is filled`);
+    else if (preset.variant === "creditBook") {
+      assert.deepEqual(built.settings.creditBook.people.map((p: { name: string; phone: string; amountInr: number }) => [p.name, p.phone, p.amountInr]), [["Ramesh", "+919845011111", 2400], ["Suresh Electricals", "+919845022222", 7850]], `${preset.id}: who owes what`);
+      assert.deepEqual([built.settings.batches, built.settings.students], [[], []], "a credit book has no batch and no student");
+    }
     else if (preset.template === "fees") assert.equal(built.settings.classes, undefined);
   }
 });
@@ -148,7 +165,8 @@ test("every preset has its name, and every name it fills in, in all four languag
     for (const l of LANGUAGES) assert.ok(preset.names[l].trim() !== "", `${preset.id}/${l}`);
     const english = presetTexts(preset, "en");
     // a preset with no example values (the listings-only shop) has only its name to review
-    assert.ok(english.size >= (Object.keys(preset.prefill).length === 0 ? 1 : 4), `${preset.id}: its name and its example names are listed for review`);
+    // the credit book's preset fills in numbers only (who owes what is the owner's), so it too has only its name to review
+    assert.ok(english.size >= (Object.keys(preset.prefill).length === 0 || preset.variant === "creditBook" ? 1 : 4), `${preset.id}: its name and its example names are listed for review`);
     for (const l of ["hi", "ml", "kn"] as const) {
       const mine = presetTexts(preset, l);
       assert.deepEqual([...mine.keys()], [...english.keys()], `${preset.id}/${l}: the same ids as English`);
@@ -171,7 +189,10 @@ test("a preset naming an unknown template, a variant the template does not have,
   assert.match(refused({ ...salon(), variant: "classes" }), /has no variant/u);
   const plans = { ...JSON.parse(readFileSync(join(PRESETS_DIR, "bakery.json"), "utf8")), variant: "plans" };
   assert.match(refused(plans), /cannot be set up in the phone form yet/u, "tiffin waits for its form step");
-  assert.deepEqual(VARIANTS.fees.settable, ["classes"]);
+  assert.deepEqual(VARIANTS.fees.settable, ["classes", "creditBook"]);
+  const credit = JSON.parse(readFileSync(join(PRESETS_DIR, "hardware-credit.json"), "utf8"));
+  assert.match(refused({ ...credit, prefill: { ...credit.prefill, creditBook: { maxPerPersonInr: 0, remindEveryDays: 7 } } }), /maxPerPersonInr/u);
+  assert.match(refused({ ...credit, prefill: { ...credit.prefill, batches: [] } }), /"batches"/u, "a credit book's prefill has no batches");
   assert.equal(readPreset(salon(), ["fees"]).ok, false, "a server that cannot set the template up does not take its presets");
 });
 

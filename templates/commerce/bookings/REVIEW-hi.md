@@ -1804,6 +1804,47 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `classes.problems.time` | कक्षा की लाइन 2: शुरू होने का समय 16:00 जैसा होना चाहिए (24 घंटे की घड़ी)। | Class line 2: the start time must look like 16:00 (24-hour clock). |  |
 | `classes.problems.minutes` | कक्षा की लाइन 2: समय 10 से 240 के बीच पूरे मिनट होना चाहिए। | Class line 2: the length must be a whole number of minutes from 10 to 240. |  |
 | `classes.problems.twice` | कक्षा की लाइन 2: वही बैच, दिन और समय दो बार लिखा है। | Class line 2: the same batch, day and time is written twice. |  |
+| `credit.panel.steps.business` | दुकान और किस पर कितना बाकी | The shop and who owes what |  |
+| `credit.panel.steps.rules` | याद और सीमाएँ | Reminders and limits |  |
+| `credit.panel.business.name` | दुकान का नाम | Shop name |  |
+| `credit.panel.business.address` | पता (ज़रूरी नहीं) | Address (optional) |  |
+| `credit.panel.business.people` | आज किस पर कितना बाकी है | Who owes what today |  |
+| `credit.panel.business.peopleHelp` | हर लाइन पर एक व्यक्ति: नाम, WhatsApp नंबर, बाकी रकम रुपये में। उदाहरण: Ramesh, 98450 12345, 2400। खाली छोड़ें तो किसी के बिना शुरू होगा; मालिक बाद में WhatsApp पर जोड़ते हैं ("Ramesh owes 2400")। | One person on each line: their name, their WhatsApp number, what they owe in rupees. Example: Ramesh, 98450 12345, 2400. Leave it empty to start with nobody; the owner adds people later on WhatsApp ("Ramesh owes 2400"). |  |
+| `credit.panel.business.numbersNote` | नंबर दुकान के सर्वर पर ही रहते हैं। अभी किसी को कुछ नहीं भेजा जाता: हर व्यक्ति को पहला संदेश तभी जाता है जब मालिक पूछें दबाएँ, और याद उनके हाँ कहने के बाद ही। | The numbers stay on the shop's server. Nothing is sent to anyone now: each person gets a first message only when the owner taps Ask, and reminders only after they say yes. |  |
+| `credit.panel.rules.every` | याद ज़्यादा से ज़्यादा हर (दिन) | A reminder at most every (days) |  |
+| `credit.panel.rules.everyHelp` | याद सिर्फ़ उन्हें जाती है जिन्होंने हाँ कहा, नीचे दिए घंटे पर, जब तक कुछ बाकी है। | Reminders go only to people who said yes, at the hour below, while something is owed. |  |
+| `credit.panel.rules.hour` | याद का घंटा (6 से 21) | Reminder hour (6 to 21) |  |
+| `credit.panel.rules.most` | एक व्यक्ति को एक महीने में ज़्यादा से ज़्यादा याद | Most reminders to one person in a month |  |
+| `credit.panel.rules.maxPerPerson` | एक खाते में ज़्यादा से ज़्यादा (₹) | Most one account may show (₹) |  |
+| `credit.panel.rules.maxPerPersonHelp` | भुगतान लिंक कभी इससे ज़्यादा का नहीं होता। यह उधार लिखने से नहीं रोकता; गलत टाइप हुई रकम रोकता है। | A payment link is never for more. It does not stop the owner writing credit; it stops a mistyped amount. |  |
+| `credit.panel.rules.partAllowed` | ग्राहक कुछ हिस्सा भर सकते हैं | Customers may pay part |  |
+| `credit.panel.rules.partMin` | सबसे कम हिस्सा (₹) | Least part payment (₹) |  |
+| `credit.panel.rules.refund` | एजेंट ख़ुद जितना रिफंड माँग सकता है (₹) | Refund the agent may ask for on its own (₹) |  |
+| `credit.panel.rules.refundHelp` | इससे ऊपर हर रिफंड मालिक मंज़ूर करते हैं। | Above this, the owner approves each refund. |  |
+| `credit.panel.rules.firstNote` | काउंटर पर दिया नकद मालिक का निशान है ("Ramesh paid 1000"), पक्का भुगतान नहीं। UPI भुगतान तभी गिना जाता है जब मालिक उसे मिला हुआ दर्ज करें। | Cash paid at the counter is the owner's mark ("Ramesh paid 1000"), never a confirmed payment. A UPI payment counts only when the owner marks it received. |  |
+| `credit.panel.summary` | खाते में 3 लोग · सेटअप पर ₹10,850 बाकी | 3 people in the book · ₹10,850 owed at setup |  |
+| `credit.panel.problems.tooMany` | यहाँ ज़्यादा से ज़्यादा 300 लोग। बड़ा खाता कोई बिल्डर सेट करता है। | At most 300 people here. A bigger book is set up by a builder. |  |
+| `credit.panel.problems.lineBad` | लाइन 2: नाम, WhatsApp नंबर और रकम, बीच में कॉमा लगाकर लिखें। | Line 2: write the name, the WhatsApp number and the amount, with commas between. |  |
+| `credit.panel.problems.number` | लाइन 2: WhatsApp नंबर सही नहीं लगता। दस अंक लिखें, या + और देश का कोड। | Line 2: the WhatsApp number does not look right. Write ten digits, or + and the country code. |  |
+| `credit.panel.problems.amount` | लाइन 2: बाकी रकम 0 से ऊपर पूरे रुपये में हो, एक खाते की सीमा तक। | Line 2: what they owe must be whole rupees above 0, at most the most one account may show. |  |
+| `credit.panel.problems.twice` | लाइन 2: यह नाम या नंबर पहले की लाइन में है। हर व्यक्ति को ऐसा नाम दें जिसे मालिक अलग पहचान सकें। | Line 2: this name or number is already on an earlier line. Give each person a name the owner can tell apart. |  |
+| `credit.panel.problems.everyBad` | याद कितनी बार जाए, यह 1 से 60 दिन हो। | How often a reminder may go must be from 1 to 60 days. |  |
+| `credit.panel.problems.hourBad` | याद का घंटा 6 से 21 के बीच हो। | The reminder hour must be from 6 to 21. |  |
+| `credit.panel.problems.mostBad` | महीने में ज़्यादा से ज़्यादा याद 1 से 12 हो। | The most reminders in a month must be from 1 to 12. |  |
+| `credit.panel.problems.maxBad` | एक खाते की सीमा 1 से 10,00,000 पूरे रुपये हो। | The most one account may show must be whole rupees from 1 to 10,00,000. |  |
+| `credit.panel.problems.partBad` | सबसे कम हिस्सा 0 से ऊपर पूरे रुपये हो। | The least part payment must be whole rupees above 0. |  |
+| `credit.panel.problems.refundBad` | रिफंड सीमा पूरे रुपये में हो। | The refund limit must be whole rupees. |  |
+| `credit.owner.title` | उधार खाता | Credit book |  |
+| `credit.owner.note` | किस पर कितना बाकी है। यह सूची सिर्फ़ आप देखते हैं। जब तक आप पूछें न दबाएँ, ग्राहक को कुछ नहीं जाता, और याद उनके हाँ कहने के बाद ही शुरू होती है। | Who owes what. Only you see this list. Nothing goes to a customer until you tap Ask, and reminders start only after they say yes. |  |
+| `credit.owner.boxLabel` | खाते में लिखें | Write in the book |  |
+| `credit.owner.boxExample` | Ramesh owes 2400, या Ramesh paid 1000 | Ramesh owes 2400, or Ramesh paid 1000 |  |
+| `credit.owner.write` | लिखें | Write |  |
+| `credit.owner.none` | खाते में अभी कोई नहीं है। | Nobody is in the book yet. |  |
+| `credit.owner.ask` | याद के बारे में पूछें | Ask about reminders |  |
+| `credit.owner.state.none` | अभी पूछा नहीं | Not asked yet |  |
+| `credit.owner.state.asked` | पूछा गया: उनके हाँ का इंतज़ार | Asked: waiting for their yes |  |
+| `credit.owner.state.yes` | याद चालू | Reminders on |  |
+| `credit.owner.state.stopped` | STOP भेजा: कोई संदेश नहीं | Sent STOP: no messages |  |
 | `preset.words.question` | दुकान क्या काम करती है? | What does the shop do? |  |
 | `preset.words.other` | कुछ और | Something else |  |
 | `preset.words.typedLabel` | आपकी दुकान क्या करती है, अपने शब्दों में? | What does the shop do, in your own words? |  |
@@ -1839,6 +1880,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.hardware.prefill.menu.4.names` | छत के पंखे का कैपेसिटर | Ceiling fan capacitor |  |
 | `preset.hardware.prefill.pickup.1.names` | सुबह | morning |  |
 | `preset.hardware.prefill.pickup.2.names` | शाम | evening |  |
+| `preset.hardware-credit.name` | हार्डवेयर या बिजली की दुकान: उधार खाता | Hardware or electrical shop: credit book |  |
 | `preset.restock.name` | सप्लायर से दुकान का स्टॉक मँगाना | Shop restocking from suppliers |  |
 | `preset.restock.prefill.supplier` | मेरा सप्लायर | My supplier |  |
 | `preset.restock.prefill.items.1.names` | चावल 25 किलो | Rice 25 kg |  |

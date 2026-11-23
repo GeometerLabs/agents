@@ -69,5 +69,8 @@ func (r *Report) Tree() map[string]any {
 	if c := r.Classes; c != nil {
 		out["classes"] = map[string]any{"held": c.Held, "linksSent": c.LinksSent, "attendanceMarked": c.AttendanceMarked, "missedNotes": c.MissedNotes, "doubts": c.Doubts}
 	}
+	if c := r.Credit; c != nil {
+		out["credit"] = map[string]any{"owedAtStart": report.AmountTree(c.OwedAtStart), "collectedAfterReminder": report.AmountTree(c.CollectedAfterReminder), "remindersSent": c.RemindersSent, "remindersAfterPaid": c.RemindersAfterPaid}
+	}
 	return out
 }
