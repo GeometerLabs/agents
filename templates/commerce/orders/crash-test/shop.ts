@@ -107,7 +107,8 @@ export function planShop(settings: Settings): { shop: Shop } | { problem: string
     settings, tz, startMs, item, qty, slot, date, at,
     deliverySlot, deliveryAt: deliverySlot ? momentsOf(settings, date, deliverySlot) : undefined,
     totalInr, advanceInr: advanceFor(settings, totalInr),
-    offerInr: Math.max(1, item.priceInr - Math.max(1, Math.round(item.priceInr / 4))),
+    // with the discount authority on (E1), the haggle is under the item's floor, so it is the refusal the price situations check
+    offerInr: Math.max(1, Math.min(item.priceInr - Math.max(1, Math.round(item.priceInr / 4)), (settings.discounts?.floors[item.id] ?? item.priceInr) - 1)),
     big: bigQty ? { qty: bigQty, item: dearest, totalInr: dearest.priceInr * bigQty, advanceInr: advanceFor(settings, dearest.priceInr * bigQty) } : undefined,
     approval: approvalQty ? { qty: approvalQty, item: dearest, totalInr: dearest.priceInr * approvalQty } : undefined,
     inside: delivery ? `Flat 4, Lake View Apartments, ${delivery.area[0]}` : undefined,

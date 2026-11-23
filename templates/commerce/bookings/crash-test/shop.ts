@@ -77,14 +77,14 @@ const SEARCH_DAYS = 14;
 /**
  * The price a haggling customer asks for: two thirds of the list price, rounded to 10 (to 100 above ₹1,000). The check looks for
  * that number as text in every message, so it must not be part of any price the messages carry; if two thirds is, try a few other
- * fractions before giving up.
+ * fractions before giving up. `below`: the offer is under it (the list price; the floor when the shop takes discounts).
  */
-export function haggleOffer(service: Service, listInr: number[]): number | undefined {
+export function haggleOffer(service: Service, listInr: number[], below = service.priceInr): number | undefined {
   const step = service.priceInr >= 1000 ? 100 : 10;
   const shown = listInr.flatMap((n) => [String(n), n.toLocaleString("en-IN")]);
   for (const fraction of [2 / 3, 0.6, 0.7, 0.5, 0.75, 0.55, 0.65]) {
     const offer = Math.round((service.priceInr * fraction) / step) * step;
-    if (offer >= 25 && offer < service.priceInr && !shown.some((s) => s.includes(String(offer)))) return offer;
+    if (offer >= 25 && offer < below && !shown.some((s) => s.includes(String(offer)))) return offer;
   }
   return undefined;
 }
@@ -94,8 +94,10 @@ export function planShop(settings: Settings): { shop: Shop } | { problem: string
   const tz = settings.timezone;
   const startMs = zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, tz);
   const today = localParts(startMs, tz);
-  const listInr = [...new Set([...settings.services.map((s) => s.priceInr), settings.deposit.amountInr])].sort((a, b) => a - b);
-  const offerInr = haggleOffer(service, listInr);
+  // the amounts the agent may say: the list prices and the deposit, and with the discount authority on (E1) each service's floor, which it states as the lowest it can do
+  const listInr = [...new Set([...settings.services.map((s) => s.priceInr), settings.deposit.amountInr, ...Object.values(settings.discounts?.floors ?? {})])].sort((a, b) => a - b);
+  // with the discount authority on (E1), a haggle must be below the service's floor to be the refusal these situations check (a price above it is the discount situations')
+  const offerInr = haggleOffer(service, listInr, settings.discounts?.floors[service.id] ?? service.priceInr);
   if (offerInr === undefined) return { problem: `No lower price to haggle for can be chosen for ${service.id} (₹${service.priceInr}) without it showing up inside another amount.` };
   const duration = service.durationMinutes;
   const grid = settings.slotMinutes;

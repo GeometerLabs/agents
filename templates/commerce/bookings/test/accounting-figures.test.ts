@@ -2,12 +2,17 @@
 //
 // `oldMoney` below is the report's own sum as it was in report/data.ts before this change (kept here, word for word, as the thing the books must agree with). It is run,
 // with modules/accounting/figures.ts, over every record the template's tests build: the scripted busy month the sample report is made from, and every crash-test
-// situation's world (the harness calls `worldHook` once for each world made), by calendar month and over the whole record. They must be equal to the paisa and the count.
+// situation's world (the situations run on the shop's own Go program; modules/crash-test/go-world.ts `goWorldHook` hands each world's record over as it closes), by calendar month and over the whole record. They must be equal to the paisa and the count.
 // A few small hand-made older records pin the edges (a missing amount, a repeated payment, a refund a person settled by their word, an owner's UPI mark).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { worldHook } from "../src/harness.ts";
-import type { World } from "../src/harness.ts";
+import { goWorldHook } from "../../../../modules/crash-test/go-world.ts";
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
+import type { Settings } from "../src/settings.ts";
+import type { RecordEntry as Line } from "../../../../modules/record/record.ts";
+
+/** A record to check: the busy month's (the demo engine's scripted month) or one crash-test situation's world, read from the shop's own Go program as it closed. */
+interface World { settings: Settings; record: { entries(): readonly Line[] } }
 import { runBusyMonth } from "../report/example-month.ts";
 import { runOn } from "../crash-test/situations.ts";
 import { BOOKINGS_LEGACY } from "../src/accounting.ts";
@@ -81,13 +86,13 @@ function equal(label: string, all: readonly RecordEntry[], upi: boolean, timezon
   return counted;
 }
 
-test("the books give the report's deposits, refunds and missing amounts, exactly, on the busy month and every crash-test situation", async () => {
+test("the books give the report's deposits, refunds and missing amounts, exactly, on the busy month and every crash-test situation", { skip: goSkip("bookings") }, async () => {
   const worlds: World[] = [];
-  worldHook.on = (w) => worlds.push(w);
+  goWorldHook.closing = (w) => worlds.push({ settings: w.settings as Settings, record: { entries: () => w.entries } });
   try {
-    await runBusyMonth();
+    worlds.push((await runBusyMonth()).world);
     await runOn();
-  } finally { worldHook.on = undefined; }
+  } finally { goWorldHook.closing = undefined; }
   assert.ok(worlds.length > 40, `${worlds.length} worlds were made`);
   let counted = 0;
   let refundsSeen = 0;

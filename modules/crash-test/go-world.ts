@@ -164,6 +164,12 @@ export function samePicture(a: Uint8Array | undefined, b: Uint8Array | undefined
   return !!x && !!y && x.header !== "" && x.header === y.header && x.pixels === y.pixels;
 }
 
+/**
+ * A test that needs the record of every world a run makes (each template's test/accounting-figures.test.ts: the books against the report's sums over every situation's record)
+ * sets `closing`; it is called with each world's settings and record lines just before the world closes. Nothing else uses it.
+ */
+export const goWorldHook: { closing?: (world: { settings: unknown; entries: any[] }) => void } = {};
+
 const PHONE_NUMBER_ID = "100000000000001";
 const PAGES = "https://reports.example.com/r";
 
@@ -182,7 +188,11 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   const agentToken = randomBytes(16).toString("hex");
   const closers: (() => Promise<void>)[] = [];
   let shop: GoShop | undefined;
-  closeLater(async () => { await shop?.close(); for (const c of closers.reverse()) await c(); });
+  closeLater(async () => {
+    if (shop && goWorldHook.closing) goWorldHook.closing({ settings: o.settings, entries: shop.record() });
+    await shop?.close();
+    for (const c of closers.reverse()) await c();
+  });
   const standins = await o.standins(viaShop, { payments, messaging });
   closers.push(() => standins.close());
   // a shop with a gateway reaches it through Guard: the stub Guard holds and refuses by the shop's own limits. A UPI shop has no gateway and so no payments Guard.

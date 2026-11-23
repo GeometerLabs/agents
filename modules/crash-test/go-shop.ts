@@ -48,6 +48,11 @@ export function goProgram(name: string): { ok: true; path: string; sha256: strin
   return { ok: true, path, sha256: createHash("sha256").update(readFileSync(path)).digest("hex") };
 }
 
+/** Why a test that runs situations on the program `name` is skipped (it is not built here), or undefined: it runs. A test is skipped only when what it needs is not there. */
+export function goSkip(name: string): string | undefined {
+  return existsSync(join(goProgramsDir(), name)) ? undefined : `the Go program ${name} is not built (cd go && go build -o bin/ ./cmd/${name}), and every situation runs on it`;
+}
+
 // Every world a situation opens is closed when the situation ends (modules/crash-test/situations.ts runSituation calls closeOpened), so no shop and no stand-in outlives it,
 // also when the situation throws half-way.
 const opened = new Set<() => Promise<void>>();
