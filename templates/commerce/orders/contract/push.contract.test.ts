@@ -1,6 +1,6 @@
 // A CUSTOMER'S WEB PUSH from an Orders shop (24 Nov 2026; the TypeScript runtime's item 11h: server/runtime.ts `push.customer` on the channel outbox's onKeep, and http.ts's
 // customer_* ops). The case the gap was about: a shop with NO WhatsApp, whose customers hear of their order only on its page, now reaches the phone that allowed alerts on that
-// page. Every push goes through the shop's push Guard (the fake Guard of modules/test/contract/push-harness.ts, which keeps what it is sent), encrypted for that phone alone and
+// page (and the Guard's refusal at its daily count is not tried again). Every push goes through the shop's push Guard (the fake Guard of modules/test/contract/push-harness.ts, which keeps what it is sent), encrypted for that phone alone and
 // signed with the shop's key. Held to what the TypeScript did: one push per kept message per phone, the page's own words fitted as every notification, the shop's name as the
 // title, the tag "update", the customer's route, a 12-hour TTL, normal urgency and one topic per phone; an order from MCP has alerts as a page order does; a phone the push
 // service says is gone (410) is removed; a phone that stopped alerts (customer_unsubscribe) hears nothing more; the page keeps its message whatever the push did.
@@ -58,14 +58,19 @@ function opened(call: PushCall, b: SoftBrowser): { title: string; body: string; 
 }
 
 describe("a customer's alerts on their order's page", () => {
-  contract("a shop with no WhatsApp: the order's next message reaches the phone that allowed alerts, once, through the push Guard, in the page's own words", async () => {
+  contract("a shop with no WhatsApp: the order's next message goes to the phone that allowed alerts, once, through the push Guard, in the page's own words; the Guard's daily count holds", async () => {
     const { s, guard } = await boot({ settings: { owner: { approveOverInr: 0 } } });
     const { hash } = await s.order();
     const b = softBrowser("updates.push.services.mozilla.com");
     assert.deepEqual((await push(s, { op: "customer_subscribe", handle: hash, subscription: b.subscription })).body, { on: true, phones: 1 });
     assert.equal(guard.calls.length, 0);
+    // the Guard refuses it at its daily count (its refusal names the reason, monorepo docs/guard-for-pathways.md: `guard.reason_code: "limit_exceeded"`)
+    guard.answer = { status: 403, reason: "limit_exceeded" };
     await s.channelEvents([{ kind: "channel_request", id: "cancel-1", channel: "web", op: "cancel", handle: hash }]); await s.settle();
     await heard(s, guard, 1);
+    await sleep(1500);
+    assert.equal(guard.calls.length, 1, "a push the Guard refused is never tried again");
+    assert.equal((await push(s, { op: "customer_state", handle: hash })).body.phones, 1, "and the phone keeps its subscription");
     const [{ path, authorization, call }] = guard.calls;
     assert.deepEqual([path, authorization], ["/v1/push/customer", `Bearer ${GUARD_TOKEN}`]);
     const words = await newest(s, hash);

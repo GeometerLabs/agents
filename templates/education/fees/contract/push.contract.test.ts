@@ -90,18 +90,23 @@ describe("a parent who allowed alerts on their private page", () => {
     assert.deepEqual(said, { title: c.settings.name, body: pushedWords(sent[0]), tag: "update" });
   });
 
-  contract("STOP ends every message to that parent, and with them the pushes", async () => {
+  contract("STOP ends every message to that parent, and with them the pushes, while another parent's reminder is pushed; a phone the push service says is gone (410) is removed", async () => {
     const { c, guard } = await november();
-    const b = softBrowser();
-    assert.equal((await push(c, { op: "customer_subscribe", handle: linkHash(c, ROHAN), subscription: b.subscription })).status, 200);
+    const rohan = softBrowser(), meera = softBrowser();
+    assert.equal((await push(c, { op: "customer_subscribe", handle: linkHash(c, ROHAN), subscription: rohan.subscription })).status, 200);
+    assert.equal((await push(c, { op: "customer_subscribe", handle: linkHash(c, MEERA), subscription: meera.subscription })).status, 200);
     await c.inbound(ROHAN, "STOP");
     assert.equal(lines(c, "opt_out", "confirmed").length, 1);
     await sleep(1000);
     const pushed = guard.calls.length;
+    guard.answer = { status: 410 };
     c.goto(at(5, 10, 0) + 1000);
     await c.waitFor(() => reminderIds(c, MEERA).length === 2, "Meera's due-day reminder");
-    await sleep(1500);
+    await heard(c, guard, pushed + 1);
     assert.equal(reminderIds(c, ROHAN).length, 1, "nothing more went to the parent who said STOP");
-    assert.equal(guard.calls.length, pushed, "and nothing more was pushed to them");
+    const said = meera.open(guard.calls[pushed].call); // only Meera's browser can open it: the one push is hers
+    assert.equal(said.body, pushedWords(whatsapp(c, MEERA).at(-1)!));
+    for (let i = 0; i < 40 && (await push(c, { op: "customer_state", handle: linkHash(c, MEERA) })).body.phones !== 0; i++) await sleep(50);
+    assert.equal((await push(c, { op: "customer_state", handle: linkHash(c, MEERA) })).body.phones, 0, "the dropped subscription is removed");
   });
 });

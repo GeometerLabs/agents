@@ -8,7 +8,7 @@
 //   - "delete my chat" (the chat identity's forget) ends a guest's alerts; a handle with no page subscribes nothing; nothing before the first answer;
 //   - the push never replaces the page's message: the page shows it whatever the push did.
 // A "fakes" shop with its stand-in WhatsApp (runtime.json `services.messaging` named, so it keeps it) and push turned on as the deployer does (enablePush).
-import { after, describe } from "node:test";
+import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -19,9 +19,9 @@ import { GUARD_TOKEN, enablePush, softBrowser, startFakeGuard } from "../../../.
 import { readVapidHeader, vapidVerifies } from "../../../../modules/push/crypto.ts";
 import type { FakeGuard, SoftBrowser } from "../../../../modules/test/contract/push-harness.ts";
 import { PUSH_LIMITS, pushGuardDef, pushSpec } from "../../../../bundle/generate/guards.ts";
-import { credential, haveBinary, skipWithoutBinary, startRealGuard } from "../../../../bundle/test/real-guard.ts";
+import { credential, skipWithoutBinary, startRealGuard } from "../../../../bundle/test/real-guard.ts";
 import type { RealGuard } from "../../../../bundle/test/real-guard.ts";
-import { contract, makeShop, openStart, sleep } from "./harness.ts";
+import { SKIP, contract, makeShop, openStart, sleep } from "./harness.ts";
 import type { Shop, ShopOptions } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -126,8 +126,8 @@ describe("a customer's alerts on their booking's page", () => {
     assert.equal(opened(guard.calls[1].call, b2).body, fitNotification(await newest(s, second.hash)));
   });
 
-  contract("the shop's real push Guard in front: its daily count for the shop's customers holds, and the push it refused is not tried again", async () => {
-    if (!haveBinary) { assert.ok(skipWithoutBinary); return; }
+  // the one case that needs the built geo-guard: skipped without it, saying why (contract()'s own skip covers the Go program)
+  test("the shop's real push Guard in front: its daily count for the shop's customers holds, and the push it refused is not tried again", { skip: SKIP ?? skipWithoutBinary }, async () => {
     // the push service the real Guard sends to: the fake Guard, used here only as the thing that keeps what reaches it
     const service = await startFakeGuard(); guards.push(service);
     const agent = credential();

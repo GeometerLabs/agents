@@ -43,12 +43,12 @@ func (m buttonsMsg) SendInteractive(ctx context.Context, to string, i messaging.
 func TestWithoutAddresses(t *testing.T) {
 	for in, want := range map[string]string{
 		"Fee due for March: ₹1,500.\nPay here: https://pay.example/l/abc?x=1\n\nYour page: HTTPS://partners.example/s/bright/f/0123 thanks": "Fee due for March: ₹1,500.\nPay here: \nYour page: thanks",
-		"  only https://a.example/x  ":           "only",
-		"https://a.example/x\u00a0next":  "next", // JavaScript's \S stops at a no-break space, and its trim takes the space off
+		"  only https://a.example/x  ":         "only",
+		"https://a.example/x\u00a0next":        "next", // JavaScript's \S stops at a no-break space, and its trim takes the space off
 		"see http://a.example/x\u3000and more": "see \u3000and more",
-		"https://a.example/x":                    "",
-		"no address at all\t\there":              "no address at all here",
-		"line one\n \t \n\n\nline two":           "line one\nline two",
+		"https://a.example/x":                  "",
+		"no address at all\t\there":            "no address at all here",
+		"line one\n \t \n\n\nline two":         "line one\nline two",
 	} {
 		if got := withoutAddresses(in); got != want {
 			t.Errorf("%q: got %q, want %q", in, got, want)

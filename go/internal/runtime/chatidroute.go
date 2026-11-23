@@ -273,8 +273,8 @@ func (s *Server) chatID(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		// the thread's alert subscriptions end with it (chat-identity-http.ts `deps.push?.forget(chatConversationOf(g))`)
-		if p := rt.Push(); p != nil && p.On {
+		// the thread's alert subscriptions end with it (chat-identity-http.ts `deps.push?.forget(chatConversationOf(g))`: whenever the store is open, push on or off)
+		if p := rt.Push(); p != nil {
 			if _, err := p.Forget(ChatConversationOf(g)); err != nil {
 				return err
 			}
