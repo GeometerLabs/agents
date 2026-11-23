@@ -13,10 +13,9 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import type { OutboundMessage } from "../../../../modules/messaging/messaging.ts";
 import { balancePaise, paidPaise } from "../src/due.ts";
 import { brightTuition } from "../src/harness.ts";
-import { PROGRAM, VERSION, createGoWorld } from "./go-world.ts";
+import { PROGRAM, VERSION, createGoWorld, settingsFile } from "./go-world.ts";
 import type { GoWorld as World, GoWorldOptions } from "./go-world.ts";
 import { parseSettings } from "../src/settings.ts";
-import { assistantSettingsJson } from "../../../../modules/assistant/settings.ts";
 import type { Settings } from "../src/settings.ts";
 import { MARKERS, SAYS } from "./says.ts";
 import type { Markers, Says } from "./says.ts";
@@ -552,10 +551,8 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
     id: "paid-twice", title: "The fee is paid twice: the extra is given back, once, within the refund limit", how: "a link that takes no part payments is paid from two phones",
     async run() {
       const { results, expect } = checker();
-      const raw = JSON.parse(JSON.stringify(shop.settings));
-      raw.students = shop.settings.students.map((s) => ({ name: s.name, parent: s.parent, batch: s.batchId, ...(s.language ? { language: s.language } : {}) }));
-      // item 11i: the assistant block back in the shape a settings file writes it (a centre saved through the panel's Character step has one)
-      if (shop.settings.assistant) raw.assistant = assistantSettingsJson(shop.settings.assistant);
+      // the centre's own settings file (go-world.ts settingsFile: as the program reads it), with part payments off
+      const raw = settingsFile(shop.settings);
       const settings1 = parseSettings({ ...raw, partPayments: { allowed: false, minInr: 1 } });
       const w = await createGoWorld({ settings: settings1, nowMs: shop.startMs });
       await atReminder(w, 0);

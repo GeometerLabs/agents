@@ -43,11 +43,13 @@ export interface GoWorld extends GoWorldBase<Settings, Store> {
 }
 
 export async function createGoWorld(o: GoWorldOptions): Promise<GoWorld> {
-  const catalogue = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES].filter((t) => !o.unapproved?.includes(t.name)) };
+  // the stand-in knows every template (it renders their words) and the provider has approved all but `unapproved`: a situation approves one later, as Meta would
+  const catalogue = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES] };
+  const approved = { templates: catalogue.templates.filter((t) => !o.unapproved?.includes(t.name)) };
   const base = await openGoWorld<Settings, Store>({
     program: PROGRAM, version: VERSION, settings: o.settings, at: o.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, o.settings.timezone),
     customer: o.settings.owner.whatsapp, parseStore, parseSettings, gateway: false,
-    standins: async (_clock, fakes) => { approveTemplates(fakes.messaging, catalogue); return serveHandlers([whatsappStandin(fakes.messaging, catalogue, { phoneNumberId: "100000000000001" })]); },
+    standins: async (_clock, fakes) => { approveTemplates(fakes.messaging, approved); return serveHandlers([whatsappStandin(fakes.messaging, catalogue, { phoneNumberId: "100000000000001" })]); },
   });
   const world: GoWorld = Object.assign(base, {
     ownerTaps: (id: string) => base.tap(id, { from: base.owner }),
