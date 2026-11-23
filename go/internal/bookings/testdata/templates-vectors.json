@@ -1441,8 +1441,11 @@
    "language": "hi"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ठीक है, आपका हेयरकट ₹400 में हो जाएगा।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -1453,8 +1456,11 @@
    "language": "hi"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "हमारा हेयरकट ₹450 का है, इसलिए ₹400 के लिए मैंने मालिक से पूछा है। जवाब आते ही यहीं बताऊँगा।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -1465,8 +1471,11 @@
    "language": "hi"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "अच्छी खबर: मालिक ने आपके हेयरकट के लिए ₹400 मान लिया है।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -1477,8 +1486,11 @@
    "language": "hi"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "माफ़ कीजिए, मालिक ₹400 पर राज़ी नहीं हुए। आपके हेयरकट की सबसे कम कीमत ₹450 है।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -1489,8 +1501,11 @@
    "language": "hi"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "कीमत पर आपकी मंज़ूरी चाहिए: +91 98111 11111 हेयरकट के लिए ₹400 माँग रहे हैं (आपकी कीमत ₹450 है)। ठीक ₹400 मानने के लिए \"approve b-3 Q7RM2X\" या मना करने के लिए \"deny b-3 Q7RM2X\" लिखें।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -1501,8 +1516,11 @@
    "language": "hi"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "कीमत वाली माँग b-3 का जवाब देने के लिए \"approve b-3 Q7RM2X\" या \"deny b-3 Q7RM2X\" लिखें।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -1651,6 +1669,29 @@
     "K7M2QX"
    ],
    "filled": "रिफंड के लिए आपकी हाँ चाहिए: ग्राहक +91 98111 11111 (हेयरकट, मंगलवार, 10 नवंबर, शाम 6:00 बजे) को ₹200। 24 घंटे के अंदर \"approve K7M2QX\" या \"deny K7M2QX\" लिखकर भेजिए।"
+  }
+ },
+ {
+  "area": "meta",
+  "name": "hi owner_discount_ask",
+  "input": {
+   "name": "owner_discount_ask",
+   "language": "hi"
+  },
+  "output": {
+   "body": "कीमत पर आपकी मंज़ूरी चाहिए: {{1}} {{2}} के लिए {{3}} माँग रहे हैं (आपकी कीमत {{4}} है)। ठीक {{5}} मानने के लिए \"approve {{6}} {{7}}\" या मना करने के लिए \"deny {{8}} {{9}}\" लिखें।",
+   "parameters": [
+    "+91 98111 11111",
+    "हेयरकट",
+    "₹400",
+    "₹450",
+    "₹400",
+    "b-3",
+    "Q7RM2X",
+    "b-3",
+    "Q7RM2X"
+   ],
+   "filled": "कीमत पर आपकी मंज़ूरी चाहिए: +91 98111 11111 हेयरकट के लिए ₹400 माँग रहे हैं (आपकी कीमत ₹450 है)। ठीक ₹400 मानने के लिए \"approve b-3 Q7RM2X\" या मना करने के लिए \"deny b-3 Q7RM2X\" लिखें।"
   }
  },
  {
@@ -3646,8 +3687,11 @@
    "language": "en"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "Okay, I can do ₹400 for your haircut.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -3658,8 +3702,11 @@
    "language": "en"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "Our haircut is ₹450, so I've asked the owner about ₹400. I'll message you here when they answer.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -3670,8 +3717,11 @@
    "language": "en"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "Good news: the owner agreed to ₹400 for your haircut.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -3682,8 +3732,11 @@
    "language": "en"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "Sorry, the owner couldn't agree to ₹400. The lowest for your haircut is ₹450.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -3694,8 +3747,11 @@
    "language": "en"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "A price needs your OK: +91 98111 11111 asks ₹400 for haircut (your price is ₹450). Reply \"approve b-3 Q7RM2X\" to agree to exactly ₹400, or \"deny b-3 Q7RM2X\".",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -3706,8 +3762,11 @@
    "language": "en"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "To answer the price ask on b-3, reply \"approve b-3 Q7RM2X\" or \"deny b-3 Q7RM2X\".",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -3856,6 +3915,29 @@
     "24"
    ],
    "filled": "A refund needs your OK: ₹200 to +91 98111 11111 (haircut, Tue 10 Nov, 6:00 pm). Reply \"approve K7M2QX\" or \"deny K7M2QX\" within 24 hours."
+  }
+ },
+ {
+  "area": "meta",
+  "name": "en owner_discount_ask",
+  "input": {
+   "name": "owner_discount_ask",
+   "language": "en"
+  },
+  "output": {
+   "body": "A price needs your OK: {{1}} asks {{2}} for {{3}} (your price is {{4}}). Reply \"approve {{5}} {{6}}\" to agree to exactly {{7}}, or \"deny {{8}} {{9}}\".",
+   "parameters": [
+    "+91 98111 11111",
+    "₹400",
+    "haircut",
+    "₹450",
+    "b-3",
+    "Q7RM2X",
+    "₹400",
+    "b-3",
+    "Q7RM2X"
+   ],
+   "filled": "A price needs your OK: +91 98111 11111 asks ₹400 for haircut (your price is ₹450). Reply \"approve b-3 Q7RM2X\" to agree to exactly ₹400, or \"deny b-3 Q7RM2X\"."
   }
  },
  {
@@ -5851,8 +5933,11 @@
    "language": "ml"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ശരി, നിങ്ങളുടെ ഹെയർകട്ട് ₹400-ന് ചെയ്തുതരാം.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -5863,8 +5948,11 @@
    "language": "ml"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ഞങ്ങളുടെ ഹെയർകട്ട് വില ₹450 ആണ്, അതിനാൽ ₹400-നെക്കുറിച്ച് ഞാൻ ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി കിട്ടിയാലുടൻ ഇവിടെ അറിയിക്കാം.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -5875,8 +5963,11 @@
    "language": "ml"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "സന്തോഷവാർത്ത: നിങ്ങളുടെ ഹെയർകട്ട്-ന് ₹400 ഉടമ സമ്മതിച്ചു.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -5887,8 +5978,11 @@
    "language": "ml"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ക്ഷമിക്കണം, ₹400-ന് ഉടമ സമ്മതിച്ചില്ല. നിങ്ങളുടെ ഹെയർകട്ട്-ന്റെ ഏറ്റവും കുറഞ്ഞ വില ₹450 ആണ്.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -5899,8 +5993,11 @@
    "language": "ml"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: +91 98111 11111 ഹെയർകട്ട്-ന് ₹400 ചോദിക്കുന്നു (നിങ്ങളുടെ വില ₹450). കൃത്യം ₹400 സമ്മതിക്കാൻ \"approve b-3 Q7RM2X\", അല്ലെങ്കിൽ \"deny b-3 Q7RM2X\" എന്ന് മറുപടി അയയ്ക്കുക.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -5911,8 +6008,11 @@
    "language": "ml"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "വിലയെക്കുറിച്ചുള്ള b-3 ചോദ്യത്തിന് മറുപടി നൽകാൻ \"approve b-3 Q7RM2X\" അല്ലെങ്കിൽ \"deny b-3 Q7RM2X\" എന്ന് അയയ്ക്കുക.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -6061,6 +6161,29 @@
     "K7M2QX"
    ],
    "filled": "റീഫണ്ടിന് നിങ്ങളുടെ അനുമതി വേണം. കസ്റ്റമർ +91 98111 11111 (ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00): ₹200. 24 മണിക്കൂറിനുള്ളിൽ \"approve K7M2QX\" അല്ലെങ്കിൽ \"deny K7M2QX\" എന്ന് മറുപടി അയക്കൂ."
+  }
+ },
+ {
+  "area": "meta",
+  "name": "ml owner_discount_ask",
+  "input": {
+   "name": "owner_discount_ask",
+   "language": "ml"
+  },
+  "output": {
+   "body": "ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: {{1}} {{2}}-ന് {{3}} ചോദിക്കുന്നു (നിങ്ങളുടെ വില {{4}}). കൃത്യം {{5}} സമ്മതിക്കാൻ \"approve {{6}} {{7}}\", അല്ലെങ്കിൽ \"deny {{8}} {{9}}\" എന്ന് മറുപടി അയയ്ക്കുക.",
+   "parameters": [
+    "+91 98111 11111",
+    "ഹെയർകട്ട്",
+    "₹400",
+    "₹450",
+    "₹400",
+    "b-3",
+    "Q7RM2X",
+    "b-3",
+    "Q7RM2X"
+   ],
+   "filled": "ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: +91 98111 11111 ഹെയർകട്ട്-ന് ₹400 ചോദിക്കുന്നു (നിങ്ങളുടെ വില ₹450). കൃത്യം ₹400 സമ്മതിക്കാൻ \"approve b-3 Q7RM2X\", അല്ലെങ്കിൽ \"deny b-3 Q7RM2X\" എന്ന് മറുപടി അയയ്ക്കുക."
   }
  },
  {
@@ -8056,8 +8179,11 @@
    "language": "kn"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ಸರಿ, ನಿಮ್ಮ ಹೇರ್ ಕಟ್ ಅನ್ನು ₹400 ಗೆ ಮಾಡಿಕೊಡುತ್ತೇವೆ.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -8068,8 +8194,11 @@
    "language": "kn"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ನಮ್ಮ ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450, ಆದ್ದರಿಂದ ₹400 ಬಗ್ಗೆ ಮಾಲೀಕರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಬಂದ ತಕ್ಷಣ ಇಲ್ಲೇ ತಿಳಿಸುತ್ತೇನೆ.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -8080,8 +8209,11 @@
    "language": "kn"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ಒಳ್ಳೆಯ ಸುದ್ದಿ: ನಿಮ್ಮ ಹೇರ್ ಕಟ್ ಗೆ ₹400 ಬೆಲೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪಿದ್ದಾರೆ.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -8092,8 +8224,11 @@
    "language": "kn"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ಕ್ಷಮಿಸಿ, ₹400 ಬೆಲೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪಲಿಲ್ಲ. ನಿಮ್ಮ ಹೇರ್ ಕಟ್ ಗೆ ಕನಿಷ್ಠ ಬೆಲೆ ₹450.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -8104,8 +8239,11 @@
    "language": "kn"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: +91 98111 11111 ಅವರು ಹೇರ್ ಕಟ್ ಗೆ ₹400 ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ ₹450). ಸರಿಯಾಗಿ ₹400 ಗೆ ಒಪ್ಪಲು \"approve b-3 Q7RM2X\", ಇಲ್ಲವಾದರೆ \"deny b-3 Q7RM2X\" ಎಂದು ಉತ್ತರಿಸಿ.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -8116,8 +8254,11 @@
    "language": "kn"
   },
   "output": {
-   "text": null,
-   "check": null
+   "text": "ಬೆಲೆಯ ಕೋರಿಕೆ b-3 ಗೆ ಉತ್ತರಿಸಲು \"approve b-3 Q7RM2X\" ಅಥವಾ \"deny b-3 Q7RM2X\" ಎಂದು ಕಳುಹಿಸಿ.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
   }
  },
  {
@@ -8266,6 +8407,29 @@
     "K7M2QX"
    ],
    "filled": "ಒಪ್ಪಿಗೆ ಬೇಕು: +91 98111 11111 ಅವರಿಗೆ ₹200 ರೀಫಂಡ್ (ಹೇರ್ ಕಟ್, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00). 24 ಗಂಟೆಯೊಳಗೆ \"approve K7M2QX\" ಅಥವಾ \"deny K7M2QX\" ಎಂದು ಉತ್ತರಿಸಿ."
+  }
+ },
+ {
+  "area": "meta",
+  "name": "kn owner_discount_ask",
+  "input": {
+   "name": "owner_discount_ask",
+   "language": "kn"
+  },
+  "output": {
+   "body": "ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: {{1}} ಅವರು {{2}} ಗೆ {{3}} ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ {{4}}). ಸರಿಯಾಗಿ {{5}} ಗೆ ಒಪ್ಪಲು \"approve {{6}} {{7}}\", ಇಲ್ಲವಾದರೆ \"deny {{8}} {{9}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+   "parameters": [
+    "+91 98111 11111",
+    "ಹೇರ್ ಕಟ್",
+    "₹400",
+    "₹450",
+    "₹400",
+    "b-3",
+    "Q7RM2X",
+    "b-3",
+    "Q7RM2X"
+   ],
+   "filled": "ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: +91 98111 11111 ಅವರು ಹೇರ್ ಕಟ್ ಗೆ ₹400 ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ ₹450). ಸರಿಯಾಗಿ ₹400 ಗೆ ಒಪ್ಪಲು \"approve b-3 Q7RM2X\", ಇಲ್ಲವಾದರೆ \"deny b-3 Q7RM2X\" ಎಂದು ಉತ್ತರಿಸಿ."
   }
  },
  {
@@ -9614,6 +9778,114 @@
          "24",
          "K7M2QX",
          "K7M2QX"
+        ]
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "name": "owner_discount_ask",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+     {
+      "type": "BODY",
+      "text": "कीमत पर आपकी मंज़ूरी चाहिए: {{1}} {{2}} के लिए {{3}} माँग रहे हैं (आपकी कीमत {{4}} है)। ठीक {{5}} मानने के लिए \"approve {{6}} {{7}}\" या मना करने के लिए \"deny {{8}} {{9}}\" लिखें।",
+      "example": {
+       "body_text": [
+        [
+         "+91 98111 11111",
+         "हेयरकट",
+         "₹400",
+         "₹450",
+         "₹400",
+         "b-3",
+         "Q7RM2X",
+         "b-3",
+         "Q7RM2X"
+        ]
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "name": "owner_discount_ask",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+     {
+      "type": "BODY",
+      "text": "A price needs your OK: {{1}} asks {{2}} for {{3}} (your price is {{4}}). Reply \"approve {{5}} {{6}}\" to agree to exactly {{7}}, or \"deny {{8}} {{9}}\".",
+      "example": {
+       "body_text": [
+        [
+         "+91 98111 11111",
+         "₹400",
+         "haircut",
+         "₹450",
+         "b-3",
+         "Q7RM2X",
+         "₹400",
+         "b-3",
+         "Q7RM2X"
+        ]
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "name": "owner_discount_ask",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+     {
+      "type": "BODY",
+      "text": "ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: {{1}} {{2}}-ന് {{3}} ചോദിക്കുന്നു (നിങ്ങളുടെ വില {{4}}). കൃത്യം {{5}} സമ്മതിക്കാൻ \"approve {{6}} {{7}}\", അല്ലെങ്കിൽ \"deny {{8}} {{9}}\" എന്ന് മറുപടി അയയ്ക്കുക.",
+      "example": {
+       "body_text": [
+        [
+         "+91 98111 11111",
+         "ഹെയർകട്ട്",
+         "₹400",
+         "₹450",
+         "₹400",
+         "b-3",
+         "Q7RM2X",
+         "b-3",
+         "Q7RM2X"
+        ]
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "name": "owner_discount_ask",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+     {
+      "type": "BODY",
+      "text": "ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: {{1}} ಅವರು {{2}} ಗೆ {{3}} ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ {{4}}). ಸರಿಯಾಗಿ {{5}} ಗೆ ಒಪ್ಪಲು \"approve {{6}} {{7}}\", ಇಲ್ಲವಾದರೆ \"deny {{8}} {{9}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+      "example": {
+       "body_text": [
+        [
+         "+91 98111 11111",
+         "ಹೇರ್ ಕಟ್",
+         "₹400",
+         "₹450",
+         "₹400",
+         "b-3",
+         "Q7RM2X",
+         "b-3",
+         "Q7RM2X"
         ]
        ]
       }
