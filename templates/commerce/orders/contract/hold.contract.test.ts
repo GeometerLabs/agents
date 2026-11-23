@@ -7,7 +7,7 @@
 // a morning slot 10:00 to 13:00 (orders close at 12:00) and an evening slot 16:00 to 19:00.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOMER, MIN, OWNER_NUMBER, RAJESH, SUNITA, beat, contract, makeShop } from "./harness.ts";
+import { CUSTOMER, MIN, OWNER_NUMBER, RAJESH, START, SUNITA, beat, contract, makeShop } from "./harness.ts";
 import type { Shop, ShopOptions } from "./harness.ts";
 import { holdsOf } from "../report/data.ts";
 
@@ -77,6 +77,16 @@ describe("the pickup hold: asked in words, accepted by the shop", () => {
     assert.equal((await items(s, "hold"))[0].digest, before, "the same hold, the same time");
     assert.equal(holdLines(s, "held").length, 1);
     assert.deepEqual(s.templatesTo(CUSTOMER, "owner"), ["owner_hold_ask", "owner_hold_held"]);
+  });
+});
+
+describe("the pickup hold: a pickup time that has already ended", () => {
+  contract("at 14:00 the morning (10:00 to 13:00) is over even though the shop's cut-off is later: nothing is asked of the owner and nothing is held", async () => {
+    const s = await boot({ at: START + 4 * 60 * MIN, settings: { pickup: { slots: [{ id: "morning", from: "10:00", to: "13:00", names: { en: ["morning"], kn: ["ಬೆಳಿಗ್ಗೆ"] } }, { id: "evening", from: "16:00", to: "19:00", names: { en: ["evening"], kn: ["ಸಂಜೆ"] } }] } } });
+    await say(s, CUSTOMER, "1 MCB 16A today morning");
+    assert.deepEqual(s.templatesTo(CUSTOMER), ["after_cutoff"]);
+    assert.deepEqual(s.templatesTo(CUSTOMER, "owner"), []);
+    assert.deepEqual(await items(s, "hold_ask"), []);
   });
 });
 
