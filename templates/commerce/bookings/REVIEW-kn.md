@@ -900,6 +900,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.orders.rules.advance` | ಖಚಿತಪಡಿಸಲು ಗ್ರಾಹಕರು ಎಷ್ಟು ಕೊಡಬೇಕು | What the customer pays to confirm |  |
 | `setup.orders.rules.advancePart` | ಆರ್ಡರ್‌ನ ಒಂದು ಭಾಗ | A part of the order |  |
 | `setup.orders.rules.advanceFull` | ಪೂರ್ತಿ ಆರ್ಡರ್ | All of the order |  |
+| `setup.orders.rules.advanceNone` | ಏನೂ ಇಲ್ಲ: ಪಿಕಪ್‌ಗಾಗಿ ಕಾಯ್ದಿರಿಸಿ (ಪ್ರತಿ ಕಾಯ್ದಿರಿಸುವಿಕೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪುತ್ತಾರೆ; ಡೆಲಿವರಿ ಇಲ್ಲ) | Nothing: keep it for pickup (the owner says yes to each hold; no delivery) |  |
 | `setup.orders.rules.percent` | ಭಾಗ (%) | Part to pay (%) |  |
 | `setup.orders.rules.hold` | ಮುಂಗಡಕ್ಕಾಗಿ ಆರ್ಡರ್ ಎಷ್ಟು ನಿಮಿಷ ಕಾಯಬೇಕು | Minutes an order is held for the advance |  |
 | `setup.orders.rules.perDay` | ಒಂದು ದಿನಕ್ಕೆ ಗರಿಷ್ಠ ಆರ್ಡರ್‌ಗಳು | Most orders for one day |  |
@@ -1878,6 +1879,13 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.clinic.prefill.services.1.names` | ಸಮಾಲೋಚನೆ | Consultation |  |
 | `preset.clinic.prefill.services.2.names` | ಫಿಸಿಯೋಥೆರಪಿ ಸೆಷನ್ | Physiotherapy session |  |
 | `preset.clinic.prefill.services.3.names` | ಫಾಲೋ-ಅಪ್ ಭೇಟಿ | Follow-up visit |  |
+| `preset.hardware.name` | ಹಾರ್ಡ್‌ವೇರ್ ಮತ್ತು ಎಲೆಕ್ಟ್ರಿಕಲ್ಸ್, ನನಗಾಗಿ ಒಂದನ್ನು ಇಡಿ | Hardware and electricals, keep one for me |  |
+| `preset.hardware.prefill.menu.1.names` | ಎಲ್ಇಡಿ ಬಲ್ಬ್ 9W | LED bulb 9W |  |
+| `preset.hardware.prefill.menu.2.names` | ಎಕ್ಸ್‌ಟೆನ್ಶನ್ ಬೋರ್ಡ್ 4-ವೇ | Extension board 4-way |  |
+| `preset.hardware.prefill.menu.3.names` | ಎಂಸಿಬಿ 16A | MCB 16A |  |
+| `preset.hardware.prefill.menu.4.names` | ಸೀಲಿಂಗ್ ಫ್ಯಾನ್ ಕೆಪಾಸಿಟರ್ | Ceiling fan capacitor |  |
+| `preset.hardware.prefill.pickup.1.names` | ಬೆಳಿಗ್ಗೆ | morning |  |
+| `preset.hardware.prefill.pickup.2.names` | ಸಂಜೆ | evening |  |
 | `preset.restock.name` | ಸರಬರಾಜುದಾರರಿಂದ ಅಂಗಡಿಗೆ ಸ್ಟಾಕ್ ಆರ್ಡರ್ | Shop restocking from suppliers |  |
 | `preset.restock.prefill.supplier` | ನನ್ನ ಸರಬರಾಜುದಾರ | My supplier |  |
 | `preset.restock.prefill.items.1.names` | ಅಕ್ಕಿ 25 ಕೆಜಿ | Rice 25 kg |  |
