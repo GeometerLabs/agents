@@ -90,6 +90,7 @@ for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
   process.once(sig, () => { killAll(); process.kill(process.pid, sig); });
 }
 
-// Under the test runner (each file runs in a process of its own with NODE_TEST_CONTEXT set, or a *.test.ts file run directly), every test ends with its children stopped. Not in
-// a script such as measure.ts, where a test hook would start the runner and print its summary into the script's output.
-if (process.env.NODE_TEST_CONTEXT !== undefined || /\.test\.[cm]?[jt]s$/u.test(process.argv[1] ?? "")) afterEach(stopAll);
+// Under the test runner (each *.test.ts file runs in a process of its own, or is run directly), every test ends with its children stopped. Not in a script such as measure.ts
+// or the hand check (scripts/hand-check.ts), where a test hook would start the runner and print its summary into the script's output: NODE_TEST_CONTEXT alone is not enough,
+// because a script a test starts inherits it (24 Nov 2026: a test running the hand check's script read the runner's report as the script's output).
+if (/\.test\.[cm]?[jt]s$/u.test(process.argv[1] ?? "")) afterEach(stopAll);

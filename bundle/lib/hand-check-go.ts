@@ -24,13 +24,20 @@ export const HAND_CHECK_LIMIT_MS = 10 * 60_000;
 
 const HERE = fileURLToPath(import.meta.url);
 
+/** The child's environment: the panel's, with `more`, and never the test runner's marker (a run started from a test is a plain script, not a test file). */
+function childEnv(more: Record<string, string> = {}): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = { ...process.env, ...more };
+  delete env.NODE_TEST_CONTEXT;
+  return env;
+}
+
 /**
  * Run the hand check of template `kind` on the settings file `settingsFile`, in a child process. `env` adds to the child's environment (GEOMETER_GO_PROGRAMS: where the server's
  * programs are). Never throws.
  */
 export function runGoHandCheck(kind: string, settingsFile: string, o: { env?: Record<string, string>; limitMs?: number } = {}): Promise<HandCheckOutcome> {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, ["--no-warnings", HERE, "--kind", kind, "--settings", settingsFile], { env: { ...process.env, ...(o.env ?? {}) }, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(process.execPath, ["--no-warnings", HERE, "--kind", kind, "--settings", settingsFile], { env: childEnv(o.env), stdio: ["ignore", "pipe", "pipe"] });
     let out = "";
     let err = "";
     child.stdout.on("data", (d: Buffer) => { out += d.toString(); });
