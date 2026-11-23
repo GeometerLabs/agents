@@ -1039,3 +1039,12 @@ New findings (not fixed):
 
 **4. The Deferred items a shop would meet** (the owner's daily notice that customer talk stopped, the tick's memory of one-time calls) are not done. Neither is small:
 Bookings has neither, and both need a shared runtime hook.
+
+**What passes.** These ran once at the end, through the heat lock, on the branch at e27c3051.
+- The Orders contract on TypeScript (`ORDERS_IMPL=ts node --test --test-concurrency=1 templates/commerce/orders/contract/`): **94 of 94**, up from 75.
+- The Orders contract on Go (`ORDERS_IMPL=go ORDERS_GO_BIN=go/bin/orders ...`): **94 of 94**.
+- `go vet ./...` is clean, and `go test -count=1 ./...` passes (35 packages ok).
+- `words-fresh.test.ts`: 21 of 21.
+- The Orders and Bookings unit tests these changes touch (plans, agent, channels, papers, report-go-live, assistant-acts, late-advance-card, bookings parser): 77 of 77.
+- The Bookings contract on Go: 151 of 151.
+- Before the fixes, both findings cases failed on the TypeScript; after them they pass on both runtimes.
