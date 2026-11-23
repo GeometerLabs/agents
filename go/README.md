@@ -96,6 +96,7 @@ internal/orders/         the Orders template (wave W4): settings with the TypeSc
 internal/orders/words/   Orders' customer and owner messages in four languages, the WhatsApp templates, labels, lists and buttons, and the outgoing check (GENERATED: scripts/gen_orders_words.ts)
 internal/orders/reading/ how an Orders shop reads a message: the rule parser, the check on a model's answer, the router's reading, a tapped reply, the plan reading (GENERATED: scripts/gen_orders_reading.ts)
 internal/ordersreport/   Orders' monthly report (templates/commerce/orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job
+internal/stockordersreport/  Stock orders' monthly report (templates/commerce/stock-orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job
 internal/stock/          the shop's one stock count (modules/stock/stock.ts): the state under assistant.stock, the owner's acts, the shop's own record of a sale or a delivery (Orders,
                          Stock orders), the reconciles and their history rules, the low alerts once per crossing; listings keeps aliases of it (22 Nov)
 internal/stockorders/    the Stock orders template (wave 2, go-w5-stock-22nov): settings, the store field for field, the rule reader, the words (generated), the limits, the agent with
@@ -121,6 +122,7 @@ scripts/gen_chat_words.ts  writes internal/runtime/chatwords/words.json (the cha
 scripts/gen_customer_talk.ts  writes internal/assistant/customerwords/words.json: a customer's talk prompt for every personality, character name and language, and its answer schema; gen_customer_talk_vectors.ts the checks, answers and prompts the Go ones are proved on
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
 scripts/gen_stock_vectors.ts     writes internal/stock/testdata/stock-vectors.json: modules/stock/stock.ts run over six scenarios, every step's answer and state (--check)
+scripts/gen_stockorders_report_words.ts and gen_stockorders_report_vectors.ts write internal/stockordersreport/words/words.json.gz and testdata/vectors.json.gz (the report's words, and the report, page, messages, summaries, go-live readings, files and job run by the TypeScript; each has `--check`, words-fresh runs them)
 scripts/gen_stockorders_words.ts writes internal/stockorders/words.json: Stock orders' messages, templates, labels, state and stock words and the reader's patterns (--check)
 scripts/gen_fees_words.ts  writes internal/fees/words/*.json.gz (every Fees and Classes message, where to pay, a family's line, the WhatsApp templates, the labels) and internal/fees/reading.json (the rule parser's word lists) from templates/education/fees; `--check` only compares (words-fresh)
 scripts/gen_bookings_reading.ts  writes internal/bookings/reading.json: the Bookings rule parser's patterns, the decision model's questions, the model's prompt and schema as templates

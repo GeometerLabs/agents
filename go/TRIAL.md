@@ -968,3 +968,18 @@ then brought it to 73 of 73.
   reads the same numbers. The Bookings contract on Go confirms it (above).
 - A possible Bookings bug, int date values from `bookings/parser.go` where the readers take float64, is not a bug. Both ways in (`readIntent` with and without the router)
   end in `coerce`, which writes the intent to JSON and reads it back, so every number is float64 before `fill` reads it.
+
+## go-so-report-23nov (23 Nov 2026): the Stock orders monthly report on Go (stream SR)
+
+**Built.** `internal/stockordersreport` (Explanation.md, Deferred.md there): the Go twin of `templates/commerce/stock-orders/report/` over the shared `internal/report`, proved on vectors
+made by running the TypeScript (`scripts/gen_stockorders_report_words.ts`, `gen_stockorders_report_vectors.ts`, both with `--check`, both in words-fresh). Wired into `internal/stockorders` by
+`report.go` (`NewMonthlyReport`, `Agent.AfterTick`, `OrdersOf`) and `settingstree.go` (`Settings.Tree`: the validated settings as the JSON tree the policy digest is of, proved against
+`validateSettings` in `settingstree_test.go`); `cmd/stock-orders` reads runtime.json's `report` block. The owner's morning line over Stock orders now runs after the report
+(`Agent.AfterTick`, the skill's `Waiting` and `Problems`).
+
+**Shared changes (additions only).** `internal/runtime/reportwiring.go`: `ReadReportConfig` (config.ts `readReport`, `reportOptionsReader`, start.ts `monthlyReportSetup`),
+`ReportMessagingOf` (the shop's messaging as the report package takes it, with its faults) and `ReportRecordOf`. Written once so Stock orders is not a third copy; Orders and Bookings
+keep their own (fold them: Deferred.md of `stockordersreport`).
+
+**Not ported:** the go-live certificate's builder (`report/certificate.ts`), which the CLI and the deployer run over the hand check; the runtime only reads a certificate, as Orders'
+does. The deletion step must keep it or port it (Deferred.md). The assistant's talk reads and open list over Stock orders (stockorders/Deferred.md).
