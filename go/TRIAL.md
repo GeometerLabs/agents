@@ -1448,7 +1448,7 @@ the only way out); the server's push sender and each shop's push Guard spec are 
   Stock orders 74/74, listings 210/210 (with words-fresh); bundle (`cd bundle && node --test test/`) 731: 722 pass, 9 skipped (REAL_CADDY), 0 fail; panel
   (`node --test panel/test/`) 259/259. No generator reads the contract folders, so no vectors changed.
 
-### e1-finish-24nov: the four items before the pilot (24 Nov 2026)
+## e1-finish-24nov: E1, the four items before the pilot (24 Nov 2026)
 
 What was built is in `internal/discounts/Explanation.md` § Before the pilot, and what is left is in its `Deferred.md`.
 
