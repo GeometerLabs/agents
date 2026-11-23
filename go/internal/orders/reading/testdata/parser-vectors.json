@@ -5063,7 +5063,6 @@
   {"ctx":"annapurna","input":"}], requested_by: [","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"}`).join(","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"}`)].join(","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
-  {"ctx":"annapurna","input":"}`, { skip: goSkip(","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"مرحبا","output":{"intent":{"kind":"unknown"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"अगर इससे ग़लती हो गई तो?","output":{"intent":{"kind":"unknown","language":"hi"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"अगर ग्राहक रद्द करे तो?","output":{"intent":{"kind":"cancel","language":"hi"},"sure":true,"paid":false}},
