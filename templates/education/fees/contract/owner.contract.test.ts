@@ -160,6 +160,13 @@ describe("the monthly report", () => {
     const data = readFileSync(join(dir, made[0], "report-2026-11.json"), "utf8");
     assert.match(data, /Bright Tuition Centre/u);
     assert.ok(!data.includes(ROHAN) && !data.includes(MEERA), "no parent's number in the report's data");
+    // students' names never leave the centre as themselves: no file of the report's folder names a student (the settings and the record's notes do)
+    for (const f of files) {
+      const text = readFileSync(join(dir, made[0], f), "utf8");
+      for (const name of ["Aarav", "Anaya", "Meera", "Kiran", "Rohan", "Sharma", "Mehta", "Gowda"]) assert.ok(!text.includes(name), `${f} names a student (${name})`);
+    }
+    // and the owner was told: the record holds the send of November's report to the owner (the stand-in approves the report's templates only if the runtime lists them)
+    assert.ok(lines(withReport, "send_message").some((l) => l.refs.report === "2026-11" && l.refs.to === "owner" && (l.outcome === "confirmed" || l.outcome === "unconfirmed")), "the owner was sent the report");
     await sleep(2500);
     assert.equal(folders().length, 1, "not again on the next beats");
     await withReport.stop(); await withReport.start();

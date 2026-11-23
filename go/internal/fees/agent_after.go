@@ -25,6 +25,13 @@ func (a *Agent) AfterTick(save func() error) {
 	}); err != nil {
 		a.c.Log("The owner's licence notice could not be sent: " + err.Error())
 	}
+	// in the licence's final stop the centre sends nothing more, so no report and no morning line go (core.ts step); the morning line, when built, follows the report
+	if a.c.Licence() == "stopped" {
+		return
+	}
+	if a.kit.Report != nil {
+		a.runReport(save) // the monthly report (report.go)
+	}
 }
 
 // licenceMessage is server/licence.ts createFeesLicenceNotice's message: the wind-down's or the final stop's words in the owner's language, with who to contact and (the final

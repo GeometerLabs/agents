@@ -1,0 +1,83 @@
+// The monthly job for Fees: templates/education/fees/report/monthly-job.ts `createMonthlyReport`. Last month's report goes to the owner on WhatsApp, once, from 09:00 on the 1st. When it
+// may go, the claim before the send and the ending after, the retries and the quiet month are the same for every template and live in report.MonthlyJob; this file gives that job Fees'
+// report: the page and the signed data (run.go), and the message built from the report's own counts (whatsapp.go). Fees has no monthly record certificate, so the job sends none
+// (MadeReport.Certificate is nil).
+//
+// How it is wired (the TypeScript's `make(ctx, {month, language, now})` gets the centre's settings, record and store in `ctx`; report.MonthlyJob.Make gets no context): the caller gives a
+// `Shop` function, read each time a report is made, so a change to the badge, the name or the settings needs no restart (as `setup.options()` is read each time in the TypeScript). The Fees
+// kit wires it in AfterTick (internal/fees/report.go).
+//
+// Each report goes into a folder of its own named by a random token (16 random bytes in hex) so its address cannot be guessed; Token is the test seam for the random part.
+package feesreport
+
+import (
+	"crypto/ed25519"
+	"fmt"
+	"path/filepath"
+
+	"github.com/GeometerLabs/agents/go/internal/accounting"
+	"github.com/GeometerLabs/agents/go/internal/report"
+)
+
+// Options is `setup.options()`: who set the agent up and whether they have the Innovator badge.
+type Options struct {
+	PreparedBy string
+	Innovator  bool
+}
+
+// Shop is what a report is made from, read when it is made: the centre's settings, its record (the whole of it, oldest first) and its fees.
+type Shop struct {
+	Settings Settings
+	Entries  []accounting.Entry
+	Dues     []Due
+}
+
+// Setup is MonthlyReportSetup.
+type Setup struct {
+	// Source is what the numbers were counted from: written on the report and in the message.
+	Source string
+	// PagesDir and PagesBaseURL: where the report folders go (one folder per report, named by a random token) and the address that folder is served at (https, no trailing slash).
+	PagesDir, PagesBaseURL string
+	Options                func() Options
+	// Key signs the report. nil: it carries a digest and a code and says it is not signed.
+	Key ed25519.PrivateKey
+	// GoLive is what the go-live certificate the centre was given shows. nil: the report says none was given.
+	GoLive func() report.GoLiveFinding
+	// Token is the test seam: the random part of the folder name.
+	Token func() string
+	// Tenant is the ledger tenant (the centre's id on the server, report.tenant in runtime.json): the report is anchored to the head of the record. "": its anchor is null.
+	Tenant string
+	// Shop reads the centre's settings, record and fees when a report is made.
+	Shop func() Shop
+}
+
+// NewMonthlyJob is createMonthlyReport(setup): the job with Fees' report.
+func NewMonthlyJob(setup Setup) *report.MonthlyJob {
+	return &report.MonthlyJob{Make: func(a report.MakeArgs) (report.MadeReport, error) {
+		opts := setup.Options()
+		shop := setup.Shop()
+		token := report.RandomToken()
+		if setup.Token != nil {
+			token = setup.Token()
+		}
+		folder := filepath.Join(setup.PagesDir, token)
+		prepared := opts.PreparedBy
+		run := Run{Settings: shop.Settings, Entries: shop.Entries, Dues: shop.Dues, Month: a.Month, Language: a.Language, Out: folder, Source: setup.Source, Key: setup.Key,
+			PreparedBy: &prepared, Innovator: opts.Innovator, Now: a.Now, Tenant: setup.Tenant}
+		if setup.GoLive != nil {
+			g := setup.GoLive()
+			run.GoLive = &g
+		}
+		made, err := WriteFeesReport(run)
+		if err != nil {
+			return report.MadeReport{}, err
+		}
+		base := fmt.Sprintf("%s/%s", setup.PagesBaseURL, token)
+		// the check link is the report's signed summary (run.go) when it is signed, so the owner can tap it and check the report with no file
+		message, err := MonthlyReportMessage(made.Report, a.Language, fmt.Sprintf("%s/report-%s-%s.html", base, a.Month, a.Language), made.Check)
+		if err != nil {
+			return report.MadeReport{}, err
+		}
+		return report.MadeReport{Code: made.Code, Folder: folder, Page: token, Text: message.Text, Template: message.Template}, nil
+	}}
+}

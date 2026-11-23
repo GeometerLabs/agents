@@ -205,3 +205,11 @@ test("the Go Fees words were made from the TypeScript words as they are now", as
     assert.deepEqual(fees.staleFiles(dir, new Map([[name, files.get(name)!]])), [name], "the check is not vacuous");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// the Fees monthly report (go/internal/feesreport): its words and its test vectors, made by go/scripts/gen_fees_report_words.ts and gen_fees_report_vectors.ts
+test("words-fresh: the Fees monthly report's generated Go data (go/internal/feesreport: words, vectors) equals a fresh render of the TypeScript", async () => {
+  const reportWords = await import("../../../../go/scripts/gen_fees_report_words.ts");
+  assert.deepEqual(reportWords.staleFiles(reportWords.OUT), [], "the Fees report's words are out of date: run  node go/scripts/gen_fees_report_words.ts  and commit the result");
+  const reportVectors = await import("../../../../go/scripts/gen_fees_report_vectors.ts");
+  assert.deepEqual(reportVectors.staleFiles(reportVectors.OUT), [], "the Fees report's vectors are out of date: run  node go/scripts/gen_fees_report_vectors.ts  and commit the result");
+});
