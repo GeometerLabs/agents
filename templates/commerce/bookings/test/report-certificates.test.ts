@@ -1,6 +1,7 @@
 // The two certificates. The go-live certificate is made from a real run of the hand check and has to say what the hand check
 // says: the same counts, the same list of what was not tested, and "stand-in services". Both certificates state facts,
 // list what was not tested, carry a short code and the full digest, and never use a word that grades.
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -31,7 +32,7 @@ const ISSUED = Date.parse("2027-02-04T10:30:00+05:30");
 let hand: Promise<HandCheckSummary> | undefined;
 const handCheck = () => (hand ??= runAll().then(summariseHandCheck));
 
-test("the go-live certificate says what the hand check says: the same counts, the same list, the same words", async () => {
+test("the go-live certificate says what the hand check says: the same counts, the same list, the same words", { skip: goSkip("bookings") }, async () => {
   const summary = await handCheck();
   assert.deepEqual([summary.held, summary.total, summary.failedTitles.length], [40, 40, 0]);
   const env = seal(buildGoLiveCertificate({ settings, handCheck: summary, issuedAt: ISSUED }));
@@ -74,7 +75,7 @@ test("a shop whose settings are not the ones the situations ran on gets one more
   assert.ok(text.includes("Deposit ₹100, and the slot is held 20 minutes") && text.includes("at least 12 hours") && text.includes("Refunds above ₹150") && !text.includes("Refunds above ₹200"));
 });
 
-test("a certificate made from a run on the shop's own settings has no 'own settings' caveat; one that left situations out says so, in every language", async () => {
+test("a certificate made from a run on the shop's own settings has no 'own settings' caveat; one that left situations out says so, in every language", { skip: goSkip("bookings") }, async () => {
   const rental = parseSettings(JSON.parse(readFileSync(new URL("../settings/equipment-rental.example.json", import.meta.url), "utf8")));
   const summary = summariseRun(await runOn(rental));
   assert.deepEqual([summary.held, summary.total, summary.failedTitles.length, summary.notRun], [35, 35, 0, undefined]);

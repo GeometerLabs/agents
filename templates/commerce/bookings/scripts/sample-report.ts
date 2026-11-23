@@ -50,7 +50,9 @@ export async function makeSampleReport(out: string): Promise<Record<string, unkn
   const common = { settings, out, source: "stand-in" as const, key, preparedBy: "Divya, local partner (example)", now, language: "en" as const };
 
   // The crash-test report: the situations that suit a UPI shop, run on these settings with the stand-in services and read into the go-live certificate.
-  const handCheck = summariseRun(await runOn(settings));
+  // the sample is an illustration made again on any machine: it names no program build (a build's file digest differs from machine to machine), so the committed files stay
+  // what the script makes; a real shop's certificate names its program (report/certificate.ts `program`)
+  const { program: _build, ...handCheck } = summariseRun(await runOn(settings));
   const goLive = writeGoLiveCertificate({ ...common, handCheck });
   const reading = readGoLiveCertificate(readFileSync(join(out, "go-live-certificate.json"), "utf8"), settings);
 

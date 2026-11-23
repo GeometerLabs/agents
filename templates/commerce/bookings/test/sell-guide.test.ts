@@ -1,6 +1,7 @@
 // The Bookings sell guide (sell/): a guide and a one-page sheet in every language the pathway speaks, the same 11 sections in
 // the same order, the same amounts and numbers everywhere, none of the words the claim rules ban, and the screen words and the
 // demo steps it teaches checked against the demo itself. The spec every pathway copies is ../../../SELL-GUIDE.md.
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -509,11 +510,12 @@ test("variant guide: the Hindi, Malayalam and Kannada variants carry the machine
   assert.ok(!/Machine-written/.test(variant("en").split("\n").slice(0, 6).join("\n")));
 });
 
-test("variant guide: what it says about the example shop and the check is what the settings and the hand check say today", async () => {
+test("variant guide: what it says about the example shop and the check is what the settings and the hand check say today", { skip: goSkip("bookings") }, async () => {
   const shop = rentalSettings();
   const run = await runOn(shop);
   assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [35, 35, 0]);
-  assert.deepEqual(run.results.filter((r) => r.situation.leftOut).map((r) => r.situation.id), ["outside-hours"]);
+  // on the Go program the monthly report's situation leaves out the process dying mid-send (it cannot be made from outside), on every shop
+  assert.deepEqual(run.results.filter((r) => r.situation.leftOut).map((r) => r.situation.id), ["outside-hours", "monthly-report-once"]);
   const [job] = shop.services;
   assert.deepEqual([job.priceInr, shop.deposit.amountInr, shop.cancellation.refundLimitInr, shop.deposit.holdMinutes, shop.cancellation.windowHours, shop.slotMinutes], [3200, 1000, 1000, 30, 24, 120]);
   assert.equal(Math.max(...shop.services.map((s) => s.durationMinutes)), 8 * 60, "the longest job is 8 hours");

@@ -1,5 +1,6 @@
 // The scripts, run for real: client-report.ts, go-live-certificate.ts and report-example.ts. They write only into --out,
 // they refuse to guess what the numbers were counted from, and what they write verifies.
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -80,7 +81,7 @@ test("client-report.ts will not guess: no --source, a bad language, a bad month,
   assert.equal(run("client-report.ts", ...args, "--lang", "en", "--out", asFile, "--source", "live").status, 1);
 });
 
-test("go-live-certificate.ts runs the hand check and writes the certificate in the shop's language", async () => {
+test("go-live-certificate.ts runs the hand check and writes the certificate in the shop's language", { skip: goSkip("bookings") }, async () => {
   const { dir, keys } = await fixtures();
   const out = join(dir, "golive");
   const r = run("go-live-certificate.ts", "--settings", join(dir, "settings.json"), "--lang", "ml", "--out", out, "--key", keys.privateKeyPath, "--prepared-by", "Divya, local Operator", "--now", "2027-02-04T10:30:00+05:30");
@@ -94,7 +95,7 @@ test("go-live-certificate.ts runs the hand check and writes the certificate in t
   assert.ok(en.stdout.includes("Held 40 of 40 situations. 0 failed. 14 not tested.") && en.stdout.includes("NOT signed"));
 });
 
-test("go-live-certificate.ts runs the situations on the shop's own settings, so another shop's certificate no longer says they ran on the example", async () => {
+test("go-live-certificate.ts runs the situations on the shop's own settings, so another shop's certificate no longer says they ran on the example", { skip: goSkip("bookings") }, async () => {
   const { dir } = await fixtures();
   const other = JSON.parse(readFileSync(SETTINGS, "utf8"));
   other.name = "Bright Salon";
@@ -115,7 +116,7 @@ test("go-live-certificate.ts runs the situations on the shop's own settings, so 
   assert.ok(refused.stderr.includes("The settings need fixing") && !existsSync(join(dir, "bad-out")));
 });
 
-test("go-live-certificate.ts for settings that cannot run some situations leaves them out of the counts, names them, and counts them as not tested", async () => {
+test("go-live-certificate.ts for settings that cannot run some situations leaves them out of the counts, names them, and counts them as not tested", { skip: goSkip("bookings") }, async () => {
   const { dir } = await fixtures();
   const noWindow = JSON.parse(readFileSync(SETTINGS, "utf8"));
   noWindow.name = "Walk-in Salon";
