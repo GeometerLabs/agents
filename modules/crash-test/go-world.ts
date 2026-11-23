@@ -76,6 +76,8 @@ export interface GoWorldBaseOptions<Settings> {
   sendFailuresPlanned?: boolean;
   /** Read the template's saved state (its server/snapshot.ts parseStore). */
   parseStore: (json: string) => any;
+  /** The template's empty state (its createStore): what the shop holds before its first step has saved anything. */
+  emptyStore: () => any;
   /** The template's own settings check (its parseSettings): the file the program is given must read back as exactly these settings. */
   parseSettings: (raw: unknown) => Settings;
   /** settings.json for parsed settings, where the file's shape is not the parsed one (Fees' students name their batch as `batch`). Left out: `settingsJson`. */
@@ -245,7 +247,7 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   const world: GoWorldBase<Settings, Store> = {
     settings: o.settings, clock, payments, messaging, guard, owner: o.settings.owner.whatsapp, shop: s, asked,
     record: { entries: () => s.record() },
-    get store(): Store { const text = s.snapshot(); if (text === null) throw new Error("the shop has saved nothing yet"); return o.parseStore(text) as Store; },
+    get store(): Store { const text = s.snapshot(); return (text === null ? o.emptyStore() : o.parseStore(text)) as Store; },
     async say(text, m = {}) {
       // a provider's message id is unique per message, as the inbox hands it on (unless the situation gives one)
       const message = messaging.receive(m.from ?? o.customer, text, { id: m.id ?? `wamid.hc_${++inbound}`, ...(m.image ? { image: true } : {}), ...(m.reply ? { reply: m.reply } : {}) });

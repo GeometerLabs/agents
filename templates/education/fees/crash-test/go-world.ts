@@ -11,6 +11,7 @@ import type { FakePaymentsOptions, PaymentRequest } from "../../../../modules/pa
 import type { OwedRefund, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { parseStore } from "../server/snapshot.ts";
+import { createStore } from "../src/due.ts";
 import { startStandins } from "../standins/server.ts";
 import type { Due, Store } from "../src/due.ts";
 import { gatewayLimitsSpec } from "../src/guard-limits.ts";
@@ -62,7 +63,7 @@ export function settingsFile(settings: Settings): Record<string, unknown> {
 export async function createGoWorld(o: GoWorldOptions): Promise<GoWorld> {
   const { settings } = o;
   const base = await openGoWorld<Settings, Store>({
-    program: PROGRAM, version: VERSION, settings, at: o.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 9, minute: 0 }, settings.timezone), customer: ROHAN_PARENT, parseStore, parseSettings,
+    program: PROGRAM, version: VERSION, settings, at: o.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 9, minute: 0 }, settings.timezone), customer: ROHAN_PARENT, parseStore, emptyStore: createStore, parseSettings,
     gateway: capabilitiesOf(settings.payment).confirmsAutomatically, settingsFile,
     spec: () => gatewayLimitsSpec(settings, { tenant: "hand-check", version: 1, reviewedBy: "hand-check" }),
     standins: (clock, fakes) => startStandins({ clock, gatewayWebhookSecret: "hand-check", whatsappAppSecret: "hand-check", phoneNumberId: "100000000000001", fakes }, { port: 0 }),

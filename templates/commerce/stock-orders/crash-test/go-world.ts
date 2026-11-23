@@ -12,6 +12,7 @@ import { serveHandlers } from "../../../../modules/standins/http.ts";
 import { approveTemplates, whatsappStandin } from "../../../../modules/standins/whatsapp.ts";
 import { REPORT_TEMPLATES } from "../report/whatsapp.ts";
 import { parseStore } from "../server/snapshot.ts";
+import { createStore } from "../src/order.ts";
 import { META_TEMPLATES } from "../src/language/meta-templates.ts";
 import type { PurchaseOrder, Store } from "../src/order.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -48,7 +49,7 @@ export async function createGoWorld(o: GoWorldOptions): Promise<GoWorld> {
   const approved = { templates: catalogue.templates.filter((t) => !o.unapproved?.includes(t.name)) };
   const base = await openGoWorld<Settings, Store>({
     program: PROGRAM, version: VERSION, settings: o.settings, at: o.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, o.settings.timezone),
-    customer: o.settings.owner.whatsapp, parseStore, parseSettings, gateway: false, sendFailuresPlanned: (o.unapproved?.length ?? 0) > 0,
+    customer: o.settings.owner.whatsapp, parseStore, emptyStore: createStore, parseSettings, gateway: false, sendFailuresPlanned: (o.unapproved?.length ?? 0) > 0,
     standins: async (_clock, fakes) => { approveTemplates(fakes.messaging, approved); return serveHandlers([whatsappStandin(fakes.messaging, catalogue, { phoneNumberId: "100000000000001" })]); },
   });
   const world: GoWorld = Object.assign(base, {

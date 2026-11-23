@@ -10,6 +10,7 @@ import type { FakePaymentsOptions, PaymentRequest } from "../../../../modules/pa
 import type { OwedRefund, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { parseStore } from "../server/snapshot.ts";
+import { createStore } from "../src/booking.ts";
 import { startStandins } from "../standins/server.ts";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
 import type { FakeCalendar } from "../src/adapters/calendar.ts";
@@ -49,7 +50,7 @@ export async function createGoWorld(o: GoWorldOptions): Promise<GoWorld> {
   const { settings } = o;
   const calendar = createFakeCalendar();
   const base = await openGoWorld<Settings, Store>({
-    program: PROGRAM, version: VERSION, settings, at: o.nowMs ?? START, customer: CUSTOMER, parseStore, parseSettings,
+    program: PROGRAM, version: VERSION, settings, at: o.nowMs ?? START, customer: CUSTOMER, parseStore, emptyStore: createStore, parseSettings,
     gateway: capabilitiesOf(settings.payment).confirmsAutomatically,
     spec: () => gatewayLimitsSpec(settings, { tenant: "hand-check", version: 1, reviewedBy: "hand-check" }),
     standins: (clock, fakes) => startStandins({ clock, razorpayWebhookSecret: "hand-check", whatsappAppSecret: "hand-check", phoneNumberId: "100000000000001", calendarId: "shop@example.com", fakes: { ...fakes, calendar } }, { port: 0 }),
