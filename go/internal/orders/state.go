@@ -9,8 +9,8 @@ package orders
 // members are written back in the order they were read (a JavaScript object keeps the order its members were first set in, which differs from order to order: a page order
 // has its `channel` before its `date`), so a store read and written back is the same bytes (proved on stores the TypeScript agent wrote, testdata/store-vectors.json.gz). A member
 // first set by this runtime goes after the ones read, in the TypeScript's usual order. The optional blocks are kept whole as raw JSON until something uses one: the owner-marked
-// ledger (`upi`, ownermarked.State) and the channel (`channel`, runtime.ChannelState) are then typed once per store and written back; `plans` stays raw here (plans.go reads it,
-// the plans' own code types it). The ai and assistant members are the shared runtime's (Snap.AI, Snap.A); this state only says where they go.
+// ledger (`upi`, ownermarked.State) and the channel (`channel`, runtime.ChannelState) are then typed once per store and written back; `plans` is typed by plans_state.go
+// (Store.PlansState) and written back the same way. The ai and assistant members are the shared runtime's (Snap.AI, Snap.A); this state only says where they go.
 //
 // Where Go and JavaScript differ: JSON is written as JSON.stringify writes it (jsonOf: no HTML escaping of <, > and &); a number member is a whole number of milliseconds or
 // rupees (a value that is not one is kept raw, as read).
@@ -169,6 +169,8 @@ type Store struct {
 	upi     *ownermarked.State
 	channel *runtime.ChannelState
 	reqs    *ChannelRequests
+	// plans is the `plans` block once a step or a read typed it (PlansState, plans_state.go); Members writes it back
+	plans *PlansState
 }
 
 // NewStore is order.ts createStore.
@@ -949,6 +951,9 @@ func (s *Store) Members() ([]runtime.Member, error) {
 			s.channel.Requests = s.reqs.json()
 		}
 		s.Channel = s.channel.Marshal()
+	}
+	if s.plans != nil {
+		s.Plans = s.plans.json()
 	}
 	out := []runtime.Member{
 		{Name: "orders", Raw: pairs(ids, s.Orders, (*Order).json)},

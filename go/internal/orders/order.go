@@ -2,7 +2,7 @@ package orders
 
 // What is worked out from the orders themselves: the Go twin of the derived reads of templates/commerce/orders/src/order.ts (holdsStock, takenOf, ordersOn, ordersInSlot, fixSlot,
 // slotMoments, itemsText, totalOf, countOf, addLine, compactFinishedOrders, orderFacts, countedLeft, factsFor) and the one read of src/plans/ledger.ts a slot's count needs
-// (planMealsInSlot, over the store's `plans` block as read).
+// (planMealsInSlot, over the store's typed `plans` block: plans_state.go).
 //
 // Stock and the day's order count are NOT counters, in either runtime: they are worked out each time from the orders that hold them (confirmed ones, and ones waiting for their
 // advance whose hold has not run out), so an expired hold, a cancellation or a restart can never leave a number that disagrees with the orders. A slot's count adds the plans'
@@ -15,7 +15,6 @@ package orders
 // itemsText and orderWhat name an item missing from the menu by its id (the TypeScript's itemsText would throw on it; orderWhat names it by its id too).
 
 import (
-	"encoding/json"
 	"math"
 	"strconv"
 	"strings"
@@ -105,34 +104,6 @@ func (st *Store) OrdersInSlot(date LocalDate, slotID string, nowMs int64, except
 
 // ---- the plans' meals in a slot (plans/ledger.ts planMealsInSlot) ----------------------------------------------------------------------------------------------------------
 
-// planRead is the part of a plan (plans/ledger.ts Plan) a slot's count reads.
-type planRead struct {
-	SlotID  string `json:"slotId"`
-	State   string `json:"state"`
-	Periods []struct {
-		Index       int64             `json:"index"`
-		From        string            `json:"from"`
-		To          string            `json:"to"`
-		State       string            `json:"state"`
-		HoldUntilMs *int64            `json:"holdUntilMs"`
-		Days        map[string]string `json:"days"`
-	} `json:"periods"`
-}
-
-// plansRead reads the store's `plans` block for a count; nil: no plans (or a block this version cannot read, which counts no meals).
-func (st *Store) plansRead() map[string]*planRead {
-	if st.Plans == nil {
-		return nil
-	}
-	var v struct {
-		Plans map[string]*planRead `json:"plans"`
-	}
-	if json.Unmarshal(st.Plans, &v) != nil {
-		return nil
-	}
-	return v.Plans
-}
-
 // KeyOf is plans/periods.ts keyOf: "2026-11-16" (the year as written, the month and day in two digits).
 func KeyOf(d LocalDate) string {
 	pad := func(n int) string {
@@ -144,37 +115,17 @@ func KeyOf(d LocalDate) string {
 	return strconv.Itoa(d.Year) + "-" + pad(d.Month) + "-" + pad(d.Day)
 }
 
-// mealCounts is a plan's meal on a day that holds its place: its period holds places (paid; a renewal asked for; a first period while its hold runs) and the day is due or
-// delivered (plans/ledger.ts holdsPlaces, periodOfDay).
-func (p *planRead) mealCounts(key string, nowMs int64) bool {
-	for _, per := range p.Periods {
-		if key >= per.From && key <= per.To { // periodOfDay: the first period that has the day
-			holds := per.State == "paid" || (per.State == "awaiting_payment" && (per.Index > 0 || (per.HoldUntilMs != nil && *per.HoldUntilMs > nowMs)))
-			d := per.Days[key]
-			return holds && (d == "due" || d == "delivered")
-		}
-	}
-	return false
-}
-
-// PlanMealsInSlot is plans/ledger.ts planMealsInSlot: the plans' meals for a slot on a date (mealsOn: a lapsed plan makes none), `except` one plan left out.
+// PlanMealsInSlot is plans/ledger.ts planMealsInSlot: the plans' meals for a slot on a date (mealsOn: a lapsed plan makes none), `except` one plan left out. It reads the typed
+// plans block (plans_state.go), the same object a step's plans change, so a meal taken in this step counts at once.
 func (st *Store) PlanMealsInSlot(date LocalDate, slotID string, nowMs int64, except string) int {
-	plans := st.plansRead()
-	if plans == nil {
+	ps := st.PlansState(false)
+	if ps == nil {
 		return 0
 	}
 	key := KeyOf(date)
-	n := 0
-	for _, p := range plans {
-		if p == nil || p.SlotID != slotID || p.State == "lapsed" {
-			continue
-		}
-		if p.mealCounts(key, nowMs) {
-			n++
-		}
-	}
+	n := ps.mealsOn(key, slotID, nowMs)
 	// the plan being checked, taken off (as the TypeScript does, without asking whether it is lapsed)
-	if own := plans[except]; own != nil && own.SlotID == slotID && own.mealCounts(key, nowMs) {
+	if own := ps.Get(except); own != nil && own.SlotID == slotID && own.mealCounts(key, nowMs) {
 		n--
 	}
 	return n
