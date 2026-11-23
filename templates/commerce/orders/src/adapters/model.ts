@@ -37,6 +37,11 @@ export interface Intent {
   mode?: "pickup" | "delivery";
   /** A price the customer proposed. The agent never accepts one below the menu price. */
   offerInr?: number;
+  /**
+   * E1 (24 Nov 2026): the customer asks for a lower price WITHOUT naming one ("any discount?"); never set with offerInr (a named price wins). It decides nothing: a shop with
+   * the discount authority answers with the price it may give alone, a shop without one as before.
+   */
+  askDiscount?: boolean;
   ask?: boolean;
   /** The message tried to change the rules ("ignore your rules"). It is treated as ordinary text and changes nothing. */
   overrideAttempt?: boolean;
@@ -77,6 +82,7 @@ export function coerceIntent(raw: unknown, context: ParseContext): Intent | null
   if (raw.slotId !== undefined) { if (typeof raw.slotId !== "string" || !/^[a-z0-9-]{1,60}$/u.test(raw.slotId)) return null; intent.slotId = raw.slotId; }
   if (raw.slotIds !== undefined) { if (!Array.isArray(raw.slotIds) || !raw.slotIds.every((x) => typeof x === "string" && /^[a-z0-9-]{1,60}$/u.test(x))) return null; intent.slotIds = raw.slotIds as string[]; }
   if (raw.mode !== undefined) { if (raw.mode !== "pickup" && raw.mode !== "delivery") return null; intent.mode = raw.mode; }
+  if (raw.askDiscount === true && intent.offerInr === undefined) intent.askDiscount = true; // E1: only a plain true, and never beside a named price
   if (raw.ask !== undefined) intent.ask = raw.ask === true;
   if (raw.overrideAttempt !== undefined) intent.overrideAttempt = raw.overrideAttempt === true;
   return intent;

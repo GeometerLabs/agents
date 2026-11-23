@@ -144,10 +144,12 @@ type waiting struct {
 	runtime.WaitingItem
 	digest string
 	button string // a UPI mark's button id ("" : the owner's typed reply)
+	code   string // E1: a price card's code, which the typed reply must carry ("approve o-3 K7M2QX")
 }
 
 // answers is assistant.ts ANSWERS.
-var answers = map[string][2]string{"big_order": {"approve", "deny"}, "late_refund": {"approve", "deny"}, "deposit": {"received", ""}, "late_deposit": {"received", ""}, "refund_owed": {"refunded", ""}}
+var answers = map[string][2]string{"big_order": {"approve", "deny"}, "late_refund": {"approve", "deny"}, "deposit": {"received", ""}, "late_deposit": {"received", ""}, "refund_owed": {"refunded", ""},
+	"discount": {"approve", "deny"}} // E1: a price card, answered with its code
 
 func (k *ordersSkill) waitingNow() []waiting {
 	a := k.a
@@ -176,6 +178,9 @@ func (k *ordersSkill) waitingNow() []waiting {
 				kind = ownermarked.ReplyRefunded
 			}
 			w.button = ownermarked.MarkButtonID(kind, it.Code)
+		}
+		if it.Deal != nil {
+			w.code = it.Deal.Code
 		}
 		out = append(out, w)
 	}
@@ -411,6 +416,9 @@ func (k *ordersSkill) Execute(act assistant.Action) runtime.Executed {
 			reply = item.No
 		}
 		msg.Text = reply + " " + o.ID
+		if item.code != "" {
+			msg.Text += " " + item.code // the card's action carried the item's digest, which is over this code: a changed ask made the card "changed" before here
+		}
 	}
 	if err := a.onOwnerMessage(msg); err != nil {
 		a.stepErr = err

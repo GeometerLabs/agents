@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
@@ -365,6 +366,10 @@ type ownerItem struct {
 	ClaimedAtMs        *int64
 	UpiRef             string
 	Code               string
+	// Deal is a waiting price card (E1, kind "discount"): the page shows its service, list price, price asked and total, and a press sends "approve b-3 <code>" with ITS code
+	// (never Code above, which is a UPI mark's). DealName is the service's name in the owner's language.
+	Deal     *discounts.Deal
+	DealName string
 }
 
 // json is the item as the owner's page reads it, in the TypeScript's member order, never with its code.
@@ -384,6 +389,9 @@ func (it ownerItem) json() json.RawMessage {
 	}
 	if it.UpiRef != "" {
 		kv = append(kv, "upiRef", it.UpiRef)
+	}
+	if d := it.Deal; d != nil { // only a price card has it, so every other item keeps its bytes; never the card's code
+		kv = append(kv, "deal", ordered2("name", it.DealName, "qty", d.Qty, "listInr", d.ListInr, "offeredInr", d.OfferedInr, "totalInr", d.TotalInr))
 	}
 	return ordered2(kv...)
 }
@@ -425,8 +433,10 @@ func claimOf(b *Booking, it *ownerItem) {
 }
 
 // ownerItems is channel.ts ownerItems' items: a deposit to mark received (UPI), a hold that ended where money may have come anyway, a refund the owner owes, a late
-// cancellation's refund the agent asked about, and a paid booking the calendar would not confirm. Only what the agent would act on now.
-func ownerItems(st *Store, now int64, lang string) []ownerItem {
+// cancellation's refund the agent asked about, a paid booking the calendar would not confirm, and (E1) a price card waiting for the owner. Only what the agent would act on now.
+// The owner's language is the settings' (the names on the items are in it).
+func ownerItems(st *Store, s *Settings, now int64) []ownerItem {
+	lang := s.Owner.Language
 	var items []ownerItem
 	at := func(b *Booking, it *ownerItem) {
 		if b == nil {
@@ -501,6 +511,22 @@ func ownerItems(st *Store, now int64, lang string) []ownerItem {
 		at(b, &it)
 		items = append(items, it)
 	}
+	// E1: a price card waiting for the owner (agent_discounts.go askedDeal). The digest is over the card's own code, which is over every field the card shows, so a press made on
+	// an older card (the ask changed since) or one already answered here or on WhatsApp finds nothing and does nothing. The amount shown is the total the card would agree.
+	for _, b := range st.Bookings {
+		d := askedDeal(b)
+		if d == nil {
+			continue
+		}
+		name := d.Item
+		if sv := s.ServiceByID(d.Item); sv != nil {
+			name = ServiceName(sv, lang)
+		}
+		it := ownerItem{Kind: "discount", Case: b.ID, Digest: digestOf("discount", b.ID, d.Code), Actions: []string{"approve", "deny"}, AmountPaise: d.TotalInr * 100,
+			Customer: ownerCustomer(st, lang, b, b.Customer), Channel: ownerChannel(b), Deal: d, DealName: name}
+		at(b, &it)
+		items = append(items, it)
+	}
 	return items
 }
 
@@ -510,7 +536,7 @@ func (k *channelKit) Owner(kst runtime.KitState, sn *runtime.Snap, _ []store.Ent
 	s := k.kit.Settings
 	now := k.kit.now()
 	items := []any{}
-	for _, it := range ownerItems(st, now, s.Owner.Language) {
+	for _, it := range ownerItems(st, s, now) {
 		items = append(items, it.json())
 	}
 	// the coming bookings of the next seven days (to midnight eight days on, in the shop's zone)

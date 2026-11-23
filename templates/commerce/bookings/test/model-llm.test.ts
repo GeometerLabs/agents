@@ -171,7 +171,7 @@ test("the prompt is one text for all four languages: it says the message is data
 
 test("the answer schema asks for every field, closes every object and uses no ranges", () => {
   const schema = JSON.stringify(intentSchema(ctx));
-  assert.deepEqual((intentSchema(ctx) as { required: string[] }).required, ["kind", "language", "serviceId", "offerInr", "date", "time", "overrideAttempt"]);
+  assert.deepEqual((intentSchema(ctx) as { required: string[] }).required, ["kind", "language", "serviceId", "offerInr", "askDiscount", "date", "time", "overrideAttempt"]); // askDiscount: E1, "any discount?" with no price named
   assert.ok(!/"(minimum|maximum|minLength|maxLength|multipleOf)"/.test(schema));
   const objects = (schema.match(/"type":"object"/g) ?? []).length;
   assert.equal((schema.match(/"additionalProperties":false/g) ?? []).length, objects);

@@ -144,14 +144,16 @@ type waiting struct {
 	digest string
 	reply  string // the owner's typed reply ("approve"), or a UPI mark's button id
 	button bool
+	code   string // E1: a price card's code, which the typed reply must carry ("approve b-3 K7M2QX")
 }
 
 // answers is assistant.ts ANSWERS.
-var answers = map[string][2]string{"late_refund": {"approve", "deny"}, "calendar": {"retry", ""}, "deposit": {"received", ""}, "late_deposit": {"received", ""}, "refund_owed": {"refunded", ""}}
+var answers = map[string][2]string{"late_refund": {"approve", "deny"}, "calendar": {"retry", ""}, "deposit": {"received", ""}, "late_deposit": {"received", ""}, "refund_owed": {"refunded", ""},
+	"discount": {"approve", "deny"}} // E1: a price card, answered with its code
 
 func (k *bookingsSkill) waitingNow() []waiting {
 	var out []waiting
-	for _, it := range ownerItems(k.a.store, k.a.now(), k.a.settings.Owner.Language) {
+	for _, it := range ownerItems(k.a.store, k.a.settings, k.a.now()) {
 		b := k.a.store.Booking(it.Case)
 		ans := answers[it.Kind]
 		w := waiting{WaitingItem: runtime.WaitingItem{Case: it.Case, Kind: it.Kind, AmountPaise: it.AmountPaise, Money: true, Yes: ans[0], No: ans[1]}, digest: it.Digest, reply: ans[0]}
@@ -174,6 +176,9 @@ func (k *bookingsSkill) waitingNow() []waiting {
 				kind = ownermarked.ReplyRefunded
 			}
 			w.reply, w.button = ownermarked.MarkButtonID(kind, it.Code), true
+		}
+		if it.Deal != nil {
+			w.code = it.Deal.Code
 		}
 		out = append(out, w)
 	}
@@ -369,6 +374,9 @@ func (k *bookingsSkill) Execute(act assistant.Action) runtime.Executed {
 				reply = item.No
 			}
 			msg.Text = reply + " " + b.ID
+			if item.code != "" {
+				msg.Text += " " + item.code // the card's action carried the item's digest, which is over this code: a changed ask made the card "changed" before here
+			}
 		}
 		if err := a.onOwnerMessage(msg); err != nil {
 			a.stepErr = err

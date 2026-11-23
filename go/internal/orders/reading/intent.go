@@ -42,7 +42,9 @@ type Intent struct {
 	Mode    string // "pickup" or "delivery"
 	// OfferInr is a price the customer proposed. The agent never accepts one below the menu price.
 	OfferInr *int64
-	Ask      *bool // set only by the shop's own "Cancel order" button, which asks "are you sure" first
+	// AskDiscount (E1, 24 Nov 2026): a numberless ask for a lower price ("any discount?"); never set beside OfferInr (a named price wins). It decides nothing.
+	AskDiscount bool
+	Ask         *bool // set only by the shop's own "Cancel order" button, which asks "are you sure" first
 	// OverrideAttempt: the message tried to change the rules ("ignore your rules"); it is treated as ordinary text and changes nothing.
 	OverrideAttempt *bool
 }
@@ -59,10 +61,11 @@ func (i Intent) MarshalJSON() ([]byte, error) {
 		SlotIDs         *[]string      `json:"slotIds,omitempty"`
 		Mode            string         `json:"mode,omitempty"`
 		OfferInr        *int64         `json:"offerInr,omitempty"`
+		AskDiscount     bool           `json:"askDiscount,omitempty"`
 		Ask             *bool          `json:"ask,omitempty"`
 		OverrideAttempt *bool          `json:"overrideAttempt,omitempty"`
 	}
-	w := wire{Kind: i.Kind, Language: i.Language, Date: i.Date, Time: i.Time, SlotID: i.SlotID, Mode: i.Mode, OfferInr: i.OfferInr, Ask: i.Ask, OverrideAttempt: i.OverrideAttempt}
+	w := wire{Kind: i.Kind, Language: i.Language, Date: i.Date, Time: i.Time, SlotID: i.SlotID, Mode: i.Mode, OfferInr: i.OfferInr, AskDiscount: i.AskDiscount, Ask: i.Ask, OverrideAttempt: i.OverrideAttempt}
 	if i.Items != nil {
 		w.Items = &i.Items
 	}
@@ -197,6 +200,9 @@ func CoerceIntent(raw any, c *ParseContext) *Intent {
 			return nil
 		}
 		in.Mode = v.(string)
+	}
+	if m["askDiscount"] == true && in.OfferInr == nil { // model.ts: only a plain true, and never beside a named price
+		in.AskDiscount = true
 	}
 	if v, given := m["ask"]; given {
 		b := v == true

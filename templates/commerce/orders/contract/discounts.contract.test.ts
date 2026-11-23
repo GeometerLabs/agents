@@ -107,3 +107,128 @@ describe("the discount authority, on", () => {
     assert.deepEqual(await advanceAsked(s), []);
   });
 });
+
+// The price card on the owner's page (E1 item 2, 24 Nov 2026): the same card as on WhatsApp, with its numbers, answered by a press that the runtime turns into the owner's own
+// "approve o-1 <code>" (go/internal/orders agent_channel.go onOwnerAction), so one decision path and one count, whichever door the answer comes through.
+type PageItem = { kind: string; case: string; digest: string; actions: string[]; amountPaise: number; deal?: { name: string; qty: number; listInr: number; offeredInr: number; totalInr: number } };
+const pageCard = async (s: Shop): Promise<PageItem | undefined> => ((await s.ownerView()).body.items as PageItem[]).find((i) => i.kind === "discount");
+async function press(s: Shop, item: PageItem, action: "approve" | "deny"): Promise<void> {
+  const a = await s.channelEvents([{ kind: "owner_action", id: `press-${action}-${item.digest.slice(0, 6)}-${s.record().length}`, action, case: item.case, digest: item.digest }], { owner: true });
+  assert.equal(a.status, 200);
+  await s.settle();
+}
+
+describe("the price card on the owner's page", () => {
+  contract("it waits with the item, the quantity, the menu price, the price asked and the total (never its code); Approve there makes the request for exactly that total", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 2, 100);
+    const item = await pageCard(s);
+    assert.ok(item, "the card is on the page");
+    assert.deepEqual([item.case, item.actions, item.amountPaise, item.deal], ["o-1", ["approve", "deny"], 20000, { name: "veg thali", qty: 2, listInr: 120, offeredInr: 100, totalInr: 200 }]);
+    assert.doesNotMatch(JSON.stringify(item), new RegExp(codeOf(s), "u"), "the card's code is not on the page");
+    await press(s, item, "approve");
+    assert.deepEqual(await advanceAsked(s), [10000], "half of exactly ₹200");
+    assert.deepEqual(s.templatesTo(CUSTOMER).slice(-2), ["discount_approved", "quote_and_link"]);
+    assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.by ?? "", r.refs.totalInr]), [["held_for_owner", "", "200"], ["confirmed", "owner", "200"]]);
+    assert.equal(await pageCard(s), undefined, "answered: the card is gone from the page");
+  });
+
+  contract("Refuse there is the owner's no: the customer is offered the menu total", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 2, 100);
+    await press(s, (await pageCard(s))!, "deny");
+    assert.deepEqual(s.templatesTo(CUSTOMER).slice(-2), ["discount_refused", "quote_and_link"]);
+    assert.deepEqual(await advanceAsked(s), [12000]);
+  });
+
+  contract("a stale card's press is refused: the order changed after the page was shown, so the old press does nothing and the new card still waits", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 2, 100);
+    const old = (await pageCard(s))!;
+    await s.inbound(CUSTOMER, "3 veg thali 10 nov 12:00 pm pickup"); await s.settle();
+    const fresh = (await pageCard(s))!;
+    assert.notEqual(fresh.digest, old.digest);
+    assert.equal(fresh.deal?.totalInr, 300);
+    await press(s, old, "approve");
+    assert.deepEqual(await advanceAsked(s), [], "nothing held");
+    assert.equal(discountLines(s).filter((r) => r.outcome === "confirmed").length, 0);
+    assert.ok(s.record().some((r) => r.action === "owner_page_action" && r.outcome === "blocked"), "the press is in the record, refused");
+    assert.deepEqual(await pageCard(s), fresh, "the new card still waits");
+  });
+
+  contract("a WhatsApp yes then a page press for the same card count once", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 2, 100);
+    const shown = (await pageCard(s))!;
+    await s.inbound(OWNER_NUMBER, `approve o-1 ${codeOf(s)}`); await s.settle();
+    await press(s, shown, "approve");
+    assert.deepEqual(await advanceAsked(s), [10000], "one request");
+    assert.equal(discountLines(s).filter((r) => r.outcome === "confirmed").length, 1, "one approval in the record");
+    assert.ok(s.record().some((r) => r.action === "owner_page_action" && r.outcome === "blocked"));
+  });
+});
+
+describe("the price card in the assistant's \"what needs me\"", () => {
+  contract("it is listed as a card with the order's total; its yes is the owner's own \"approve o-1 <code>\", decided once", async () => {
+    const s = await boot({ mode: "guards", settings: { ...ON, assistant: {} } });
+    await ask(s, 2, 100);
+    await s.inbound(OWNER_NUMBER, "what needs me"); await s.settle();
+    const card = s.sent(OWNER_NUMBER).filter((m) => m.interactive).at(-1)!;
+    assert.match(card.text, /^\+919844444444 asks a lower price than your list for o-1 \(2 × veg thali\): ₹200 in all\. Agree to it\?/u);
+    await s.tap(card.interactive.buttons[0].id, { from: OWNER_NUMBER }); await s.settle();
+    assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.by ?? "", r.refs.totalInr]), [["held_for_owner", "", "200"], ["confirmed", "owner", "200"]]);
+    assert.ok(s.record().some((r) => r.action === "owner_decision" && r.outcome === "confirmed" && r.refs.kind === "discount"));
+    assert.equal(await pageCard(s), undefined, "answered once: nothing waits on the page");
+  });
+});
+
+// "Any discount?" without a number (E1 item 3, 24 Nov 2026): read by the rules in four languages. With the authority on, the agent offers the lowest price it may give alone for
+// the order's item (two veg thalis at ₹120: 10% of the line is ₹24, so ₹108 each, never below the ₹100 floor), decided and recorded as any price within the cap, and the advance
+// follows the agreed total; with no item yet it asks which one. With it off, today's answer.
+describe("a discount asked without a price", () => {
+  contract("on: in each language, ₹108 each is offered and agreed, recorded once, and the advance is half of ₹216", async () => {
+    for (const ask of ["any discount?", "कुछ छूट मिलेगी?", "ഇളവ് ഉണ്ടോ", "ರಿಯಾಯಿತಿ ಇದೆಯಾ"]) {
+      const s = await boot({ settings: ON });
+      await s.inbound(CUSTOMER, `2 veg thali 10 nov 12:00 pm pickup, ${ask}`); await s.settle();
+      assert.deepEqual(s.templatesTo(CUSTOMER), ["discount_agreed", "quote_and_link"], ask);
+      assert.deepEqual(await advanceAsked(s), [10800], ask);
+      assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.by, r.refs.offeredInr, r.refs.totalInr]), [["confirmed", "agent", "108", "216"]], ask);
+    }
+  });
+
+  contract("on: with nothing ordered yet, the agent asks which item, and nothing is decided", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER), ["discount_which"]);
+    assert.deepEqual(discountLines(s), []);
+  });
+
+  contract("on, an item with no floor: the menu price is stated once, nothing is decided, and the advance is half the menu total", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "2 curd 10 nov 12:00 pm pickup, any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER), ["price_floor", "quote_and_link"]);
+    assert.deepEqual(await advanceAsked(s), [2000]);
+    assert.deepEqual(discountLines(s), []);
+  });
+
+  contract("on, a card waiting for the owner: \"any discount?\" hears that the owner was asked, and the card is not voided", async () => {
+    const s = await boot({ settings: ON });
+    await ask(s, 2, 100);
+    const code = codeOf(s);
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER).slice(-1), ["discount_asked"]);
+    assert.equal(codeOf(s), code);
+    assert.equal(discountLines(s).length, 1, "no second decision");
+    assert.deepEqual(await advanceAsked(s), [], "nothing held");
+  });
+
+  contract("off: today's answer, and the advance stays half the menu total", async () => {
+    const s = await boot();
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER), ["didnt_understand"]);
+    await s.inbound(CUSTOMER, "2 veg thali 10 nov 12:00 pm pickup, any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER).slice(-1), ["quote_and_link"]);
+    assert.deepEqual(await advanceAsked(s), [12000]);
+    assert.deepEqual(discountLines(s), []);
+  });
+});

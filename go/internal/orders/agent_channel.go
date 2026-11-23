@@ -250,6 +250,8 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 			kind = ownermarked.ReplyKept
 		}
 		msg.Reply = &messaging.Reply{ID: ownermarked.MarkButtonID(kind, item.Code), Kind: "button"}
+	} else if item.Deal != nil {
+		msg.Text = action + " " + cs + " " + item.Deal.Code // E1: a price card's answer names its code, exactly as the owner types it on WhatsApp (onDiscountAnswer decides)
 	} else {
 		msg.Text = action + " " + cs
 	}

@@ -374,3 +374,14 @@ escaped). Three existing assertions moved from `GET /setup` to `GET /setup/other
 
 The shop's page has a block "The owner's own asks" (`leave.ts`, `words-leave.ts`) when the owner asked, from the exported record, for their file or for another Operator. The file is not the Operator's to approve or stop: the block says so and only reports where it stands (asked, ready until, taken, ran out, or why it could not be made yet, from `status/leave/<shop>.json` which holds no link). For another Operator it says what to do, links to the existing handover page, shows "a move is waiting for the owner's code" while one is, and the days left of 14. `/stranded` (builder accounts, linked from the shops list) lists owners who have waited more than 14 days (the rule is `modules/approvals/leave.ts` `stranded`). After a finished move the handover page says what Geometer's billing was told (`lib/fleet-move.ts`). The asks reach the panel with the exported record, up to a quarter of an hour later; see Deferred. Tests: `test/leave.test.ts`.
 
+
+## The discount boxes (24 Nov 2026, E1)
+
+The Bookings deposit step and the Orders rules step end with the discount authority's boxes (`discounts.ts`):
+- a switch, off by default;
+- the cap the agent may take off alone, as a percentage and in rupees (the lower one is used);
+- a floor (the lowest price) for each service or menu item.
+
+**One check.** What the boxes say goes through `modules/limits/discounts.ts` `readDiscounts`, the deployer's own check. The Operator reads its sentences, and a Bookings floor below the deposit on the same step is refused. The floors are kept by the item's name until the save, which puts them on the ids.
+
+**Owning the key.** The panel owns `discounts` (`keep.ts`): switched off, the block goes. Two things are kept as they were: a saved floor of a service past the form's rows, and the whole block when the draft is from before the boxes. Tests: `test/discounts-form.test.ts`.

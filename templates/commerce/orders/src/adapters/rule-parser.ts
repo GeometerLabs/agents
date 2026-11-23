@@ -7,7 +7,7 @@
 import { canon } from "../../../../../modules/language/format.ts";
 import { blankWrittenDate, findDatePhrase, findTimePhrase, phraseRe, wordRe } from "../../../../../modules/language/dates.ts";
 import { inBoth } from "../../../../../modules/language/words.ts";
-import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../../../../modules/understanding/rules.ts";
+import { GREETING_RE, NO_RE, YES_RE, asksDiscount, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../../../../modules/understanding/rules.ts";
 import type { IntentLine, Intent, IntentParser, ParseContext } from "./model.ts";
 
 export const CANCEL_RE = wordRe(["cancel", "cancelled", "canceled", "cancellation", "कैंसल", "रद्द", "रद", "निरस्त", "radd", "cancle", ...inBoth((w) => w.cancel)]);
@@ -116,6 +116,7 @@ export function parseIntent(text: string, context: ParseContext): Intent {
   const mode = PICKUP_RE.test(t) ? "pickup" : DELIVERY_RE.test(t) ? "delivery" : undefined;
   if (items.length > 0) intent.items = items;
   if (offerInr !== undefined) intent.offerInr = offerInr;
+  else if (asksDiscount(t)) intent.askDiscount = true; // E1: "any discount?" with no price named (a named price wins)
   if (date) intent.date = date;
   if (time) intent.time = time;
   if (mode) intent.mode = mode;

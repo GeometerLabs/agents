@@ -351,6 +351,11 @@ export interface OwnerMoreWords {
   refundRequest: (who: string, what: string, amount: string) => string; refundIt: string; dontRefund: string;
   parents: string; parentsNote: string; parentRow: (students: string, phone: string) => string;
   linkActive: (since: string) => string; linkNone: string; sendLink: string; revokeLink: string;
+  /**
+   * E1 (24 Nov 2026), a Bookings or Orders price card: the customer asks `offered` for `item` (`qty` of them; 1 for a booking) where the list says `list`, `total` in all, more off
+   * than the agent may give alone. The two answers are the owner's "approve" and "deny" with the card's code, exactly as on WhatsApp.
+   */
+  discount: (who: string, item: string, qty: number, offered: string, list: string, total: string) => string; agreePrice: string; keepPrice: string;
 }
 
 export const OWNER_MORE: W<OwnerMoreWords> = {
@@ -359,6 +364,8 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     upcomingOrders: "Coming orders", noneComingOrders: "No confirmed orders in the coming week.",
     bigOrder: (who, what, amount) => `${who} ordered ${what}, ${amount} in all. It is above your line for orders you accept first; nothing is held until you answer.`,
     accept: "Accept the order", refuse: "Refuse the order",
+    discount: (who, item, qty, offered, list, total) => `${who} asks for ${qty > 1 ? `${qty} × ${item} at ${offered} each` : `${item} at ${offered}`} instead of your price of ${list}: ${total} in all. That is more off than the agent may give alone, so nothing is agreed until you answer.`,
+    agreePrice: "Agree to this price", keepPrice: "Keep my price",
     lateOrder: (who, what, amount) => `${who} cancelled an order late (${what}). Their advance is ${amount}.`,
     giveBack: "Give the advance back", keepAdvance: "Keep the advance", keptOrder: "Kept for an order I took by hand",
     waiver: (who, what, amount) => `${who}'s parent asked to take ${amount} off ${what}.`, waiveIt: "Take it off", dontWaive: "Do not take it off",
@@ -373,6 +380,8 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     upcomingOrders: "आने वाले ऑर्डर", noneComingOrders: "आने वाले हफ़्ते में कोई पक्का ऑर्डर नहीं।",
     bigOrder: (who, what, amount) => `${who} ने ${what} का ऑर्डर दिया, कुल ${amount}। यह आपकी उस सीमा से ऊपर है जिसके ऊपर के ऑर्डर आप पहले मंज़ूर करते हैं; आपके जवाब तक कुछ रोका नहीं गया।`,
     accept: "ऑर्डर मंज़ूर कीजिए", refuse: "ऑर्डर मना कीजिए",
+    discount: (who, item, qty, offered, list, total) => `${who} ${qty > 1 ? `${qty} × ${item}, ${offered} प्रति नग` : `${item}, ${offered}`} में माँग रहे हैं, आपका दाम ${list} है: कुल ${total}। यह एजेंट जितनी छूट खुद दे सकता है उससे ज़्यादा है, इसलिए आपके जवाब तक कुछ तय नहीं होगा।`,
+    agreePrice: "यह दाम मंज़ूर करें", keepPrice: "अपना दाम रखें",
     lateOrder: (who, what, amount) => `${who} ने एक ऑर्डर देर से रद्द किया (${what})। उनकी अग्रिम राशि ${amount} है।`,
     giveBack: "अग्रिम राशि लौटाइए", keepAdvance: "अग्रिम राशि रखिए", keptOrder: "हाथ से लिए ऑर्डर के लिए रखा",
     waiver: (who, what, amount) => `${who} के माता-पिता ने ${what} में से ${amount} कम करने को कहा है।`, waiveIt: "कम कीजिए", dontWaive: "कम मत कीजिए",
@@ -387,6 +396,8 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     upcomingOrders: "വരാനിരിക്കുന്ന ഓർഡറുകൾ", noneComingOrders: "വരുന്ന ആഴ്ച ഉറപ്പായ ഓർഡറുകളൊന്നുമില്ല.",
     bigOrder: (who, what, amount) => `${who} ${what} ഓർഡർ ചെയ്തു, ആകെ ${amount}. ആദ്യം നിങ്ങൾ അംഗീകരിക്കുന്ന ഓർഡറുകളുടെ പരിധിക്ക് മുകളിലാണിത്; നിങ്ങൾ മറുപടി നൽകുന്നതുവരെ ഒന്നും പിടിച്ചുവയ്ക്കില്ല.`,
     accept: "ഓർഡർ അംഗീകരിക്കൂ", refuse: "ഓർഡർ നിരസിക്കൂ",
+    discount: (who, item, qty, offered, list, total) => `${who} ${qty > 1 ? `${qty} × ${item}, ഒന്നിന് ${offered}` : `${item}, ${offered}`} എന്ന വിലയ്ക്ക് ചോദിക്കുന്നു, നിങ്ങളുടെ വില ${list}: ആകെ ${total}. ഏജന്റിന് സ്വയം നൽകാവുന്നതിലും കൂടുതൽ ഇളവാണിത്, അതിനാൽ നിങ്ങൾ മറുപടി നൽകുന്നതുവരെ ഒന്നും ഉറപ്പിക്കില്ല.`,
+    agreePrice: "ഈ വില സമ്മതിക്കൂ", keepPrice: "എന്റെ വില നിലനിർത്തൂ",
     lateOrder: (who, what, amount) => `${who} ഒരു ഓർഡർ വൈകി റദ്ദാക്കി (${what}). അവരുടെ അഡ്വാൻസ് ${amount}.`,
     giveBack: "അഡ്വാൻസ് തിരികെ നൽകൂ", keepAdvance: "അഡ്വാൻസ് വച്ചോളൂ", keptOrder: "കൈകൊണ്ട് എടുത്ത ഓർഡറിനായി വച്ചു",
     waiver: (who, what, amount) => `${who}-ന്റെ രക്ഷിതാവ് ${what}-ൽ നിന്ന് ${amount} കുറയ്ക്കാൻ ചോദിച്ചു.`, waiveIt: "കുറയ്ക്കൂ", dontWaive: "കുറയ്ക്കരുത്",
@@ -401,6 +412,8 @@ export const OWNER_MORE: W<OwnerMoreWords> = {
     upcomingOrders: "ಮುಂಬರುವ ಆರ್ಡರ್‌ಗಳು", noneComingOrders: "ಮುಂದಿನ ವಾರ ಖಚಿತ ಆರ್ಡರ್‌ಗಳಿಲ್ಲ.",
     bigOrder: (who, what, amount) => `${who} ${what} ಆರ್ಡರ್ ಮಾಡಿದ್ದಾರೆ, ಒಟ್ಟು ${amount}. ನೀವು ಮೊದಲು ಒಪ್ಪುವ ಆರ್ಡರ್‌ಗಳ ಮಿತಿಗಿಂತ ಇದು ಮೇಲಿದೆ; ನೀವು ಉತ್ತರಿಸುವವರೆಗೆ ಏನನ್ನೂ ಹಿಡಿದಿಟ್ಟಿಲ್ಲ.`,
     accept: "ಆರ್ಡರ್ ಒಪ್ಪಿ", refuse: "ಆರ್ಡರ್ ನಿರಾಕರಿಸಿ",
+    discount: (who, item, qty, offered, list, total) => `${who} ${qty > 1 ? `${qty} × ${item}, ಒಂದಕ್ಕೆ ${offered}` : `${item}, ${offered}`} ಬೆಲೆಗೆ ಕೇಳುತ್ತಿದ್ದಾರೆ, ನಿಮ್ಮ ಬೆಲೆ ${list}: ಒಟ್ಟು ${total}. ಇದು ಏಜೆಂಟ್ ತಾನೇ ನೀಡಬಹುದಾದ ರಿಯಾಯಿತಿಗಿಂತ ಹೆಚ್ಚು, ಆದ್ದರಿಂದ ನೀವು ಉತ್ತರಿಸುವವರೆಗೆ ಏನೂ ಒಪ್ಪಿಲ್ಲ.`,
+    agreePrice: "ಈ ಬೆಲೆಗೆ ಒಪ್ಪಿ", keepPrice: "ನನ್ನ ಬೆಲೆ ಇರಲಿ",
     lateOrder: (who, what, amount) => `${who} ಒಂದು ಆರ್ಡರ್ ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ (${what}). ಅವರ ಮುಂಗಡ ${amount}.`,
     giveBack: "ಮುಂಗಡ ಹಿಂತಿರುಗಿಸಿ", keepAdvance: "ಮುಂಗಡ ಇಟ್ಟುಕೊಳ್ಳಿ", keptOrder: "ಕೈಯಾರೆ ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಂಡೆ",
     waiver: (who, what, amount) => `${who} ಅವರ ಪೋಷಕರು ${what} ನಿಂದ ${amount} ಕಡಿಮೆ ಮಾಡಲು ಕೇಳಿದ್ದಾರೆ.`, waiveIt: "ಕಡಿಮೆ ಮಾಡಿ", dontWaive: "ಕಡಿಮೆ ಮಾಡಬೇಡಿ",

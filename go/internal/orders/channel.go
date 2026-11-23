@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
+	"github.com/GeometerLabs/agents/go/internal/discounts"
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
@@ -222,11 +223,23 @@ func (s *Settings) OrderView(st *Store, hash string) json.RawMessage {
 		pay, payKind = s.payOf(st, o)
 	}
 	lines := []json.RawMessage{}
+	// E1 item 4: a price agreed by the agent or approved by the owner is shown ON ITS LINE (that item's lines at the agreed price of one, with the menu price beside it as
+	// `listInr`), so the lines always add up to the total the link charges (the deal's total is the other lines at the menu plus this item's quantity at the agreed price:
+	// discounts.NewDeal). Chosen over a separate "discount" line because the deal is on one item: the customer and the owner read the price they agreed where the item is.
+	// Only a live deal changes a line, so a shop without the authority keeps its bytes.
+	deal := o.deal()
+	if !deal.Live() {
+		deal = nil
+	}
 	for _, l := range o.Lines {
 		names := json.RawMessage(nil)
 		var price int64
 		if it := s.ItemOf(l.ItemID); it != nil {
 			names, price = s.itemNames(it), it.PriceInr
+			if deal != nil && deal.Item == l.ItemID && deal.OfferedInr < price {
+				lines = append(lines, ordered("itemId", l.ItemID, "names", names, "qty", l.Qty, "priceInr", deal.OfferedInr, "listInr", price))
+				continue
+			}
 		} else {
 			kv := []any{}
 			for _, lang := range runtime.LANGUAGES {
@@ -314,6 +327,10 @@ type OwnerItem struct {
 	ClaimedAtMs        *int64
 	UpiRef             string
 	Code               string
+	// Deal is a waiting price card (E1, kind "discount"): the page shows its item, quantity, menu price, price asked and the order's total, and a press sends
+	// "approve o-3 <code>" with ITS code (never Code above, which is a UPI mark's). DealName is the item's name in the owner's language.
+	Deal     *discounts.Deal
+	DealName string
 }
 
 // JSON is the item as the owner's page reads it, in the TypeScript's member order, never with its code.
@@ -323,7 +340,11 @@ func (it OwnerItem) JSON() json.RawMessage {
 	if it.Why != nil {
 		kv = append(kv, "why", *it.Why)
 	}
-	return ordered(append(kv, "claimedAtMs", numRaw(it.ClaimedAtMs), "upiRef", strRaw(it.UpiRef))...)
+	kv = append(kv, "claimedAtMs", numRaw(it.ClaimedAtMs), "upiRef", strRaw(it.UpiRef))
+	if d := it.Deal; d != nil { // only a price card has it, so every other item keeps its bytes; never the card's code
+		kv = append(kv, "deal", ordered("name", it.DealName, "qty", d.Qty, "listInr", d.ListInr, "offeredInr", d.OfferedInr, "totalInr", d.TotalInr))
+	}
+	return ordered(kv...)
 }
 
 // digestOf is channel.ts digestOf: the SHA-256 of JSON.stringify(parts), 32 hex digits.
@@ -476,6 +497,22 @@ func (s *Settings) OwnerItems(st *Store, nowMs int64) ([]OwnerItem, []Upcoming) 
 			continue
 		}
 		it.Customer, it.Channel, it.What = s.customerOf(st, o, o.Customer), channelOf(o), s.OrderWhat(o, "")
+		at(o, &it)
+		items = append(items, it)
+	}
+	// E1: a price card waiting for the owner (agent_discounts.go askedDeal). The digest is over the card's own code, which is over every field the card shows, so a press made on
+	// an older card (the order changed since) or one already answered here or on WhatsApp finds nothing and does nothing. The amount shown is the order's total the card would agree.
+	for _, o := range st.Orders {
+		d := askedDeal(o)
+		if d == nil {
+			continue
+		}
+		name := d.Item
+		if item := s.ItemOf(d.Item); item != nil {
+			name = ItemName(item, s.Owner.Language)
+		}
+		it := OwnerItem{Kind: "discount", Case: o.ID, Digest: digestOf("discount", o.ID, d.Code), Actions: []string{"approve", "deny"}, AmountPaise: d.TotalInr * 100,
+			Customer: s.customerOf(st, o, o.Customer), Channel: channelOf(o), What: s.OrderWhat(o, ""), Deal: d, DealName: name}
 		at(o, &it)
 		items = append(items, it)
 	}

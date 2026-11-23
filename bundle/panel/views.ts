@@ -19,6 +19,7 @@ import type { CheckResult } from "./checks.ts";
 import type { LiveView, ShopStatus } from "./contract.ts";
 import { presetWords } from "./words-presets.ts";
 import { keepWords } from "./words-keep.ts";
+import { discountBoxes } from "./discounts.ts"; // E1: the discount boxes of the deposit step
 import { panelLeave } from "./words-leave.ts";
 import type { LeaveView } from "./leave.ts";
 import { html, raw } from "./html.ts";
@@ -589,6 +590,7 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
     body = html`<form method="post" action="/setup/${d.id}/${v.now + 1}">${csrf(c)}
   ${text(s.amount, "deposit", d.form.deposit, { mode: "numeric", max: 9 })}
   ${text(s.window, "window", d.windowHours, { mode: "numeric", max: 3, help: s.windowHint })}
+  ${discountBoxes(c.w, d.discounts, d.form.services.filter((r) => !(r.name === "" && r.price === "")).map((r) => ({ name: r.name, priceInr: undefined })), text)}
   <h2>${s.whatThisMeans}</h2>
   <ul class="plain">${Object.values(v.limits).map((t) => html`<li><span class="mark">✓</span><span>${t}</span></li>`)}</ul>
   ${back}${next}</form>`;

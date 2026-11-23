@@ -197,6 +197,8 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "refund_request") return `${who} asked for ${w.inr(d.amountPaise)} back (${w.lit(d.what)}, ${ref}). Refund it?`;
     if (d.itemKind === "waiver") return `Waive ${w.inr(d.amountPaise)} of ${who}'s fee (${w.lit(d.what)}, ${ref})?`;
     if (d.itemKind === "big_order") return `Accept order ${ref} from ${who} (${w.lit(d.what)}, ${w.inr(d.amountPaise)})?`;
+    // E1: a price card waiting (Bookings or Orders): the customer's lower price, the total it comes to; a yes is the owner's "approve" with the card's code
+    if (d.itemKind === "discount") return `${who} asks a lower price than your list for ${ref} (${w.lit(d.what)}): ${w.inr(d.amountPaise)} in all. Agree to it?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}. Go ahead?`;
   },
   hi: (w, d) => {
@@ -212,6 +214,7 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "refund_request") return `${who} ने ${w.inr(d.amountPaise)} वापस माँगे हैं (${w.lit(d.what)}, ${ref})। लौटाएँ?`;
     if (d.itemKind === "waiver") return `${who} की फीस (${w.lit(d.what)}, ${ref}) में ${w.inr(d.amountPaise)} की छूट दें?`;
     if (d.itemKind === "big_order") return `${who} का ऑर्डर ${ref} (${w.lit(d.what)}, ${w.inr(d.amountPaise)}) स्वीकार करें?`;
+    if (d.itemKind === "discount") return `${who} ${ref} (${w.lit(d.what)}) के लिए आपकी सूची से कम दाम माँग रहे हैं: कुल ${w.inr(d.amountPaise)}। मंज़ूर करें?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}। आगे बढ़ें?`;
   },
   ml: (w, d) => {
@@ -227,6 +230,7 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "refund_request") return `${who} ${w.inr(d.amountPaise)} തിരികെ ചോദിച്ചു (${w.lit(d.what)}, ${ref}). തിരികെ നൽകണോ?`;
     if (d.itemKind === "waiver") return `${who}-ന്റെ ഫീസിൽ (${w.lit(d.what)}, ${ref}) ${w.inr(d.amountPaise)} ഇളവ് നൽകണോ?`;
     if (d.itemKind === "big_order") return `${who}-ന്റെ ഓർഡർ ${ref} (${w.lit(d.what)}, ${w.inr(d.amountPaise)}) സ്വീകരിക്കണോ?`;
+    if (d.itemKind === "discount") return `${who} ${ref} (${w.lit(d.what)})-ന് നിങ്ങളുടെ ലിസ്റ്റിനേക്കാൾ കുറഞ്ഞ വില ചോദിക്കുന്നു: ആകെ ${w.inr(d.amountPaise)}. സമ്മതിക്കണോ?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}. തുടരണോ?`;
   },
   kn: (w, d) => {
@@ -242,6 +246,7 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "refund_request") return `${who} ಅವರು ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಲು ಕೇಳಿದ್ದಾರೆ (${w.lit(d.what)}, ${ref}). ಹಿಂತಿರುಗಿಸಬೇಕೆ?`;
     if (d.itemKind === "waiver") return `${who} ಅವರ ಫೀಸ್‌ನಲ್ಲಿ (${w.lit(d.what)}, ${ref}) ${w.inr(d.amountPaise)} ರಿಯಾಯಿತಿ ನೀಡಬೇಕೆ?`;
     if (d.itemKind === "big_order") return `${who} ಅವರ ಆರ್ಡರ್ ${ref} (${w.lit(d.what)}, ${w.inr(d.amountPaise)}) ಸ್ವೀಕರಿಸಬೇಕೆ?`;
+    if (d.itemKind === "discount") return `${who} ${ref} (${w.lit(d.what)}) ಗೆ ನಿಮ್ಮ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಬೆಲೆ ಕೇಳುತ್ತಿದ್ದಾರೆ: ಒಟ್ಟು ${w.inr(d.amountPaise)}. ಒಪ್ಪಬೇಕೆ?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}. ಮುಂದುವರಿಯಬೇಕೆ?`;
   },
 };

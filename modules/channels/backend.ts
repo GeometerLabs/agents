@@ -68,13 +68,18 @@ export type BookingView =
  * payment a parent says they made), `waiver` and `refund_request`. `what` is what it is about, already in the owner's language, for a kind no service names.
  */
 export interface OwnerItemView {
-  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request" | "po_approval" | "po_silent" | "po_receive" | "po_unsure" | "po_refused"; case: string; digest: string; actions: string[]; amountPaise: number;
+  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request" | "po_approval" | "po_silent" | "po_receive" | "po_unsure" | "po_refused" | "discount"; case: string; digest: string; actions: string[]; amountPaise: number;
   customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp" | "chat"; serviceId?: string; startMs?: number; why?: string; what?: string;
   /**
    * Money clarity: for a `deposit` or a `late_deposit`, when the customer said they paid (left out: nobody said so, the hold is only waiting) and the UPI reference they
    * typed. `late_deposit` is a hold that ended where money may have come anyway; "received" on it is the late mark, after which the refund (or keep) card follows.
    */
   claimedAtMs?: number; upiRef?: string;
+  /**
+   * E1 (24 Nov 2026), kind "discount": the price card's numbers (the item's name in the owner's language, how many, the list price and the price asked for one, the total the card
+   * would agree). Never the card's code: the runtime puts it in the answer, as the owner's own "approve b-3 K7M2QX".
+   */
+  deal?: { name: string; qty: number; listInr: number; offeredInr: number; totalInr: number };
 }
 /**
  * Item 11h (Fees): a parent as the owner's page lists them, with their private link's state. `ref` names the parent without their number ("p-" and 12 hex digits
@@ -135,7 +140,8 @@ export type OrderView =
   | { status: "refused"; reason: string; channel: string }
   | {
     status: "not_held" | "checking" | "held" | "confirmed" | "expired" | "cancelled" | "done"; ref: string; channel?: string;
-    lines: { itemId: string; names: Record<Language, string>; qty: number; priceInr: number }[];
+    /** E1 item 4: a line at a price the customer agreed (`priceInr`) has the menu price beside it (`listInr`); the lines add up to `totalInr`. */
+    lines: { itemId: string; names: Record<Language, string>; qty: number; priceInr: number; listInr?: number }[];
     totalInr?: number; advanceInr?: number; date?: string; mode?: "pickup" | "delivery"; slot?: { id: string; fromMs: number; toMs: number }; area?: string;
     holdExpiresAt?: number; pay?: PayInstructions; canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[]; claimed?: boolean;
   };

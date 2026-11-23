@@ -4,7 +4,7 @@
 // decides anything: prices, hours and slots are decided by the limits, so a smarter (or fooled) parser changes nothing
 // about what is allowed.
 import { canon } from "../../../../../modules/language/format.ts";
-import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop, nfc } from "../../../../../modules/understanding/rules.ts";
+import { GREETING_RE, NO_RE, YES_RE, asksDiscount, detectLanguage, findOffer, isOverrideAttempt, isStop, nfc } from "../../../../../modules/understanding/rules.ts";
 import { findDatePhrase, findTimePhrase, phraseRe, wordRe } from "../../../../../modules/language/dates.ts";
 import { inBoth } from "../../../../../modules/language/words.ts";
 import type { Intent, IntentParser, ParseContext } from "./model.ts";
@@ -42,6 +42,7 @@ export function parseIntent(text: string, context: ParseContext): Intent {
   const time = findTimePhrase(text);
   if (serviceId) intent.serviceId = serviceId;
   if (offerInr !== undefined) intent.offerInr = offerInr;
+  else if (asksDiscount(t)) intent.askDiscount = true; // E1: "any discount?" with no price named (a named price wins)
   if (date) intent.date = date;
   if (time) intent.time = time;
 

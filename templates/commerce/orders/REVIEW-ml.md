@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (81)
+## 1. Messages to the customer (82)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -93,6 +93,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `discount_asked` | The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet | ഞങ്ങളുടെ veg thali വില ₹120 ആണ്, അതിനാൽ ഒന്നിന് ₹100 എന്നതിനെക്കുറിച്ച് ഞാൻ ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി കിട്ടിയാലുടൻ ഇവിടെ അറിയിക്കാം. | Our veg thali is ₹120, so I've asked the owner about ₹100 each. I'll message you here when they answer. |  |
 | `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | സന്തോഷവാർത്ത: veg thali ഒന്നിന് ₹100 ഉടമ സമ്മതിച്ചു. | Good news: the owner agreed to ₹100 each for the veg thali. |  |
 | `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | ക്ഷമിക്കണം, ₹100-ന് ഉടമ സമ്മതിച്ചില്ല. veg thali-ന്റെ ഏറ്റവും കുറഞ്ഞ വില ₹120 ആണ്. | Sorry, the owner couldn't agree to ₹100. The lowest for the veg thali is ₹120. |  |
+| `discount_which` | The customer asked for a discount without naming a price, before saying which item: the agent asks which one | ഏത് സാധനത്തിനാണ്? എന്ത്, എത്ര വേണമെന്ന് പറയൂ, എത്രയ്ക്ക് തരാമെന്ന് ഞാൻ പറയാം. | Which item is it for? Tell me what you'd like and how many, and I'll tell you the price I can do. |  |
 
 ## 2. Messages to the owner (44)
 

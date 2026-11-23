@@ -378,7 +378,7 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 		return a.stepErr
 	}
 	var item *ownerItem
-	for _, it := range ownerItems(a.store, a.now(), a.settings.Owner.Language) {
+	for _, it := range ownerItems(a.store, a.settings, a.now()) {
 		if it.Case == cs && it.Digest == digest && contains(it.Actions, action) {
 			item = &it
 			break
@@ -400,6 +400,8 @@ func (a *Agent) onOwnerAction(ev map[string]any) error {
 			kind = ownermarked.ReplyKept
 		}
 		msg.Reply = &messaging.Reply{ID: ownermarked.MarkButtonID(kind, item.Code), Kind: "button"}
+	} else if item.Deal != nil {
+		msg.Text = action + " " + cs + " " + item.Deal.Code // E1: a price card's answer names its code, exactly as the owner types it on WhatsApp (onDiscountAnswer decides)
 	} else {
 		msg.Text = action + " " + cs
 	}

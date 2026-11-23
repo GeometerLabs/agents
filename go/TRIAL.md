@@ -1447,3 +1447,21 @@ the only way out); the server's push sender and each shop's push Guard spec are 
   clean, `go test ./...` 40 packages ok; contracts (`node --test --test-concurrency=1 <folder>/`): Bookings 169/169 (the real-Guard case ran), Orders 107/107, Fees 102/102,
   Stock orders 74/74, listings 210/210 (with words-fresh); bundle (`cd bundle && node --test test/`) 731: 722 pass, 9 skipped (REAL_CADDY), 0 fail; panel
   (`node --test panel/test/`) 259/259. No generator reads the contract folders, so no vectors changed.
+
+## e1-finish-24nov: E1, the four items before the pilot (24 Nov 2026)
+
+What was built is in `internal/discounts/Explanation.md` § Before the pilot, and what is left is in its `Deferred.md`.
+
+- **The panel's boxes** (`bundle/panel/discounts.ts`). They sit in the Bookings deposit step and the Orders rules step: a switch (off by default), the two caps and a floor per item. They are checked by `readDiscounts`, so the Operator reads its sentences, and the panel now owns the `discounts` key.
+- **The card on the owner's page and in "what needs me".** A press becomes the owner's own `approve b-3 <code>`, so there is one decider. A stale press or a second answer does nothing.
+- **"Any discount?" without a number.** The intent's `askDiscount` is read by the rules in four languages, and the model may read it too. With the block, the agent offers `discounts.CapPrice` through `decideOffer`, recorded as agreed. With no item in the conversation, it asks which one. Off: today's answer.
+- **The order's page.** A deal's line is shown at the agreed price, with the menu price beside it, so the lines add up to the total.
+- **`gen_orders_reading.ts`.** The sample is now stable: a phrase is in a share by its own hash, so a new phrase only adds itself. The move to it was one regeneration in its own commit.
+- **TypeScript findings: none changed.** One note: the owner page's words have no review sheet, so the card's hi, ml and kn words wait there (Deferred.md).
+- **Run of record (24 Nov, merged with main 60144bf0, which has web push).** One pass over the merged tree. Two things were then fixed and their suites run again: the Bookings model schema's required fields in two tests, and the Orders reading vectors (one parser and two plan phrases were added, none left).
+  - `go build/vet/test ./...`: all ok.
+  - Contracts: Bookings 178/178, Orders 117/117, Fees 102/102, Stock orders 74/74, listings 210/210 (words-fresh included), directory 36/36.
+  - Panel: 269/269. Bundle: 722 pass, 9 skipped (REAL_CADDY).
+  - TypeScript: Bookings 838/838, Orders 215/215, modules (channels, limits, assistant, understanding) 334/334.
+  - `--check` of every generator: fresh. The three generators without a `--check` (digest, format, rules vectors) were run and changed no file.
+- **Every shop sees one change: the model's prompt and schema.** They gain `askDiscount`, so a model reading sees it. A message the rules read is answered exactly as before.

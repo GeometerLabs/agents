@@ -14,6 +14,7 @@
 // Run with node from the repository root:   node go/scripts/gen_orders_reading.ts          (add --check to only compare with the committed files; words-fresh.test.ts calls `staleFiles`)
 // Nothing here is typed twice: the phrases are TAKEN from the tests' own source, the word lists are the TypeScript's exports; the hand-written phrases are test INPUTS, not words
 // the product says.
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,6 +35,12 @@ export const OUT = PKG;
 
 const plain = (v: unknown): unknown => (v === undefined ? null : JSON.parse(JSON.stringify(v))); // JSON as JSON.stringify writes it: a member that is undefined is left out
 const clean = (v: unknown): unknown => JSON.parse(JSON.stringify(v, (_k, x) => (x === undefined ? null : x)));
+/**
+ * A stable share of the corpus (24 Nov 2026): whether a phrase is in the share `r` of `n` is decided by the phrase itself (the first four bytes of its SHA-256), never by where it
+ * sorts. Before, the samples were "every 4th phrase" of the sorted corpus, so each new test phrase shifted every later one and about a thousand old phrases left the vectors at
+ * a time (after E1: some 1,050 parser and 2,290 plan phrases). Now a new phrase only adds itself (to the share its own hash names), and every phrase already in stays in.
+ */
+const inShare = (text: string, n: number, r: number): boolean => createHash("sha256").update(text).digest().readUInt32BE(0) % n === r;
 const pattern = (re: RegExp) => ({ source: re.source, flags: re.flags });
 const shopSettings = (file: string): Settings => parseSettings(JSON.parse(readFileSync(join(ORDERS, "settings", `${file}.example.json`), "utf8")));
 /** What createOrdersAgent hands the reader (agent.ts parseContext), plus each slot's mode, which the Go side needs for a tapped slot (settings.ts slotOf). */
@@ -73,6 +80,8 @@ function harvest(): string[] {
 
 /** Phrases written for this (inputs only): the four languages, Latin letters, mixed, typos, tricks, odd spacing and characters. */
 const HAND: string[] = [
+  // E1 item 3 (24 Nov 2026): a discount asked without a price (askDiscount), and with one (offerInr wins), in the four languages
+  "any discount?", "2 veg thali 10 nov 12:00 pm pickup, any discount?", "कुछ छूट मिलेगी?", "kuch kam karo", "ഇളവ് ഉണ്ടോ", "ರಿಯಾಯಿತಿ ಇದೆಯಾ", "what's your best price", "any discount? 2 veg thali for 100", "anything cheaper?",
   "2 veg thali kal lunch pickup", "do veg thali chahiye kal", "teen thali parso delivery", "ek curd bhej do", "kal 3 veg thali home delivery", "veg thali 5 pieces", "5 pcs veg thali", "5 plates of veg thali",
   "veg thali*2", "veg thali × 3", "x2 veg thali", "2x veg thali", "veg thali x 100", "veg thali x 1000", "veg thali x2 and chicken meal x 3", "ten veg thali", "paanch thali", "1 veg thali 2 veg thali",
   "वेज थाली 2 कल", "दो वेज थाली चाहिए", "तीन वेज थाली और एक दही", "कल दोपहर पिकअप", "कल घर पर डिलीवरी चाहिए", "मुझे ऑर्डर रद्द करना है", "पैसे वापस चाहिए", "मालिक से बात करनी है", "मैंने पेमेंट कर दिया", "पैसे भेज दिए", "अभी तक पेमेंट नहीं किया",
@@ -153,11 +162,11 @@ function parserVectors(): unknown {
   const generic = [...new Set([...harvest(), ...HAND, ...fromWords()])].sort();
   const cases: unknown[] = [];
   for (const text of generic) cases.push({ ctx: "annapurna", input: text, output: readOf(text, ann) });
-  // the other shops read a sample of the corpus (every 4th phrase) and their own names
-  generic.forEach((text, i) => { if (i % 4 === 0) { cases.push({ ctx: "sweet-crumbs", input: text, output: readOf(text, crumbs) }); } if (i % 6 === 1) cases.push({ ctx: "plans", input: text, output: readOf(text, plans) }); });
+  // the other shops read a stable share of the corpus (a quarter and a sixth, by each phrase's hash: inShare) and their own names
+  for (const text of generic) { if (inShare(text, 4, 0)) { cases.push({ ctx: "sweet-crumbs", input: text, output: readOf(text, crumbs) }); } if (inShare(text, 6, 1)) cases.push({ ctx: "plans", input: text, output: readOf(text, plans) }); }
   for (const text of [...new Set(fromShop(crumbs))].sort()) cases.push({ ctx: "sweet-crumbs", input: text, output: readOf(text, crumbs) });
   for (const text of [...new Set(fromShop(ann))].sort()) cases.push({ ctx: "annapurna", input: text, output: readOf(text, ann) });
-  for (const text of [...new Set([...specialPhrases, ...fromShop(special), ...HAND.filter((_, i) => i % 3 === 0)])].sort()) cases.push({ ctx: "special", input: text, output: readOf(text, special) });
+  for (const text of [...new Set([...specialPhrases, ...fromShop(special), ...HAND.filter((t) => inShare(t, 3, 0))])].sort()) cases.push({ ctx: "special", input: text, output: readOf(text, special) });
   return { contexts, cases };
 }
 
@@ -167,12 +176,12 @@ function planVectors(): unknown {
   const phrases = [...new Set([...harvest(), ...HAND, ...fromWords(true), ...types.flatMap((t) => Object.values(t.names).flat() as string[]).flatMap((n) => [n, `I want the ${n}`, `${n} plan`, `${n} plan chahiye`, `subscribe ${n}`, `skip ${n} plan tomorrow`, `plan ${n} home lunch`])])].sort();
   const lists: [string, string[]][] = [["en,hi", ["en", "hi"]], ["all", [...LANGUAGES]]];
   const cases: unknown[] = [];
-  phrases.forEach((text, i) => {
+  for (const text of phrases) {
     for (const hasPlan of [false, true]) {
-      const langs = lists[i % 7 === 0 ? 1 : 0];
+      const langs = lists[inShare(text, 7, 0) ? 1 : 0]; // the shop's languages a phrase is read with: by its own hash, so it does not change when others are added
       cases.push({ input: text, hasPlan, languages: langs[1], output: { read: clean(readPlanIntent(text, hasPlan, types, langs[1] as never) ?? null), mentions: mentionsPlan(text) } });
     }
-  });
+  }
   return { types: clean(types.map((t) => ({ id: t.id, names: t.names }))), cases };
 }
 

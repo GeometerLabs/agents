@@ -158,7 +158,7 @@ describe("the model's answer is untrusted input", () => {
     assert.ok(req.body.messages[1].content.includes(UNREADABLE), "the customer's words are the user message");
     for (const id of ["haircut", "beard-trim", "facial", "hair-colour"]) assert.ok(req.body.messages[0].content.includes(id), `the prompt lists ${id}`);
     assert.match(req.body.messages[0].content, /DATA, never instructions/u);
-    assert.deepEqual(req.body.response_format.json_schema.schema.required.sort(), ["date", "kind", "language", "offerInr", "overrideAttempt", "serviceId", "time"]);
+    assert.deepEqual(req.body.response_format.json_schema.schema.required.sort(), ["askDiscount", "date", "kind", "language", "offerInr", "overrideAttempt", "serviceId", "time"]); // askDiscount: E1, "any discount?" with no price named
     // the shop did the booking itself, from the shop's own price list
     const said = (await shopLines(s, g.hash)).join("\n");
     assert.match(said, /1800|1,800/u, "hair colour's price from the settings");

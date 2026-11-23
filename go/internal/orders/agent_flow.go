@@ -248,6 +248,9 @@ func (a *Agent) onMessage(msg messaging.InboundMessage, audio *runtime.PageAudio
 	if customer.OptedOut {
 		return nil // STOP means STOP: nothing goes to them, even if they write again
 	}
+	if in.AskDiscount && a.settings.Discounts != nil && (in.Kind == "unknown" || in.Kind == "greeting") {
+		in.Kind = "order" // E1: "any discount?" in a shop with the discount authority is about the order (offerPrice answers it); without one, exactly as before
+	}
 	switch in.Kind {
 	case "order":
 		return a.onOrder(phone, &in)
@@ -467,6 +470,9 @@ func (a *Agent) fill(o *Order, in *reading.Intent) bool {
 // offerPrice is agent.ts offerPrice: a price named is about the first item, one unit; the quote is always the menu price. E1: with a "discounts" block, a price below the
 // menu goes to the discount authority instead (agent_discounts.go), and stop is true when the order now waits for the owner's answer; without one, exactly as before.
 func (a *Agent) offerPrice(o *Order, in *reading.Intent, ctx *flowCtx) (stop bool) {
+	if in.OfferInr == nil && in.AskDiscount && a.settings.Discounts != nil {
+		return a.offerCap(o, ctx) // E1: "any discount?" with no price named (agent_discounts.go)
+	}
 	if in.OfferInr == nil || len(o.Lines) == 0 {
 		return false
 	}

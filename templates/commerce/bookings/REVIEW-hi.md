@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (64)
+## 1. Messages to the customer (65)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -76,6 +76,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `discount_asked` | The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet | हमारा हेयरकट ₹450 का है, इसलिए ₹400 के लिए मैंने मालिक से पूछा है। जवाब आते ही यहीं बताऊँगा। | Our haircut is ₹450, so I've asked the owner about ₹400. I'll message you here when they answer. |  |
 | `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | अच्छी खबर: मालिक ने आपके हेयरकट के लिए ₹400 मान लिया है। | Good news: the owner agreed to ₹400 for your haircut. |  |
 | `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | माफ़ कीजिए, मालिक ₹400 पर राज़ी नहीं हुए। आपके हेयरकट की सबसे कम कीमत ₹450 है। | Sorry, the owner couldn't agree to ₹400. The lowest for your haircut is ₹450. |  |
+| `discount_which` | The customer asked for a discount without naming a price, before saying which service: the agent asks which one | किस सेवा के लिए? बताइए, मैं बता दूँगा कि कितने में कर सकता हूँ। | Which service is it for? Tell me, and I'll tell you the price I can do. |  |
 
 ## 2. Messages to the owner (39)
 
@@ -1856,6 +1857,14 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | कक्षा 9 | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | कक्षा 10 | Class 10 |  |
 | `keep.lost` | Rahul का पुराना बकाया और पहले की दूसरी जानकारी नहीं रखी गई, क्योंकि माता-पिता का नंबर बदल गया। अपने बिल्डर से उन्हें फिर से जुड़वाएँ। | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `discounts.title` | छूट | Discounts |  |
+| `discounts.on` | एजेंट को कम दाम पर हाँ कहने दें | Let the agent agree to a lower price |  |
+| `discounts.onHelp` | बंद: आपकी सूची से कम हर दाम मना होगा, जैसे अभी। चालू: एजेंट नीचे लिखी रकम तक खुद कम कर सकता है, इससे ज़्यादा के लिए आपसे पूछता है, और आपके रखे सबसे कम दाम से नीचे कभी नहीं जाता। | Off: every price below your list is refused, as now. On: the agent may take off up to the amount below on its own, asks you for more, and never goes below the lowest price you set. |  |
+| `discounts.capPercent` | खुद ज़्यादा से ज़्यादा कितना कम करे (%) | Most it may take off alone (%) |  |
+| `discounts.capInr` | खुद ज़्यादा से ज़्यादा कितना कम करे (₹) | Most it may take off alone (₹) |  |
+| `discounts.capHelp` | दोनों में से जो कम है, वही माना जाएगा। उससे ज़्यादा पर एजेंट पहले आपसे पूछेगा। | The lower of the two is used. Above it, the agent asks you first. |  |
+| `discounts.floorsHelp` | हर एक का सबसे कम दाम। जिस पर छूट नहीं देनी, उसका खाना खाली छोड़ें। | The lowest price for each. Leave a box empty for no discount on that one. |  |
+| `discounts.floor` | Haircut का सबसे कम दाम (₹) | Lowest price for Haircut (₹) |  |
 | `leave.assistant.leave_file_asked` | हो गया। आपकी दुकान की फ़ाइल करीब आधे घंटे में आपके ऐप पेज पर होगी, उसे लेने का बटन भी। बटन एक बार और 3 दिन तक चलता है। इसके लिए आपके Operator की ज़रूरत नहीं है, और उनसे पूछा भी नहीं जाता। | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
 | `leave.assistant.leave_file_again` | आपने थोड़ी देर पहले दुकान की फ़ाइल माँगी थी। वह आ रही है; थोड़ी देर में अपना ऐप पेज देखिए। | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
 | `leave.assistant.leave_operator_asked` | हो गया। मैंने आपके Operator को बता दिया है कि आप दूसरा Operator चाहते हैं। आपकी हाँ के बिना कुछ नहीं बदलता: आपका Operator नए व्यक्ति का नाम देता है, आपको एक कोड मिलता है, और आप उसे यहाँ "move" और कोड लिखकर भेजते हैं। 14 दिन में कुछ न हुआ तो Geometer आपकी मदद करेगा। | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |

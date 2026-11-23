@@ -337,7 +337,8 @@ function bookingsWords(l: Language, m: Bag, D: { year: number; month: number; da
   m["card.refund"] = withInr(slots(cardQuestion({ ...card, kind: "refund", amountPaise: P }, l, TZ)));
   m["card.message"] = slots(cardQuestion({ ...card, kind: "message", amountPaise: 0, words: S("words") }, l, TZ));
   m["card.answer"] = withInr(slots(cardQuestion({ ...card, kind: "answer", amountPaise: P }, l, TZ)));
-  for (const itemKind of ["late_refund", "calendar", "deposit", "refund_owed"]) m[`card.answer.${itemKind}`] = withInr(slots(cardQuestion({ ...card, kind: "answer", itemKind, amountPaise: P }, l, TZ)));
+  // "discount" (E1): a price card waiting, for Bookings and Orders alike
+  for (const itemKind of ["late_refund", "calendar", "deposit", "refund_owed", "discount"]) m[`card.answer.${itemKind}`] = withInr(slots(cardQuestion({ ...card, kind: "answer", itemKind, amountPaise: P }, l, TZ)));
   // a limit card: the rule with its value is filled on the Go side from limitwords (the rule's {v}), so here the rule is one slot and the value now another
   const lw = { inr: () => S("now"), n: () => S("now"), lit: (t: string) => t };
   const view = (rule: string): LimitView => ({ id: "x", unit: "inr", zeroIsOff: false, name: { en: S("name"), hi: S("name"), ml: S("name"), kn: S("name") }, rule: { en: rule, hi: rule, ml: rule, kn: rule } });

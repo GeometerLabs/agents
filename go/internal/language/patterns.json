@@ -282,6 +282,10 @@
    "source": "\\bat\\s*₹?\\s*(\\d[\\d,]*)(?!\\s*(?::|am\\b|pm\\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))",
    "flags": "u"
   },
+  "rules.discount_ask": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:reduce the price|വില കുറയ്ക്കുമോ[\\p{L}\\p{M}]*|kurachu tharamo|ಕಡಿಮೆ ಮಾಡ್ತೀರಾ[\\p{L}\\p{M}]*|കുറച്ചു തരാമോ[\\p{L}\\p{M}]*|any discount|lowest price|बेस्ट प्राइस|लास्ट प्राइस|final price|കുറയ്ക്കാമോ[\\p{L}\\p{M}]*|kadime madi|best price|last price|concession|kam kar do|ഡിസ്കൗണ്ട[\\p{L}\\p{M}]*|ಕಡಿಮೆ ಮಾಡಿ[\\p{L}\\p{M}]*|ಬೆಲೆ ಕಡಿಮೆ[\\p{L}\\p{M}]*|discounts|thoda kam|price kam|डिस्काउंट|kurakkamo|ಡಿಸ್ಕೌಂಟ[\\p{L}\\p{M}]*|discount|kam karo|kuch kam|rate kam|कम कर दो|थोड़ा कम|ರಿಯಾಯಿತಿ[\\p{L}\\p{M}]*|riyayiti|कम करो|कुछ कम|रेट कम|दाम कम|ilavu|ഇളവ[\\p{L}\\p{M}]*|छूट)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
   "intents.kind.undo": {
    "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:take that back|pehle jaisa|पहले जैसा|ಹಿಂದಿನಂತೆ[\\p{L}\\p{M}]*|wapas lo|वापस लो|പഴയപോലെ[\\p{L}\\p{M}]*|revert|പഴയപടി[\\p{L}\\p{M}]*|undo)(?![\\p{L}\\p{M}\\p{N}])",
    "flags": "iu"

@@ -96,7 +96,8 @@ export function orderPage(o: { shop: PageShop; offer: OrderOffer; language: Lang
 
   const slot = v.slot ? windowText(v.slot.fromMs, v.slot.toMs, tz, o.language) : "";
   const when = v.mode && slot ? w.when(v.mode, slot, v.area) : slot;
-  const what = html`<div class="card sum"><ul>${v.lines.map((l) => html`<li>${l.qty} × ${l.names[o.language]} <small class="note">(${formatInr(l.priceInr)})</small></li>`)}</ul>
+  // E1 item 4: a line at an agreed price shows it, with the menu price struck through beside it, so the lines add up to the total
+  const what = html`<div class="card sum"><ul>${v.lines.map((l) => html`<li>${l.qty} × ${l.names[o.language]} <small class="note">(${formatInr(l.priceInr)}${l.listInr !== undefined && l.listInr > l.priceInr ? html` <s>${formatInr(l.listInr)}</s>` : ""})</small></li>`)}</ul>
 ${v.totalInr !== undefined ? html`<p><b>${w.total(formatInr(v.totalInr))}</b>${v.advanceInr !== undefined && v.advanceInr !== v.totalInr ? html`<br>${w.advance(formatInr(v.advanceInr))}` : ""}</p>` : ""}
 ${when ? html`<p>${when}</p>` : ""}<p><small class="note">${w.note(v.ref)}</small></p></div>`;
   const line = v.status === "held" ? w.held(v.holdExpiresAt !== undefined ? formatSlot(v.holdExpiresAt, tz, o.language) : "")

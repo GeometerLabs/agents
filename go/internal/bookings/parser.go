@@ -57,6 +57,8 @@ func ParseIntent(text string, s *Settings) Intent {
 	in.ServiceID = findService(t, s)
 	if offer := understanding.FindOffer(t); offer >= 0 {
 		in.OfferInr = &offer
+	} else if understanding.AsksDiscount(t) {
+		in.AskDiscount = true // E1: "any discount?" with no price named (a named price wins)
 	}
 	if d := language.FindDatePhrase(text); d != nil {
 		in.Date = d.JSON()
