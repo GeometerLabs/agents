@@ -314,6 +314,7 @@ export function reviewSheet(language: ReviewLanguage): string {
     feeRow("Classes: a doubt for the teacher (the agent never answers it)", "doubt", CLASS_WORDS.doubt),
     // the credit book: the OWNER's words (a shop with the creditBook block only reads these)
     feeRow("Credit book, the owner: someone owes an amount (\"Ramesh owes 2400\")", "owes", CREDIT_WORDS.owes),
+    feeRow("Credit book, the owner: someone who is already in the book still owes (\"remaining\"), or a new person with their number", "baki, remaining", CREDIT_WORDS.owesWeak),
     feeRow("Credit book, the owner: someone paid at the counter (the owner's mark)", "paid", CREDIT_WORDS.paid),
     feeRow("Credit book, the owner: the list of who owes what", "who owes", CREDIT_WORDS.list),
     feeRow("Credit book, the owner: ask a customer about reminders", "ask", CREDIT_WORDS.ask),

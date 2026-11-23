@@ -48,6 +48,8 @@ export interface Strings {
     paidRule: string; /** B71 part 2: a UPI centre's rule (no gateway named). */ paidRuleUpi: string; fees(items: string): string; due(day: number, graceDays: number): string; lateFee(amount: string): string; noLateFee: string;
     reminders(days: string, hour: number, most: number): string; partPayments(least: string): string; noPartPayments: string; waiver(amount: string): string; noWaiver: string; refund(amount: string): string;
     students(count: number): string; notAGrade: string; didNotHold: string; handRunLine: string; checkedOn: string;
+    /** The credit book's limits (a shop with the creditBook block), each one phrase. */
+    credit: { firstTap: string; reminders(every: number, hour: number, most: number): string; most(amount: string): string; noDiscount: string; people(count: number): string };
   };
   /**
    * What the monthly report says about the go-live checks: whether a go-live certificate was given, whether it could be trusted, and what its checks ran on. A date is passed in
@@ -120,6 +122,7 @@ export const en: Strings = {
     partPayments: (least) => `Part payments are allowed, from ${least}`, noPartPayments: "Part payments are not allowed",
     waiver: (amount) => `Taking off more than ${amount} in all from one student's month only with your OK`, noWaiver: "Every request to take money off a fee goes to you",
     refund: (amount) => `Refunds above ${amount} only with your OK`, students: (count) => `${count} students on the list`,
+    credit: { firstTap: "Nothing goes to a customer before your tap, and reminders only after they say yes", reminders: (e, h, m) => `A reminder at most every ${e} days, at ${h}:00, at most ${m} to one person in a month`, most: (a) => `One account shows at most ${a}`, noDiscount: "Every discount a customer asks about goes to you", people: (n) => `${n} people in the book at setup` },
     notAGrade: "This counts the situations tried. It does not grade the agent.", didNotHold: "Did not hold",
     handRunLine: "Checks were run by hand against stand-in services, not real WhatsApp or payments. Test money only.", checkedOn: "Checks run on",
   },
@@ -196,6 +199,7 @@ export const hi: Strings = {
     partPayments: (least) => `आंशिक भुगतान की अनुमति है, ${least} से`, noPartPayments: "आंशिक भुगतान की अनुमति नहीं है",
     waiver: (amount) => `एक विद्यार्थी के एक महीने में कुल ${amount} से ज़्यादा घटाना सिर्फ़ आपसे पूछकर`, noWaiver: "फीस घटाने की हर माँग आपके पास आती है",
     refund: (amount) => `${amount} से ऊपर का रिफंड आपसे पूछकर`, students: (count) => `सूची में ${count} विद्यार्थी`,
+    credit: { firstTap: "आपके दबाने से पहले ग्राहक को कुछ नहीं जाता, और याद उनके हाँ कहने के बाद ही", reminders: (e, h, m) => `याद ज़्यादा से ज़्यादा हर ${e} दिन, ${h}:00 बजे, एक व्यक्ति को महीने में ज़्यादा से ज़्यादा ${m}`, most: (a) => `एक खाते में ज़्यादा से ज़्यादा ${a}`, noDiscount: "ग्राहक जो भी छूट माँगे, वह आपके पास आती है", people: (n) => `सेटअप पर खाते में ${n} लोग` },
     notAGrade: "यह आज़माई गई स्थितियों की गिनती है। यह एजेंट को अंक या दर्जा नहीं देती।", didNotHold: "जिनमें गड़बड़ हुई",
     handRunLine: "जाँच हाथ से की गई, असली WhatsApp या पेमेंट पर नहीं, बल्कि अभ्यास वाले नकली सिस्टम (stand-in services) पर। सिर्फ़ टेस्ट पैसा।", checkedOn: "जाँच इन पर की गई",
   },
@@ -272,6 +276,7 @@ export const ml: Strings = {
     partPayments: (least) => `ഭാഗികമായി അടയ്ക്കാം, ${least} മുതൽ`, noPartPayments: "ഭാഗികമായി അടയ്ക്കാൻ അനുവാദമില്ല",
     waiver: (amount) => `ഒരു വിദ്യാർത്ഥിയുടെ ഒരു മാസത്തിൽ ആകെ ${amount}-ൽ കൂടുതൽ കുറയ്ക്കുന്നത് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം`, noWaiver: "ഫീസ് കുറയ്ക്കാനുള്ള ഓരോ അഭ്യർത്ഥനയും നിങ്ങളുടെ അടുത്തേക്ക് വരും",
     refund: (amount) => `${amount}-ന് മുകളിലുള്ള റീഫണ്ട് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം`, students: (count) => `ലിസ്റ്റിൽ ${count} വിദ്യാർത്ഥികൾ`,
+    credit: { firstTap: "നിങ്ങൾ അമർത്തുന്നതിന് മുമ്പ് ഉപഭോക്താവിന് ഒന്നും പോകില്ല, അവർ സമ്മതിച്ചതിനു ശേഷം മാത്രം ഓർമ്മപ്പെടുത്തലുകൾ", reminders: (e, h, m) => `ഓർമ്മപ്പെടുത്തൽ പരമാവധി ഓരോ ${e} ദിവസം, ${h}:00-ന്, ഒരാൾക്ക് മാസത്തിൽ പരമാവധി ${m}`, most: (a) => `ഒരു അക്കൗണ്ടിൽ പരമാവധി ${a}`, noDiscount: "ഉപഭോക്താവ് ചോദിക്കുന്ന ഓരോ കിഴിവും നിങ്ങളുടെ അടുത്തേക്ക് വരും", people: (n) => `സജ്ജീകരണ സമയത്ത് കണക്കിൽ ${n} പേർ` },
     notAGrade: "ഇത് പരീക്ഷിച്ച സാഹചര്യങ്ങളുടെ എണ്ണം മാത്രമാണ്. ഇത് ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല.", didNotHold: "പിഴച്ചവ",
     handRunLine: "പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തത് യഥാർത്ഥ WhatsApp, പേയ്മെന്റ് എന്നിവയിലല്ല, പരിശീലന സംവിധാനങ്ങളിലാണ് (stand-in services). ടെസ്റ്റ് പണം മാത്രം.", checkedOn: "പരിശോധിച്ചത്",
   },
@@ -348,6 +353,7 @@ export const kn: Strings = {
     partPayments: (least) => `ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇದೆ, ${least} ರಿಂದ`, noPartPayments: "ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇಲ್ಲ",
     waiver: (amount) => `ಒಬ್ಬ ವಿದ್ಯಾರ್ಥಿಯ ಒಂದು ತಿಂಗಳಲ್ಲಿ ಒಟ್ಟು ${amount} ಕ್ಕಿಂತ ಹೆಚ್ಚು ಕಡಿಮೆ ಮಾಡುವುದು ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ`, noWaiver: "ಶುಲ್ಕ ಕಡಿಮೆ ಮಾಡುವ ಪ್ರತಿ ಕೋರಿಕೆಯೂ ನಿಮ್ಮ ಬಳಿಗೆ ಬರುತ್ತದೆ",
     refund: (amount) => `${amount} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ`, students: (count) => `ಪಟ್ಟಿಯಲ್ಲಿ ${count} ವಿದ್ಯಾರ್ಥಿಗಳು`,
+    credit: { firstTap: "ನೀವು ಒತ್ತುವ ಮೊದಲು ಗ್ರಾಹಕರಿಗೆ ಏನೂ ಹೋಗುವುದಿಲ್ಲ, ಅವರು ಒಪ್ಪಿದ ನಂತರವೇ ನೆನಪುಗಳು", reminders: (e, h, m) => `ನೆನಪು ಹೆಚ್ಚೆಂದರೆ ಪ್ರತಿ ${e} ದಿನಕ್ಕೊಮ್ಮೆ, ${h}:00 ಕ್ಕೆ, ಒಬ್ಬರಿಗೆ ತಿಂಗಳಲ್ಲಿ ಹೆಚ್ಚೆಂದರೆ ${m}`, most: (a) => `ಒಂದು ಖಾತೆಯಲ್ಲಿ ಹೆಚ್ಚೆಂದರೆ ${a}`, noDiscount: "ಗ್ರಾಹಕರು ಕೇಳುವ ಪ್ರತಿ ರಿಯಾಯಿತಿಯೂ ನಿಮ್ಮ ಬಳಿ ಬರುತ್ತದೆ", people: (n) => `ಹೊಂದಿಸುವಾಗ ಲೆಕ್ಕದಲ್ಲಿ ${n} ಜನ` },
     notAGrade: "ಇದು ಪ್ರಯತ್ನಿಸಿದ ಸಂದರ್ಭಗಳ ಎಣಿಕೆ ಮಾತ್ರ. ಇದು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ.", didNotHold: "ತಪ್ಪಿದವು",
     handRunLine: "ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp ಅಥವಾ ಪಾವತಿಯ ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ (stand-in services). ಟೆಸ್ಟ್ ಹಣ ಮಾತ್ರ.", checkedOn: "ಪರಿಶೀಲನೆ ನಡೆದದ್ದು",
   },

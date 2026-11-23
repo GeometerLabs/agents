@@ -295,7 +295,7 @@ function creditWorld(): { entries: RecordEntry[]; dues: Due[] } {
   mark(D(14), "f-1", "upi_1", 190000, "upi"); // the rest: f-1 is paid
   entry(D(20), "f-3", 60000);
   w.add(D(21), "credit_add", "blocked", "f-3", { refs: { account: "c-3", amountPaise: "9900000" }, decisions: [block("credit-account-max")] });
-  return { entries: w.entries(), dues: [due({ id: "f-1", month: "2026-10", state: "paid", payments: pays(100000, 190000) }), due({ id: "f-2", month: "2026-10", state: "paid", payments: pays(100000, 685000) }), due({ id: "f-3", month: "2026-11", state: "open", feeInr: 600 })] };
+  return { entries: w.entries(), dues: [due({ id: "f-1", month: "2026-10", state: "paid", payments: pays(100000, 190000) }), due({ id: "f-2", month: "2026-10", state: "paid", payments: pays(100000, 685000) }), due({ id: "f-3", month: "2026-11", state: "open", feeInr: 600 }), due({ id: "f-4", month: "2026-10", state: "open", feeInr: 300, payments: pays(10000) })] }; // f-4: an October account still open in November
 }
 
 /** The financial year end: lines either side of 31 March 18:30 UTC (midnight in India), a restore. */

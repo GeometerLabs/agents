@@ -158,7 +158,7 @@ const hi: Set = {
   owner_credit_upi_expected: (f) => `जाँचने के लिए UPI भुगतान: ${name(f)} (${phone(f)}) से ${inr(f, "balanceInr")} माँगे गए हैं (${ref(f)})। आपके UPI ऐप में दिखे तो Received दबाएँ या "received ${code(f)}" लिखें। अलग रकम आई हो तो "received ${code(f)}" और रकम लिखें।`,
   owner_credit_upi_marked: (f) => `धन्यवाद। ${name(f)} के खाते में ${inr(f, "receivedInr")} आपके द्वारा भुगतान के रूप में दर्ज हैं।`,
   owner_credit_upi_part: (f) => `धन्यवाद। ${name(f)} के खाते में ${inr(f, "receivedInr")} आपके द्वारा भुगतान के रूप में दर्ज हैं। ${inr(f, "balanceInr")} अभी बाकी है; आने पर Received दबाएँ या "received ${code(f)}" लिखें।`,
-  owner_credit_link_failed: (f) => `${name(f)} के खाते (${phone(f)}) का भुगतान लिंक नहीं बन सका, इसलिए नहीं भेजा गया। अगली याद पर या उनके फिर पूछने पर दोबारा कोशिश होगी। ऐसा बार-बार हो तो अपना भुगतान खाता देखें या एजेंट सेट करने वाले व्यक्ति को बताएँ।`,
+  owner_credit_link_failed: (f) => `खाता: ${name(f)} के खाते (${phone(f)}) का भुगतान लिंक नहीं बन सका, इसलिए नहीं भेजा गया। अगली याद पर या उनके फिर पूछने पर दोबारा कोशिश होगी। ऐसा बार-बार हो तो अपना भुगतान खाता देखें या एजेंट सेट करने वाले व्यक्ति को बताएँ।`,
   owner_credit_discount_note: (f) => `खाता: ${name(f)} (${phone(f)}) ने बाकी रकम (${inr(f, "balanceInr")}) पर छूट माँगी है। कृपया उन्हें संदेश भेजें। कुछ बदला नहीं गया।`,
   owner_credit_refund_request: (f) => `मंज़ूरी चाहिए: ${name(f)} (${phone(f)}) अपने खाते में भरे ${inr(f, "paidInr")} में से ${inr(f, "refundInr")} वापस माँग रहे हैं। "approve ${req(f)}" या "deny ${req(f)}" लिखें।`,
   owner_credit_overpayment: (f) => `खाता: ${name(f)} (${phone(f)}) ने बाकी से ज़्यादा भर दिया। ज़्यादा ${inr(f, "refundInr")} लौटाए जा रहे हैं।`,
@@ -219,7 +219,7 @@ const ml: Set = {
   owner_credit_upi_expected: (f) => `പരിശോധിക്കാനുള്ള UPI പേയ്മെന്റ്: ${name(f)} (${phone(f)})-നോട് ${inr(f, "balanceInr")} ചോദിച്ചിട്ടുണ്ട് (${ref(f)}). നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ Received അമർത്തുക അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി നൽകുക. മറ്റൊരു തുകയാണ് വന്നതെങ്കിൽ "received ${code(f)}" എന്നും തുകയും എഴുതൂ.`,
   owner_credit_upi_marked: (f) => `നന്ദി. ${name(f)}-ന്റെ അക്കൗണ്ടിൽ ${inr(f, "receivedInr")} നിങ്ങൾ അടച്ചതായി രേഖപ്പെടുത്തി.`,
   owner_credit_upi_part: (f) => `നന്ദി. ${name(f)}-ന്റെ അക്കൗണ്ടിൽ ${inr(f, "receivedInr")} നിങ്ങൾ അടച്ചതായി രേഖപ്പെടുത്തി. ${inr(f, "balanceInr")} ഇനിയും തരാനുണ്ട്; അത് വരുമ്പോൾ Received അമർത്തുക അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി നൽകുക.`,
-  owner_credit_link_failed: (f) => `${name(f)}-ന്റെ അക്കൗണ്ടിന് (${phone(f)}) പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ അയച്ചില്ല. അടുത്ത ഓർമ്മപ്പെടുത്തലിലോ അവർ വീണ്ടും ചോദിക്കുമ്പോഴോ വീണ്ടും ശ്രമിക്കും. ഇത് ആവർത്തിച്ചാൽ നിങ്ങളുടെ പേയ്മെന്റ് അക്കൗണ്ട് നോക്കൂ, അല്ലെങ്കിൽ ഏജന്റ് സജ്ജമാക്കിയ ആളെ അറിയിക്കൂ.`,
+  owner_credit_link_failed: (f) => `കണക്ക്: ${name(f)}-ന്റെ അക്കൗണ്ടിന് (${phone(f)}) പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ അയച്ചില്ല. അടുത്ത ഓർമ്മപ്പെടുത്തലിലോ അവർ വീണ്ടും ചോദിക്കുമ്പോഴോ വീണ്ടും ശ്രമിക്കും. ഇത് ആവർത്തിച്ചാൽ നിങ്ങളുടെ പേയ്മെന്റ് അക്കൗണ്ട് നോക്കൂ, അല്ലെങ്കിൽ ഏജന്റ് സജ്ജമാക്കിയ ആളെ അറിയിക്കൂ.`,
   owner_credit_discount_note: (f) => `കണക്ക്: ${name(f)} (${phone(f)}) തരാനുള്ള തുകയിൽ (${inr(f, "balanceInr")}) കിഴിവ് ചോദിച്ചു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ. ഒന്നും മാറ്റിയിട്ടില്ല.`,
   owner_credit_refund_request: (f) => `അനുമതി വേണം: ${name(f)} (${phone(f)}) അവരുടെ അക്കൗണ്ടിൽ അടച്ച ${inr(f, "paidInr")}-ൽ നിന്ന് ${inr(f, "refundInr")} തിരികെ ചോദിക്കുന്നു. "approve ${req(f)}" അല്ലെങ്കിൽ "deny ${req(f)}" എന്ന് മറുപടി നൽകുക.`,
   owner_credit_overpayment: (f) => `കണക്ക്: ${name(f)} (${phone(f)}) തരാനുള്ളതിൽ കൂടുതൽ അടച്ചു. അധികമുള്ള ${inr(f, "refundInr")} തിരികെ നൽകുന്നു.`,
@@ -280,7 +280,7 @@ const kn: Set = {
   owner_credit_upi_expected: (f) => `ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ${name(f)} (${phone(f)}) ಅವರಿಂದ ${inr(f, "balanceInr")} ಕೇಳಲಾಗಿದೆ (${ref(f)}). ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ Received ಒತ್ತಿ ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ "received ${code(f)}" ಮತ್ತು ಮೊತ್ತ ಬರೆಯಿರಿ.`,
   owner_credit_upi_marked: (f) => `ಧನ್ಯವಾದ. ${name(f)} ಅವರ ಖಾತೆಯಲ್ಲಿ ${inr(f, "receivedInr")} ನೀವು ಪಾವತಿಯಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿದ್ದೀರಿ.`,
   owner_credit_upi_part: (f) => `ಧನ್ಯವಾದ. ${name(f)} ಅವರ ಖಾತೆಯಲ್ಲಿ ${inr(f, "receivedInr")} ನೀವು ಪಾವತಿಯಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿದ್ದೀರಿ. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ; ಬಂದಾಗ Received ಒತ್ತಿ ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
-  owner_credit_link_failed: (f) => `${name(f)} ಅವರ ಖಾತೆಗೆ (${phone(f)}) ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಕಳುಹಿಸಿಲ್ಲ. ಮುಂದಿನ ನೆನಪಿನಲ್ಲಿ ಅಥವಾ ಅವರು ಮತ್ತೆ ಕೇಳಿದಾಗ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ. ಇದು ಮತ್ತೆ ಮತ್ತೆ ಆದರೆ ನಿಮ್ಮ ಪಾವತಿ ಖಾತೆ ನೋಡಿ ಅಥವಾ ಏಜೆಂಟ್ ಹೊಂದಿಸಿದವರಿಗೆ ತಿಳಿಸಿ.`,
+  owner_credit_link_failed: (f) => `ಲೆಕ್ಕ: ${name(f)} ಅವರ ಖಾತೆಗೆ (${phone(f)}) ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಕಳುಹಿಸಿಲ್ಲ. ಮುಂದಿನ ನೆನಪಿನಲ್ಲಿ ಅಥವಾ ಅವರು ಮತ್ತೆ ಕೇಳಿದಾಗ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ. ಇದು ಮತ್ತೆ ಮತ್ತೆ ಆದರೆ ನಿಮ್ಮ ಪಾವತಿ ಖಾತೆ ನೋಡಿ ಅಥವಾ ಏಜೆಂಟ್ ಹೊಂದಿಸಿದವರಿಗೆ ತಿಳಿಸಿ.`,
   owner_credit_discount_note: (f) => `ಲೆಕ್ಕ: ${name(f)} (${phone(f)}) ಕೊಡಬೇಕಾದ ಮೊತ್ತದ (${inr(f, "balanceInr")}) ಮೇಲೆ ರಿಯಾಯಿತಿ ಕೇಳಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ. ಏನನ್ನೂ ಬದಲಿಸಿಲ್ಲ.`,
   owner_credit_refund_request: (f) => `ಅನುಮೋದನೆ ಬೇಕು: ${name(f)} (${phone(f)}) ತಮ್ಮ ಖಾತೆಯಲ್ಲಿ ಪಾವತಿಸಿದ ${inr(f, "paidInr")} ರಲ್ಲಿ ${inr(f, "refundInr")} ಹಿಂತಿರುಗಿ ಕೇಳುತ್ತಿದ್ದಾರೆ. "approve ${req(f)}" ಅಥವಾ "deny ${req(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_credit_overpayment: (f) => `ಲೆಕ್ಕ: ${name(f)} (${phone(f)}) ಕೊಡಬೇಕಾದುದಕ್ಕಿಂತ ಹೆಚ್ಚು ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚಿನ ${inr(f, "refundInr")} ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತಿದೆ.`,
@@ -323,13 +323,16 @@ export const CREDIT_META: readonly [string, CreditTemplateId, "customer" | "owne
  * builds each list with language.WordRe as the Fees rule parser builds FEE_WORDS, after language.Canon (lower case, the Indian scripts' digits as 0-9). Generated into
  * go/internal/fees/reading.json by go/scripts/gen_fees_words.ts; nothing is typed twice.
  *  - owes / paid: the word that makes "Ramesh owes 2,400" an entry and "Ramesh paid 1,000" the owner's mark; the name is the words left when the amount, the number and these are taken out
+ *  - owesWeak: words that also mean "remaining" ("बाकी", "baki"): an entry only for a name already in the book, or with a number given, so "stock baki 10" is not an entry
  *  - list: "who owes" and its words, the owner's list of who owes what
  *  - ask: "ask Ramesh", the typed twin of the owner's tap that sends the first question
  *  - filler: words taken out of a name ("ne", "par", "rs", "rupees"), so "रमेश ने 1000 दिए" names रमेश
- * "owes" is the credit book's own word; "paid" is read as the credit book's only for a name in the book, so another part of the same shop keeps its own words (decision 65).
+ * "owes" is the credit book's own word; "paid", "ask" and the weak words are read as the credit book's only for a name in the book, so another part of the same shop keeps its
+ * own words (decision 65).
  */
 export const CREDIT_WORDS = {
-  owes: ["owes", "owe", "has to pay", "to pay", "due", "udhaar", "udhar", "udhari", "baki", "baaki", "उधार", "उधारी", "बाकी", "बाक़ी", "देना है", "देने हैं", "തരാനുണ്ട്", "കടം", "ബാക്കി", "ಕೊಡಬೇಕು", "ಬಾಕಿ", "ಸಾಲ", "ಉದ್ರಿ"],
+  owes: ["owes", "owe", "udhaar", "udhar", "udhari", "उधार", "उधारी", "തരാനുണ്ട്", "കടം", "ಕೊಡಬೇಕು", "ಸಾಲ", "ಉದ್ರಿ"],
+  owesWeak: ["baki", "baaki", "बाकी", "बाक़ी", "देना है", "देने हैं", "ബാക്കി", "ಬಾಕಿ"],
   paid: ["paid", "gave", "has paid", "jama", "diye", "diya", "दिए", "दिये", "दिया", "जमा", "चुकाए", "चुकाया", "भरे", "भरा", "തന്നു", "അടച്ചു", "നൽകി", "ಕೊಟ್ಟರು", "ಕೊಟ್ಟ", "ಕೊಟ್ಟಿದ್ದಾರೆ", "ಪಾವತಿಸಿದರು", "ಕಟ್ಟಿದರು"],
   list: ["who owes", "who owes what", "khata", "credit list", "udhaar list", "किस पर कितना", "कौन कितना", "खाता", "उधार सूची", "ആര് എത്ര", "കണക്ക്", "ಯಾರು ಎಷ್ಟು", "ಲೆಕ್ಕ", "ಖಾತೆ"],
   ask: ["ask", "पूछो", "पूछें", "ചോദിക്കൂ", "ಕೇಳಿ"],

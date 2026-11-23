@@ -111,6 +111,8 @@ describe("parts, the month's cap and the owner's list", () => {
     c.goto(at(5, 10, 1)); await c.waitFor(() => lines(c, "send_message", "blocked").some((l) => l.conversation === RAMESH && l.decisions.some((d) => d.ruleId === "reminder-cap" && d.verdict === "block")), "the third held by the month's cap");
     assert.equal(sentOf(c, "credit_reminder", RAMESH).length, 2);
     c.goto(at(1, 10, 1, 12)); await c.waitFor(() => sentOf(c, "credit_reminder", RAMESH).length === 3, "December's first");
+    await beats();
+    assert.equal(sentOf(c, "credit_reminder", RAMESH).length, 3, "after the gap, one reminder and the next a full interval on: no run of reminders on the next beats");
     await c.inbound(OWNER, "who owes");
     assert.equal(sentOf(c, "owner_credit_list").length, 1, "the list goes to the owner");
     assert.ok(toCustomer(c).every((l) => !templatesOf(l).includes("owner_credit_list")));
@@ -192,13 +194,39 @@ describe("on the wire", () => {
     const pay = c.sent(SURESH).at(-1)!.text;
     assert.match(pay, /^Pay ₹7,850 on your account at Sri Lakshmi Hardware here: /u);
     assert.match(pay, /upi:\/\/pay\?pa=srilakshmihw(%40|@)oksbi/u); assert.match(pay, /am=7850/u);
+    // "I have paid" marks nothing: the owner is asked to look, with a one-use code; the owner's "received <code>" is the payment record, and only then the receipt
+    await c.inbound(SURESH, "I have paid");
+    assert.deepEqual(lines(c, "owner_marked_paid"), [], "the customer's word marks nothing");
+    const ownerTexts = () => c.sent(OWNER).map((m) => m.text);
+    const code = /received ([A-Z0-9]{4,})/u.exec(ownerTexts().filter((t) => t.includes("Suresh Electricals")).reverse().find((t) => /received [A-Z0-9]{4,}/u.test(t)) ?? "")?.[1];
+    assert.ok(code, `the owner was given a code: ${JSON.stringify(ownerTexts())}`);
+    await c.inbound(OWNER, `received ${code} 2000`);
+    const marked = lines(c, "owner_marked_paid", "confirmed").at(-1)!;
+    assert.equal(marked.refs.markedBy, "owner"); assert.equal(marked.refs.amountPaise, "200000");
+    assert.match(c.sent(SURESH).at(-1)!.text, /has recorded ₹2,000 paid on your account\. ₹5,850 is still to pay/u);
     await c.inbound(OWNER, "who owes");
-    const list = c.sent(OWNER).map((m) => m.text).find((t) => t.includes("Suresh Electricals ₹7,850")) ?? "";
-    assert.match(list, /Suresh Electricals ₹7,850, Ramesh ₹2,400, Anil ₹600/u, "the owner's list, largest first, in the owner's language");
+    const list = c.sent(OWNER).map((m) => m.text).find((t) => t.includes("Suresh Electricals ₹5,850")) ?? "";
+    assert.match(list, /Suresh Electricals ₹5,850, Ramesh ₹2,400, Anil ₹600/u, "the owner's list, largest first, in the owner's language");
     assert.ok(!list.includes("98450"), "no number in the list");
     // Ramesh (Kannada) is asked in Kannada
     await c.inbound(OWNER, "ask Ramesh");
     assert.match(c.sent(RAMESH).at(-1)!.text, /^ನಮಸ್ಕಾರ Ramesh, ಇದು Sri Lakshmi Hardware\. .*₹2,400/u);
+  });
+});
+
+describe("with the shop's assistant on", () => {
+  contract("the book's words are the book's before the assistant's; a number is never handed on; the assistant still answers what is not the book's, over credit accounts", async () => {
+    const c = await makeCentre({ mode: "guards", example: "credit", settings: { assistant: {} } }); centres.push(c);
+    await c.start();
+    await c.waitFor(() => lines(c, "credit_add", "confirmed").length === 3, "the three accounts opened");
+    await c.inbound(OWNER, "who owes");
+    assert.match(c.sent(OWNER).at(-1)!.text, /Suresh Electricals ₹7,850, Ramesh ₹2,400, Anil ₹600/u, "the book's list, not the assistant's");
+    await c.inbound(OWNER, "please call 98450 12345 tomorrow about the delivery");
+    assert.equal(sentOf(c, "owner_credit_help").length, 1, "a number the book cannot place gets the book's help line");
+    const before = c.sent(OWNER).length;
+    await c.inbound(OWNER, "what needs me");
+    assert.ok(c.sent(OWNER).length > before, "the assistant answered what is not the book's");
+    assert.deepEqual(c.tasks().filter((t) => t.state === "failed"), [], "no step failed over a credit account");
   });
 });
 

@@ -23,11 +23,11 @@ import (
 )
 
 type creditLists struct {
-	Owes, Paid, List, Ask, Filler []string
+	Owes, OwesWeak, Paid, List, Ask, Filler []string
 }
 
 type creditReaders struct {
-	owes, paid, list, ask, filler *language.Regex
+	owes, owesWeak, paid, list, ask, filler *language.Regex
 }
 
 var (
@@ -45,7 +45,7 @@ func creditWords() *creditReaders {
 			panic("reading.json: " + err.Error())
 		}
 		c := l.Credit
-		creditReading = creditReaders{owes: language.WordRe(c.Owes, "u", false), paid: language.WordRe(c.Paid, "u", false), list: language.WordRe(c.List, "u", false),
+		creditReading = creditReaders{owes: language.WordRe(c.Owes, "u", false), owesWeak: language.WordRe(c.OwesWeak, "u", false), paid: language.WordRe(c.Paid, "u", false), list: language.WordRe(c.List, "u", false),
 			ask: language.WordRe(c.Ask, "u", false), filler: language.WordRe(c.Filler, "u", false)}
 	})
 	return &creditReading
@@ -54,6 +54,7 @@ func creditWords() *creditReaders {
 // creditSaid is what the owner's words say to the credit book.
 type creditSaid struct {
 	kind      string // "owes", "paid", "list", "ask", "number", "unclear" (both owes and paid), "" (none of the credit book's words)
+	weak      bool   // "owes" read from a word that also means "remaining" only (CREDIT_WORDS owesWeak)
 	name      string
 	amountInr int64
 	hasAmount bool
@@ -125,8 +126,8 @@ func readCredit(text string) creditSaid {
 		break
 	}
 	found := func(r *language.Regex) []*language.Match { return r.All(low) }
-	owes, paid, list, ask := found(w.owes), found(w.paid), found(w.list), found(w.ask)
-	for _, ms := range [][]*language.Match{owes, paid, list, ask, found(w.filler)} {
+	owes, weak, paid, list, ask := found(w.owes), found(w.owesWeak), found(w.paid), found(w.list), found(w.ask)
+	for _, ms := range [][]*language.Match{owes, weak, paid, list, ask, found(w.filler)} {
 		for _, m := range ms {
 			gone = append(gone, span{m.Start(), m.End()})
 		}
@@ -137,10 +138,12 @@ func readCredit(text string) creditSaid {
 		out.kind = "list"
 	case len(ask) > 0 && ask[0].Start() == firstWordAt(low) && !out.hasAmount:
 		out.kind = "ask"
-	case len(owes) > 0 && len(paid) > 0:
+	case len(owes)+len(weak) > 0 && len(paid) > 0:
 		out.kind = "unclear"
 	case len(owes) > 0:
 		out.kind = "owes"
+	case len(weak) > 0:
+		out.kind, out.weak = "owes", true
 	case len(paid) > 0:
 		out.kind = "paid"
 	case out.hasPhone && !out.hasAmount:

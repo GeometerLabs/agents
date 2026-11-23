@@ -254,7 +254,8 @@ export function buildFeesReport(input: ReportInput): FeesReport {
   // ---- the fees as they stand: the month's own fees, read when the report is made ----
   const monthStart = localParts(from, settings.timezone);
   const ofMonth = input.dues.filter((d) => d.month === monthKey(monthStart));
-  const stillOpen = ofMonth.filter((d) => d.state === "open");
+  // a credit book's account runs across months: what is still to collect is every open account, whatever month it opened in (a Fees centre: the month's own fees, as before)
+  const stillOpen = (settings.creditBook ? input.dues : ofMonth).filter((d) => d.state === "open");
   const stillToCollect = emptyAmount();
   for (const d of stillOpen) { stillToCollect.count += 1; stillToCollect.paise += Math.max(0, balancePaise(d)); }
   const fees = {

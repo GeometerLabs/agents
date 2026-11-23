@@ -218,13 +218,14 @@ func (a *Agent) creditGate(sa *messaging.SayArgs) *Decision {
 
 // ---- reminders ----
 
-// creditSchedule gives an open account with the customer's yes its next reminder, when it has none waiting: `remindEveryDays` after the later of the yes, the entry and the last
-// reminder, at the shop's reminder hour.
+// creditSchedule gives an open account with the customer's yes its next reminder, when it has none waiting: `remindEveryDays` after the latest of the yes, the entry, the last
+// reminder and now, at the shop's reminder hour. Now is in it so that after a gap (the server was down, or a reminder was late) the next one is a full interval on, never a run
+// of reminders on consecutive beats.
 func (a *Agent) creditSchedule(d *Due, acc *CreditAccount) {
 	if acc == nil || acc.Consent != ConsentYes || acc.YesAtMs == nil || d.State != Open || balancePaise(d) <= 0 || a.store.Customer(acc.Phone).OptedOut {
 		return
 	}
-	base := max(*acc.YesAtMs, d.DueMs)
+	base := max(*acc.YesAtMs, d.DueMs, a.now())
 	for _, r := range d.Reminders {
 		if !r.Sent {
 			return
@@ -278,7 +279,10 @@ func (a *Agent) creditOwner(d *Due, acc *CreditAccount, template string, o sayOp
 }
 
 // creditOwnerText reads the owner's words for the credit book (WhatsApp, or the owner's page). taken false: they are not the credit book's, and another part of the shop (the
-// shop's assistant, an approval) may read them. A message with a number in it is always taken: a customer's number is never handed to the assistant or a model.
+// shop's assistant, an approval, and one day another template part behind the same number, decision 65) may read them. The book takes only what is whole and its own: a name,
+// one of its words and an amount ("Ramesh owes 2,400"); "paid", "ask" and the like only for a name already in the book; "who owes"; and a number completing the entry that
+// waits for it. Words of its lists in a sentence that is not that ("the rent is due on Monday") are left to the others. A message with a phone number in it that the book
+// does not take is still answered with its help line, because a customer's number is never handed to the assistant or a model.
 func (a *Agent) creditOwnerText(text, replyID string) (bool, error) {
 	c := a.book()
 	if strings.HasPrefix(replyID, creditAskButton) {
@@ -296,6 +300,13 @@ func (a *Agent) creditOwnerText(text, replyID string) (bool, error) {
 		a.sayOwner("owner_credit_help", sayOpts{})
 		return true, nil
 	}
+	// not the book's: left to the others, unless a phone number is in it (a customer's number is never handed on)
+	notMine := func() (bool, error) {
+		if said.hasPhone {
+			return help()
+		}
+		return false, nil
+	}
 	noted := func(kind string, acc *CreditAccount) {
 		refs := map[string]string{"kind": kind}
 		if acc != nil {
@@ -303,27 +314,27 @@ func (a *Agent) creditOwnerText(text, replyID string) (bool, error) {
 		}
 		a.log(nil, a.owner(), "owner_credit", "confirmed", map[string]any{"kind": kind}, logMore{refs: refs, notes: "the owner's words for the credit book, read by the rules (the words themselves are not kept)"})
 	}
+	known := c.byName(said.name)
 	switch said.kind {
 	case "list":
 		noted("list", nil)
 		a.creditList()
 		return true, nil
 	case "ask":
-		acc := c.byName(said.name)
-		if acc == nil {
-			if said.hasPhone {
-				return help()
-			}
-			return false, nil // "ask ..." about someone not in the book may be another part's words
+		if known == nil {
+			return notMine() // "ask ..." about someone not in the book may be another part's words
 		}
-		noted("ask", acc)
-		a.creditAsk(acc)
+		noted("ask", known)
+		a.creditAsk(known)
 		return true, nil
 	case "owes":
-		if said.name == "" || !said.hasAmount || said.badAmount {
+		if said.name == "" || !said.hasAmount || (said.weak && known == nil && !said.hasPhone) {
+			return notMine() // not a whole entry, or "remaining" about someone the book does not know
+		}
+		if said.badAmount {
 			return help()
 		}
-		acc := c.byName(said.name)
+		acc := known
 		if acc == nil && !said.hasPhone {
 			c.Waiting = &CreditWaiting{Name: creditName(said.name), AmountInr: said.amountInr, AtMs: a.now()}
 			noted("owes", nil)
@@ -343,20 +354,14 @@ func (a *Agent) creditOwnerText(text, replyID string) (bool, error) {
 		a.creditEntry(acc, said.amountInr)
 		return true, nil
 	case "paid":
-		acc := c.byName(said.name)
-		if acc == nil {
-			if said.name == "" {
-				return help()
-			}
-			noted("paid", nil)
-			a.creditOwner(nil, nil, "owner_credit_unknown_person", sayOpts{creditName: creditName(said.name)})
-			return true, nil
+		if known == nil {
+			return notMine() // "paid" about someone not in the book is another part's (a supplier paid), or not the book's
 		}
 		if !said.hasAmount || said.badAmount {
 			return help()
 		}
-		noted("paid", acc)
-		return true, a.creditPaid(acc, said.amountInr)
+		noted("paid", known)
+		return true, a.creditPaid(known, said.amountInr)
 	case "number":
 		w := c.Waiting
 		if w == nil || a.now()-w.AtMs > waitingForNumberMs || (said.name != "" && nameKey(said.name) != nameKey(w.Name)) {
@@ -371,12 +376,11 @@ func (a *Agent) creditOwnerText(text, replyID string) (bool, error) {
 		a.creditEntry(acc, w.AmountInr)
 		return true, nil
 	case "unclear":
-		return help()
+		if known != nil {
+			return help()
+		}
 	}
-	if said.hasPhone {
-		return help()
-	}
-	return false, nil
+	return notMine()
 }
 
 // creditNewAccount makes an account for a name and the number the owner gave, unless the number is the owner's own or another account's.

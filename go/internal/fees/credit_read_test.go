@@ -18,6 +18,8 @@ func TestReadCredit(t *testing.T) {
 		{"Ramesh paid 1000", "paid", "Ramesh", "", 1000, false},
 		{"Ramesh paid 10.50", "paid", "Ramesh", "", 10, true},
 		{"रमेश पर 2400 उधार", "owes", "रमेश", "", 2400, false},
+		{"रमेश के 2400 बाकी", "owes", "रमेश", "", 2400, false},
+		{"the rent is due on Monday 5", "", "the rent due on Monday", "", 5, false},
 		{"रमेश ने १००० दिए", "paid", "रमेश", "", 1000, false},
 		{"രമേശ് 2400 തരാനുണ്ട്", "owes", "രമേശ്", "", 2400, false},
 		{"ರಮೇಶ್ 600 ಕೊಡಬೇಕು", "owes", "ರಮೇಶ್", "", 600, false},

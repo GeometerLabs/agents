@@ -301,8 +301,18 @@ func BuildFeesReport(in Input) (*Report, error) {
 	// ---- the fees as they stand: the month's own fees, read when the report is made ----
 	start := zone.LocalParts(from, shop.Timezone)
 	key := fmt.Sprintf("%d-%02d", start.Year, start.Month)
+	// a credit book's account runs across months: what is still to collect is every open account, whatever month it opened in (data.ts; a Fees centre: the month's own fees)
+	credit := hasCredit(in.Settings)
 	for _, d := range in.Dues {
 		if d.Month != key {
+			if credit && d.State == "open" {
+				r.Fees.StillOpen++
+				r.Fees.StillToCollect.Count++
+				r.Fees.StillToCollect.Paise += max(0, d.BalancePaise)
+				if d.Payments > 0 {
+					r.Fees.PartlyPaid++
+				}
+			}
 			continue
 		}
 		r.Fees.Opened++
