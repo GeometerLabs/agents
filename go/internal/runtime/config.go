@@ -82,8 +82,14 @@ type Config struct {
 	// whole file as read.
 	Services map[string]any
 	Raw      map[string]any
-	file     string
+	// StandInsHTTP: runtime.json `"standins": "http"` (checked by standInsProblems): a "fakes" shop whose services are the hand check's stand-ins over HTTP, reached through the
+	// live clients. A template's BuildPorts takes its live path for such a shop, and only then; everything else about a fakes shop (the test clock, no record key) is unchanged.
+	StandInsHTTP bool
+	file         string
 }
+
+// UsesClients says whether this shop reaches its services through the live clients (live mode, or the hand check's stand-ins over HTTP) rather than the in-memory stand-ins.
+func (c Config) UsesClients() bool { return c.Mode == "live" || c.StandInsHTTP }
 
 // Client is a shop's folder, read.
 type Client struct {
@@ -410,10 +416,39 @@ func (c *Client) readRuntime(in map[string]any) error {
 			cfg.AllowMicro = &v
 		}
 	}
+	if v, present := in["standins"]; present {
+		cfg.StandInsHTTP = true
+		errs = append(errs, standInsProblems(v, cfg.Mode, cfg.Services)...)
+	}
 	if len(errs) > 0 {
 		return bad("runtime.json needs fixing:\n- %s", strings.Join(errs, "\n- "))
 	}
 	return nil
+}
+
+// standInsProblems checks runtime.json `"standins": "http"` (the go-live hand check's shop, modules/crash-test/go-shop.ts, 24 Nov 2026). Such a shop is a "fakes" shop (so it may
+// run on the test clock, internal/testclock) whose services are the hand check's stand-ins, reached over HTTP through the SAME clients a live shop uses, so a stand-in can fail on
+// purpose (a lost reply, a calendar that saves nothing) and keep the records the situations are judged from. Why it can never reach a real service: it is refused outside
+// "fakes" mode, and every service it names must be on this machine (http://127.0.0.1 or http://localhost), so no real provider can stand behind it.
+func standInsProblems(v any, mode string, services map[string]any) []string {
+	var errs []string
+	if v != "http" {
+		errs = append(errs, `"standins" can only be "http" (the hand check's stand-ins, reached over HTTP on this machine). Leave it out for a shop's own stand-ins or real services.`)
+	}
+	if mode != "fakes" {
+		errs = append(errs, `"standins" is for a "fakes" shop only (the hand check's): a "live" shop reaches real services through its Guards.`)
+	}
+	for _, name := range []string{"payments", "calendar", "messaging"} {
+		m, ok := services[name].(map[string]any)
+		if !ok {
+			continue
+		}
+		u, _ := m["baseUrl"].(string)
+		if !strings.HasPrefix(u, "http://127.0.0.1:") && !strings.HasPrefix(u, "http://localhost:") {
+			errs = append(errs, fmt.Sprintf(`With "standins", services.%s.baseUrl must be a stand-in on this machine (http://127.0.0.1:<port>).`, name))
+		}
+	}
+	return errs
 }
 
 // Switch reads one of runtime.json's two outside switches ("ai": "buttons", "model": "off") fresh, so a change the deployer writes while the shop runs takes effect at once. A

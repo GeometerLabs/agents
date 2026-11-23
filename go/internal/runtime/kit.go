@@ -327,6 +327,8 @@ func (r *Runtime) kitStatus() (map[string]any, error) {
 		"pathway": kit.Pathway(), "version": kit.Version(), kit.CasesName(): kit.CountCases(r.snap.T), "refunds": kit.Refunds(r.snap.T),
 		"tasks": counts, "oldestPendingAt": oldestISO, "waitingForGuard": waiting, "lastStepAt": lastStep, "lastFailureAt": lastFail, "recordLength": len(r.entries),
 		"steps": r.steps, "errors": r.errors, "startedAt": iso(r.started), "ai": budget.Summary(&ai, r.policy, r.clock, r.o.Now()),
+		// a count only: the go-live hand check (modules/crash-test/go-shop.ts) moves the test clock and waits for the next beat to END before it judges what the beat did
+		"ticks": r.ticks,
 	}, nil
 }
 

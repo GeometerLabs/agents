@@ -155,7 +155,8 @@ func BuildPorts(cfg runtime.Config, s *Settings, o PortsOptions) (Ports, error) 
 		// owner-marked (modules/payments/providers/upi): the owner confirms and refunds by hand; nothing is cancelled at a gateway
 		p.Capabilities = payments.Capabilities{}
 	}
-	if cfg.Mode != "live" {
+	// the in-memory stand-ins for a fakes shop; the live clients for a live shop AND for the hand check's shop (runtime.json "standins": "http", runtime/config.go)
+	if !cfg.UsesClients() {
 		if !own {
 			p.Calendar = calendar.NewFake()
 		}
