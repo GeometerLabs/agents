@@ -50,7 +50,8 @@ type sayOpts struct {
 	image                                      *messaging.SayImage
 	cls                                        *classFacts
 	gate                                       []Decision
-	phoneShown                                 string // the label a chat guest is named by in the owner's message (chat-guest.ts guestLabel)
+	talk                                       *talkReply // a talk reply (agent_customertalk.go): rendered as its own words, checked over its own facts
+	phoneShown                                 string     // the label a chat guest is named by in the owner's message (chat-guest.ts guestLabel)
 }
 
 type sayExtra struct {
