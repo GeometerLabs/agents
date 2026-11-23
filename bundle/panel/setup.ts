@@ -19,6 +19,8 @@ import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { CharacterDraft } from "./character.ts";
+import { applyDiscountBoxes, discountBlock, discountDraftOf, newDiscountDraft, withDiscounts } from "./discounts.ts";
+import type { DiscountDraft } from "./discounts.ts";
 
 export type Body = Record<string, string | undefined>;
 
@@ -63,6 +65,11 @@ export interface Draft {
   trade?: { preset?: string; typed?: string };
   /** A preset's suggested personality and signboard paint, applied when the Character step first rolls its faces (the Operator still chooses; `chosen` stays false). */
   suggestCharacter?: { personality?: string; paint?: string };
+  /**
+   * E1 (24 Nov 2026): the discount boxes of the Bookings deposit step and the Orders rules step (discounts.ts): off by default. A draft saved before the boxes has none, and
+   * its shop's saved "discounts" block is kept as it was.
+   */
+  discounts?: DiscountDraft;
 }
 
 /** The module is a provider's id (modules/payments/providers): UPI's ID and payee are kept here, a gateway's key in `Draft.gateway`. */
@@ -104,6 +111,7 @@ export function newDraft(id: string, accountId: string, template: Template, exam
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false, form, windowHours: String(example.cancellation.windowHours),
     primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
     whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "", use: "own" }, gateway: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
+    discounts: newDiscountDraft(),
   };
 }
 
@@ -120,14 +128,16 @@ export function whatsappDraftOf(meta: ShopMeta, runtime: Record<string, any> | u
 
 /** A draft for a shop that already exists, so changing its settings is the same six steps. */
 export function draftFromShop(id: string, accountId: string, templateId: string, shopId: string, settings: Settings, runtime: Record<string, any> | undefined, meta: ShopMeta, now: string): Draft {
+  const form = formFromSettings(settings);
   return {
-    id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: formFromSettings(settings), windowHours: String(settings.cancellation.windowHours),
+    id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form, windowHours: String(settings.cancellation.windowHours),
     primaryLanguage: settings.languages[0], otherLanguages: settings.languages.slice(1), ownerLanguage: settings.owner.language, ownerNumber: settings.owner.whatsapp,
     ...approversDraftOf(settings.approvers),
     whatsapp: whatsappDraftOf(meta, runtime),
     calendar: { id: String(runtime?.services?.calendar?.calendarId ?? ""), use: calendarModule(settings) }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" },
     payment: paymentFromSettings(settings.payment),
     expectedBookings: meta.expectedBookings === undefined ? "" : String(meta.expectedBookings), done: Number.MAX_SAFE_INTEGER,
+    discounts: discountDraftOf(settings.discounts, form.services.filter((r) => r.id !== "").map((r) => ({ id: r.id, name: r.name }))),
   };
 }
 
@@ -196,6 +206,11 @@ export function applyDeposit(draft: Draft, body: Body, w: Words): StepResult {
     if (cheapest !== undefined && Number(deposit) > cheapest) problems.push(s.depositTooBig(formatInr(Number(deposit)), formatInr(cheapest)));
   }
   if (!/^\d{1,3}$/u.test(window) || Number(window) > 720) problems.push(s.windowBad);
+  // E1: the discount boxes, checked by readDiscounts against the services as typed, with the deposit as the least a floor may be (Guard holds the deposit link to exactly it)
+  const services = draft.form.services.filter((r) => !(r.name === "" && r.price === "")).map((r) => ({ name: r.name, priceInr: WHOLE.test(r.price) ? Number(r.price) : undefined }));
+  const boxes = applyDiscountBoxes(body, services, "service", WHOLE.test(deposit) && Number(deposit) >= 1 ? { inr: Number(deposit), name: "the deposit" } : undefined);
+  problems.push(...boxes.problems);
+  draft.discounts = boxes.draft;
   draft.form = { ...draft.form, deposit };
   draft.windowHours = window;
   return { problems };
@@ -388,7 +403,11 @@ export function buildSettings(draft: Draft, example: Settings, saved?: unknown):
     cancellation: { windowHours: WHOLE.test(draft.windowHours) ? Number(draft.windowHours) : s.cancellation.windowHours, refundLimitInr: Math.max(base.cancellation.refundLimitInr, deposit) },
   };
   // `approvers` is the form's own: left out of `raw` when the Operator gave none, so keepHidden deletes the saved ones too
-  return validateSettings(saved === undefined ? raw : keepHidden(raw, saved, KEEP.bookings));
+  const written = (saved === undefined ? raw : keepHidden(raw, saved, KEEP.bookings)) as Record<string, unknown>;
+  // E1: the discount block from the boxes, its floors on the ids the services got now (the form's rows that are not empty, in order, are settingsFromForm's services)
+  const rows = draft.form.services.filter((r) => !(r.name === "" && r.price === ""));
+  const shown = s.services.map((sv, i) => ({ id: sv.id, name: rows[i]?.name ?? "" }));
+  return validateSettings(withDiscounts(written, discountBlock(draft.discounts, shown, written, saved, "services")));
 }
 
 /**

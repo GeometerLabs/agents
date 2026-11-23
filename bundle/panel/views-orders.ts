@@ -7,7 +7,9 @@ import type { Settings, Slot } from "../../templates/commerce/orders/src/setting
 import type { OrdersReport } from "../../templates/commerce/orders/report/data.ts";
 import { languageOptions } from "../../templates/commerce/bookings/demo/personalise.ts";
 import { formatRupees } from "./cost.ts";
+import { menuItems } from "./orders.ts";
 import type { OrdersForm } from "./orders.ts";
+import { discountBoxes } from "./discounts.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { Helpers } from "./views-fees.ts";
@@ -46,6 +48,7 @@ export function ordersRulesBody(c: Ctx, d: Draft, action: string, back: Raw | st
   <div class="row">${h.text(r.daysAhead, "daysAhead", f.daysAhead, { mode: "numeric", max: 2 })}${h.text(r.window, "windowHours", f.windowHours, { mode: "numeric", max: 3 })}</div>
   ${h.text(r.refund, "refund", f.refund, { mode: "numeric", max: 9, help: r.refundHelp })}
   ${h.text(r.approveOver, "approveOver", f.approveOver, { mode: "numeric", max: 9, help: r.approveHelp })}
+  ${discountBoxes(c.w, d.discounts, menuItems(f.menu), h.text)}
   ${lines.length > 0 ? html`<h2>${c.w.setup.depositStep.whatThisMeans}</h2><ul class="plain">${lines.map((t) => html`<li><span class="mark">✓</span><span>${t}</span></li>`)}</ul>` : ""}
   ${back}${next}</form>`;
 }

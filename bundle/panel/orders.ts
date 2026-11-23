@@ -16,6 +16,8 @@ import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
 import { KEEP, keepHidden } from "./keep.ts";
+import { applyDiscountBoxes, discountBlock, discountDraftOf, newDiscountDraft, withDiscounts } from "./discounts.ts";
+import type { FloorItem } from "./discounts.ts";
 
 /** A phone form with room for this many menu items. A shop with more is set up by a builder, who can write the file. */
 export const MAX_ITEMS = 30;
@@ -93,6 +95,7 @@ export function newOrdersDraft(id: string, accountId: string, template: Template
       maxPerDay: String(example.orders.maxPerDay), maxItems: String(example.orders.maxItemsPerOrder), daysAhead: String(example.orders.daysAhead), windowHours: String(example.cancellation.windowHours),
       refund: String(example.refund.limitInr), approveOver: String(example.owner.approveOverInr),
     } satisfies OrdersForm,
+    discounts: newDiscountDraft(),
   };
 }
 
@@ -118,6 +121,7 @@ export function ordersDraftFromShop(id: string, accountId: string, templateId: s
       maxPerDay: String(s.orders.maxPerDay), maxItems: String(s.orders.maxItemsPerOrder), daysAhead: String(s.orders.daysAhead), windowHours: String(s.cancellation.windowHours),
       refund: String(s.refund.limitInr), approveOver: String(s.owner.approveOverInr), keep: { ids },
     } satisfies OrdersForm,
+    discounts: discountDraftOf(s.discounts, s.menu.map((i) => ({ id: i.id, name: itemName(i, first) }))),
   };
 }
 
@@ -191,9 +195,17 @@ export function applyOrdersRules(draft: Draft, body: Body, w: Words): StepResult
   if (whole(next.maxItems, 1, 100) && dearest > 0 && Number(next.maxItems) * dearest * 100 > DEFAULT_CAPS.refundPaisePerDay) {
     problems.push(o.orderTooBig(`₹${(Number(next.maxItems) * dearest).toLocaleString("en-IN")}`, `₹${(DEFAULT_CAPS.refundPaisePerDay / 100).toLocaleString("en-IN")}`));
   }
+  // E1: the discount boxes, checked by readDiscounts against the menu as typed at the first step
+  const boxes = applyDiscountBoxes(body, menuItems(ordersOf(draft).menu), "item");
+  problems.push(...boxes.problems);
+  draft.discounts = boxes.draft;
   draft.orders = next;
   return { problems };
 }
+
+/** The menu's items as the discount boxes show them: each line's name and its price (undefined when the price is not a whole number yet). */
+export const menuItems = (menu: string): FloorItem[] =>
+  lines(menu).map((l) => menuLine(l)).flatMap((m) => (m ? [{ name: m.name, priceInr: whole(m.price, 1, 100_000) ? Number(m.price) : undefined }] : []));
 
 // ---- the settings, and the folder ---------------------------------------------------------------------------------------------------------
 
@@ -234,7 +246,9 @@ export function buildOrdersSettings(draft: Draft, example: Settings, saved?: unk
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage, approveOverInr: n(f.approveOver) },
     ...approversFromDraft(draft),
   };
-  const written = saved === undefined ? raw : keepHidden(raw, saved, KEEP.orders);
+  const kept = (saved === undefined ? raw : keepHidden(raw, saved, KEEP.orders)) as Record<string, unknown>;
+  // E1: the discount block from the boxes, its floors on the ids the items got now
+  const written = withDiscounts(kept, discountBlock(draft.discounts, items.map((m, i) => ({ id: itemIds[i], name: m.name })), kept, saved, "menu"));
   const checked = validateSettings(written);
   // `written` is the shape a builder writes (and `shop add --template orders` takes), with the form's own ids kept.
   return checked.ok ? ({ ok: true, settings: checked.settings as never, raw: written } as Built) : { ok: false, errors: checked.errors };

@@ -166,7 +166,8 @@ const NAMED = ["id", "names"];
 
 /** Bookings (setup.ts + demo/personalise.ts). Not owned, so kept: the address, a service's machine or chair (`resource`), the reminders, slot and buffer minutes, the time zone. */
 const BOOKINGS: KeepSpec = {
-  owned: ["name", "languages", "services", "openingHours", "resources", "deposit", "cancellation", "owner", "approvers", "payment", "calendar"],
+  // "discounts" (E1): the deposit step's boxes write it, or leave it out when switched off (discounts.ts)
+  owned: ["name", "languages", "services", "openingHours", "resources", "deposit", "cancellation", "owner", "approvers", "payment", "calendar", "discounts"],
   lists: { services: { owned: [...NAMED, "priceInr", "durationMinutes"], names: true, shown: 4 } }, // shown = demo/personalise.ts MAX_SERVICES (test/keep.test.ts checks it)
 };
 
@@ -183,7 +184,8 @@ const FEES: KeepSpec = {
 
 /** Orders (orders.ts). Not owned, so kept: `plans`, the reminder, a slot's own cut-off and most orders, an item's other names. */
 const ORDERS: KeepSpec = {
-  owned: ["name", "address", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "cancellation", "refund", "payment", "owner", "approvers"],
+  // "discounts" (E1): the rules step's boxes write it, or leave it out when switched off (discounts.ts)
+  owned: ["name", "address", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "cancellation", "refund", "payment", "owner", "approvers", "discounts"],
   lists: {
     menu: { owned: [...NAMED, "priceInr", "dailyStock"], names: true },
     "pickup.slots": { owned: ["id", "from", "to", "names"], names: true },
