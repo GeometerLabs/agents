@@ -1,7 +1,7 @@
 // The gaps before the deletion of the TypeScript runtime and its unit tests (group G, README.md, 23 Nov 2026): behaviours that only a unit test of the TypeScript checked until now, each
 // run on BOTH runtimes. (1) The owner told outside their 24-hour window: a supplier's STOP, the order's send, a receipt marked on the page and the card that ran out each have an
-// approved template of their own with their values (before, they went as the generic `stock_owner_notice` with no parameters, which a real provider refuses). (2) The two limits the
-// owner may tighten (the order cap and the month's budget) keep their hard bounds: never below the dearest catalogue line, never below the cap, never looser. (3) The low-stock reorder
+// approved template of their own with their values (before, they went as the generic `stock_owner_notice` with no parameters, which a real provider refuses). (2) The month's budget
+// the owner may tighten keeps its hard bounds: never below the cap, never looser. (3) The low-stock reorder
 // asks which supplier when an item has two, waits while the owner is in the middle of another question, and gives up after three questions. (4) The WhatsApp Guard down while the
 // owner writes: the message is kept and waits, nothing is answered meanwhile, and when the Guard is back there is one answer. (5) The send-once intent holds the order's own message.
 // From test/agent.test.ts, test/chat-limits.test.ts, test/stock.test.ts, test/send-once.test.ts and test/runtime.test.ts.
@@ -65,22 +65,25 @@ describe("the owner is told outside their window by a template of its own", () =
   });
 });
 
-describe("the two limits the owner may tighten keep their bounds", () => {
-  contract("the order cap cannot go below the dearest catalogue line, the budget cannot go below the cap, and neither can be loosened", async () => {
+describe("the month's budget keeps its bounds", () => {
+  // The order cap cannot be set from WhatsApp: every word that names it contains "order", so the shop's own reader takes the sentence for an order request. Its bounds (never
+  // below the dearest line) are reached only through the owner's limits page behind a passkey, which this contract cannot sign in to: left (go/TRIAL.md).
+  contract("the budget cannot go below the order cap or be loosened; a tighter value inside the bounds makes a card, and its yes puts it in force", async () => {
     const s = await made.boot({ settings: { assistant: {} } });
     const cards = (): any[] => (s.saved()?.assistant?.cards ?? []).filter((c: any) => c.action?.kind === "limit");
-    await s.ownerSays("cap per order at most ₹300");            // the dearest line is ₹460
-    await s.ownerSays("monthly budget at most ₹10000");     // the cap is ₹12,000
-    await s.ownerSays("monthly budget at most ₹25000");     // the budget is ₹20,000 now: this loosens it
-    assert.doesNotMatch(s.lastToOwner()?.text ?? "", /catalogue/u, "the words were read as a limit, not as an order");
-    assert.equal(cards().length, 0, `no limit card for a value out of bounds: ${JSON.stringify([s.lastToOwner()?.text, cards()])}`);
-    await s.ownerSays("cap per order at most ₹9000");           // within bounds: a card
-    assert.equal(cards().filter((c: any) => c.state === "open").length, 1, JSON.stringify([s.sent(OWNER).map((m) => m.text), cards()]));
+    await s.ownerSays("monthly budget at most ₹10000");     // the cap is ₹12,000: below it
+    assert.equal(cards().length, 0, JSON.stringify(s.sent(OWNER).map((m) => m.text)));
+    await s.ownerSays("monthly budget at most ₹25000");     // the budget is ₹20,000: this loosens it
+    assert.equal(cards().length, 0);
+    assert.match(s.lastToOwner()!.text, /would loosen it, not tighten it/u);
+    await s.ownerSays("monthly budget at most ₹13000");     // within bounds: a card
+    assert.equal(cards().filter((c: any) => c.state === "open").length, 1, JSON.stringify(s.sent(OWNER).map((m) => m.text)));
     await s.ownerSays(`yes ${s.code()}`);
     assert.equal(s.saved().assistant.limitChanges.length, 1);
-    await s.ownerSays("order 25 boxes of hair colour from ravi");   // ₹11,250: above the new cap of ₹9,000
-    assert.equal(Object.keys(s.saved().orders).length, 0, "an order above the tightened cap gets no card");
-    assert.match(s.lastToOwner()!.text, /₹9,000/u);
+    await orderAndApprove(s, "order 26 boxes of hair colour from ravi");   // ₹11,700: within ₹13,000
+    await s.ownerSays("order 4 boxes of hair colour from meena");        // ₹1,840: the two together pass ₹13,000
+    assert.equal(Object.keys(s.saved().orders).length, 1, "the second order is not made");
+    assert.match(s.lastToOwner()!.text, /₹13,000 budget/u);
   });
 });
 

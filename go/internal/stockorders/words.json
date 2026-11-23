@@ -69,7 +69,7 @@
      ]
     },
     "card": {
-     "text": "मंज़ूरी के लिए ऑर्डर {orderRef}: {qty} × {itemName} ({unitName}), {unitPriceInr} प्रति {unitName}, कुल {totalInr}, {supplierName} से। इस महीने आपके {budgetInr} बजट में से {reservedInr} रखा जा चुका है, इस ऑर्डर के बाद {leftInr} बचेगा। बटन से मंज़ूर करें, या yes {code} लिखें। मना करने के लिए no {code} लिखें।",
+     "text": "मंज़ूरी के लिए ऑर्डर {orderRef}: {qty} × {itemName} ({unitName}), {unitPriceInr} प्रति {unitName}, कुल {totalInr}, {supplierName} से। इस महीने आपके {budgetInr} बजट में से {reservedInr} रखा जा चुका है, इस ऑर्डर के बाद {leftInr} बचेगा। बटन से मंज़ूर करें, या yes {code} लिखें। मना करने के लिए no {code} लिखें, या दूसरा बटन दबाएँ।",
      "needs": [
       "supplierName",
       "itemName",
@@ -411,7 +411,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "मंज़ूरी के लिए ऑर्डर {ref}: {qty} × {item} ({unit}), {price} प्रति {unit}, कुल {total}, {supplier} से। इस महीने आपके {budget} बजट में से {reserved} रखा जा चुका है, इस ऑर्डर के बाद {left} बचेगा। बटन से मंज़ूर करें, या yes {code} लिखें। मना करने के लिए no {code} लिखें।",
+     "body": "मंज़ूरी के लिए ऑर्डर {ref}: {qty} × {item} ({unit}), {price} प्रति {unit}, कुल {total}, {supplier} से। इस महीने आपके {budget} बजट में से {reserved} रखा जा चुका है, इस ऑर्डर के बाद {left} बचेगा। बटन से मंज़ूर करें, या yes {code} लिखें। मना करने के लिए no {code} लिखें, या दूसरा बटन दबाएँ।",
      "params": [
       "orderRef",
       "qty",
@@ -624,7 +624,7 @@
      ]
     },
     "card": {
-     "text": "Order {orderRef} for your approval: {qty} × {itemName} ({unitName}), {unitPriceInr} per {unitName}, total {totalInr}, from {supplierName}. This month {reservedInr} of your {budgetInr} budget is reserved, so {leftInr} is left after this order. Approve with the button, or reply yes {code}. To decline reply no {code}.",
+     "text": "Order {orderRef} for your approval: {qty} × {itemName} ({unitName}), {unitPriceInr} per {unitName}, total {totalInr}, from {supplierName}. This month {reservedInr} of your {budgetInr} budget is reserved, so {leftInr} is left after this order. Approve with the button, or reply yes {code}. To decline reply no {code}, or use the other button.",
      "needs": [
       "supplierName",
       "itemName",
@@ -966,7 +966,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "Order {ref} for your approval: {qty} × {item} ({unit}), {price} per {unit}, total {total}, from {supplier}. This month {reserved} of your {budget} budget is reserved, so {left} is left after this order. Approve with the button, or reply yes {code}. To decline reply no {code}.",
+     "body": "Order {ref} for your approval: {qty} × {item} ({unit}), {price} per {unit}, total {total}, from {supplier}. This month {reserved} of your {budget} budget is reserved, so {left} is left after this order. Approve with the button, or reply yes {code}. To decline reply no {code}, or use the other button.",
      "params": [
       "orderRef",
       "qty",
@@ -1179,7 +1179,7 @@
      ]
     },
     "card": {
-     "text": "അനുമതിക്കായി ഓർഡർ {orderRef}: {qty} × {itemName} ({unitName}), ഒരു {unitName}-ന് {unitPriceInr}, ആകെ {totalInr}, {supplierName}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budgetInr} ബജറ്റിൽ {reservedInr} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {leftInr} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes {code} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no {code} എന്ന് നൽകൂ.",
+     "text": "അനുമതിക്കായി ഓർഡർ {orderRef}: {qty} × {itemName} ({unitName}), ഒരു {unitName}-ന് {unitPriceInr}, ആകെ {totalInr}, {supplierName}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budgetInr} ബജറ്റിൽ {reservedInr} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {leftInr} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes {code} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no {code} എന്ന് നൽകൂ, അല്ലെങ്കിൽ മറ്റേ ബട്ടൺ അമർത്തൂ.",
      "needs": [
       "supplierName",
       "itemName",
@@ -1521,7 +1521,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "അനുമതിക്കായി ഓർഡർ {ref}: {qty} × {item} ({unit}), ഒരു {unit}-ന് {price}, ആകെ {total}, {supplier}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budget} ബജറ്റിൽ {reserved} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {left} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes {code} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no {code} എന്ന് നൽകൂ.",
+     "body": "അനുമതിക്കായി ഓർഡർ {ref}: {qty} × {item} ({unit}), ഒരു {unit}-ന് {price}, ആകെ {total}, {supplier}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {budget} ബജറ്റിൽ {reserved} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {left} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes {code} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no {code} എന്ന് നൽകൂ, അല്ലെങ്കിൽ മറ്റേ ബട്ടൺ അമർത്തൂ.",
      "params": [
       "orderRef",
       "qty",
@@ -1734,7 +1734,7 @@
      ]
     },
     "card": {
-     "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {orderRef}: {qty} × {itemName} ({unitName}), ಒಂದು {unitName}ಗೆ {unitPriceInr}, ಒಟ್ಟು {totalInr}, {supplierName} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budgetInr} ಬಜೆಟ್‌ನಲ್ಲಿ {reservedInr} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {leftInr} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes {code} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no {code} ಎಂದು ಉತ್ತರಿಸಿ.",
+     "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {orderRef}: {qty} × {itemName} ({unitName}), ಒಂದು {unitName}ಗೆ {unitPriceInr}, ಒಟ್ಟು {totalInr}, {supplierName} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budgetInr} ಬಜೆಟ್‌ನಲ್ಲಿ {reservedInr} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {leftInr} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes {code} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no {code} ಎಂದು ಉತ್ತರಿಸಿ, ಅಥವಾ ಇನ್ನೊಂದು ಬಟನ್ ಒತ್ತಿ.",
      "needs": [
       "supplierName",
       "itemName",
@@ -2076,7 +2076,7 @@
      "name": "stock_owner_approval_card",
      "usedFor": "card",
      "audience": "owner",
-     "body": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {ref}: {qty} × {item} ({unit}), ಒಂದು {unit}ಗೆ {price}, ಒಟ್ಟು {total}, {supplier} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budget} ಬಜೆಟ್‌ನಲ್ಲಿ {reserved} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {left} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes {code} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no {code} ಎಂದು ಉತ್ತರಿಸಿ.",
+     "body": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {ref}: {qty} × {item} ({unit}), ಒಂದು {unit}ಗೆ {price}, ಒಟ್ಟು {total}, {supplier} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {budget} ಬಜೆಟ್‌ನಲ್ಲಿ {reserved} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {left} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes {code} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no {code} ಎಂದು ಉತ್ತರಿಸಿ, ಅಥವಾ ಇನ್ನೊಂದು ಬಟನ್ ಒತ್ತಿ.",
      "params": [
       "orderRef",
       "qty",

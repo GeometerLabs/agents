@@ -122,7 +122,7 @@ const en: Set = {
   supplier_thanks_yes: (f) => `Thank you. Order ${ref(f)} is noted as confirmed by you.`,
   supplier_thanks_no: (f) => `Thank you. Order ${ref(f)} is noted as not supplied by you.`,
 
-  card: (f) => `Order ${ref(f)} for your approval: ${orderLine(f)}, from ${sup(f)}. This month ${inr(f, "reservedInr")} of your ${inr(f, "budgetInr")} budget is reserved, so ${inr(f, "leftInr")} is left after this order. Approve with the button, or reply yes ${code(f)}. To decline reply no ${code(f)}.`,
+  card: (f) => `Order ${ref(f)} for your approval: ${orderLine(f)}, from ${sup(f)}. This month ${inr(f, "reservedInr")} of your ${inr(f, "budgetInr")} budget is reserved, so ${inr(f, "leftInr")} is left after this order. Approve with the button, or reply yes ${code(f)}. To decline reply no ${code(f)}, or use the other button.`,
   card_changed: () => "The order changed since that card, so the earlier card no longer counts and nothing was sent. Here is the card as it is now:",
   card_closed: () => "That card was already answered or replaced, so nothing was done.",
   card_expired: () => "That card ran out, so nothing was sent. Ask me again if you still want it.",
@@ -173,7 +173,7 @@ const hi: Set = {
   supplier_thanks_yes: (f) => `धन्यवाद। ऑर्डर ${ref(f)} आपकी ओर से पक्का दर्ज हुआ।`,
   supplier_thanks_no: (f) => `धन्यवाद। ऑर्डर ${ref(f)} आपकी ओर से "नहीं दे सकते" दर्ज हुआ।`,
 
-  card: (f) => `मंज़ूरी के लिए ऑर्डर ${ref(f)}: ${orderLine(f)}, ${sup(f)} से। इस महीने आपके ${inr(f, "budgetInr")} बजट में से ${inr(f, "reservedInr")} रखा जा चुका है, इस ऑर्डर के बाद ${inr(f, "leftInr")} बचेगा। बटन से मंज़ूर करें, या yes ${code(f)} लिखें। मना करने के लिए no ${code(f)} लिखें।`,
+  card: (f) => `मंज़ूरी के लिए ऑर्डर ${ref(f)}: ${orderLine(f)}, ${sup(f)} से। इस महीने आपके ${inr(f, "budgetInr")} बजट में से ${inr(f, "reservedInr")} रखा जा चुका है, इस ऑर्डर के बाद ${inr(f, "leftInr")} बचेगा। बटन से मंज़ूर करें, या yes ${code(f)} लिखें। मना करने के लिए no ${code(f)} लिखें, या दूसरा बटन दबाएँ।`,
   card_changed: () => "उस कार्ड के बाद ऑर्डर बदल गया, इसलिए पुराना कार्ड मान्य नहीं है और कुछ नहीं भेजा गया। अभी का कार्ड यह है:",
   card_closed: () => "उस कार्ड का जवाब पहले ही दिया जा चुका है या उसकी जगह नया कार्ड आ गया है, इसलिए कुछ नहीं किया गया।",
   card_expired: () => "उस कार्ड का समय ख़त्म हो गया, इसलिए कुछ नहीं भेजा गया। अगर अब भी चाहिए तो फिर कहें।",
@@ -224,7 +224,7 @@ const ml: Set = {
   supplier_thanks_yes: (f) => `നന്ദി. ഓർഡർ ${ref(f)} നിങ്ങൾ സ്ഥിരീകരിച്ചതായി രേഖപ്പെടുത്തി.`,
   supplier_thanks_no: (f) => `നന്ദി. ഓർഡർ ${ref(f)} നിങ്ങൾക്ക് നൽകാൻ കഴിയില്ലെന്ന് രേഖപ്പെടുത്തി.`,
 
-  card: (f) => `അനുമതിക്കായി ഓർഡർ ${ref(f)}: ${orderLine(f)}, ${sup(f)}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ ${inr(f, "budgetInr")} ബജറ്റിൽ ${inr(f, "reservedInr")} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം ${inr(f, "leftInr")} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes ${code(f)} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no ${code(f)} എന്ന് നൽകൂ.`,
+  card: (f) => `അനുമതിക്കായി ഓർഡർ ${ref(f)}: ${orderLine(f)}, ${sup(f)}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ ${inr(f, "budgetInr")} ബജറ്റിൽ ${inr(f, "reservedInr")} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം ${inr(f, "leftInr")} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes ${code(f)} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no ${code(f)} എന്ന് നൽകൂ, അല്ലെങ്കിൽ മറ്റേ ബട്ടൺ അമർത്തൂ.`,
   card_changed: () => "ആ കാർഡിന് ശേഷം ഓർഡർ മാറി, അതിനാൽ പഴയ കാർഡ് സാധുവല്ല, ഒന്നും അയച്ചില്ല. ഇപ്പോഴത്തെ കാർഡ് ഇതാ:",
   card_closed: () => "ആ കാർഡിന് ഇതിനകം മറുപടി നൽകി, അല്ലെങ്കിൽ പുതിയ കാർഡ് വന്നു, അതിനാൽ ഒന്നും ചെയ്തില്ല.",
   card_expired: () => "ആ കാർഡിന്റെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും അയച്ചില്ല. ഇപ്പോഴും വേണമെങ്കിൽ വീണ്ടും പറയൂ.",
@@ -275,7 +275,7 @@ const kn: Set = {
   supplier_thanks_yes: (f) => `ಧನ್ಯವಾದ. ಆರ್ಡರ್ ${ref(f)} ಅನ್ನು ನೀವು ಖಚಿತಪಡಿಸಿದ್ದೀರಿ ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ.`,
   supplier_thanks_no: (f) => `ಧನ್ಯವಾದ. ಆರ್ಡರ್ ${ref(f)} ಅನ್ನು ನೀವು ಪೂರೈಸಲಾಗದು ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ.`,
 
-  card: (f) => `ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ ${ref(f)}: ${orderLine(f)}, ${sup(f)} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ ${inr(f, "budgetInr")} ಬಜೆಟ್‌ನಲ್ಲಿ ${inr(f, "reservedInr")} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ ${inr(f, "leftInr")} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes ${code(f)} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no ${code(f)} ಎಂದು ಉತ್ತರಿಸಿ.`,
+  card: (f) => `ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ ${ref(f)}: ${orderLine(f)}, ${sup(f)} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ ${inr(f, "budgetInr")} ಬಜೆಟ್‌ನಲ್ಲಿ ${inr(f, "reservedInr")} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ ${inr(f, "leftInr")} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes ${code(f)} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no ${code(f)} ಎಂದು ಉತ್ತರಿಸಿ, ಅಥವಾ ಇನ್ನೊಂದು ಬಟನ್ ಒತ್ತಿ.`,
   card_changed: () => "ಆ ಕಾರ್ಡ್ ನಂತರ ಆರ್ಡರ್ ಬದಲಾಗಿದೆ, ಹಾಗಾಗಿ ಹಳೆಯ ಕಾರ್ಡ್ ಮಾನ್ಯವಲ್ಲ ಮತ್ತು ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಈಗಿನ ಕಾರ್ಡ್ ಇಲ್ಲಿದೆ:",
   card_closed: () => "ಆ ಕಾರ್ಡ್‌ಗೆ ಈಗಾಗಲೇ ಉತ್ತರಿಸಲಾಗಿದೆ ಅಥವಾ ಹೊಸ ಕಾರ್ಡ್ ಬಂದಿದೆ, ಹಾಗಾಗಿ ಏನೂ ಮಾಡಿಲ್ಲ.",
   card_expired: () => "ಆ ಕಾರ್ಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ, ಹಾಗಾಗಿ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಈಗಲೂ ಬೇಕಿದ್ದರೆ ಮತ್ತೆ ಹೇಳಿ.",
