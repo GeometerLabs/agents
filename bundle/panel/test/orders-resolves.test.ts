@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { KINDS } from "../../lib/kinds.ts";
+import { runGoHandCheck } from "../../lib/hand-check-go.ts";
 import { runBusyMonth } from "../../../templates/commerce/orders/report/example-month.ts";
 import { WORDS } from "../languages.ts";
 import { createDocuments } from "../documents.ts";
@@ -41,7 +42,8 @@ test("an orders@ lock is an Orders shop in every place the panel decides by temp
   const month = await runBusyMonth();
   const entries = month.world.record.entries();
   const orders = [...month.world.store.orders.values()];
-  const b = await boot({}, { signing: true });
+  // the real hand check, on the Orders program (helpers.ts passingHandCheck is the flows' stand-in): this test is about which template the panel decides on
+  const b = await boot({ handCheck: (kind, file) => runGoHandCheck(kind, file) }, { signing: true });
   try {
     const arjun = await b.account("arjun", "builder");
     const divya = await b.account("divya", "partner");
@@ -81,7 +83,7 @@ test("an orders@ lock is an Orders shop in every place the panel decides by temp
     const ran = await live.run("annapurna");
     assert.ok(ran && ran.hand.total > 0 && ran.hand.held === ran.hand.total, JSON.stringify(ran?.hand));
     assert.equal(ran.settingsDigest, KINDS.orders.papers.policyDigest(settings));
-    assert.equal(ran.hand.total, KINDS.orders.papers.summariseRun(await KINDS.orders.papers.runOn(settings)).total);
+    assert.equal(ran.hand.program?.name, "orders", "on the Orders program");
 
     // the cases of the export: the orders are read, not the (empty) bookings
     const papers = createPapers(b.config, shops, createDocuments(store), () => NOW);

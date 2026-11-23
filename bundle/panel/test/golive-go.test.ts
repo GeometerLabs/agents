@@ -35,7 +35,7 @@ function addShop(b: Boot, id: string, folder: string, example: string, pathway: 
 }
 
 test("a pickup-hold shop: its hold situations run on the Orders program, and the hand check no longer stands between it and going live", { skip: goSkip("orders") }, async () => {
-  const b = await boot({}, { signing: true });
+  const b = await boot({ handCheck: (kind, file) => runGoHandCheck(kind, file) }, { signing: true });
   try {
     addShop(b, "ganesh", "commerce/orders", "ganesh-electricals-hold.example.json", "orders");
     const { store } = openStores(b.config);
@@ -62,7 +62,7 @@ test("a pickup-hold shop: its hold situations run on the Orders program, and the
 });
 
 test("a credit-book shop: its credit situations run on the Fees program, and the gate takes the hand check; a changed reminder hour is 'settings changed'", { skip: goSkip("fees") }, async () => {
-  const b = await boot({}, { signing: true });
+  const b = await boot({ handCheck: (kind, file) => runGoHandCheck(kind, file) }, { signing: true });
   try {
     addShop(b, "lakshmi", "education/fees", "hardware-credit.example.json", "fees");
     const { store } = openStores(b.config);

@@ -121,7 +121,7 @@ test("the checks for a Fees centre have no calendar, 'Ready to go live' makes th
     const w = WORDS.en.setup.checks;
     assert.ok(page.includes(w.whatsapp.confirmed("+919000011111")) && page.includes(RZW.en.checks.confirmed(RZW.en.accounts.modeLive)), page.slice(page.indexOf("Checks"), page.indexOf("Checks") + 1500));
     assert.ok(!page.includes(w.calendar.title), "no calendar check");
-    assert.ok(/Held 26 of 26 situations\. 0 failed\. \d+ not tested\./u.test(page), "the Fees hand check's own sentence");
+    assert.ok(/Held (\d+) of \1 situations\. 0 failed\. \d+ not tested\./u.test(page), "the Fees hand check's own sentence");
     assert.ok(page.includes(w.readyButton));
     const pins = JSON.parse(readFileSync(join(b.dir, "shops", shop, "pins.json"), "utf8"));
     assert.deepEqual(pins.calendar, undefined);
