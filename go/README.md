@@ -73,7 +73,7 @@ internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn
                          Geometer's reset, the owner's phones and own codes, the number lock), in owner-access.sqlite, same schema (modules/channels owner-*.ts, webauthn.ts)
 internal/testclock/      the contract tests' clock (GEOMETER_TEST=1 + GEOMETER_TEST_CLOCK_FILE, a "fakes" shop only; a live shop refuses to start with it)
 internal/push/           web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push)
-internal/language/       the bottom layer of reading words (modules/language): plain, canon, the ONE writing of dates, times and rupees for every runtime (format.go,
+internal/language/       the bottom layer of reading words (modules/language): plain, canon, the shapes a model's date and time must have (phrase_shape.go, every template's coerce), the ONE writing of dates, times and rupees for every runtime (format.go,
                          formats.json, FormatInr; the old internal/locale and the assistant's own date tables were joined into it, 19 Nov), JavaScript's string length, slices and whitespace,
                          toLowerCase, NFC, TextDecoder, Date.parse (js.go, shared by the directory, access and listings); regex.go matches a JavaScript pattern the way
                          JavaScript does (each top-level alternative tried in turn at each place, the look-behind and look-ahead edges checked by hand, since RE2 has neither), over the
@@ -93,7 +93,8 @@ internal/bookingsreport/ Bookings' monthly report (templates/commerce/bookings/r
 internal/orders/         the Orders template (wave W4): settings with the TypeScript's sentences, the store field for field (unknown members kept raw), the derived reads (stock and the day's
                          count worked out from the orders), the books, the channel's reads (offer, view, owner's page, documents), the Kit, and the agent over one step (agent_*.go: say, the
                          order flow and its limits, money and refunds, the owner-marked UPI money, cancelling, the owner's commands and the balance, the tick, recovery, the page); plans and
-                         the Orders skill of the shop's assistant; read Explanation.md and Deferred.md
+                         the Orders skill of the shop's assistant; the watch over its Guards, the owner's route and a page's outbox are bookings.Watch, bookings.OwnerMessaging and
+                         runtime.ChannelMessaging (23 Nov, no copies of its own); read Explanation.md and Deferred.md
 internal/orders/words/   Orders' customer and owner messages in four languages, the WhatsApp templates, labels, lists and buttons, and the outgoing check (GENERATED: scripts/gen_orders_words.ts)
 internal/orders/reading/ how an Orders shop reads a message: the rule parser, the check on a model's answer, the router's reading, a tapped reply, the plan reading (GENERATED: scripts/gen_orders_reading.ts)
 internal/ordersreport/   Orders' monthly report (templates/commerce/orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job

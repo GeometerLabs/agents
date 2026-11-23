@@ -26,10 +26,11 @@ words.ts), with no change of behaviour.
 - a date's and a time's numbers are `float64`, as decoded JSON (the Bookings lesson); a quantity is `int` and a price named `*int64`, written to JSON exactly as the TypeScript's;
 - `Intent.Items` and `SlotIDs`: nil is "not said", an empty slice is "said, none" (`items: []` stays `items: []`).
 
-## One difference on purpose
+## A date and a time from a model (23 Nov 2026)
 
-`coerceIntent` copies a `date` or `time` of any shape (`raw.date as DatePhrase`). `CoerceIntent` refuses one that is not an object. A model's answer never carries either
-(`Shape` drops them), so no real path differs; the vectors leave such values out and `TestCoerceDateShape` covers it.
+`coerceIntent` copied a `date` or `time` of any shape until 23 Nov 2026. Both runtimes now refuse one that is not of the shapes dates.ts makes: the TypeScript asks
+`isDatePhrase`/`isTimePhrase` (modules/language/dates.ts), Go asks their twins `language.IsDatePhrase`/`IsTimePhrase` (internal/language/phrase_shape.go), the checks that were
+Bookings' own. The coerce vectors carry hostile dates and times with the TypeScript's answers; `TestCoerceDateShape` adds a few by hand.
 
 ## The reading the router is given
 

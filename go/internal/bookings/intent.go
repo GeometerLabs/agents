@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
@@ -61,25 +62,18 @@ func CoerceIntent(raw any, s *Settings) *Intent {
 		n := int64(v.(float64))
 		in.OfferInr = &n
 	}
+	// a date and a time of the shapes dates.ts makes, or the answer is refused (internal/language's checks, shared with Orders since 23 Nov 2026)
 	if v, given := m["date"]; given {
-		d, isObj := v.(map[string]any)
-		ok := isObj && ((d["kind"] == "relative" && (d["offsetDays"] == 0.0 || d["offsetDays"] == 1.0 || d["offsetDays"] == 2.0)) ||
-			(d["kind"] == "weekday" && wholeIn(d["weekday"], 0, 6) && (d["which"] == "next" || d["which"] == "this" || d["which"] == "plain")) ||
-			(d["kind"] == "calendar" && wholeIn(d["day"], 1, 31) && wholeIn(d["month"], 1, 12)))
-		if !ok {
+		if !language.IsDatePhrase(v) {
 			return nil
 		}
-		in.Date = d
+		in.Date = v.(map[string]any)
 	}
 	if v, given := m["time"]; given {
-		t, isObj := v.(map[string]any)
-		p, hasPeriod := t["period"]
-		ok := isObj && wholeIn(t["hour"], 0, 23) && wholeIn(t["minute"], 0, 59) &&
-			(!hasPeriod || ((p == "am" || p == "pm") && wholeIn(t["hour"], 1, 12))) // "18:00 pm" would be hour 30
-		if !ok {
+		if !language.IsTimePhrase(v) {
 			return nil
 		}
-		in.Time = t
+		in.Time = v.(map[string]any)
 	}
 	if v, given := m["overrideAttempt"]; given {
 		b := v == true

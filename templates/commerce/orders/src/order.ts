@@ -301,8 +301,10 @@ export function slotMoments(settings: Settings, mode: "pickup" | "delivery", dat
 }
 
 /** The order as a line of words, from the record: "2 × Veg thali, 1 × Curd". */
+// 23 Nov 2026: an item no longer on the menu (the owner took it off with orders still open) is named by its id, as orderWhat already did, instead of throwing in the
+// middle of a step; the Go runtime does the same (internal/orders ItemsText).
 export const itemsText = (settings: Settings, lines: readonly OrderLine[], language: Language): string =>
-  lines.map((l) => `${l.qty} × ${itemName(itemOf(settings, l.itemId)!, language)}`).join(", ");
+  lines.map((l) => { const item = itemOf(settings, l.itemId); return `${l.qty} × ${item ? itemName(item, language) : l.itemId}`; }).join(", ");
 
 /** The values of this order's record that a message may use. Everything comes from the order and the settings, never from message text. */
 export function factsFor(settings: Settings, order: Order | null, language: Language, extra: { customerPhone?: string; refundInr?: number; menu?: boolean; areas?: boolean; slotChoices?: { fromMs: number; toMs: number }[]; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; nowMs?: number; link?: string } = {}): MessageFacts {
@@ -319,7 +321,8 @@ export function factsFor(settings: Settings, order: Order | null, language: Lang
     menu: (extra.menu ? settings.menu : []).map((i) => ({ name: itemName(i, language), priceInr: i.priceInr })),
     ...(extra.areas && settings.delivery ? { areas: settings.delivery.area } : {}),
     ...(order && order.lines.length > 0 ? { itemsText: itemsText(settings, order.lines, language), quantities: order.lines.map((l) => l.qty) } : {}),
-    ...(order?.plan ? { itemsText: planName(planTypeOf(settings.plans, order.plan.typeId)!, language) } : {}), // a plan's period payment: the plan's name is "the items"
+    // a plan's period payment: the plan's name is "the items"; a plan type no longer in the settings leaves them as they are (23 Nov 2026: it threw; Go's FactsFor does this)
+    ...(order?.plan && planTypeOf(settings.plans, order.plan.typeId) ? { itemsText: planName(planTypeOf(settings.plans, order.plan.typeId)!, language) } : {}),
     ...(item ? { itemName: itemName(item, language), priceInr: item.priceInr } : {}),
     ...(extra.leftCount !== undefined ? { leftCount: extra.leftCount } : {}),
     totalInr: total,

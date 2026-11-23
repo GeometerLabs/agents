@@ -703,7 +703,7 @@ func (settlementPayments) ReadsSettlements() bool { return true }
 
 func (s settlementPayments) ReadSettlements(day zone.Date) ([]accounting.SettlementRow, error) {
 	var rows []payments.SettlementRow
-	err := s.a.watch.do("payments", "listRequests", func() error {
+	err := s.a.watch.Do("payments", "listRequests", func() error {
 		var err error
 		rows, err = s.r.ReadSettlements(s.a.ctx, payments.Day{Year: day.Year, Month: day.Month, Day: day.Day}, 0)
 		return err
