@@ -2,12 +2,13 @@
 // what the update moved, a run that was stopped in the middle and carries on without doing anything twice, a refused deploy that puts the pin back and stops the rollout,
 // a dry run that changes nothing, and the agents someone else wrote being skipped. The hand check is answered by a stand-in, in the very lines the real one prints, except in
 // the two tests that run the real one (one, and a whole update with it) so the reading of its lines is held to what it really prints.
+import { goSkip } from "../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { addAgent } from "../agent/deploy.ts";
-import { deploy } from "../deploy.ts";
+import { composeFile, deploy } from "../deploy.ts";
 import { main } from "../geometer.ts";
 import { compare, readHandCheck, runHandCheck, savedDataLayout } from "../handcheck.ts";
 import { realRunner } from "../lib/runner.ts";
@@ -133,8 +134,12 @@ test("a failed situation is read with the first check that failed; a count that 
   assert.equal(readHandCheck(handCheckText("X", holdsAll()).replace("Held 4 of 4", "Held 3 of 4")), undefined);
   const before = readHandCheck(handCheckText("X", holdsAll()))!;
   const after = readHandCheck(handCheckText("X", [...holdsAll().slice(1).map((r, i) => (i === 0 ? { ...r, held: false } : r)), { title: "A new situation", held: false }]))!;
-  assert.deepEqual(compare(before, after), { failing: [{ title: "Razorpay created the link but the reply was lost", why: "A check failed: what the stand-in's own records hold" }, { title: "A new situation", why: "A check failed: what the stand-in's own records hold" }], notChecked: ["A normal booking"] });
-  assert.deepEqual(compare(after, after), { failing: [], notChecked: [] }, "a situation that failed in both is not a reason to hold a client back");
+  assert.deepEqual(compare(before, after), { failing: [{ title: "Razorpay created the link but the reply was lost", why: "A check failed: what the stand-in's own records hold" }, { title: "A new situation", why: "A check failed: what the stand-in's own records hold" }], notChecked: ["A normal booking"], notRunNow: [] });
+  assert.deepEqual(compare(after, after), { failing: [], notChecked: [], notRunNow: [] }, "a situation that failed in both is not a reason to hold a client back");
+  // 24 Nov 2026: a situation the new version lists as not run on these settings, with its reason, is not a loss: it is said, and does not hold the client back
+  const listed = readHandCheck(`${handCheckText("X", holdsAll().slice(1))}\n\n  NOT RUN on X's settings (1), and not counted above:\n    - A normal booking: this version's program cannot express it on these settings.\n`)!;
+  assert.deepEqual(listed.notRun, [{ title: "A normal booking", reason: "this version's program cannot express it on these settings" }]);
+  assert.deepEqual(compare(before, listed), { failing: [], notChecked: [], notRunNow: [{ title: "A normal booking", reason: "this version's program cannot express it on these settings" }] });
 });
 
 // ---- update ---------------------------------------------------------------------------------------------------------------------------------
@@ -377,21 +382,47 @@ test("rollback across a change in how the runtime lays out its saved data is ref
 
 // ---- the whole thing with the real hand check -----------------------------------------------------------------------------------------------
 
-// todo (24 Nov 2026): the hand check runs each situation on the shop's Go program, so a fault written into a version's TypeScript agent (src/agent.ts) no longer reaches it, and
-// both versions here run the same programs (this checkout's). Holding a client back on a new failure is held by the stand-in tests above; a fault in a version's own program
-// needs each version's programs kept beside it (bundle/panel/Deferred.md). The test still runs and says what it sees.
-test("with a real fault in the new version that only a client with a 48-hour cancellation window meets, the real hand check holds that client back and moves the other", { todo: "a version's TypeScript agent is not what the hand check runs since the switch to Go (bundle/panel/Deferred.md)" }, async () => {
+/**
+ * A program that misreads one setting, as a faulty new build would: it runs the real program after making a cancellation window over 24 hours a hundred times longer, so
+ * nobody is ever "inside" it. Written as a small node script named after the program, into a folder the update's hand check is pointed at. Only a client whose window is
+ * over 24 hours meets the fault.
+ */
+const REPO_ROOT = new URL("../../", import.meta.url).pathname.replace(/\/$/u, "");
+function faultyPrograms(dir: string): void {
+  mkdirSync(dir, { recursive: true });
+  const real = join(REPO_ROOT, "go", "bin", "bookings");
+  writeFileSync(join(dir, "bookings"), `#!${process.execPath}
+// a faulty build for update.test.ts: the cancellation window over 24 hours is read a hundred times too long, then the real program runs on the folder
+const { readFileSync, writeFileSync } = require("node:fs");
+const { spawn } = require("node:child_process");
+const folder = process.argv[3];
+const file = folder + "/settings.json";
+const s = JSON.parse(readFileSync(file, "utf8"));
+if (s.cancellation && s.cancellation.windowHours > 24) { s.cancellation.windowHours *= 100; writeFileSync(file, JSON.stringify(s)); }
+const child = spawn(${JSON.stringify(real)}, process.argv.slice(2), { stdio: "inherit" });
+for (const sig of ["SIGTERM", "SIGINT"]) process.on(sig, () => child.kill(sig));
+child.on("exit", (code, signal) => process.exit(code ?? (signal ? 1 : 0)));
+`, { mode: 0o755 });
+}
+
+// 24 Nov 2026: the fault is in the new version's PROGRAM (the hand check runs each situation on it since the switch to Go; a fault written into a version's TypeScript agent no
+// longer reaches it). The "before" side runs on the programs the shop runs now (programs-running, made here as the deployer's copy of the running image would be), the
+// "after" side on the new build (programs). The client the fault touches is held back with the situations that fail; the other moves.
+test("with a real fault in the new version's program that only a client with a 48-hour cancellation window meets, the real hand check holds that client back and moves the other", { skip: goSkip("bookings") }, async () => {
   const w = world({ "glow-salon": panelRuntime(), "bright-tuition": panelRuntime() }); try {
     for (const s of ["glow-salon", "bright-tuition"]) w.handIn(s);
     setSettings(w, "bright-tuition", (x) => { x.name = "Bright Tuition"; x.cancellation.windowHours = 48; });
     await deploy(w.ctx);
     addVersion(w, "0.3.0");
-    // version 0.3.0 is the pathway with one line changed: a window of more than 24 hours is counted a hundred times too long, so nobody is ever "inside" it
-    const file = join(w.root, "templates", "commerce", "bookings@0.3.0", "src", "agent.ts");
-    const line = "const inWindow = hoursLeft >= settings.cancellation.windowHours;";
-    const text = readFileSync(file, "utf8");
-    assert.equal(text.split(line).length, 2, "the line this test changes in its copy of the pathway has moved: pick another line that depends on a setting");
-    writeFileSync(file, text.replace(line, "const inWindow = hoursLeft >= settings.cancellation.windowHours * (settings.cancellation.windowHours > 24 ? 100 : 1);"));
+    const programs = w.paths.programs;
+    faultyPrograms(programs);
+    // the programs the shop runs now: the real build, under the image the deployed compose file names, as copyGoPrograms leaves them
+    const image = /geo-go:[A-Za-z0-9._-]+/u.exec(readFileSync(composeFile(w.root), "utf8"))?.[0];
+    assert.ok(image, "the deployed compose file names the programs' image");
+    const running = `${programs}-running`;
+    mkdirSync(running, { recursive: true });
+    for (const p of ["bookings", "orders", "fees", "stock-orders"]) cpSync(join(REPO_ROOT, "go", "bin", p), join(running, p));
+    writeFileSync(join(running, "image.txt"), `${image}\n`);
     const next = w.ctx.runner.run.bind(w.ctx.runner);
     w.ctx.runner.run = (command, args, options) => (command === process.execPath ? realRunner.run(command, args, options) : next(command, args, options));
     const r = await update(w, "--to", "0.3.0");

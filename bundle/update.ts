@@ -153,7 +153,10 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
   // the hand check on this client's own settings: at the version it runs now, and at the new one
   ctx.log(`${shop}: running the hand check on its own settings at ${running} and at ${to}...`);
   const settingsFile = join(serverPaths(ctx.dir).shop(shop), "settings.json");
-  const before = await runHandCheck(ctx, fromDir, settingsFile);
+  // the "before" side runs on the programs the shop runs NOW (the image its compose entry names, copied out as the new ones are), so the two runs compare two programs, not
+  // one; where that image cannot be read the current programs stand in, and the update says so
+  const runningPrograms = goRuntimeOf(fromDir) && !opts.dryRun ? await copyRunningPrograms(ctx) : undefined;
+  const before = await runHandCheck(ctx, fromDir, settingsFile, runningPrograms ? { programs: runningPrograms } : {});
   if (!before.ok) return heldBack(`The hand check could not be run on its settings at ${running}, the version it runs now, so there is nothing to compare ${to} with (${before.reason}). It stays on ${running}.`, { from: running, to });
   const after = await runHandCheck(ctx, toDir, settingsFile);
   if (!after.ok) return heldBack(`The hand check could not be run on its settings at ${to} (${after.reason}). It stays on ${running}.`, { from: running, to, before: counts(before.read) });
@@ -168,6 +171,8 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
     ].filter(Boolean).join(" ");
     return heldBack(said, { ...result, failing: diff.failing, notChecked: diff.notChecked });
   }
+  // a situation that held at the version it runs and that the new version lists as not run on these settings, with its reason, is said and does not hold the shop back
+  if (diff.notRunNow.length > 0) ctx.log(`${shop}: not run at ${to} on its settings (not counted as a loss): ${diff.notRunNow.map((n) => `${n.title}: ${n.reason}`).join("; ")}.`);
 
   const layout = { from: await savedDataLayout(ctx, fromDir), to: await savedDataLayout(ctx, toDir) };
   const known = layout.from !== undefined && layout.to !== undefined ? { layout: { from: layout.from, to: layout.to } } : {};
@@ -189,6 +194,20 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
   const step: Step = { status: "moving", at, ...result, ...known, fromLock: folder.lockText, toLock: `${to}\n`, historyBefore: [...(loadState(ctx.dir).shops[shop]?.lockHistory ?? [])] };
   save(step);
   return finishMove(ctx, shop, step, "update");
+}
+
+/**
+ * The programs of the image the server's shops run now (the deployed compose file names it: geo-go:<tag>), copied into <server>/programs-running for the "before" side of an
+ * update's hand check. Undefined when there is none to read (no compose file, no Go shop yet, or the copy failed): the caller says so and the current programs stand in.
+ */
+async function copyRunningPrograms(ctx: Context): Promise<string | undefined> {
+  let image: string | undefined;
+  try { image = /geo-go:[A-Za-z0-9._-]+/u.exec(readFileSync(composeFile(ctx.dir), "utf8"))?.[0]; } catch { image = undefined; }
+  if (!image) { ctx.log("The running shop programs could not be named (no deployed compose file names them), so the hand check before the update runs on this checkout's programs."); return undefined; }
+  const dir = `${serverPaths(ctx.dir).programs}-running`;
+  const copied = await copyGoPrograms(ctx, image, dir);
+  if (!copied.ok) { ctx.log(`${copied.reason} The hand check before the update runs on this checkout's programs.`); return undefined; }
+  return dir;
 }
 
 // ---- rollback --------------------------------------------------------------------------------------------------------------------------------------

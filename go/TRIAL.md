@@ -1594,3 +1594,27 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   `assistant` block one fails, above), Orders Annapurna 17/17, Razorpay 17/18, Sweet Crumbs 15/16, plans 22/22, the hold 4/4 (three times), with discounts 20/20, Fees Bright
   Tuition 24/25 (1 not run), credit book 4/4, UPI 7/7, Classes 30/30, Stock orders 17/17 (three times). Seen once and not diagnosed: under two test files at once, the Fees
   trick situation failed in one run and held three times alone (a failure can only refuse a shop, never pass one).
+
+## handcheck-go-24nov, part B: the three refusals fixed at their cause, the gaps closed (24 Nov 2026)
+
+- **The three refusals were product bugs, not stand-in artefacts.** For each, what the program sent was compared with the template set the shop submits (whatsapp-templates.json,
+  made from meta-templates.ts) and with what the stand-in approves (the same catalogue):
+  - **Bookings with the assistant**: the Go morning line sent `owner_morning` (submitted with an IMAGE header, modules/assistant/templates.ts) with no header, which Meta refuses
+    (132012). The port had dropped morning.ts's `headerImage`. Fixed in Go: the picture `<base>/character/<face>.png?v=<version>` from pages.json `character.version`
+    (access.ReadPages now reads it). The hand-check shop with the assistant names its drawn pictures in pages.json, as the deployer's loop does.
+  - **Orders on Razorpay**: `owner_payment_unused` was in no submitted template, so it went under the generic `order_owner_notice`, which is not submitted either: refused
+    outside the owner's window on live WhatsApp. Fixed in the template set: `owner_order_payment_unused`.
+  - **Fees on Razorpay**: a refund's word to the parent (`fee_refund_done`, `_pending`, `_approved`, `_denied`, `_expired`) was in no submitted template: five templates;
+    `fee_refund_done` began with its value, which Meta refuses, so it now begins with words in all four languages (hi/ml/kn reworded by moving the existing words; on the
+    review sheets). whatsapp-templates.json, the review sheets and the Go words regenerated.
+  - Fees' "the model is down" runs on Go again (the program asks no model and still answers with buttons; the record shows the rules read the message). Every example holds
+    every situation; the pinned failures and the todo sell-guide tests are plain passes (Orders 18 of 18, Fees 26 of 26, as the guides say).
+- **Gaps**: broken-setting tests for Bookings, Orders and Stock orders (golive-go.test.ts); the Fees trick situation held 20 of 20 under load (ten beside the Orders units,
+  ten beside the Fees units), so the one failure seen before was not reproduced; the beat: a hand-check shop may beat down to 0.1 s and the runner uses 0.2 s (a Go test holds
+  both floors); `standins: "http"` takes only 127.0.0.1 or [::1] with a port for every address it names (services, push, models) and holds the process to this machine while it
+  runs (guard/loopback.go: the far end of every connection is checked, no redirect off the loopback), with Go tests for localhost, 0.0.0.0, other IPv6, a mapped address, a
+  look-alike host, user info, https, no port, a redirect and a non-loopback dial.
+- **The update**: a situation the new version lists as not run on these settings, with its reason, is no longer counted as a loss (bundle/handcheck.ts `notRunNow`, said in
+  the log); the "before" side runs on the programs the shop runs now (copied out of the image the deployed compose file names into <server>/programs-running). The update
+  test that put a fault into a version's TypeScript agent now puts it into the new version's program (a build that misreads windows over 24 hours): the 48-hour client is
+  held back, the other moves.

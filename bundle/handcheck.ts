@@ -9,7 +9,8 @@ import { pathToFileURL } from "node:url";
 import type { Context } from "./deploy.ts";
 
 export interface Situation { title: string; held: boolean; /** for one that did not hold: the first check that failed, in the hand check's words */ why: string }
-export interface HandCheckRead { held: number; total: number; situations: Situation[] }
+/** `notRun`: the situations the run listed as not run on these settings, each with its reason ("NOT RUN on ...: - Title: reason."). */
+export interface HandCheckRead { held: number; total: number; situations: Situation[]; notRun: { title: string; reason: string }[] }
 
 /** Read the hand check's printed answer. Undefined when it does not look like one, or when its count and its lines do not agree. */
 export function readHandCheck(stdout: string): HandCheckRead | undefined {
@@ -35,17 +36,28 @@ export function readHandCheck(stdout: string): HandCheckRead | undefined {
   }
   const held = situations.filter((s) => s.held).length;
   if (situations.length !== Number(header[2]) || held !== Number(header[1])) return undefined;
-  return { held, total: situations.length, situations };
+  // the situations listed as not run, each with its reason (modules/crash-test/print.ts: "  NOT RUN on <shop>'s settings (n), and not counted above:" then "    - <title>: <reason>.")
+  const notRun: { title: string; reason: string }[] = [];
+  const from = lines.findIndex((l) => /^ {2}NOT RUN on /u.test(l));
+  if (from >= 0) {
+    for (let i = from + 1; i < lines.length; i++) {
+      const m = /^ {4}- (.+?): (\S.*)$/u.exec(lines[i]);
+      if (!m) break;
+      notRun.push({ title: m[1].trim(), reason: m[2].replace(/\.$/u, "").trim() });
+    }
+  }
+  return { held, total: situations.length, situations, notRun };
 }
 
 const firstWords = (text: string): string => (text.split("\n").map((l) => l.trim()).find((l) => l !== "") ?? "").slice(0, 200);
 
 /** Run the hand check that sits in one version's folder on one settings file. A hand check that finds a situation failing exits 1; that is an answer, not a failure to ask. */
-export async function runHandCheck(ctx: Context, pathwayDir: string, settingsFile: string): Promise<{ ok: true; read: HandCheckRead } | { ok: false; reason: string }> {
+export async function runHandCheck(ctx: Context, pathwayDir: string, settingsFile: string, o: { programs?: string } = {}): Promise<{ ok: true; read: HandCheckRead } | { ok: false; reason: string }> {
   // since 24 Nov 2026 a version's hand check runs each situation on the shop's Go program: on a server, the copy of the programs of the image the shops run (lib/go-build.ts
   // copyGoPrograms; update.ts makes it before it asks); a version from before runs on its own TypeScript engine and ignores it
   // where there is no server copy (a Mac, a test), the programs this checkout built (go/bin); a version folder kept beside the server has no go/bin of its own
-  const candidates = [ctx.dir ? serverPaths(ctx.dir).programs : undefined, ctx.appDir ? join(ctx.appDir, "go", "bin") : undefined];
+  // `o.programs`: the programs to run on, when the caller has them (update.ts: the running version's own, for the "before" side)
+  const candidates = [o.programs, ctx.dir ? serverPaths(ctx.dir).programs : undefined, ctx.appDir ? join(ctx.appDir, "go", "bin") : undefined];
   const programs = candidates.find((d): d is string => d !== undefined && existsSync(d) && readdirSync(d).length > 0);
   const env = programs ? { GEOMETER_GO_PROGRAMS: programs } : undefined;
   const r = await ctx.runner.run(process.execPath, [join(pathwayDir, "scripts", "hand-check.ts"), "--settings", settingsFile], { timeoutMs: 600_000, ...(env ? { env } : {}) });
@@ -57,8 +69,13 @@ export async function runHandCheck(ctx: Context, pathwayDir: string, settingsFil
 export interface Difference {
   /** Fails at the new version and did not fail at the old one: held there, or was not run there. */
   failing: { title: string; why: string }[];
-  /** Held at the old version and is not run at the new one. */
+  /** Held at the old version and is not checked at the new one, with no reason given: dropped, not "cannot be run here". */
   notChecked: string[];
+  /**
+   * Held at the old version and listed at the new one as not run on these settings, with its reason (24 Nov 2026: a version whose program cannot express a situation for this
+   * shop says why; that is not a loss of the shop's, so it does not hold the shop back, and the update says it).
+   */
+  notRunNow: { title: string; reason: string }[];
 }
 
 /** What the new version does worse than the old one on the same settings. A situation that failed in both is not counted: the client is no worse off. */
@@ -67,7 +84,8 @@ export function compare(before: HandCheckRead, after: HandCheckRead): Difference
   const now = new Set(after.situations.map((s) => s.title));
   return {
     failing: after.situations.filter((s) => !s.held && was.get(s.title)?.held !== false).map((s) => ({ title: s.title, why: s.why })),
-    notChecked: before.situations.filter((s) => s.held && !now.has(s.title)).map((s) => s.title),
+    notChecked: before.situations.filter((s) => s.held && !now.has(s.title) && !after.notRun.some((n) => n.title === s.title && n.reason !== "")).map((s) => s.title),
+    notRunNow: before.situations.filter((s) => s.held && !now.has(s.title)).flatMap((s) => after.notRun.filter((n) => n.title === s.title && n.reason !== "")),
   };
 }
 
