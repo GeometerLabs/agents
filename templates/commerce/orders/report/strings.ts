@@ -38,6 +38,8 @@ export interface Strings {
   languageName: Record<Language, string>;
   /** E1, the discount authority (modules/limits/discounts.ts DISCOUNT_REPORT_WORDS): the labels of the month's discounts, shown only when the month has any. */
   discounts: { given: string; asked: string; refused: string };
+  /** "Keep one for me", the pickup hold (24 Nov 2026): the labels of the month's holds, shown only when the month has any. */
+  holds: { collected: string; expired: string; enquiries: string; perTen: string };
   /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
   upiLabel: { collected: string; givenBack: string; notChecked: string };
   /** The \"Money this month\" block (modules/accounting/report-block.ts), from the signed books summary. */
@@ -85,6 +87,7 @@ export const en: Strings = {
   notChecked: { cash: "balance paid in cash or UPI at pickup", upi: "payments outside Razorpay", whatsapp: "real WhatsApp", razorpay: "real Razorpay", review: "a native speaker's review of the wording" },
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
   discounts: DISCOUNT_REPORT_WORDS.en,
+  holds: { collected: "Holds collected", expired: "Holds that ended uncollected", enquiries: "Item enquiries", perTen: "Collections per ten enquiries" },
   moneyBlock: MONEY_BLOCK_WORDS.en,
   upiLabel: { collected: "Advance marked paid by owner", givenBack: "Refunds marked sent by owner", notChecked: "automatic payment checking (with UPI you mark each payment)" },
   notTested: {
@@ -167,6 +170,7 @@ export const hi: Strings = {
   notChecked: { cash: "पिकअप पर नकद या UPI से दी गई बाकी रकम", upi: "Razorpay के बाहर के भुगतान", whatsapp: "असली WhatsApp", razorpay: "असली Razorpay", review: "शब्दों की किसी मूल भाषी से जाँच" },
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
   discounts: DISCOUNT_REPORT_WORDS.hi,
+  holds: { collected: "रखा सामान जो ले जाया गया", expired: "रखा सामान जो नहीं ले जाया गया", enquiries: "सामान की पूछताछ", perTen: "हर दस पूछताछ पर ले जाया गया" },
   moneyBlock: MONEY_BLOCK_WORDS.hi,
   upiLabel: { collected: "मालिक द्वारा मिला हुआ दर्ज एडवांस", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड", notChecked: "भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं)" },
   notTested: {
@@ -248,6 +252,7 @@ export const ml: Strings = {
   notChecked: { cash: "പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക", upi: "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ", whatsapp: "യഥാർത്ഥ WhatsApp", razorpay: "യഥാർത്ഥ Razorpay", review: "വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
   discounts: DISCOUNT_REPORT_WORDS.ml,
+  holds: { collected: "മാറ്റിവച്ചത് വാങ്ങിയത്", expired: "മാറ്റിവച്ചത് വാങ്ങാതെ പോയത്", enquiries: "സാധനത്തെക്കുറിച്ചുള്ള ചോദ്യങ്ങൾ", perTen: "പത്ത് ചോദ്യങ്ങൾക്ക് വാങ്ങിയത്" },
   moneyBlock: MONEY_BLOCK_WORDS.ml,
   upiLabel: { collected: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്", notChecked: "പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു)" },
   notTested: {
@@ -329,6 +334,7 @@ export const kn: Strings = {
   notChecked: { cash: "ಪಿಕಪ್‌ನಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಟ್ಟ ಉಳಿದ ಮೊತ್ತ", upi: "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು", whatsapp: "ನಿಜವಾದ WhatsApp", razorpay: "ನಿಜವಾದ Razorpay", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
   discounts: DISCOUNT_REPORT_WORDS.kn,
+  holds: { collected: "ಕಾಯ್ದಿರಿಸಿದ್ದು ತೆಗೆದುಕೊಂಡಿದ್ದು", expired: "ಕಾಯ್ದಿರಿಸಿದ್ದು ತೆಗೆದುಕೊಳ್ಳದೆ ಮುಗಿದದ್ದು", enquiries: "ವಸ್ತುವಿನ ವಿಚಾರಣೆಗಳು", perTen: "ಹತ್ತು ವಿಚಾರಣೆಗೆ ತೆಗೆದುಕೊಂಡಿದ್ದು" },
   moneyBlock: MONEY_BLOCK_WORDS.kn,
   upiLabel: { collected: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್", notChecked: "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ)" },
   notTested: {

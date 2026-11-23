@@ -129,7 +129,39 @@ type Report struct {
 	Plans *PlansReport
 	// Discounts is E1's block (internal/discounts Count): nil, and left out of the tree and the page, when the month has no discount line.
 	Discounts *discounts.Counts
-	Anchor    *bookingsreport.LedgerHead
+	// Holds is the pickup hold's block (report/data.ts holdsOf): nil, and left out of the tree and the page, when the month has no pickup_hold line.
+	Holds  *HoldCounts
+	Anchor *bookingsreport.LedgerHead
+}
+
+// HoldCounts is report/data.ts HoldCounts: the month's item enquiries, holds collected, holds that ended uncollected, and collections per ten enquiries.
+type HoldCounts struct{ Enquiries, Collected, Expired, PerTen int }
+
+// holdsOf is report/data.ts holdsOf: each order once per step of a confirmed `pickup_hold` line (go/internal/orders agent_hold.go). PerTen is JavaScript's
+// Math.round(collected * 10 / enquiries), a half going up: for these whole, non-negative numbers that is floor((20c + e) / 2e), done in integers so no float rounding differs.
+func holdsOf(month []accounting.Entry) *HoldCounts {
+	steps := map[string]map[string]bool{}
+	seen := false
+	for _, e := range month {
+		b, ok := bookingOf(e)
+		if !ok || e.Action != "pickup_hold" || e.Outcome != "confirmed" {
+			continue
+		}
+		seen = true
+		step := e.Refs["step"]
+		if steps[step] == nil {
+			steps[step] = map[string]bool{}
+		}
+		steps[step][b] = true
+	}
+	if !seen {
+		return nil
+	}
+	h := &HoldCounts{Enquiries: len(steps["enquiry"]), Collected: len(steps["collected"]), Expired: len(steps["expired"])}
+	if h.Enquiries > 0 {
+		h.PerTen = (20*h.Collected + h.Enquiries) / (2 * h.Enquiries)
+	}
+	return h
 }
 
 // UPI says whether the money is the owner's marks (paidBy).
@@ -419,6 +451,7 @@ func BuildOrdersReport(in Input) (*Report, error) {
 	r.NotTested = NotTestedForReport(goLive, shop)
 	r.GoLive = goLive
 	r.Discounts = discounts.Count(month)
+	r.Holds = holdsOf(month)
 	if hasPlans(in.Settings) {
 		p := plansReportOf(all, month)
 		r.Plans = &p

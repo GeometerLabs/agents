@@ -56,6 +56,8 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
     [esc(p.stoppedCustomers), fig(r.customers.stopped), ""],
     // E1, the discount authority: three rows, only when the month has a discount
     ...(r.discounts ? [[esc(s.discounts.given), ...amount(r.discounts.given)], [esc(s.discounts.asked), fig(r.discounts.asked), ""], [esc(s.discounts.refused), fig(r.discounts.refused), ""]] : []),
+    // the pickup hold: four rows, only when the month has a hold line
+    ...(r.holds ? [[esc(s.holds.collected), fig(r.holds.collected), ""], [esc(s.holds.expired), fig(r.holds.expired), ""], [esc(s.holds.enquiries), fig(r.holds.enquiries), ""], [esc(s.holds.perTen), fig(r.holds.perTen), ""]] : []),
   ]);
   const sold = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
     [esc(p.soldOrders), fig(r.sold.orders), ""],
