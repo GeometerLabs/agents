@@ -202,9 +202,17 @@ var stoppedGate = Decision{RuleID: "subscription_suspended", Verdict: "block", R
 // voice is the Fees words for say.
 type voice struct{}
 
-func (voice) Render(id string, facts any) (string, error) { return Render(id, facts.(*MessageFacts)) }
+func (voice) Render(id string, facts any) (string, error) {
+	if t, ok := renderTalk(id, facts); ok {
+		return t, nil
+	}
+	return Render(id, factsOf(facts))
+}
 func (voice) TemplateMessage(t messaging.TemplateArgs) (messaging.TemplateMessage, error) {
 	f, ok := t.Facts.(*MessageFacts)
+	if tf, isTalk := t.Facts.(*talkFacts); isTalk {
+		f, ok = tf.MessageFacts, true
+	}
 	if !ok {
 		return messaging.TemplateMessage{Name: t.Generic, Language: t.Language, Text: t.Text}, nil
 	}
@@ -225,7 +233,13 @@ func (a *Agent) sayDeps() messaging.SayDeps {
 		Owner:      messaging.OwnerInfo{WhatsApp: a.owner(), Language: a.settings.Owner.Language},
 		LanguageOf: func(phone string, d any) string { return a.languageOf(phone, dueOf(d)) },
 		OptedOut:   func(phone string) bool { return a.store.Customer(phone).OptedOut },
-		FactsFor:   func(sa *messaging.SayArgs, lang string) (any, error) { return a.factsFor(sa, lang), nil },
+		FactsFor: func(sa *messaging.SayArgs, lang string) (any, error) {
+			f := a.factsFor(sa, lang)
+			if t := extraOf(sa).o.talk; t != nil {
+				return &talkFacts{MessageFacts: f, reply: t}, nil
+			}
+			return f, nil
+		},
 		InteractiveFor: func(sa *messaging.SayArgs, facts any, lang string) (*messaging.InteractiveMessage, error) {
 			o := extraOf(sa).o.offer
 			if o == nil {
@@ -237,7 +251,7 @@ func (a *Agent) sayDeps() messaging.SayDeps {
 			}
 			parts := make([]string, 0, len(ids))
 			for _, id := range ids {
-				t, err := Render(id, facts.(*MessageFacts))
+				t, err := voice{}.Render(id, facts)
 				if err != nil {
 					return nil, err
 				}

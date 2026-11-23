@@ -102,9 +102,13 @@ func (a *Agent) onMessage(m messaging.InboundMessage) error {
 	case "owner":
 		return a.onTalkToOwner(phone, phone)
 	case "greeting", "yes", "no":
-		return a.onMenu(phone, true)
+		return a.onMenu(phone, true, "", false)
 	}
-	return a.onMenu(phone, false)
+	text := m.Text
+	if m.Reply != nil {
+		text = ""
+	}
+	return a.onMenu(phone, false, text, in.OverrideAttempt)
 }
 
 // targetDue is agent.ts targetDue: the parent's own fee a button named, or their oldest open one; failing that (allowPaid), their latest.
@@ -451,13 +455,18 @@ func (a *Agent) onTalkToOwner(phone, replyTo string) error {
 	return nil
 }
 
-// onMenu is agent.ts onMenu: a greeting, a yes or a no, or words that are none of these: what is owed, with the buttons; or that nothing is. (The shop's talk is not ported.)
-func (a *Agent) onMenu(phone string, understood bool) error {
+// onMenu is agent.ts onMenu: a greeting, a yes or a no, or words that are none of these: what is owed, with the buttons; or that nothing is. Words nothing could read may be
+// answered by the shop's talk first (agent_customertalk.go).
+func (a *Agent) onMenu(phone string, understood bool, text string, overrideAttempt bool) error {
 	if !a.takesNewWork() {
 		return a.pausedReply(phone, "menu")
 	}
 	open := a.store.openDues(phone)
 	if len(open) == 0 {
+		// block M: words nothing could read, from a parent with nothing due: the assistant may still answer from what the centre has published
+		if !understood && text != "" && a.talkToCustomer(phone, text, overrideAttempt, nil) {
+			return nil
+		}
 		a.tellCustomer(nil, phone, []string{"fee_nothing_due"}, sayOpts{})
 		return nil
 	}
@@ -477,7 +486,7 @@ func (a *Agent) onMenu(phone string, understood bool) error {
 	}
 	if understood {
 		a.tellCustomer(d, phone, []string{"fee_menu"}, sayOpts{offer: feeButtons(d)})
-	} else {
+	} else if text == "" || !a.talkToCustomer(phone, text, overrideAttempt, d) {
 		a.tellCustomer(d, phone, []string{"fee_didnt_understand"}, sayOpts{offer: feeButtons(d)})
 	}
 	return nil
