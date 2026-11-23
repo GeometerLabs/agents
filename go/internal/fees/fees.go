@@ -40,6 +40,9 @@ type Ports struct {
 	// PushOwner and OwnerRoute are the owner's push alerts and their choice of route (push.ts), as Bookings has them.
 	PushOwner  func(text string) []string
 	OwnerRoute func(hasWhatsApp bool) string
+	// PushCustomer is push.ts `customer` (24 Nov 2026): the words kept for a page's conversation, and every message to a parent's number (push.ts alsoPushTo, agent_push.go),
+	// also go to the phones that allowed alerts on that page (runtime.CustomerPush). nil: no push. It never fails the message.
+	PushCustomer func(conversation, text string)
 	// QR makes a UPI request's QR picture where WhatsApp can fetch it (qr-image.ts folderQrImages); nil: the words carry the link and the UPI ID.
 	QR ownermarked.ImageMaker
 }

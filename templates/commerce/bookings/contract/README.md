@@ -330,6 +330,7 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
 | `chat.contract.test.ts` | C | fakes | the chat's thread and limits, the four languages, the model's answer as untrusted input |
 | `recovery.contract.test.ts` | R | guards | a Guard down, the process killed mid-step, a lost reply, the to-do list's recovery steps, a restored snapshot |
 | `record-licence.contract.test.ts` | D | fakes, guards | agent.db's format, the append-only record without a customer's number, the licence's wind-down and final stop, the owner's notice, the monthly report |
+| `push.contract.test.ts` | C | fakes (+ the real geo-guard when built) | a customer's web push: a booking page's next message pushed once through the push Guard in the page's words, a 410 drops the phone, the Guard's daily count (fake and real) is not tried again, a chat guest's alerts after the first answer, "delete my chat" ends them |
 | `cross-restart.test.ts` | | guards | a Go-to-Go restart on one folder (the TypeScript and Go runtimes in turn until 24 Nov 2026) (skipped without the Go binary) |
 | `differential.test.ts` | | guards | the public demo's TypeScript world and the Go shop on the demo's own paths, every WhatsApp message compared whole |
 
@@ -370,7 +371,7 @@ and the record's trigger), ticker (hold expiry, completion and a reminder on the
 | report-monthly (D): the owner's WhatsApp message, the certificate and signed summary files, the quiet month, the licence's final stop | only the data file's making, once, is covered | read the WhatsApp stand-in |
 | runtime (R): steps one at a time in order, a failing step tried again then failed, a step that fails after its work saves nothing | the step seam is in-process only (`aroundStep`); no HTTP route makes a step throw | **unit** (the task runner of `modules/runtime/core.ts`: vectors), listed here so it is not dropped |
 | server (S): "readyz turns 503 when the store cannot be read" | needs a store that fails | **unit** for the Go store |
-| web push (route 24), chat identity (route 12), `owner-voice`, `chat-voice`, `owner-file`: | shared with the listings contract (push, owner-file) or need speech | the listings contract covers the shared code; run it against the Bookings shop in the port |
+| the owner's web push (route 24), chat identity (route 12), `owner-voice`, `chat-voice`, `owner-file`: | shared with the listings contract (push, owner-file) or need speech | the listings contract covers the shared code; run it against the Bookings shop in the port. A customer's web push (route 24's customer_* ops) is `push.contract.test.ts` (24 Nov 2026) |
 
 The classes "b" (unit) are NOT started: their vectors (inputs and outputs made from the TypeScript) must be generated before the TypeScript is deleted; that is the port's first step per
 package. The list in section 6 is the checklist.

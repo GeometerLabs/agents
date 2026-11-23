@@ -111,6 +111,8 @@ func run(folder string) error {
 	// item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push alone for a shop with no WhatsApp: push.ts ownerRoute)
 	ports.PushOwner = func(text string) []string { return rt.OwnerPush(text) } // the one shared owner route (runtime/ownerroute.go); rt is made later, so a closure
 	ports.OwnerRoute = func(hasWhatsApp bool) string { return rt.OwnerRoute(hasWhatsApp) }
+	// 24 Nov 2026: a page's message also goes to the phones that allowed alerts on that page (runtime/push.go CustomerPush, through the shop's push Guard)
+	ports.PushCustomer = func(conversation, text string) { rt.CustomerPush(conversation, text) }
 	// the books (go-bk-books-19nov's adapters): the money lines' accounting and the settlement read; the monthly report runs after the beat's step (agent_after.go)
 	sr, _ := ports.Payments.(payments.SettlementReader)
 	ports.Books = bookings.NewBooks(bookings.BooksPorts{Messaging: ports.WhatsApp, Settlements: sr, Capabilities: ports.Capabilities})

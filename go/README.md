@@ -82,7 +82,8 @@ internal/listings/       the listings: state and rules, the owner's ops, the pub
 internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn), the Operator's setup code and card, and who controls them (the gate, the Operator's requests,
                          Geometer's reset, the owner's phones and own codes, the number lock), in owner-access.sqlite, same schema (modules/channels owner-*.ts, webauthn.ts)
 internal/testclock/      the contract tests' clock (GEOMETER_TEST=1 + GEOMETER_TEST_CLOCK_FILE, a "fakes" shop only; a live shop refuses to start with it)
-internal/push/           web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push)
+internal/push/           web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push);
+                         the owner's alerts, and (24 Nov 2026) a customer's, a chat guest's and a Fees parent's (runtime/push.go customer_* ops and CustomerPush)
 internal/language/       the bottom layer of reading words (modules/language): plain, canon, the shapes a model's date and time must have (phrase_shape.go, every template's coerce), the ONE writing of dates, times and rupees for every runtime (format.go,
                          formats.json, FormatInr; the old internal/locale and the assistant's own date tables were joined into it, 19 Nov), JavaScript's string length, slices and whitespace,
                          toLowerCase, NFC, TextDecoder, Date.parse (js.go, shared by the directory, access and listings); regex.go matches a JavaScript pattern the way

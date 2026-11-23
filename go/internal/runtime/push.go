@@ -6,8 +6,11 @@ package runtime
 // push.sqlite in the data folder (internal/push), the TypeScript runtime's own file, so a subscription made by one runtime is seen by the other. The sender drains the queue to the Guard
 // outside the shop's steps (internal/push/sender.go).
 //
-// For a listings shop the customer_* ops have nothing to act on (no chat, no booking pages), so, as TypeScript answers it, a well-formed handle gets 404 "No page with alerts has this
-// handle." and a malformed one 400.
+// The customer_* ops (24 Nov 2026, http.ts "push"): a customer who allowed alerts on their booking's or order's page, a chat guest the shop has answered, or a Fees parent on their
+// private page keeps a phone's subscription under that page's conversation ("web:<16 hex>", "mcp:<16 hex>", "chat:<16 hex>", "parent:p-<12 hex>"), at most two phones each, in the
+// same push.sqlite rows the TypeScript wrote. CustomerPush queues the words a page was given to those phones (a template's agent calls it when it keeps a message for a page,
+// runtime.ChannelMessaging and bookings' chanMsg, and Fees for a message to a parent's number). For a listings shop (no template kit) the ops have nothing to act on, so, as
+// TypeScript answers it, a well-formed handle gets 404 "No page with alerts has this handle." and a malformed one 400.
 //
 // The owner's side (who may subscribe, the alerts to the owner's phones, what ends a subscription) is the owner's sign-in's: owner.go OwnerPushOp and alert, under the owner lock.
 // Here are the route's shape, PushOwner (one alert queued for the owner's phones) and AlertPhones (the count /status reports).
@@ -133,8 +136,6 @@ func (r *Runtime) AlertPhones() int {
 	return 0
 }
 
-var handleHash = regexp.MustCompile(`^[0-9a-f]{64}$`)
-
 // subscriptionOf reads a browser's PushSubscription from a body's `subscription`: the shape push/store.ts `subscriptionProblem` checks first.
 func subscriptionOf(v any) (push.Subscription, bool) {
 	o, _ := v.(map[string]any)
@@ -186,16 +187,145 @@ func (s *Server) pushRoute(w http.ResponseWriter, r *http.Request) error {
 		return s.pushOwnerOp(w, r, p, op, body, whatsapp)
 	}
 	if strings.HasPrefix(op, "customer_") {
-		if h, _ := body["handle"].(string); !handleHash.MatchString(h) {
+		h, _ := body["handle"].(string)
+		if !HandleHash.MatchString(h) {
 			send(w, 400, errBody("handle is the handle's hash: 64 hex digits."))
-		} else {
-			// a listings shop has no chat and no booking, order or fee pages: no handle names a page with alerts
-			send(w, 404, errBody("No page with alerts has this handle."))
+			return nil
 		}
-		return nil
+		return s.pushCustomerOp(w, p, op, h, body)
 	}
 	send(w, 400, errBody("op is key, owner_* or customer_*."))
 	return nil
+}
+
+// parentRefOf is the shape of a Fees parent's stable ref (channel.ts parentRef: "p-" and 12 hex digits), the only ref a parent's alerts are kept under.
+var parentRefOf = regexp.MustCompile(`^p-[0-9a-f]{12}$`)
+
+// pushCustomerOp is http.ts's customer_* branch, in its order: a chat thread the runtime knows first (alerts offered only after the shop's first answer), then a Fees parent's private
+// page (keyed by the PARENT's stable ref, not by the link, which is made again after a restart), then a booking's or order's own page made on the page or through MCP (a WhatsApp
+// customer hears on WhatsApp). Anything else is 404, the same answer for a page that never was and one at another shop.
+func (s *Server) pushCustomerOp(w http.ResponseWriter, p *push.Push, op, handle string, body map[string]any) error {
+	rt := s.rt
+	var ch ChannelKit
+	if rt.o.Kit != nil {
+		ch = rt.o.Kit.Channel()
+	}
+	if ch == nil {
+		// a listings shop has no chat and no booking, order or fee pages: no handle names a page with alerts
+		send(w, 404, errBody("No page with alerts has this handle."))
+		return nil
+	}
+	st, _, _ := rt.KitState()
+	// W2: a phone tied to a thread has that thread's alerts (chat-identity's openRead)
+	thread, _ := rt.openRead(handle, "")
+	cs, err := rt.channelOf(st)
+	if err != nil {
+		return err
+	}
+	var who string
+	chat := ChatKnown(cs, thread)
+	if chat {
+		if op == "customer_subscribe" && !ChatAnswered(cs, thread) {
+			send(w, 403, errBody("Alerts are offered after the first answer."))
+			return nil
+		}
+		who = ChatConversationOf(thread)
+	} else {
+		who = pageConversation(ch, st, handle)
+		if who == "" {
+			send(w, 404, errBody("No page with alerts has this handle."))
+			return nil
+		}
+	}
+	switch op {
+	case "customer_subscribe":
+		signer := "own"
+		if body["signer"] == "streetlist" {
+			signer = "streetlist"
+		}
+		if why := subscribeWhy(p, who, body["subscription"], signer); why != "" {
+			send(w, 400, errBody(why))
+			return nil
+		}
+	case "customer_unsubscribe":
+		endpoint, ok := body["endpoint"].(string)
+		if !ok {
+			send(w, 400, errBody("Send the endpoint to stop."))
+			return nil
+		}
+		p.Unsubscribe(who, endpoint)
+	case "customer_state":
+	default:
+		send(w, 400, errBody("op is not one this route knows."))
+		return nil
+	}
+	phones, err := p.Phones(who)
+	if err != nil {
+		return err
+	}
+	out := map[string]any{"on": true, "phones": phones}
+	if chat {
+		out["answered"] = ChatAnswered(cs, thread)
+	}
+	send(w, 200, out)
+	return nil
+}
+
+// pageConversation is the conversation whose alerts this handle's page keeps: a Fees parent's ("parent:<ref>") when the kit has parents' pages and the link is one, else a booking's
+// or order's page made on the page or through MCP ("web:" or "mcp:" and 16 hex digits of the hash, conversation.ts conversationOf); "" for none. A view is whatever the template's
+// read gives (an ordered object, a map, a struct), so its two members are read from its JSON.
+func pageConversation(ch ChannelKit, st KitState, handle string) string {
+	member := func(v any, name string) string {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return ""
+		}
+		var o map[string]json.RawMessage
+		if json.Unmarshal(b, &o) != nil {
+			return ""
+		}
+		var text string
+		if json.Unmarshal(o[name], &text) != nil {
+			return ""
+		}
+		return text
+	}
+	if pr, ok := ch.(ParentReader); ok {
+		if v := pr.Parent(st, handle); v != nil {
+			if ref := member(v, "ref"); parentRefOf.MatchString(ref) {
+				return "parent:" + ref
+			}
+		}
+	}
+	if v := ch.View(st, handle); v != nil {
+		if c := member(v, "channel"); c == "web" || c == "mcp" {
+			return c + ":" + handle[:16]
+		}
+	}
+	return ""
+}
+
+// subscribeWhy is push.subscribe's refusal for a customer's phone, or "", in push.ts's order: a Streetlist app phone at a shop with no relay first, then a body that is not
+// {endpoint, keys: {p256dh, auth}} (store.ts subscriptionProblem's first check), then the address and the keys.
+func subscribeWhy(p *push.Push, who string, raw any, signer string) string {
+	sub, ok := subscriptionOf(raw)
+	if !ok && (signer != "streetlist" || p.RelayKey != "") {
+		return push.ShapeProblem
+	}
+	return p.Subscribe(who, sub, signer, "")
+}
+
+// CustomerPush is push.ts `customer` for a template's agent: the words a page's conversation was given go to the phones that allowed alerts on that page. It never fails the
+// message it rides on (outbox.ts onKeep: "an alert that could not be queued never fails the page's message"): push off, no phone, or a store error queues nothing, said in the
+// log without the words or the conversation.
+func (r *Runtime) CustomerPush(conversation, text string) {
+	p := r.Push()
+	if p == nil || !p.On || conversation == "" {
+		return
+	}
+	if _, err := p.Customer(conversation, text); err != nil {
+		r.o.Log("A customer's alert could not be queued: " + err.Error())
+	}
 }
 
 // pushOwnerOp: the owner's credential and every owner-control rule are checked in owner.go OwnerPushOp, under the owner lock.

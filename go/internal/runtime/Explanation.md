@@ -73,3 +73,19 @@ these lines never state it in another one). Proved on `testdata/assistant-lines.
 TypeScript's and the problems of four tampered forms of each equal word for word (`assistantlines_test.go`), and every packed key in every language passes with its own facts
 (`assistant/writer_test.go`). As in TypeScript, a held-back line sends nothing in its place (say.ts's `heldBack` is a no-op for the assistant); the fixed line ("I could not answer
 that just now", `talk_fallback`) is the talk's answer to a reply that fails the talk's own five checks.
+
+## A customer's web push (24 Nov 2026, `webpush-24nov`)
+
+The TypeScript runtimes pushed a page's message to a customer who allowed alerts on that page (item 11h), and the Go programs now do the same through the same pieces the owner's
+alerts use (internal/push: the store push.sqlite, RFC 8291, VAPID, the sender to the shop's push Guard). `push.go`'s customer_* ops keep a phone's subscription under the page's
+conversation, in http.ts's order: a chat thread the runtime knows (offered only after the shop's first answer: 403 before it; W2's chat identity resolves a tied phone's hash
+first), then a Fees parent's private page (`parent:<ref>`, the parent's stable ref read from the kit's `ParentReader`, never the link), then a booking's or order's page made on the
+page or through MCP (`web:` or `mcp:` and 16 hex digits of the hash; a template's view is read as JSON for its `channel` member). Anything else is 404, the same answer for a page
+that never was and one at another shop; a listings shop (no kit) answers as before. Two phones a page, as the TypeScript store keeps them.
+
+What is pushed is what the page was given: `ChannelMessaging`'s `onKeep` (outbox.ts's fourth parameter; Bookings' own `chanMsg.keep` calls the same port) hands each kept message to
+`Runtime.CustomerPush`, which queues it (`push.Customer`: the tag "update", the shop's name as the title, the words fitted as every notification) and never fails the message: a
+store error is logged without the words. The push is queued inside the step, as the TypeScript queued it, so a step thrown away and run again queues its words again; the sender's
+one topic per phone and kind means a phone that was away gets the newest. A Fees centre also pushes every message to a parent's number (internal/fees agent_push.go, push.ts
+alsoPushTo). "Delete my chat" (chat-id `forget`) ends the thread's subscriptions with the reason "forgotten" (`push.Forget`), as chat-identity-http.ts did. STOP needs nothing of
+its own: the say gate sends no message after it, so nothing is kept and nothing pushed.

@@ -279,6 +279,81 @@ func TestSenderAgainstAFakeGuard(t *testing.T) {
 	}
 }
 
+// A customer's push (24 Nov 2026, push.ts `customer`): only the phones of that page's conversation, at most two of them, tagged "update", posted to the Guard's customer route
+// with the customer's TTL, normal urgency and one topic per phone; forgetting the conversation ends its phones and their waiting pushes.
+func TestCustomerPush(t *testing.T) {
+	st, _ := Open(filepath.Join(t.TempDir(), File))
+	defer st.Close()
+	var mu sync.Mutex
+	var got []Call
+	var paths []string
+	guard := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		var c Call
+		_ = json.Unmarshal(b, &c)
+		mu.Lock()
+		got, paths = append(got, c), append(paths, r.URL.Path)
+		mu.Unlock()
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer guard.Close()
+	now := int64(2_000_000)
+	snd := NewSender(SenderOptions{Store: st, Guard: &Guard{BaseURL: guard.URL}, Subject: func() string { return "https://pages.example/glow" }, Now: func() int64 { return now }})
+	p := New(st, snd, "Glow Salon", func() int64 { return now }, true, "")
+	const page, other = "web:0123456789abcdef", "web:fedcba9876543210"
+	if ids, err := p.Customer(page, "You're booked!"); err != nil || len(ids) != 0 {
+		t.Fatalf("nobody allowed alerts: nothing queued, got %v %v", ids, err)
+	}
+	k, auth, sub := browser(t)
+	if why := p.Subscribe(page, sub, "", ""); why != "" {
+		t.Fatal(why)
+	}
+	if ids, _ := p.Customer(other, "another page's news"); len(ids) != 0 {
+		t.Fatal("another page's words never reach this phone")
+	}
+	if ids, _ := p.Customer(page, "  You're\n booked!  "); len(ids) != 1 {
+		t.Fatalf("one push for the one phone, got %v", ids)
+	}
+	snd.Pass()
+	mu.Lock()
+	if len(got) != 1 || paths[0] != "/v1/push/customer" {
+		t.Fatalf("the guard heard %v %v", got, paths)
+	}
+	c := got[0]
+	mu.Unlock()
+	if c.Urgency != "normal" || c.TTL != CustomerTTL || c.Topic != "customer-"+c.Sub {
+		t.Fatalf("call: %+v", c)
+	}
+	var payload Payload
+	if err := json.Unmarshal(openPush(t, decodeB64URL(c.Body), k, auth), &payload); err != nil || payload.Title != "Glow Salon" || payload.Body != "You're booked!" || payload.Tag != "update" {
+		t.Fatalf("what the phone reads: %+v %v", payload, err)
+	}
+	// a page keeps at most two phones: the oldest goes
+	for i := 0; i < CustomerPhones; i++ {
+		_, _, s := browser(t)
+		_ = p.Subscribe(page, s, "", "")
+	}
+	if n, _ := p.Phones(page); n != CustomerPhones {
+		t.Fatalf("a page keeps %d phones, got %d", CustomerPhones, n)
+	}
+	// "delete my chat": every phone of the conversation ends, and what waited for them goes
+	_, _ = p.Customer(page, "waiting")
+	if n, err := p.Forget(page); err != nil || n != CustomerPhones {
+		t.Fatalf("forgot %d %v", n, err)
+	}
+	if n, _ := p.Phones(page); n != 0 {
+		t.Fatal("no phone is left")
+	}
+	if due, _ := st.Due(now, 20); len(due) != 0 {
+		t.Fatal("the waiting pushes went with the phones")
+	}
+	// push off: nothing is queued
+	off := New(st, snd, "Glow Salon", func() int64 { return now }, false, "")
+	if ids, _ := off.Customer(page, "x"); ids != nil {
+		t.Fatal("push off queues nothing")
+	}
+}
+
 func TestFitNotification(t *testing.T) {
 	if FitNotification("  a \n\u00a0 b\ufeff c  ", 300) != "a b c" {
 		t.Fatal("whitespace as JavaScript sees it")
