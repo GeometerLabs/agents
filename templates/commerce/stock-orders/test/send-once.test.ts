@@ -125,7 +125,7 @@ test("through the runtime: the process dies after WhatsApp took the order, and a
     one.submit([{ kind: "message", message: messaging.receive(settings.owner.whatsapp, "order 10 boxes of hair colour from Ravi Traders") }]);
     one.kick();
     await one.idle();
-    const code = /"yes ([A-Z0-9]{4,6})"|“yes ([A-Z0-9]{4,6})”/u.exec(messaging.sentTo(settings.owner.whatsapp).map((m) => m.text).join("\n"));
+    const code = /\byes ([A-Z0-9]{4,6})\b/u.exec(messaging.sentTo(settings.owner.whatsapp).map((m) => m.text).join("\n"));
     one.submit([{ kind: "message", message: messaging.receive(settings.owner.whatsapp, `yes ${code?.[1] ?? code?.[2]}`) }]);
     one.kick();
     try { await one.idle(); } catch { /* the database is gone, as in a real death */ }

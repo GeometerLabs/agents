@@ -197,6 +197,18 @@ test("the low mark fires once per crossing, clears when the count rises above it
   assert.notEqual(lowRequestId({ line: RICE, crossing: 1 }), lowRequestId({ line: RICE, crossing: 2 }), "one reorder request per crossing");
 });
 
+test("pendingAlerts hands back copies, and noteAsked's return is the count (a caller must not read it from the alert it holds)", () => {
+  const s = counted(RICE, 8, { low: 3 });
+  sale(s, shop, RICE, "sale:o-2:x", 5, c(1)); // 3 left: at the mark
+  const held = pendingAlerts(s)[0];
+  assert.equal(held.asked, undefined);
+  assert.equal(noteAsked(s, RICE, 1), 1);
+  assert.equal(held.asked, undefined, "the alert the caller holds is a copy: the queue's own count moved, not this one");
+  assert.equal(noteAsked(s, RICE, 1), 2);
+  assert.equal(pendingAlerts(s)[0].asked, 2, "a fresh read sees the queue's count");
+  assert.equal(noteAsked(s, RICE, 9), 0, "no such crossing: nothing counted");
+});
+
 test("a count that starts at or under its low mark is one crossing; setting or clearing the mark follows the same rule", () => {
   const s = counted(RICE, 2, { low: 2 });
   assert.equal(pendingAlerts(s).length, 1);

@@ -334,8 +334,12 @@ function watchLow(s: StockState, l: StockLine, c: WriteContext): void {
   } else if (l.count > l.low && l.lowFlag) l.lowFlag = false;
 }
 
-/** The alerts not yet shown whose line is of this kind (a Stock orders agent takes the "supply" ones). Pure: shows them without removing. */
-export const pendingAlerts = (s: StockState | undefined, kind?: StockKind): LowAlert[] => (s?.alerts ?? []).filter((a) => kind === undefined || kindOf(a.line) === kind);
+/**
+ * The alerts not yet shown whose line is of this kind (a Stock orders agent takes the "supply" ones). Pure: shows them without removing, and as COPIES (23 Nov): a caller that
+ * then calls `noteAsked` must use what that returns, never the alert it holds (it used to be the queue's own object, so a later read of `asked` saw the new count only by luck;
+ * the Go twin has always copied).
+ */
+export const pendingAlerts = (s: StockState | undefined, kind?: StockKind): LowAlert[] => (s?.alerts ?? []).filter((a) => kind === undefined || kindOf(a.line) === kind).map((a) => ({ ...a }));
 
 /** The card or line for this crossing has been made: take it off the queue. A second call finds nothing. */
 export function ackAlert(s: StockState, line: StockId, crossing: number): boolean {

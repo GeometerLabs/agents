@@ -143,7 +143,11 @@ func run(folder string) error {
 		}
 		defer acc.Close()
 	}
-	rt, err := runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: understanding.NewModel(client.Config.Talk, log, "The talk is off", understanding.TalkTimeoutMs, understanding.TalkMaxTokens), RecordKey: key, Log: log, Now: now, Kit: kit})
+	// item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push.ts pushMessaging); rt exists once runtime.New returns, and no step runs before then
+	var rt *runtime.Runtime
+	kit.PushOwner = func(text string) []string { return rt.OwnerPush(text) }
+	kit.OwnerRoute = func(hasWhatsApp bool) string { return rt.OwnerRoute(hasWhatsApp) }
+	rt, err = runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: understanding.NewModel(client.Config.Talk, log, "The talk is off", understanding.TalkTimeoutMs, understanding.TalkMaxTokens), RecordKey: key, Log: log, Now: now, Kit: kit})
 	if err != nil {
 		return err
 	}

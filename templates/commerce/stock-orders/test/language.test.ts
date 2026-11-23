@@ -33,7 +33,7 @@ test("the WhatsApp templates start and end with fixed words and fill back into t
     const facts = sampleFacts(language as "en" | "hi" | "ml" | "kn");
     const filled = fillBody(metaBody(body), parametersFor(t, language, facts));
     assert.equal(filled, render(t.usedFor, facts), `${t.name} ${language}`);
-    assert.ok(slotsOf(body).length > 0);
+    assert.ok(slotsOf(body).length > 0 || t.usedFor === "card_expired", `${t.name} ${language} has no value in it`); // the one fixed notice: "that card ran out" names nothing of the record
   }
 });
 

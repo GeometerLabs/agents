@@ -200,7 +200,7 @@ describe("the supplier answers", () => {
 
   contract("a supplier's STOP: they are messaged no more, an order for them is held back, and a cancel releases its budget", async () => {
     const s = await made.boot();
-    await s.ownerSays("status"); // the owner wrote today: what the shop tells them is a plain message (outside the window it would need a template, and this one has none)
+    await s.ownerSays("status"); // the owner wrote today (the STOP told outside the window is in gaps.contract.test.ts: it goes as its own template)
     await s.inbound(MEENA, "STOP");
     assert.ok(s.sent(OWNER).some((m) => /asked for no more messages/u.test(m.text)));
     await orderAndApprove(s, "order 12 shampoo from meena");
