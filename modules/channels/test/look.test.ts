@@ -68,3 +68,17 @@ test("the owner's app: with a nonce, one script, in the head, and the dark/light
   assert.ok(!/<script|id="theme"/u.test(plain));
   assert.match(plain, /class="calm"/u, "nothing waiting: a calm line");
 });
+
+// E1 (24 Nov 2026): a price card waiting on the owner's page: its tag, the item, how many, the price asked against the list and the total, and its two answers, each a press
+// bound to the item's digest (the runtime turns it into the owner's own "approve b-3 <code>"; the code is never on the page). Every language says the numbers.
+test("a price card on the owner's page: the numbers and the two answers, in each language", () => {
+  const item = { kind: "discount" as const, case: "o-3", digest: "d".repeat(32), actions: ["approve", "deny"], amountPaise: 20000, customer: { phone: "+919844444444" }, channel: "whatsapp" as const,
+    deal: { name: "Veg thali", qty: 2, listInr: 120, offeredInr: 100, totalInr: 200 } };
+  for (const language of LANGUAGES) {
+    const page = ownerPage({ base: "https://pages.example/glow/o/x", language, view: { ...OWNER_VIEW, kind: "orders", app: undefined, items: [item] }, relayAsks: [] });
+    assert.ok(page.includes(OWNER_LOOK[language].tag.discount), `${language}: the tag`);
+    for (const amount of ["₹100", "₹120", "₹200"]) assert.ok(page.includes(amount), `${language}: ${amount}`);
+    assert.equal(page.match(/name="digest" value="d{32}"/gu)?.length, 2, `${language}: two answers, each bound to the digest`);
+    assert.ok(page.includes('name="action" value="approve"') && page.includes('name="action" value="deny"'), language);
+  }
+});

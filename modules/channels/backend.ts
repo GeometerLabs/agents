@@ -140,7 +140,8 @@ export type OrderView =
   | { status: "refused"; reason: string; channel: string }
   | {
     status: "not_held" | "checking" | "held" | "confirmed" | "expired" | "cancelled" | "done"; ref: string; channel?: string;
-    lines: { itemId: string; names: Record<Language, string>; qty: number; priceInr: number }[];
+    /** E1 item 4: a line at a price the customer agreed (`priceInr`) has the menu price beside it (`listInr`); the lines add up to `totalInr`. */
+    lines: { itemId: string; names: Record<Language, string>; qty: number; priceInr: number; listInr?: number }[];
     totalInr?: number; advanceInr?: number; date?: string; mode?: "pickup" | "delivery"; slot?: { id: string; fromMs: number; toMs: number }; area?: string;
     holdExpiresAt?: number; pay?: PayInstructions; canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[]; claimed?: boolean;
   };

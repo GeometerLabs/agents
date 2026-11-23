@@ -223,11 +223,23 @@ func (s *Settings) OrderView(st *Store, hash string) json.RawMessage {
 		pay, payKind = s.payOf(st, o)
 	}
 	lines := []json.RawMessage{}
+	// E1 item 4: a price agreed by the agent or approved by the owner is shown ON ITS LINE (that item's lines at the agreed price of one, with the menu price beside it as
+	// `listInr`), so the lines always add up to the total the link charges (the deal's total is the other lines at the menu plus this item's quantity at the agreed price:
+	// discounts.NewDeal). Chosen over a separate "discount" line because the deal is on one item: the customer and the owner read the price they agreed where the item is.
+	// Only a live deal changes a line, so a shop without the authority keeps its bytes.
+	deal := o.deal()
+	if !deal.Live() {
+		deal = nil
+	}
 	for _, l := range o.Lines {
 		names := json.RawMessage(nil)
 		var price int64
 		if it := s.ItemOf(l.ItemID); it != nil {
 			names, price = s.itemNames(it), it.PriceInr
+			if deal != nil && deal.Item == l.ItemID && deal.OfferedInr < price {
+				lines = append(lines, ordered("itemId", l.ItemID, "names", names, "qty", l.Qty, "priceInr", deal.OfferedInr, "listInr", price))
+				continue
+			}
 		} else {
 			kv := []any{}
 			for _, lang := range runtime.LANGUAGES {
