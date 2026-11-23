@@ -66,6 +66,10 @@ func FindOffer(t string) int64 {
 	return -1
 }
 
+// AsksDiscount is rules.ts `asksDiscount` on words after Canon (E1, 24 Nov 2026): a numberless ask for a lower price ("any discount?", "कुछ कम करो"), in the four languages. The
+// parsers set it only when no price was named. The pattern is rules.ts DISCOUNT_ASK_RE, handed over by go/scripts/gen_patterns.ts.
+func AsksDiscount(t string) bool { return language.P("rules.discount_ask").Test(t) }
+
 // IsStop is rules.ts `isStop` on words after Canon: "stop" on its own or with a few words around it, never a sentence that merely contains the word.
 func IsStop(t string) bool {
 	n := len(strings.FieldsFunc(language.TrimJS(t), language.IsJSSpace)) // t.trim().split(/\s+/u).filter(Boolean)

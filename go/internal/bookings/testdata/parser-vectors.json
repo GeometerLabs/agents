@@ -1,5 +1,12 @@
 [
  {
+  "name": "...",
+  "input": "...",
+  "output": {
+   "kind": "unknown"
+  }
+ },
+ {
   "name": "10 ನವೆಂಬರ್‌ಗೆ ಹೇರ್ ಕಟ್, 300ಕ್ಕೆ",
   "input": "10 ನವೆಂಬರ್‌ಗೆ ಹೇರ್ ಕಟ್, 300ಕ್ಕೆ",
   "output": {
@@ -95,7 +102,8 @@
   "output": {
    "kind": "unknown",
    "language": "en",
-   "overrideAttempt": true
+   "overrideAttempt": true,
+   "askDiscount": true
   }
  },
  {
@@ -140,6 +148,43 @@
     "hour": 6,
     "minute": 0
    }
+  }
+ },
+ {
+  "name": "any discount on haircut?",
+  "input": "any discount on haircut?",
+  "output": {
+   "kind": "book",
+   "language": "en",
+   "serviceId": "haircut",
+   "askDiscount": true
+  }
+ },
+ {
+  "name": "any discount?",
+  "input": "any discount?",
+  "output": {
+   "kind": "unknown",
+   "language": "en",
+   "askDiscount": true
+  }
+ },
+ {
+  "name": "any discount? haircut for 400",
+  "input": "any discount? haircut for 400",
+  "output": {
+   "kind": "book",
+   "language": "en",
+   "serviceId": "haircut",
+   "offerInr": 400
+  }
+ },
+ {
+  "name": "anything cheaper?",
+  "input": "anything cheaper?",
+  "output": {
+   "kind": "unknown",
+   "language": "en"
   }
  },
  {
@@ -270,6 +315,16 @@
   }
  },
  {
+  "name": "haircut for 400",
+  "input": "haircut for 400",
+  "output": {
+   "kind": "book",
+   "language": "en",
+   "serviceId": "haircut",
+   "offerInr": 400
+  }
+ },
+ {
   "name": "haircut next Tuesday 6pm",
   "input": "haircut next Tuesday 6pm",
   "output": {
@@ -340,6 +395,36 @@
   }
  },
  {
+  "name": "haircut पर कुछ छूट मिलेगी?",
+  "input": "haircut पर कुछ छूट मिलेगी?",
+  "output": {
+   "kind": "book",
+   "language": "hi",
+   "serviceId": "haircut",
+   "askDiscount": true
+  }
+ },
+ {
+  "name": "haircut ರಿಯಾಯಿತಿ ಇದೆಯಾ",
+  "input": "haircut ರಿಯಾಯಿತಿ ಇದೆಯಾ",
+  "output": {
+   "kind": "book",
+   "language": "kn",
+   "serviceId": "haircut",
+   "askDiscount": true
+  }
+ },
+ {
+  "name": "haircut ഇളവ് ഉണ്ടോ",
+  "input": "haircut ഇളവ് ഉണ്ടോ",
+  "output": {
+   "kind": "book",
+   "language": "ml",
+   "serviceId": "haircut",
+   "askDiscount": true
+  }
+ },
+ {
   "name": "haircut ₹300",
   "input": "haircut ₹300",
   "output": {
@@ -405,6 +490,23 @@
     "minute": 0,
     "period": "pm"
    }
+  }
+ },
+ {
+  "name": "kuch kam karo",
+  "input": "kuch kam karo",
+  "output": {
+   "kind": "unknown",
+   "language": "en",
+   "askDiscount": true
+  }
+ },
+ {
+  "name": "less spicy please",
+  "input": "less spicy please",
+  "output": {
+   "kind": "unknown",
+   "language": "en"
   }
  },
  {
@@ -522,6 +624,15 @@
   }
  },
  {
+  "name": "what's your best price",
+  "input": "what's your best price",
+  "output": {
+   "kind": "unknown",
+   "language": "en",
+   "askDiscount": true
+  }
+ },
+ {
   "name": "yes",
   "input": "yes",
   "output": {
@@ -555,6 +666,18 @@
    "language": "hi",
    "overrideAttempt": true,
    "offerInr": 0
+  }
+ },
+ {
+  "name": "कल का काम",
+  "input": "कल का काम",
+  "output": {
+   "kind": "book",
+   "language": "hi",
+   "date": {
+    "kind": "relative",
+    "offsetDays": 1
+   }
   }
  },
  {
@@ -811,6 +934,15 @@
    "kind": "book",
    "language": "kn",
    "serviceId": "beard-trim"
+  }
+ },
+ {
+  "name": "ಡಿಸ್ಕೌಂಟ್ ಇದೆಯಾ",
+  "input": "ಡಿಸ್ಕೌಂಟ್ ಇದೆಯಾ",
+  "output": {
+   "kind": "unknown",
+   "language": "kn",
+   "askDiscount": true
   }
  },
  {
@@ -1171,6 +1303,15 @@
     "minute": 0,
     "period": "pm"
    }
+  }
+ },
+ {
+  "name": "ഡിസ്കൗണ്ട് ഉണ്ടോ",
+  "input": "ഡിസ്കൗണ്ട് ഉണ്ടോ",
+  "output": {
+   "kind": "unknown",
+   "language": "ml",
+   "askDiscount": true
   }
  },
  {

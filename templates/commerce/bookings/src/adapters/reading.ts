@@ -62,6 +62,7 @@ function readDecision(answers: Record<string, ChoiceAnswer>, ruled: Intent, slot
   const read: Intent = { kind };
   if (ruled.language) read.language = ruled.language;
   if (ruled.offerInr !== undefined) read.offerInr = ruled.offerInr;
+  if (ruled.askDiscount) read.askDiscount = true; // E1: the rules' "any discount?" stays whatever the decision model says the customer wants
   if (ruled.overrideAttempt) read.overrideAttempt = true;
   const wantsDetails = kind === "book" || kind === "reschedule";
 

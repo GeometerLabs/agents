@@ -156,6 +156,37 @@ func (a *Agent) decideOffer(o *Order, item *MenuItem, offered int64, ctx *flowCt
 	return true
 }
 
+// offerCap answers "any discount?" with no price named (E1 item 3): the agent offers the lowest price it may give ALONE for the order's item (discounts.CapPrice: the lower of the
+// two caps in force, never below the floor), which then goes through decideOffer like a named price, so it is decided, recorded once and the money follows it exactly. No item in
+// the order yet: the customer is asked which one (stop). A card waiting for the owner is left as it is (checkDeal says so); a price already agreed or approved that is as low or
+// lower stands and is said again. When nothing may be given alone (no floor, a cap of 0), the menu price is stated once, as for a price below it.
+func (a *Agent) offerCap(o *Order, ctx *flowCtx) (stop bool) {
+	if len(o.Lines) == 0 {
+		a.tellCustomer(o, o.Customer, cat(ctx.prefix, "discount_which"), sayOpts{offer: itemsOffer(cat(ctx.prefix, "discount_which")...)}) // the menu follows its words
+		return true
+	}
+	item := a.settings.ItemOf(o.Lines[0].ItemID) // the first item of the order, as a named price is read
+	if item == nil {
+		return false
+	}
+	ctx.itemID = item.ID
+	d := o.deal()
+	if d != nil && d.State == discounts.Asked {
+		return false // the owner's card is out: checkDeal (in proceed) tells the customer so, and it is not voided
+	}
+	ask, _, _ := a.askOf(o, item, item.PriceInr)
+	price, ok := discounts.CapPrice(a.settings.Discounts, a.discountCaps(), item.ID, item.PriceInr, ask.Qty)
+	if d.Live() && d.Item == item.ID && (d.OfferedInr <= price || !ok) {
+		ctx.prefix = append(ctx.prefix, "discount_agreed") // a price as low or lower already stands (the owner's yes, say): it is said again, never replaced
+		return false
+	}
+	if !ok {
+		ctx.prefix = append(ctx.prefix, "price_floor")
+		return false
+	}
+	return a.decideOffer(o, item, price, ctx)
+}
+
 // checkDeal holds an order's deal to the order as it is now, before anything is held or quoted. The same ask (the same code): an asked card still waits (stop), anything else
 // stands. A changed order (another quantity, other lines, a new menu price): the decision is made again for the same price asked, so a change never rides on an old yes or an
 // old card; the item gone from the order drops the deal.

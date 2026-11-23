@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (64)
+## 1. Messages to the customer (65)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -76,6 +76,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `discount_asked` | The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet | ഞങ്ങളുടെ ഹെയർകട്ട് വില ₹450 ആണ്, അതിനാൽ ₹400-നെക്കുറിച്ച് ഞാൻ ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി കിട്ടിയാലുടൻ ഇവിടെ അറിയിക്കാം. | Our haircut is ₹450, so I've asked the owner about ₹400. I'll message you here when they answer. |  |
 | `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | സന്തോഷവാർത്ത: നിങ്ങളുടെ ഹെയർകട്ട്-ന് ₹400 ഉടമ സമ്മതിച്ചു. | Good news: the owner agreed to ₹400 for your haircut. |  |
 | `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | ക്ഷമിക്കണം, ₹400-ന് ഉടമ സമ്മതിച്ചില്ല. നിങ്ങളുടെ ഹെയർകട്ട്-ന്റെ ഏറ്റവും കുറഞ്ഞ വില ₹450 ആണ്. | Sorry, the owner couldn't agree to ₹400. The lowest for your haircut is ₹450. |  |
+| `discount_which` | The customer asked for a discount without naming a price, before saying which service: the agent asks which one | ഏത് സേവനത്തിനാണ്? പറയൂ, എത്രയ്ക്ക് ചെയ്തുതരാമെന്ന് ഞാൻ പറയാം. | Which service is it for? Tell me, and I'll tell you the price I can do. |  |
 
 ## 2. Messages to the owner (39)
 
@@ -1903,6 +1904,14 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | ഒമ്പതാം ക്ലാസ് | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | പത്താം ക്ലാസ് | Class 10 |  |
 | `keep.lost` | Rahul-ന്റെ പഴയ കുടിശ്ശികയും മുമ്പത്തെ മറ്റ് വിവരങ്ങളും സൂക്ഷിച്ചില്ല, കാരണം രക്ഷിതാവിന്റെ നമ്പർ മാറി. അവ വീണ്ടും ചേർക്കാൻ നിങ്ങളുടെ ബിൽഡറോട് പറയുക. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `discounts.title` | ഇളവുകൾ | Discounts |  |
+| `discounts.on` | കുറഞ്ഞ വിലയ്ക്ക് സമ്മതിക്കാൻ ഏജന്റിനെ അനുവദിക്കുക | Let the agent agree to a lower price |  |
+| `discounts.onHelp` | ഓഫ്: നിങ്ങളുടെ ലിസ്റ്റിനേക്കാൾ കുറഞ്ഞ എല്ലാ വിലയും നിരസിക്കും, ഇപ്പോഴത്തെ പോലെ. ഓൺ: താഴെയുള്ള തുക വരെ ഏജന്റിന് സ്വയം കുറയ്ക്കാം, അതിൽ കൂടുതലിന് നിങ്ങളോട് ചോദിക്കും, നിങ്ങൾ വെച്ച ഏറ്റവും കുറഞ്ഞ വിലയ്ക്ക് താഴെ ഒരിക്കലും പോകില്ല. | Off: every price below your list is refused, as now. On: the agent may take off up to the amount below on its own, asks you for more, and never goes below the lowest price you set. |  |
+| `discounts.capPercent` | സ്വയം പരമാവധി കുറയ്ക്കാവുന്നത് (%) | Most it may take off alone (%) |  |
+| `discounts.capInr` | സ്വയം പരമാവധി കുറയ്ക്കാവുന്നത് (₹) | Most it may take off alone (₹) |  |
+| `discounts.capHelp` | രണ്ടിൽ കുറഞ്ഞതാണ് കണക്കാക്കുക. അതിനു മുകളിൽ ഏജന്റ് ആദ്യം നിങ്ങളോട് ചോദിക്കും. | The lower of the two is used. Above it, the agent asks you first. |  |
+| `discounts.floorsHelp` | ഓരോന്നിന്റെയും ഏറ്റവും കുറഞ്ഞ വില. ഇളവ് വേണ്ടാത്തതിന്റെ കള്ളി ഒഴിച്ചിടുക. | The lowest price for each. Leave a box empty for no discount on that one. |  |
+| `discounts.floor` | Haircut-ന്റെ ഏറ്റവും കുറഞ്ഞ വില (₹) | Lowest price for Haircut (₹) |  |
 | `leave.assistant.leave_file_asked` | ശരി. നിങ്ങളുടെ കടയുടെ ഫയൽ ഏകദേശം അര മണിക്കൂറിൽ നിങ്ങളുടെ ആപ്പ് പേജിൽ ഉണ്ടാകും, എടുക്കാനുള്ള ബട്ടണും. ബട്ടൺ ഒരു തവണ മാത്രം, 3 ദിവസം വരെ പ്രവർത്തിക്കും. ഇതിന് നിങ്ങളുടെ Operator വേണ്ട, അവരോട് ചോദിക്കുന്നുമില്ല. | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
 | `leave.assistant.leave_file_again` | കുറച്ചുമുമ്പ് നിങ്ങൾ കടയുടെ ഫയൽ ചോദിച്ചിരുന്നു. അത് വരുന്നുണ്ട്; കുറച്ച് കഴിഞ്ഞ് ആപ്പ് പേജ് നോക്കൂ. | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
 | `leave.assistant.leave_operator_asked` | ശരി. മറ്റൊരു Operator വേണമെന്ന് ഞാൻ നിങ്ങളുടെ Operator-നെ അറിയിച്ചു. നിങ്ങൾ സമ്മതിക്കാതെ ഒന്നും മാറില്ല: Operator പുതിയ ആളുടെ പേര് നൽകും, നിങ്ങൾക്ക് ഒരു കോഡ് കിട്ടും, അത് "move" എന്നും കോഡും ചേർത്ത് ഇവിടെ അയയ്ക്കണം. 14 ദിവസത്തിൽ ഒന്നും നടന്നില്ലെങ്കിൽ Geometer സഹായിക്കും. | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |

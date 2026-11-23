@@ -79,6 +79,21 @@ export function findOffer(t: string): number | undefined {
   return FREE_RE.test(t) ? 0 : undefined;
 }
 
+/**
+ * E1 (24 Nov 2026): a customer asking for a lower price WITHOUT naming one ("any discount?", "कुछ कम करो", "ഇളവ് ഉണ്ടോ", "ರಿಯಾಯಿತಿ ಇದೆಯಾ"), in the four languages and in Latin
+ * letters. Read by the Bookings and Orders rule parsers into the intent's `askDiscount` only when no price is named (a named price always wins: findOffer). It decides
+ * nothing: a shop with the discount authority answers it with the price it may give alone (go/internal/discounts CapPrice), a shop without one as before. Not "cheaper"
+ * or "less" alone: "anything cheaper?" asks for another item, "less spicy" is not about money.
+ */
+export const DISCOUNT_ASK_RE = wordRe([
+  "discount", "discounts", "any discount", "best price", "lowest price", "last price", "final price", "reduce the price", "concession", "kam karo", "kam kar do", "kuch kam", "thoda kam", "rate kam", "price kam",
+  "छूट", "डिस्काउंट", "कम करो", "कम कर दो", "कुछ कम", "थोड़ा कम", "रेट कम", "दाम कम", "बेस्ट प्राइस", "लास्ट प्राइस",
+  "ഇളവ്", "ഡിസ്കൗണ്ട്", "കുറച്ചു തരാമോ", "കുറയ്ക്കാമോ", "വില കുറയ്ക്കുമോ", "ilavu", "kurakkamo", "kurachu tharamo",
+  "ರಿಯಾಯಿತಿ", "ಡಿಸ್ಕೌಂಟ್", "ಕಡಿಮೆ ಮಾಡಿ", "ಕಡಿಮೆ ಮಾಡ್ತೀರಾ", "ಬೆಲೆ ಕಡಿಮೆ", "riyayiti", "kadime madi",
+]);
+/** Is the message a numberless ask for a lower price? `t` is the message after `canon`. The caller checks that no price was named. */
+export const asksDiscount = (t: string): boolean => DISCOUNT_ASK_RE.test(t);
+
 // Short messages only: STOP inside a long sentence is not an opt-out, and a missed opt-out is worse than a false one so the word lists are wide.
 export function isStop(t: string): boolean {
   const tokens = t.trim().split(/\s+/u).filter(Boolean);

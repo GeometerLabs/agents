@@ -82,6 +82,7 @@ const WHEN: Record<TemplateId, string> = {
   // E1, the discount authority (only a shop with a "discounts" block)
   discount_agreed: "The customer asked for less, within what the agent may take off alone: the price agreed (the quote follows)",
   discount_asked: "The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet",
+  discount_which: "The customer asked for a discount without naming a price, before saying which service: the agent asks which one",
   discount_approved: "The owner said yes to the price card: the agreed price (the quote and link follow)",
   discount_refused: "The owner said no to the price card: the lowest price, which is the list price (the quote follows)",
   owner_discount_ask: "To the owner: the price card, with the exact price, answered with the reference and the card's code",

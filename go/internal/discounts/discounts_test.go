@@ -138,3 +138,32 @@ func TestReadShape(t *testing.T) {
 		t.Fatalf("every problem: %v", errs)
 	}
 }
+
+// CapPrice (E1 item 3, "any discount?"): the lowest price the agent gives alone, which Decide always finds within the cap, never below the floor, and the list price when nothing
+// may be given alone.
+func TestCapPrice(t *testing.T) {
+	s := &Settings{CapPercent: 10, CapInr: 100, Floors: []Floor{{"haircut", 300}, {"thali", 100}, {"tea", 20}}}
+	c := s.CapsOf()
+	check := func(item string, list, qty, want int64, ok bool) {
+		t.Helper()
+		got, gotOK := CapPrice(s, c, item, list, qty)
+		if got != want || gotOK != ok {
+			t.Errorf("CapPrice(%s, %d, ×%d) = %d %v, want %d %v", item, list, qty, got, gotOK, want, ok)
+		}
+		if gotOK {
+			if o := Decide(s, c, Ask{Item: item, Name: item, Qty: qty, ListInr: list, OfferedInr: got}); o.Kind != WithinCap {
+				t.Errorf("Decide(%s at %d ×%d) = %s, want within the cap", item, got, qty, o.Kind)
+			}
+		}
+	}
+	check("haircut", 450, 1, 405, true)  // 10% of ₹450 is ₹45, below the ₹100 cap
+	check("haircut", 2000, 1, 1900, true) // 10% is ₹200: the ₹100 cap is lower
+	check("thali", 120, 2, 108, true)    // 10% of the line (₹240) is ₹24: ₹12 off each
+	check("thali", 120, 9, 109, true)    // 10% of ₹1,080 is ₹108, ₹100 cap: ₹100 / 9 = ₹11 off each (₹99 in all), never past the cap
+	check("thali", 105, 1, 100, true)    // 10% of ₹105 rounds down to ₹10: ₹95 is below the floor, so the floor
+	check("tea", 20, 1, 20, false)       // the floor is the list price: nothing alone
+	check("dosa", 60, 1, 60, false)      // no floor: the list price
+	if p, ok := CapPrice(s, Caps{0, 100}, "haircut", 450, 1); p != 450 || ok {
+		t.Errorf("a cap of 0%%: the list price, got %d %v", p, ok)
+	}
+}

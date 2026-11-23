@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (64)
+## 1. Messages to the customer (65)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -76,6 +76,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `discount_asked` | The customer asked for less, beyond what the agent may take off alone: the owner is asked, nothing is held yet | ನಮ್ಮ ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450, ಆದ್ದರಿಂದ ₹400 ಬಗ್ಗೆ ಮಾಲೀಕರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಬಂದ ತಕ್ಷಣ ಇಲ್ಲೇ ತಿಳಿಸುತ್ತೇನೆ. | Our haircut is ₹450, so I've asked the owner about ₹400. I'll message you here when they answer. |  |
 | `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | ಒಳ್ಳೆಯ ಸುದ್ದಿ: ನಿಮ್ಮ ಹೇರ್ ಕಟ್ ಗೆ ₹400 ಬೆಲೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪಿದ್ದಾರೆ. | Good news: the owner agreed to ₹400 for your haircut. |  |
 | `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | ಕ್ಷಮಿಸಿ, ₹400 ಬೆಲೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪಲಿಲ್ಲ. ನಿಮ್ಮ ಹೇರ್ ಕಟ್ ಗೆ ಕನಿಷ್ಠ ಬೆಲೆ ₹450. | Sorry, the owner couldn't agree to ₹400. The lowest for your haircut is ₹450. |  |
+| `discount_which` | The customer asked for a discount without naming a price, before saying which service: the agent asks which one | ಯಾವ ಸೇವೆಗೆ? ಹೇಳಿ, ಎಷ್ಟಕ್ಕೆ ಮಾಡಿಕೊಡಬಹುದು ಎಂದು ನಾನು ಹೇಳುತ್ತೇನೆ. | Which service is it for? Tell me, and I'll tell you the price I can do. |  |
 
 ## 2. Messages to the owner (39)
 
@@ -1903,6 +1904,14 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | 9ನೇ ತರಗತಿ | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | 10ನೇ ತರಗತಿ | Class 10 |  |
 | `keep.lost` | Rahul ಅವರ ಹಳೆಯ ಬಾಕಿ ಮತ್ತು ಇತರ ಹಿಂದಿನ ವಿವರಗಳನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲಿಲ್ಲ, ಏಕೆಂದರೆ ಪೋಷಕರ ನಂಬರ್ ಬದಲಾಯಿತು. ಅವನ್ನು ಮತ್ತೆ ಸೇರಿಸಲು ನಿಮ್ಮ ಬಿಲ್ಡರ್‌ಗೆ ಹೇಳಿ. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `discounts.title` | ರಿಯಾಯಿತಿಗಳು | Discounts |  |
+| `discounts.on` | ಕಡಿಮೆ ಬೆಲೆಗೆ ಒಪ್ಪಲು ಏಜೆಂಟ್‌ಗೆ ಬಿಡಿ | Let the agent agree to a lower price |  |
+| `discounts.onHelp` | ಆಫ್: ನಿಮ್ಮ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಎಲ್ಲಾ ಬೆಲೆಯನ್ನೂ ನಿರಾಕರಿಸಲಾಗುತ್ತದೆ, ಈಗಿನಂತೆ. ಆನ್: ಕೆಳಗಿನ ಮೊತ್ತದವರೆಗೆ ಏಜೆಂಟ್ ತಾನೇ ಕಡಿಮೆ ಮಾಡಬಹುದು, ಅದಕ್ಕಿಂತ ಹೆಚ್ಚಿಗೆ ನಿಮ್ಮನ್ನು ಕೇಳುತ್ತದೆ, ನೀವು ಇಟ್ಟ ಕನಿಷ್ಠ ಬೆಲೆಗಿಂತ ಕೆಳಗೆ ಎಂದಿಗೂ ಹೋಗುವುದಿಲ್ಲ. | Off: every price below your list is refused, as now. On: the agent may take off up to the amount below on its own, asks you for more, and never goes below the lowest price you set. |  |
+| `discounts.capPercent` | ತಾನೇ ಗರಿಷ್ಠ ಎಷ್ಟು ಕಡಿಮೆ ಮಾಡಬಹುದು (%) | Most it may take off alone (%) |  |
+| `discounts.capInr` | ತಾನೇ ಗರಿಷ್ಠ ಎಷ್ಟು ಕಡಿಮೆ ಮಾಡಬಹುದು (₹) | Most it may take off alone (₹) |  |
+| `discounts.capHelp` | ಎರಡರಲ್ಲಿ ಕಡಿಮೆಯದನ್ನು ಬಳಸಲಾಗುತ್ತದೆ. ಅದಕ್ಕಿಂತ ಹೆಚ್ಚಾದರೆ ಏಜೆಂಟ್ ಮೊದಲು ನಿಮ್ಮನ್ನು ಕೇಳುತ್ತದೆ. | The lower of the two is used. Above it, the agent asks you first. |  |
+| `discounts.floorsHelp` | ಪ್ರತಿಯೊಂದರ ಕನಿಷ್ಠ ಬೆಲೆ. ರಿಯಾಯಿತಿ ಬೇಡದಿದ್ದರೆ ಆ ಡಬ್ಬಿ ಖಾಲಿ ಬಿಡಿ. | The lowest price for each. Leave a box empty for no discount on that one. |  |
+| `discounts.floor` | Haircut ಕನಿಷ್ಠ ಬೆಲೆ (₹) | Lowest price for Haircut (₹) |  |
 | `leave.assistant.leave_file_asked` | ಆಯಿತು. ನಿಮ್ಮ ಅಂಗಡಿಯ ಫೈಲ್ ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ನಿಮ್ಮ ಆ್ಯಪ್ ಪುಟದಲ್ಲಿ ಇರುತ್ತದೆ, ತೆಗೆದುಕೊಳ್ಳಲು ಬಟನ್ ಕೂಡ. ಬಟನ್ ಒಂದೇ ಬಾರಿ, 3 ದಿನ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಇದಕ್ಕೆ ನಿಮ್ಮ Operator ಬೇಕಿಲ್ಲ, ಅವರನ್ನು ಕೇಳುವುದೂ ಇಲ್ಲ. | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
 | `leave.assistant.leave_file_again` | ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು ಅಂಗಡಿಯ ಫೈಲ್ ಕೇಳಿದ್ದೀರಿ. ಅದು ಬರುತ್ತಿದೆ; ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಆ್ಯಪ್ ಪುಟ ನೋಡಿ. | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
 | `leave.assistant.leave_operator_asked` | ಆಯಿತು. ನೀವು ಬೇರೆ Operator ಬಯಸುತ್ತೀರಿ ಎಂದು ನಿಮ್ಮ Operator ಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ನೀವು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ: Operator ಹೊಸ ವ್ಯಕ್ತಿಯ ಹೆಸರು ನೀಡುತ್ತಾರೆ, ನಿಮಗೆ ಒಂದು ಕೋಡ್ ಸಿಗುತ್ತದೆ, ಅದನ್ನು ಇಲ್ಲಿ "move" ಮತ್ತು ಕೋಡ್ ಎಂದು ಕಳುಹಿಸಿ. 14 ದಿನದಲ್ಲಿ ಏನೂ ಆಗದಿದ್ದರೆ Geometer ನಿಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತದೆ. | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |

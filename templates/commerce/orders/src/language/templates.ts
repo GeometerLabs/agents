@@ -102,7 +102,8 @@ export type TemplateId =
  * The customer's lines come before the next step's words (the quote with the agreed total); the owner's card names the exact total and is answered with the order number AND
  * the card's code, so a yes is bound to exactly what the card showed. Only a shop with a "discounts" block ever sends them.
  */
-export type DiscountTemplateId = "discount_agreed" | "discount_asked" | "discount_approved" | "discount_refused" | "owner_discount_ask" | "owner_discount_use_code" | "owner_discount_stale";
+// discount_which (E1 item 3): "any discount?" with no item or service in the conversation yet
+export type DiscountTemplateId = "discount_agreed" | "discount_asked" | "discount_approved" | "discount_refused" | "discount_which" | "owner_discount_ask" | "owner_discount_use_code" | "owner_discount_stale";
 
 /**
  * The licence's wind-down and final stop (plan B13; modules/licence). The customer's line answers a request for a new order while ordering is paused; the owner's two are
@@ -674,6 +675,7 @@ const discountEn: DiscountSet = {
   discount_asked: (f) => `Our ${need(f, "itemName")} is ${inr(f, "priceInr")}, so I've asked the owner about ${inr(f, "offeredInr")} each. I'll message you here when they answer.`,
   discount_approved: (f) => `Good news: the owner agreed to ${inr(f, "offeredInr")} each for the ${need(f, "itemName")}.`,
   discount_refused: (f) => `Sorry, the owner couldn't agree to ${inr(f, "offeredInr")}. The lowest for the ${need(f, "itemName")} is ${inr(f, "priceInr")}.`,
+  discount_which: () => `Which item is it for? Tell me what you'd like and how many, and I'll tell you the price I can do.`,
   owner_discount_ask: (f) => `A price needs your OK: ${need(f, "customerPhone")} asks ${inr(f, "offeredInr")} each for ${need(f, "itemName")} (your price is ${inr(f, "priceInr")}) in an order of ${items(f)}, ${inr(f, "totalInr")} in all. Reply "approve ${need(f, "orderRef")} ${need(f, "discountCode")}" to agree to exactly ${inr(f, "totalInr")}, or "deny ${need(f, "orderRef")} ${need(f, "discountCode")}".`,
   owner_discount_use_code: (f) => `To answer the price ask on ${need(f, "orderRef")}, reply "approve ${need(f, "orderRef")} ${need(f, "discountCode")}" or "deny ${need(f, "orderRef")} ${need(f, "discountCode")}".`,
   owner_discount_stale: () => "That answer is for a price ask that has changed or was already answered, so nothing was done.",
@@ -683,6 +685,7 @@ const discountHi: DiscountSet = {
   discount_asked: (f) => `हमारा ${need(f, "itemName")} ${inr(f, "priceInr")} का है, इसलिए एक का ${inr(f, "offeredInr")} के लिए मैंने मालिक से पूछा है। जवाब आते ही यहीं बताऊँगा।`,
   discount_approved: (f) => `अच्छी खबर: मालिक ने ${need(f, "itemName")} के लिए एक का ${inr(f, "offeredInr")} मान लिया है।`,
   discount_refused: (f) => `माफ़ कीजिए, मालिक ${inr(f, "offeredInr")} पर राज़ी नहीं हुए। ${need(f, "itemName")} की सबसे कम कीमत ${inr(f, "priceInr")} है।`,
+  discount_which: () => `किस चीज़ पर? क्या और कितना चाहिए बताइए, मैं बता दूँगा कि कितने में कर सकता हूँ।`,
   owner_discount_ask: (f) => `कीमत पर आपकी मंज़ूरी चाहिए: ${need(f, "customerPhone")} ${need(f, "itemName")} के लिए एक का ${inr(f, "offeredInr")} माँग रहे हैं (आपकी कीमत ${inr(f, "priceInr")} है), ऑर्डर ${items(f)}, कुल ${inr(f, "totalInr")}। ठीक ${inr(f, "totalInr")} मानने के लिए "approve ${need(f, "orderRef")} ${need(f, "discountCode")}" या मना करने के लिए "deny ${need(f, "orderRef")} ${need(f, "discountCode")}" लिखें।`,
   owner_discount_use_code: (f) => `कीमत वाली माँग ${need(f, "orderRef")} का जवाब देने के लिए "approve ${need(f, "orderRef")} ${need(f, "discountCode")}" या "deny ${need(f, "orderRef")} ${need(f, "discountCode")}" लिखें।`,
   owner_discount_stale: () => "यह जवाब ऐसी कीमत वाली माँग का है जो बदल गई है या जिसका जवाब पहले ही दिया जा चुका है, इसलिए कुछ नहीं किया गया।",
@@ -692,6 +695,7 @@ const discountMl: DiscountSet = {
   discount_asked: (f) => `ഞങ്ങളുടെ ${need(f, "itemName")} വില ${inr(f, "priceInr")} ആണ്, അതിനാൽ ഒന്നിന് ${inr(f, "offeredInr")} എന്നതിനെക്കുറിച്ച് ഞാൻ ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി കിട്ടിയാലുടൻ ഇവിടെ അറിയിക്കാം.`,
   discount_approved: (f) => `സന്തോഷവാർത്ത: ${need(f, "itemName")} ഒന്നിന് ${inr(f, "offeredInr")} ഉടമ സമ്മതിച്ചു.`,
   discount_refused: (f) => `ക്ഷമിക്കണം, ${inr(f, "offeredInr")}-ന് ഉടമ സമ്മതിച്ചില്ല. ${need(f, "itemName")}-ന്റെ ഏറ്റവും കുറഞ്ഞ വില ${inr(f, "priceInr")} ആണ്.`,
+  discount_which: () => `ഏത് സാധനത്തിനാണ്? എന്ത്, എത്ര വേണമെന്ന് പറയൂ, എത്രയ്ക്ക് തരാമെന്ന് ഞാൻ പറയാം.`,
   owner_discount_ask: (f) => `ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: ${need(f, "customerPhone")} ${need(f, "itemName")} ഒന്നിന് ${inr(f, "offeredInr")} ചോദിക്കുന്നു (നിങ്ങളുടെ വില ${inr(f, "priceInr")}), ഓർഡർ ${items(f)}, ആകെ ${inr(f, "totalInr")}. കൃത്യം ${inr(f, "totalInr")} സമ്മതിക്കാൻ "approve ${need(f, "orderRef")} ${need(f, "discountCode")}", അല്ലെങ്കിൽ "deny ${need(f, "orderRef")} ${need(f, "discountCode")}" എന്ന് മറുപടി അയയ്ക്കുക.`,
   owner_discount_use_code: (f) => `വിലയെക്കുറിച്ചുള്ള ${need(f, "orderRef")} ചോദ്യത്തിന് മറുപടി നൽകാൻ "approve ${need(f, "orderRef")} ${need(f, "discountCode")}" അല്ലെങ്കിൽ "deny ${need(f, "orderRef")} ${need(f, "discountCode")}" എന്ന് അയയ്ക്കുക.`,
   owner_discount_stale: () => "ഈ മറുപടി മാറിപ്പോയതോ ഇതിനകം മറുപടി നൽകിയതോ ആയ ഒരു വില ചോദ്യത്തിനുള്ളതാണ്, അതിനാൽ ഒന്നും ചെയ്തില്ല.",
@@ -701,6 +705,7 @@ const discountKn: DiscountSet = {
   discount_asked: (f) => `ನಮ್ಮ ${need(f, "itemName")} ಬೆಲೆ ${inr(f, "priceInr")}, ಆದ್ದರಿಂದ ಒಂದಕ್ಕೆ ${inr(f, "offeredInr")} ಬಗ್ಗೆ ಮಾಲೀಕರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಬಂದ ತಕ್ಷಣ ಇಲ್ಲೇ ತಿಳಿಸುತ್ತೇನೆ.`,
   discount_approved: (f) => `ಒಳ್ಳೆಯ ಸುದ್ದಿ: ${need(f, "itemName")} ಒಂದಕ್ಕೆ ${inr(f, "offeredInr")} ಬೆಲೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪಿದ್ದಾರೆ.`,
   discount_refused: (f) => `ಕ್ಷಮಿಸಿ, ${inr(f, "offeredInr")} ಬೆಲೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪಲಿಲ್ಲ. ${need(f, "itemName")} ಗೆ ಕನಿಷ್ಠ ಬೆಲೆ ${inr(f, "priceInr")}.`,
+  discount_which: () => `ಯಾವುದಕ್ಕೆ? ಏನು, ಎಷ್ಟು ಬೇಕು ಎಂದು ಹೇಳಿ, ಎಷ್ಟಕ್ಕೆ ಕೊಡಬಹುದು ಎಂದು ನಾನು ಹೇಳುತ್ತೇನೆ.`,
   owner_discount_ask: (f) => `ಒಂದು ಬೆಲೆಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು: ${need(f, "customerPhone")} ಅವರು ${need(f, "itemName")} ಒಂದಕ್ಕೆ ${inr(f, "offeredInr")} ಕೇಳುತ್ತಿದ್ದಾರೆ (ನಿಮ್ಮ ಬೆಲೆ ${inr(f, "priceInr")}), ಆರ್ಡರ್ ${items(f)}, ಒಟ್ಟು ${inr(f, "totalInr")}. ಸರಿಯಾಗಿ ${inr(f, "totalInr")} ಗೆ ಒಪ್ಪಲು "approve ${need(f, "orderRef")} ${need(f, "discountCode")}", ಇಲ್ಲವಾದರೆ "deny ${need(f, "orderRef")} ${need(f, "discountCode")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_discount_use_code: (f) => `ಬೆಲೆಯ ಕೋರಿಕೆ ${need(f, "orderRef")} ಗೆ ಉತ್ತರಿಸಲು "approve ${need(f, "orderRef")} ${need(f, "discountCode")}" ಅಥವಾ "deny ${need(f, "orderRef")} ${need(f, "discountCode")}" ಎಂದು ಕಳುಹಿಸಿ.`,
   owner_discount_stale: () => "ಈ ಉತ್ತರ ಬದಲಾದ ಅಥವಾ ಈಗಾಗಲೇ ಉತ್ತರಿಸಿದ ಬೆಲೆಯ ಕೋರಿಕೆಗೆ ಸಂಬಂಧಿಸಿದ್ದು, ಆದ್ದರಿಂದ ಏನೂ ಮಾಡಲಿಲ್ಲ.",

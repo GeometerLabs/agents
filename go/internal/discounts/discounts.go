@@ -224,6 +224,23 @@ func MaxAlone(c Caps, lineListInr int64) int64 {
 	return min(lineListInr*c.Percent/100, c.Inr)
 }
 
+// CapPrice is the price of one the agent offers ALONE when the customer asks for a discount without naming a price (E1 item 3, "any discount?"): the list price less the most the
+// cap in force allows on the line, spread over the quantity and rounded down so the line's discount never passes the cap (qty × off ≤ MaxAlone), and never below the floor. The
+// caller hands that price to Decide like any price asked, so it is decided, recorded and bound to the money exactly as a named one (Decide finds it within the cap). ok false: the
+// agent may give nothing alone (no floor for the item, a cap of 0, or a floor at the list price), and the list price stands. qty below 1 counts as 1.
+func CapPrice(s *Settings, c Caps, item string, listInr, qty int64) (int64, bool) {
+	floor, ok := s.FloorOf(item)
+	if !ok {
+		return listInr, false
+	}
+	qty = max(qty, 1)
+	price := max(listInr-MaxAlone(c, listInr*qty)/qty, floor)
+	if price >= listInr {
+		return listInr, false
+	}
+	return price, true
+}
+
 // Decide is the discount authority's decision on one ask. s nil (the shop has no "discounts" block) is never asked: the caller keeps its list rule. qty below 1 counts as 1.
 func Decide(s *Settings, c Caps, a Ask) Outcome {
 	qty := max(a.Qty, 1)

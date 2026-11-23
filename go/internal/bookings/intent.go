@@ -22,6 +22,7 @@ type Intent struct {
 	Language        string         `json:"language,omitempty"`
 	ServiceID       string         `json:"serviceId,omitempty"`
 	OfferInr        *int64         `json:"offerInr,omitempty"`
+	AskDiscount     bool           `json:"askDiscount,omitempty"` // E1: "any discount?" with no price named; never beside OfferInr. It decides nothing.
 	Date            map[string]any `json:"date,omitempty"`
 	Time            map[string]any `json:"time,omitempty"`
 	OverrideAttempt *bool          `json:"overrideAttempt,omitempty"`
@@ -74,6 +75,9 @@ func CoerceIntent(raw any, s *Settings) *Intent {
 			return nil
 		}
 		in.Time = v.(map[string]any)
+	}
+	if m["askDiscount"] == true && in.OfferInr == nil { // model.ts: only a plain true, and never beside a named price
+		in.AskDiscount = true
 	}
 	if v, given := m["overrideAttempt"]; given {
 		b := v == true

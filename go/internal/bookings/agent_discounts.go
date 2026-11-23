@@ -119,6 +119,25 @@ func (a *Agent) decideOffer(b *Booking, sv *Service, offered int64) (prefix []st
 	return nil, nil, true
 }
 
+// offerCap answers "any discount?" with no price named (E1 item 3): the agent offers the lowest price it may give ALONE for the service in the conversation (discounts.CapPrice:
+// the lower of the two caps in force, never below the floor), which then goes through decideOffer like a named price, so it is decided, recorded once and bound like one. No
+// service known yet: the customer is asked which one (stop). A price already agreed or approved that is as low or lower stands and is said again (a card that waits never comes
+// here: onBook answers it first). When nothing may be given alone (no floor, a cap of 0), the list price is stated once, as for a price below it.
+func (a *Agent) offerCap(b *Booking, sv *Service) (prefix []string, shown []Decision, stop bool) {
+	if sv == nil {
+		a.tellCustomer(b, b.Customer, []string{"discount_which"}, sayOpts{offer: servicesOffer("discount_which")}) // the list of services follows its words
+		return nil, nil, true
+	}
+	price, ok := discounts.CapPrice(a.settings.Discounts, a.discountCaps(), sv.ID, sv.PriceInr, 1)
+	if d := b.deal(); d.Live() && d.Item == sv.ID && (d.OfferedInr <= price || !ok) {
+		return []string{"discount_agreed"}, nil, false
+	}
+	if !ok {
+		return []string{"price_floor"}, nil, false
+	}
+	return a.decideOffer(b, sv, price)
+}
+
 // dealStands checks a booking's deal against what the booking is now: a deal for another service, or one whose list price changed, no longer applies and is dropped (a card
 // that waited for it is void). True when an asked card still waits for the owner (the flow does not go on).
 func (a *Agent) dealStands(b *Booking) (waiting bool) {

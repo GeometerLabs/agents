@@ -257,3 +257,21 @@ test("Kannada ಕ್ಕೆ: a price from 25 up, a clock hour from 1 to 12, and a
   assert.equal(both.offerInr, 300);
   assert.equal(parse("10 ನವೆಂಬರ್‌ಗೆ ಹೇರ್ ಕಟ್, 300ಕ್ಕೆ").offerInr, 300); // a day written before its month, then the price
 });
+
+// E1 item 3 (24 Nov 2026): a discount asked without a price, in the four languages and in Latin letters, is `askDiscount`; a named price wins (offerInr, no askDiscount); words
+// about something else are not a discount ask. It changes no kind: the Go runtime answers it only in a shop with the discount authority.
+test("\"any discount?\" with no price named is askDiscount, in four languages; a named price wins", () => {
+  for (const text of ["any discount?", "any discount on haircut?", "haircut पर कुछ छूट मिलेगी?", "kuch kam karo", "haircut ഇളവ് ഉണ്ടോ", "ഡിസ്കൗണ്ട് ഉണ്ടോ", "haircut ರಿಯಾಯಿತಿ ಇದೆಯಾ", "ಡಿಸ್ಕೌಂಟ್ ಇದೆಯಾ", "what's your best price"]) {
+    assert.equal(parse(text).askDiscount, true, text);
+    assert.equal(parse(text).offerInr, undefined, text);
+  }
+  assert.equal(parse("any discount? haircut for 400").askDiscount, undefined, "a named price wins");
+  assert.equal(parse("haircut for 400").offerInr, 400);
+  for (const text of ["haircut tomorrow at 6pm", "anything cheaper?", "less spicy please", "कल का काम"]) assert.equal(parse(text).askDiscount, undefined, text);
+});
+// the same phrases as literal calls, so go/scripts/gen_bookings_vectors.ts (which harvests `parse("...")`) proves the Go reader on each of them
+test("the discount asks, each read the same in Go (parser vectors)", () => {
+  const asks = [parse("any discount?"), parse("any discount on haircut?"), parse("haircut पर कुछ छूट मिलेगी?"), parse("kuch kam karo"), parse("haircut ഇളവ് ഉണ്ടോ"), parse("ഡിസ്കൗണ്ട് ഉണ്ടോ"), parse("haircut ರಿಯಾಯಿತಿ ಇದೆಯಾ"), parse("ಡಿಸ್ಕೌಂಟ್ ಇದೆಯಾ"), parse("what's your best price")];
+  assert.ok(asks.every((i) => i.askDiscount === true));
+  assert.ok([parse("anything cheaper?"), parse("less spicy please"), parse("कल का काम")].every((i) => i.askDiscount === undefined));
+});

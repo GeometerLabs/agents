@@ -62,6 +62,9 @@ func (Reading) Shape(answer any) any {
 			out[k] = v
 		}
 	}
+	if a["askDiscount"] == true {
+		out["askDiscount"] = true
+	}
 	if a["overrideAttempt"] == true {
 		out["overrideAttempt"] = true
 	}
@@ -93,7 +96,7 @@ func (r Reading) Decision(ruled Intent) (map[string]understanding.ChoiceQuestion
 		if kind == "other" {
 			kind = "unknown"
 		}
-		read := Intent{Kind: kind, Language: ruled.Language, OfferInr: ruled.OfferInr, Items: ruled.Items, Date: ruled.Date, Time: ruled.Time, Mode: ruled.Mode}
+		read := Intent{Kind: kind, Language: ruled.Language, OfferInr: ruled.OfferInr, AskDiscount: ruled.AskDiscount, Items: ruled.Items, Date: ruled.Date, Time: ruled.Time, Mode: ruled.Mode}
 		if ruled.OverrideAttempt != nil && *ruled.OverrideAttempt {
 			read.OverrideAttempt = ruled.OverrideAttempt
 		}

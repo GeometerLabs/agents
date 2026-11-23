@@ -181,3 +181,35 @@ describe("the price card in the assistant's \"what needs me\"", () => {
     assert.equal(await pageCard(s), undefined, "answered once: nothing waits on the page");
   });
 });
+
+// "Any discount?" without a number (E1 item 3, 24 Nov 2026): read by the rules in four languages. With the authority on, the agent offers the lowest price it may give alone for
+// the order's item (two veg thalis at ₹120: 10% of the line is ₹24, so ₹108 each, never below the ₹100 floor), decided and recorded as any price within the cap, and the advance
+// follows the agreed total; with no item yet it asks which one. With it off, today's answer.
+describe("a discount asked without a price", () => {
+  contract("on: in each language, ₹108 each is offered and agreed, recorded once, and the advance is half of ₹216", async () => {
+    for (const ask of ["any discount?", "कुछ छूट मिलेगी?", "ഇളവ് ഉണ്ടോ", "ರಿಯಾಯಿತಿ ಇದೆಯಾ"]) {
+      const s = await boot({ settings: ON });
+      await s.inbound(CUSTOMER, `2 veg thali 10 nov 12:00 pm pickup, ${ask}`); await s.settle();
+      assert.deepEqual(s.templatesTo(CUSTOMER), ["discount_agreed", "quote_and_link"], ask);
+      assert.deepEqual(await advanceAsked(s), [10800], ask);
+      assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.by, r.refs.offeredInr, r.refs.totalInr]), [["confirmed", "agent", "108", "216"]], ask);
+    }
+  });
+
+  contract("on: with nothing ordered yet, the agent asks which item, and nothing is decided", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER), ["discount_which"]);
+    assert.deepEqual(discountLines(s), []);
+  });
+
+  contract("off: today's answer, and the advance stays half the menu total", async () => {
+    const s = await boot();
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER), ["didnt_understand"]);
+    await s.inbound(CUSTOMER, "2 veg thali 10 nov 12:00 pm pickup, any discount?"); await s.settle();
+    assert.deepEqual(s.templatesTo(CUSTOMER).slice(-1), ["quote_and_link"]);
+    assert.deepEqual(await advanceAsked(s), [12000]);
+    assert.deepEqual(discountLines(s), []);
+  });
+});

@@ -1495,6 +1495,21 @@
  },
  {
   "area": "render",
+  "name": "hi discount_which",
+  "input": {
+   "id": "discount_which",
+   "language": "hi"
+  },
+  "output": {
+   "text": "किस सेवा के लिए? बताइए, मैं बता दूँगा कि कितने में कर सकता हूँ।",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
+  "area": "render",
   "name": "hi owner_discount_ask",
   "input": {
    "id": "owner_discount_ask",
@@ -3733,6 +3748,21 @@
   },
   "output": {
    "text": "Sorry, the owner couldn't agree to ₹400. The lowest for your haircut is ₹450.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
+  "area": "render",
+  "name": "en discount_which",
+  "input": {
+   "id": "discount_which",
+   "language": "en"
+  },
+  "output": {
+   "text": "Which service is it for? Tell me, and I'll tell you the price I can do.",
    "check": {
     "ok": true,
     "problems": []
@@ -5987,6 +6017,21 @@
  },
  {
   "area": "render",
+  "name": "ml discount_which",
+  "input": {
+   "id": "discount_which",
+   "language": "ml"
+  },
+  "output": {
+   "text": "ഏത് സേവനത്തിനാണ്? പറയൂ, എത്രയ്ക്ക് ചെയ്തുതരാമെന്ന് ഞാൻ പറയാം.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
+  "area": "render",
   "name": "ml owner_discount_ask",
   "input": {
    "id": "owner_discount_ask",
@@ -8225,6 +8270,21 @@
   },
   "output": {
    "text": "ಕ್ಷಮಿಸಿ, ₹400 ಬೆಲೆಗೆ ಮಾಲೀಕರು ಒಪ್ಪಲಿಲ್ಲ. ನಿಮ್ಮ ಹೇರ್ ಕಟ್ ಗೆ ಕನಿಷ್ಠ ಬೆಲೆ ₹450.",
+   "check": {
+    "ok": true,
+    "problems": []
+   }
+  }
+ },
+ {
+  "area": "render",
+  "name": "kn discount_which",
+  "input": {
+   "id": "discount_which",
+   "language": "kn"
+  },
+  "output": {
+   "text": "ಯಾವ ಸೇವೆಗೆ? ಹೇಳಿ, ಎಷ್ಟಕ್ಕೆ ಮಾಡಿಕೊಡಬಹುದು ಎಂದು ನಾನು ಹೇಳುತ್ತೇನೆ.",
    "check": {
     "ok": true,
     "problems": []

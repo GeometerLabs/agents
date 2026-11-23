@@ -80,6 +80,8 @@ function harvest(): string[] {
 
 /** Phrases written for this (inputs only): the four languages, Latin letters, mixed, typos, tricks, odd spacing and characters. */
 const HAND: string[] = [
+  // E1 item 3 (24 Nov 2026): a discount asked without a price (askDiscount), and with one (offerInr wins), in the four languages
+  "any discount?", "2 veg thali 10 nov 12:00 pm pickup, any discount?", "कुछ छूट मिलेगी?", "kuch kam karo", "ഇളവ് ഉണ്ടോ", "ರಿಯಾಯಿತಿ ಇದೆಯಾ", "what's your best price", "any discount? 2 veg thali for 100", "anything cheaper?",
   "2 veg thali kal lunch pickup", "do veg thali chahiye kal", "teen thali parso delivery", "ek curd bhej do", "kal 3 veg thali home delivery", "veg thali 5 pieces", "5 pcs veg thali", "5 plates of veg thali",
   "veg thali*2", "veg thali × 3", "x2 veg thali", "2x veg thali", "veg thali x 100", "veg thali x 1000", "veg thali x2 and chicken meal x 3", "ten veg thali", "paanch thali", "1 veg thali 2 veg thali",
   "वेज थाली 2 कल", "दो वेज थाली चाहिए", "तीन वेज थाली और एक दही", "कल दोपहर पिकअप", "कल घर पर डिलीवरी चाहिए", "मुझे ऑर्डर रद्द करना है", "पैसे वापस चाहिए", "मालिक से बात करनी है", "मैंने पेमेंट कर दिया", "पैसे भेज दिए", "अभी तक पेमेंट नहीं किया",

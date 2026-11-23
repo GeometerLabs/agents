@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AT_HOUR_RE, CLOCK_TIME_RE, DAY_AFTER_RE, GREETING_WITH_TIME_RE, HOUR_AMPM_RE, HOUR_BEFORE_CLOCK_WORD, HOUR_THEN_PERIOD_RE, KANNADA_AT_HOUR, MONTH_RES, NEXT_RE, PERIODS, PERIOD_THEN_HOUR_RE, THIS_RE, TODAY_RE, TOMORROW_RE, WEEKDAY_RES, YESTERDAY_RE, blankWrittenDate, findDatePhrase, findTimePhrase, wordRe } from "../../modules/language/dates.ts";
-import { ENGLISH_WORDS_RE, FREE_RE, GREETING_RE, NO_RE, OFFER_TESTS, OVERRIDE_PATTERNS, ROMAN_HINDI_RE, ROMAN_KANNADA_RE, ROMAN_MALAYALAM_RE, STOP_DRAVIDIAN_RE, STOP_HINDI_RE, STOP_WORDS_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../modules/understanding/rules.ts";
+import { DISCOUNT_ASK_RE, ENGLISH_WORDS_RE, FREE_RE, GREETING_RE, NO_RE, OFFER_TESTS, OVERRIDE_PATTERNS, ROMAN_HINDI_RE, ROMAN_KANNADA_RE, ROMAN_MALAYALAM_RE, STOP_DRAVIDIAN_RE, STOP_HINDI_RE, STOP_WORDS_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../modules/understanding/rules.ts";
 import { GUEST_WORDS, KIND_RES, REF_RE } from "../../modules/assistant/intents.ts";
 import { COMPLETION, LINK as TALK_LINK, LONG_DIGITS, NUMBER_WORDS, PERCENT } from "../../modules/assistant/talk-check.ts";
 import { AMOUNT_RE, DATE_RE, QUANTITY_STEM_RE, QUANTITY_WORD_RE, TIME_RE, TRAILING_PUNCTUATION, UPI_RE, URL_RE } from "../../modules/language/check.ts";
@@ -38,6 +38,7 @@ function patterns(): Map<string, RegExp> {
   OVERRIDE_PATTERNS.forEach((re, i) => p.set(`rules.override.${i}`, re));
   p.set("rules.english", ENGLISH_WORDS_RE).set("rules.roman_hindi", ROMAN_HINDI_RE).set("rules.roman_malayalam", ROMAN_MALAYALAM_RE).set("rules.roman_kannada", ROMAN_KANNADA_RE);
   OFFER_TESTS.forEach(([re], i) => p.set(`rules.offer.${i}`, re));
+  p.set("rules.discount_ask", DISCOUNT_ASK_RE); // E1: "any discount?" with no price named
   for (const [kind, re] of KIND_RES) p.set(`intents.kind.${kind}`, re);
   p.set("intents.ref", REF_RE).set("intents.guest", GUEST_WORDS);
   // three regular expressions that are not exported (intents.ts AMOUNT_RE, and the two inline ones of limits-card.ts readLimitRequest): their literals, taken out of the source

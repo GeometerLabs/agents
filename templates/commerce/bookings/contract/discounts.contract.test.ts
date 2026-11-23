@@ -209,3 +209,51 @@ describe("the price card on the owner's page", () => {
     assert.ok(s.record().some((r) => r.action === "owner_page_action" && r.outcome === "blocked"));
   });
 });
+
+// "Any discount?" without a number (E1 item 3, 24 Nov 2026): read by the rules in four languages. With the authority on, the agent offers the lowest price it may give alone (the
+// lower of the two caps, never below the floor: ₹45 off the ₹450 haircut is ₹405), decided and recorded as any price within the cap; with no service yet it asks which one.
+// With it off, today's answer.
+describe("a discount asked without a price", () => {
+  contract("on: in each language, the agent offers ₹405 for the haircut, recorded once as given by the agent; the deposit link stays the deposit", async () => {
+    for (const text of ["any discount on haircut?", "haircut पर कुछ छूट मिलेगी?", "haircut ഇളവ് ഉണ്ടോ", "haircut ರಿಯಾಯಿತಿ ಇದೆಯಾ"]) {
+      const s = await boot({ settings: ON });
+      await s.inbound(CUSTOMER, text); await s.settle();
+      const [line] = discountLines(s);
+      assert.deepEqual([line?.outcome, line?.refs.by, line?.refs.offeredInr, line?.refs.discountInr], ["confirmed", "agent", "405", "45"], text);
+      assert.match(s.sent(CUSTOMER)[0].text, /₹405/u, text);
+      await s.inbound(CUSTOMER, `${dayOf(openStart(s.now(), 3))} at 11am`); await s.settle();
+      assert.deepEqual(links(s).map((l) => l.body.amount), [20000], text);
+      assert.equal(discountLines(s).length, 1, `${text}: one decision`);
+    }
+  });
+
+  contract("on: with no service in the conversation, the agent asks which one, and nothing is decided", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.match(s.sent(CUSTOMER)[0].text, /^Which service is it for\?/u);
+    assert.deepEqual(discountLines(s), []);
+  });
+
+  contract("on: a card waiting for the owner is not voided, and a lower price the owner approved stands", async () => {
+    const s = await boot({ settings: ON });
+    await s.inbound(CUSTOMER, "haircut for 350"); await s.settle(); // no time yet: nothing is held, so the booking stays the one the deal is on
+    const code = codeOf(s);
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.match(s.sent(CUSTOMER).at(-1)!.text, /asked the owner about ₹350/u);
+    assert.equal(codeOf(s), code, "the same card");
+    assert.equal(discountLines(s).length, 1, "no second decision");
+    await s.inbound(OWNER, `approve b-1 ${code}`); await s.settle();
+    await s.inbound(CUSTOMER, "any discount on haircut?"); await s.settle();
+    assert.match(s.sent(CUSTOMER).at(-1)!.text, /₹350/u, "the approved ₹350 is said again, not replaced by ₹405");
+    assert.deepEqual(discountLines(s).map((r) => [r.outcome, r.refs.offeredInr]), [["held_for_owner", "350"], ["confirmed", "350"]]);
+  });
+
+  contract("off: today's answer, and nothing is decided or recorded as a discount", async () => {
+    const s = await boot();
+    await s.inbound(CUSTOMER, "any discount?"); await s.settle();
+    assert.match(s.sent(CUSTOMER)[0].text, /^Sorry, I didn't catch that\. Which service would you like, and on what day and time\?\nhaircut: ₹450/u);
+    await s.inbound(CUSTOMER, "any discount on haircut?"); await s.settle();
+    assert.match(s.sent(CUSTOMER).at(-1)!.text, /^When would you like your haircut\?/u);
+    assert.deepEqual(discountLines(s), []);
+  });
+});

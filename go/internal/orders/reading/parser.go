@@ -211,6 +211,8 @@ func ParseIntent(text string, c *ParseContext) Intent {
 	}
 	if offer >= 0 {
 		in.OfferInr = &offer
+	} else if understanding.AsksDiscount(t) {
+		in.AskDiscount = true // E1: "any discount?" with no price named (a named price wins)
 	}
 	if date != nil {
 		in.Date = asJSONNumbers(date.JSON())

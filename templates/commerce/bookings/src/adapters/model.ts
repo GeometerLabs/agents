@@ -25,6 +25,11 @@ export interface Intent {
   serviceId?: string;
   /** A price the customer proposed, in rupees. "Free" is 0. The agent never accepts it; it only has to answer it. */
   offerInr?: number;
+  /**
+   * E1 (24 Nov 2026): the customer asks for a lower price WITHOUT naming one ("any discount?"); never set with offerInr (a named price wins). It decides nothing: a shop with
+   * the discount authority answers with the price it may give alone, a shop without one as before.
+   */
+  askDiscount?: boolean;
   date?: DatePhrase;
   time?: TimePhrase;
   /** The message tried to change the rules ("ignore your rules"). It is treated as ordinary text and changes nothing. */
@@ -68,6 +73,7 @@ export function coerceIntent(raw: unknown, context: ParseContext): Intent | null
   // a date and a time of the shapes dates.ts makes, or the answer is refused (the checks are shared with Orders since 23 Nov 2026)
   if (raw.date !== undefined) { if (!isDatePhrase(raw.date)) return null; intent.date = raw.date; }
   if (raw.time !== undefined) { if (!isTimePhrase(raw.time)) return null; intent.time = raw.time; }
+  if (raw.askDiscount === true && intent.offerInr === undefined) intent.askDiscount = true; // E1: only a plain true, and never beside a named price
   if (raw.overrideAttempt !== undefined) intent.overrideAttempt = raw.overrideAttempt === true;
   if (raw.ask !== undefined) intent.ask = raw.ask === true;
   return intent;

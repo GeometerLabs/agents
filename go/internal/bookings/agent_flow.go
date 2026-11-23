@@ -186,6 +186,9 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 	if customer.OptedOut {
 		return nil // STOP means STOP: nothing goes to them, even if they write again
 	}
+	if in.AskDiscount && a.settings.Discounts != nil && (in.Kind == "unknown" || in.Kind == "greeting") {
+		in.Kind = "book" // E1: "any discount?" in a shop with the discount authority is about the booking (onBook answers it); without one, exactly as before
+	}
 	switch in.Kind {
 	case "book":
 		return a.onBook(phone, &in)
@@ -467,7 +470,14 @@ func (a *Agent) onBook(phone string, in *Intent) error {
 		a.tellCustomer(b, phone, []string{"discount_asked"}, sayOpts{})
 		return nil
 	}
-	if sv != nil && in.OfferInr != nil {
+	if disc && in.OfferInr == nil && in.AskDiscount {
+		// E1: "any discount?" with no price named: the price the agent may give alone (agent_discounts.go offerCap)
+		p, sh, stop := a.offerCap(b, sv)
+		if stop {
+			return nil
+		}
+		prefix, shown = p, sh
+	} else if sv != nil && in.OfferInr != nil {
 		if disc && *in.OfferInr < sv.PriceInr {
 			p, sh, stop := a.decideOffer(b, sv, *in.OfferInr)
 			if stop {
