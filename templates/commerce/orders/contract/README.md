@@ -39,7 +39,8 @@ TypeScript only; `cross-restart.test.ts` needs both runtimes and is skipped with
 | `record-licence.contract.test.ts` | D | guards, fakes | agent.db's format and the order in `state_rows`, a newer schema refused, no number or name in the record, the licence's wind-down, final stop and notices, the monthly report once |
 | `owner.contract.test.ts` | O | guards, fakes | the owner's commands without the assistant, the declared limits, the assistant's Orders skill (open orders, a card for a big order, the owner's cancel with its refund card, the app view and talk box), the Stock page and the shelf count |
 | `chat.contract.test.ts` | C | fakes | a chat guest's order through the same flow, "Chat guest 1" to the owner, a send made again, Hindi, a model's answer checked and fallen back from |
-| `plans.contract.test.ts` | P | fakes (plans, UPI) | a monthly plan asked, quoted and started by the owner's mark; skip before and after the cut-off; plan meals holding slot places; a shop without plans |
+| `plans.contract.test.ts` | P | fakes (plans, UPI) | a monthly plan asked, quoted and started by the owner's mark; skip before and after the cut-off; plan meals holding slot places; the renewal with the credit carried, asked once; its reminder and its lapse with the credit owed back; a cancel mid-month with the unused days owed back; a cancel while the renewal waits; a pause and a resume credited at the renewal; a shop without plans |
+| `gaps.contract.test.ts` | G | fakes, guards | money, limit, approval and licence behaviour only a unit test held before 23 Nov 2026: the same order again (one link), a changed order (old link closed, stock freed), a UPI mark of part of the advance, the balance marked once, a full-advance order with no balance, the late advance's 48-hour and 14-day windows, a slot's place given back, Guard's licence refusal (402), and the owner's cancel and refund from the chat (above the refund limit, a waiting order, a big order, a kept advance, a UPI shop) |
 | `cross-restart.test.ts` | X | guards | TypeScript then Go and Go then TypeScript on one folder |
 
 ## The 36 unit-test files of `templates/commerce/orders/test/`, and where each ends up
@@ -50,27 +51,27 @@ TypeScript only; `cross-restart.test.ts` needs both runtimes and is skipped with
 |-----------|-------|-------|
 | accounting-figures | b | the report's money from the books (go/internal/ordersreport vectors) |
 | accounting-pages | a | documents and the accountant's files: M, D |
-| agent | a+b | F, M (flow and money); the rule parser's phrases: go/internal/orders/reading vectors |
+| agent | a+b | F, M, G (flow and money; the same order again, a UPI part mark); the rule parser's phrases: go/internal/orders/reading vectors |
 | approvals-guard-binary | d | the real Guard binary |
 | approvers | a+d | the relay's replies are not the agent's: O; the relay's words: d |
-| assistant, assistant-acts | a | O |
+| assistant, assistant-acts | a | O, G (the owner's cancel above the limit, of a waiting order, of a big order, a kept advance's refund, a UPI shop) |
 | channels | a | F (the page through the runtime); the front's HTML is d |
 | chat | a | C |
 | full-chain | d | the local stack; its refund and restart cases are in M and R |
 | guard-outage | a | R |
 | language | b | go/internal/orders/words vectors |
 | last-item | a | F (two customers for the last ones) |
-| late-advance-card | a | F (the late mark after a hold ends) |
-| licence | a+b | D; the words: words vectors |
+| late-advance-card | a | F (the late mark after a hold ends), G (the 48-hour and 14-day windows) |
+| licence | a+b | D, G (Guard's 402); the words: words vectors |
 | limits | b | the pure limits (each also seen in F and M) |
 | money-clarity | a | F, M |
 | ondc | b | the ONDC mapping (pure; mapping only) |
 | papers, review-sheet, walkthrough, sell-guide, situations | d | scripts, sell texts, crash-test situations |
 | plans | a+b | P; the ledger's periods and the plan reading: vectors |
-| reminder-balance | a | F (reminder, completion), M (balance) |
+| reminder-balance | a | F (reminder, completion), M (balance by link), G (balance marked once, none to mark) |
 | report, report-accounting, report-go-live, report-summary | b | ordersreport vectors; the monthly job: D |
 | runtime, runtime-imports | a+d | R, D (restart, store round trip, refund context: M) |
-| settings, slot-capacity | a+b | the settings' refusals (S, vectors), the slot limit: F |
+| settings, slot-capacity | a+b | the settings' refusals (S, vectors), the slot limit: F, its place given back: G |
 | stock | a+b | O (the shelf count over HTTP), go/internal/stock vectors |
 | talk | a | C |
 | voice-notes | a | F (a voice note on a shop without voice) |
