@@ -1340,7 +1340,7 @@ fee; Stock orders: the supplier asked again, the month turning over). A guards s
 walks those on the Go shop through the record and the pages, not the words. Also not walked: Bookings' owner approve/deny (the demo's shop never holds a refund above the
 limit; money.contract walks it).
 
-**Deleted (TypeScript: -14,102 / +988 lines since 6a51bf7a; 88 files, 11,907 lines, of which 42 code files 5,104 and 46 test files 6,803; the rest trimmed from kept tests):**
+**Deleted (TypeScript: -14,181 / +1,162 lines since 6a51bf7a, net -13,019; 87 files, 11,879 lines, of which 42 code files 5,104 and 45 test files 6,775; the rest trimmed from kept tests and files; added: the four differentials, their comparer and agent-runtime.ts, 501 lines; Go: the four Version constants):**
 - each template's `server/` main, start, runtime, services (and Bookings' events, tasks, ticker, server re-exports; licence for Bookings, Orders, Fees; Fees' materials),
   `src/adapters/live/index.ts` of Orders, Fees and Stock orders, `scripts/local-stack.ts` of Bookings, Orders and Fees with `test/full-chain.test.ts`, `test/runtime-kit.ts`;
 - modules: `runtime/` core, http, start, main, ticker, owner-file; `assistant/` morning, understanding (and the functions of `app/view.ts`, whose OwnerAppView shape the
@@ -1385,3 +1385,12 @@ hashed, the ledger the centre's own), bundle owner-file's deployer pass, bundle 
 file and a link out of the batch's folder are never handed out: classes.contract.test.ts). bundle/Deferred.md has each with what would close it. The two tests of bundle self-hosted-model that
 priced a self-hosted model's call on the TypeScript runtime are a Bookings contract case now (chat.contract.test.ts: priced at the builder's rate, 0 kept as 0, no rate
 no price), passing on Go.
+
+**The run of record (24 Nov 2026, through the heat lock, the Go programs built from this branch):** `go build/vet ./...` clean, `go test ./...` 39 packages ok; the contracts on Go
+(`node --test --test-concurrency=1 <folder>/`): Bookings 155/155 (151 + the four differentials + the self-hosted model's price, - the second cross-restart), Orders 97
+(96 on the whole run after 18:00, the bakery case's cut-off; with its day moved it passes, rerun with the relay-client cases: 40/40 of the four changed files), Fees 100/100,
+Stock orders 74/74, listings 210/210 (with words-fresh), directory 36/36; every generator fresh (`--check`); the units of every template and module
+(`node --test templates/*/*/test/ modules/*/test/ modules/test/`) 2,285: 2,284 pass, 1 skipped; the bundle (`cd bundle && node --test test/`, with GEOMETER_MONOREPO set, so
+the 13 tests that need the monorepo run) 725: 716 pass, 9 skipped (REAL_CADDY), 0 fail (two tests that ran past the pass's 180 s test timeout pass without it); the
+panel 253: 252 pass, 1 skipped.
+
