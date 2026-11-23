@@ -94,7 +94,10 @@ async function busyMonth(markPaid: boolean): Promise<{ entries: RecordEntry[]; o
   await w.ownerSays(`wrong ${po4}`);
   await orderAndApprove("order 3 bottles of shampoo from Meena Beauty Supplies");
   await w.ownerSays("order 500 bottles of hair oil from Meena Beauty Supplies");
-  return { entries: [...w.record.entries()], orders: w.orders() };
+  // The agent's approval cards carry a random code, which goes into each entry's `inputsDigest`, so two runs would make two records. The digest is made fixed here (the report digests the
+  // whole entry but its conversation, so it takes the fixed value, in the TypeScript and in Go alike): everything else in the record is the real agent's.
+  const entries = [...w.record.entries()].map((e) => ({ ...e, inputsDigest: sha(`${e.seq}|${e.action}|${e.outcome}`).slice(0, 16) }));
+  return { entries, orders: w.orders() };
 }
 const busy = await busyMonth(true);
 const busyQuiet = await busyMonth(false);

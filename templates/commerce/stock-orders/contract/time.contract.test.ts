@@ -109,4 +109,39 @@ describe("the monthly report", () => {
     await sleep(2200);
     assert.equal(folders().length, 1, "nor after a restart");
   });
+
+  // What the report counts and what it leaves out, read from its own files: the month's one approved order, held against the budget under the supplier's own name, the owner's lines in
+  // the owner's language, a signed-or-sealed check code, and no phone number in any file of the folder (the owner's, the supplier's, or one written in the shop's settings). From
+  // test/report.test.ts. The Go report is proved against the TypeScript's on 31 cases in go/internal/stockordersreport; this is the same truth through the running shop.
+  contract("counts the month's approved order under its supplier, says it in the owner's lines, and carries no phone number in any file", async () => {
+    const dir = join(tmpdir(), `stock-orders-report-counts-${process.pid}-${Date.now()}`);
+    mkdirSync(dir, { recursive: true }); dirs.push(dir);
+    const s = await made.boot({ mode: "fakes", tickSeconds: 1, runtime: { report: { preparedBy: "Divya, local Operator", innovator: false, pageBaseUrl: "https://reports.example/r", pagesDir: dir, source: "test-mode" } } });
+    await approved(s);
+    s.advance(dec1 - s.now());
+    await until(s, () => existsSync(dir) && readdirSync(dir).length === 1, "the report folder");
+    const folder = join(dir, readdirSync(dir)[0]);
+    await until(s, () => ["report-2026-11.json", "report-2026-11-en.html", "owner-2026-11-en.txt"].every((f) => readdirSync(folder).includes(f)), "the report's files");
+    const sealed = JSON.parse(readFileSync(join(folder, "report-2026-11.json"), "utf8"));
+    const r = sealed.document;
+    assert.equal(r.format, "geometer-stock-orders-report/1");
+    assert.equal(r.pathway.name, "stock-orders");
+    assert.deepEqual(r.period.month, { year: 2026, month: 11 });
+    assert.equal(r.preparedBy, "Divya, local Operator");
+    assert.equal(r.source, "test-mode");
+    assert.deepEqual([r.orders.placed, r.orders.sentOut, r.orders.silent, r.owner.asked, r.owner.approved], [1, 1, 1, 1, 1], JSON.stringify(r.orders));
+    assert.equal(r.budget.usedPaise, 450000, "the approved order holds its ₹4,500 of the month's budget");
+    assert.equal(r.budget.usedPaise + r.budget.leftPaise, r.budget.monthlyPaise);
+    assert.deepEqual(r.suppliers.map((x: any) => [x.id, x.name, x.placed]), [["ravi-traders", "Ravi Traders", 1]]);
+    assert.deepEqual(r.markedPaidByOwner, { orders: 0 });
+    assert.match(sealed.code, /^[0-9A-Z]{4}-[0-9A-Z]{4}$/u);
+    const text = readFileSync(join(folder, "owner-2026-11-en.txt"), "utf8").trimEnd().split("\n");
+    assert.equal(text.length, 6, "the owner's six lines");
+    assert.match(text[0], /Glow Unisex Salon/u);
+    assert.match(text[1], /Orders placed: 1\b/u);
+    for (const f of readdirSync(folder)) {
+      const body = readFileSync(join(folder, f), "utf8");
+      for (const n of [OWNER, OWNER.slice(1), "919876500001", "919876500002", "919876500003"]) assert.ok(!body.includes(n), `${f} carries ${n}`);
+    }
+  });
 });
