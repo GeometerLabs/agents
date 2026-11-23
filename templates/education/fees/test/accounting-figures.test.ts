@@ -12,7 +12,7 @@ import type { Settings } from "../src/settings.ts";
 import type { RecordEntry as Line } from "../../../../modules/record/record.ts";
 
 /** A record to check: the busy month's (the demo engine's scripted month) or one crash-test situation's world, read from the shop's own Go program as it closed. */
-interface World { settings: Settings; record: { entries(): readonly Line[] } }
+interface World { settings: Settings; record: { entries(): readonly Line[] }; store?: any }
 import { runBusyMonth } from "../report/example-month.ts";
 import { runOn } from "../crash-test/situations.ts";
 import { FEES_LEGACY } from "../src/accounting.ts";
@@ -76,7 +76,7 @@ function spans(all: readonly RecordEntry[], timezone: string): { label: string; 
 
 test("the books give the report's money, exactly, on the busy month and every crash-test situation", { skip: goSkip("fees") }, async () => {
   const worlds: World[] = [];
-  goWorldHook.closing = (w) => worlds.push({ settings: w.settings as Settings, record: { entries: () => w.entries } });
+  goWorldHook.closing = (w) => worlds.push({ settings: w.settings as Settings, record: { entries: () => w.entries }, store: w.store });
   try {
     worlds.push((await runBusyMonth()).world);
     await runOn();

@@ -173,7 +173,7 @@ export function samePicture(a: Uint8Array | undefined, b: Uint8Array | undefined
  * A test that needs the record of every world a run makes (each template's test/accounting-figures.test.ts: the books against the report's sums over every situation's record)
  * sets `closing`; it is called with each world's settings and record lines just before the world closes. Nothing else uses it.
  */
-export const goWorldHook: { closing?: (world: { settings: unknown; entries: any[] }) => void } = {};
+export const goWorldHook: { closing?: (world: { settings: unknown; entries: any[]; store: unknown }) => void } = {};
 
 const PHONE_NUMBER_ID = "100000000000001";
 const PAGES = "https://reports.example.com/r";
@@ -200,7 +200,7 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   messaging.inject = ((...a: Parameters<typeof inject>) => { sendFaultsPlanned = true; return inject(...a); }) as typeof inject;
   closeLater(async () => {
     const lines = shop ? shop.record() : [];
-    if (shop && goWorldHook.closing) goWorldHook.closing({ settings: o.settings, entries: lines });
+    if (shop && goWorldHook.closing) { const text = shop.snapshot(); goWorldHook.closing({ settings: o.settings, entries: lines, store: text === null ? o.emptyStore() : o.parseStore(text) }); }
     await shop?.close();
     for (const c of closers.reverse()) await c();
     return sendFaultsPlanned ? [] : lines.filter((e) => e.action === "send_message" && e.outcome === "failed").map((e) => `a message ${e.refs?.to ? `to the ${e.refs.to} ` : ""}was refused by the provider: ${String(e.notes ?? "").slice(0, 160)}`);
