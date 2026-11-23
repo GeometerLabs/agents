@@ -1443,3 +1443,18 @@ none (Node carried its own list). A person's commands: `docker exec <directory> 
 generator read, and `types.ts`) are deleted; the tests that need it moved to `bundle/test/go-runtime.test.ts`, `modules/discovery/contract/` and `go/internal/directory`.
 
 **Old images.** `geometer update` and `geometer go-build` remove `geo-go:<tag>` images nothing needs: kept are this checkout's, the image of every container (running or stopped) and every image the deployed compose file names; `update --dry-run` lists them without removing.
+
+## The panel starts when it is used (24 Nov 2026, stream N2)
+
+The panel is used for minutes a day but held about 170 MB all day. `panel/main.ts serve` now starts asleep (`panel/ondemand.ts`): a small listener opens the panel's port and answers `/healthz` itself; the first other request loads the full panel (`import("./server.ts")`, then `panelHandler`), answers, and every later request goes straight to it. After `PANEL_IDLE_MINUTES` (default 15, `0` = never; never under 15, the sign-in limiter's window, because a restart forgets its failure counts) with no request it stops taking connections, lets the requests in flight finish, and exits 0. `compose.ts` gives the panel `restart: unless-stopped` by name, which restarts after any exit code, so it comes back asleep within a second; its health check is the listener's `/healthz`, which passes asleep and awake and does not count as use (or the check every 10 seconds would keep it awake). The command-line jobs of `main.ts` (invite, reset, export...) load what they use when they run.
+
+Nothing is lost by a sleep: a sign-in is a signed cookie (key derived from the data key, or a file), accounts, invitations, half-done setups (`drafts/`), the vault and every written file are in the panel's data folder; the owner's passkeys belong to each shop's runtime. Tested in `panel/test/ondemand.test.ts` (a cookie, a half-done setup and an invitation made before a sleep work after it).
+
+Measured on this Mac, Node 26, one run each (`ps -o rss=`, panel on an empty server folder, port on 127.0.0.1):
+
+| | before (today's panel) | after (asleep) | after, woken |
+|---|---|---|---|
+| RSS | 168 MB | 98 MB | 164 MB |
+| First page (`/login`) | 6 ms (already loaded) | 533 ms (loads the panel) | 1 ms after |
+
+Of the 98 MB asleep, 50 MB is bare Node and about 26 MB is Node stripping the types of `.ts` at start (the N1 stream's pre-stripped `.js` removes that part).
