@@ -59,8 +59,8 @@ func batchNames(s *Settings, batchID string) map[string]string {
 	return out
 }
 
-// Offer is channel.ts feesOffer: the centre's name, address, languages and how parents pay; paused in the licence's wind-down.
-func (k *channelKit) Offer(_ runtime.KitState, _ runtime.OfferQuery) (any, error) {
+// Offer is channel.ts feesOffer: the centre's name, address, languages and how parents pay; paused in the licence's wind-down; the assistant's character when it is on.
+func (k *channelKit) Offer(st runtime.KitState, _ runtime.OfferQuery) (any, error) {
 	s := k.settings()
 	shop := map[string]any{"name": s.Name, "timezone": s.Timezone, "languages": s.Languages, "paused": k.kit.licence() != ""}
 	if s.HasAddress {
@@ -70,6 +70,12 @@ func (k *channelKit) Offer(_ runtime.KitState, _ runtime.OfferQuery) (any, error
 		shop["payment"] = map[string]any{"kind": "upi", "payee": s.Payment.Payee}
 	} else {
 		shop["payment"] = map[string]any{"kind": "link"}
+	}
+	// item 11i: with the centre's assistant on, the page's head shows its character in the mood the public sees now (the front adds the picture)
+	if centre, ok := st.(*Store); ok {
+		if character := k.kit.publicCharacter(centre); character != nil {
+			shop["character"] = character
+		}
 	}
 	return map[string]any{"kind": "fees", "shop": shop}, nil
 }
@@ -345,9 +351,9 @@ func parentsList(s *Settings, st *Store) []parentRow {
 	return out
 }
 
-// Owner is channel.ts ownerView: the items without their codes, the parents and their links, the cash list and the Money section from the record. (The assistant's app view and
-// the Classes section are added when those are ported: Deferred.md.)
-func (k *channelKit) Owner(sv runtime.KitState, _ *runtime.Snap, entries []store.Entry) any {
+// Owner is channel.ts ownerView: the items without their codes, the parents and their links, the cash list and the Money section from the record, the Classes section, and
+// with the centre's assistant on its app view (ownerAppView over the Fees skill and the last saved state's assistant part: agent_assistant.go).
+func (k *channelKit) Owner(sv runtime.KitState, sn *runtime.Snap, entries []store.Entry) any {
 	s, st := k.settings(), sv.(*Store)
 	items := ownerItems(s, st)
 	if items == nil {
@@ -367,6 +373,9 @@ func (k *channelKit) Owner(sv runtime.KitState, _ *runtime.Snap, entries []store
 	}
 	if s.Classes != nil {
 		out["classes"] = ownerClassesView(s, st, now)
+	}
+	if app := k.kit.appView(st, sn); app != nil {
+		out["app"] = app
 	}
 	return out
 }

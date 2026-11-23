@@ -19,11 +19,12 @@ import (
 var OwnerKinds = []string{"day", "owes", "open_orders", "waiting", "money", "close_day", "reopen_day", "move", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget", "leave_file", "leave_operator"}
 
 // OwnerReading is the owner's reading for this shop's kinds: the zero value is a listings-only shop's (OfferedKinds); Bookings is a Bookings shop's (BookingsKinds, with its
-// router prompt, schema and decision question rendered for those kinds), Orders an Orders shop's (KindsOrders: the open orders besides), and LimitRule reads a rule about one
-// of its declared limits.
+// router prompt, schema and decision question rendered for those kinds), Orders an Orders shop's (KindsOrders: the open orders besides), Fees a Fees centre's (KindsFees: who
+// owes besides), and LimitRule reads a rule about one of its declared limits.
 type OwnerReading struct {
 	Bookings  bool
 	Orders    bool
+	Fees      bool
 	LimitRule func(text string) bool
 }
 
@@ -37,6 +38,9 @@ func (r OwnerReading) Kinds() []string {
 	if r.Orders {
 		return Rules().KindsOrders
 	}
+	if r.Fees {
+		return Rules().KindsFees
+	}
 	return OfferedKinds
 }
 
@@ -46,6 +50,9 @@ func (r OwnerReading) router() routerWords {
 	}
 	if r.Orders {
 		return Rules().RouterOrders
+	}
+	if r.Fees {
+		return Rules().RouterFees
 	}
 	return Rules().Router
 }

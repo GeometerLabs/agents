@@ -74,6 +74,11 @@ type Agent struct {
 	acct                        accounting.Accounting
 	// madeThisStep are the parents' links made in this step (agent.ts madeThisStep): a parent with two students gets the same link in both reminders.
 	madeThisStep map[string]string
+	// asst is the shop's assistant of this step, made on first use (agent_assistant.go); stepErr is an error one of its acts met deep in the agent's own paths (a Guard found
+	// down), handed back by the step after the assistant returns, so the step is thrown away whole as TypeScript's thrown error throws it away
+	asst     *runtime.Assistant
+	asstMade bool
+	stepErr  error
 }
 
 func newAgent(k *Kit, c *runtime.StepContext) *Agent {
@@ -98,17 +103,7 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 	case k.Ports.Payments != nil:
 		a.pay = a.watch.Payments(k.Ports.Payments)
 	}
-	// runtime-limits.ts apply: a limit the owner tightened is in force for this step (a copy: the file's value is the base the changes are judged from)
-	if v, ok := c.InForce("refund_limit"); ok && v != a.settings.RefundLimitInr {
-		cp := *a.settings
-		cp.RefundLimitInr = v
-		a.settings = &cp
-	}
-	if v, ok := c.InForce("waiver_limit"); ok && v != a.settings.WaiverLimitInr {
-		cp := *a.settings
-		cp.WaiverLimitInr = v
-		a.settings = &cp
-	}
+	a.applyInForce()
 	owner := bookings.OwnerMessaging(a.watch.Messaging(k.Ports.WhatsApp), bookings.OwnerRoute{Owner: a.owner, Now: a.now, PushOwner: k.Ports.PushOwner, ChooseRoute: k.Ports.OwnerRoute})
 	a.msg = runtime.ChannelMessaging(owner, st.chanState, a.now)
 	a.say = messaging.NewSay(a.sayDeps())
@@ -117,6 +112,21 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 }
 
 func (a *Agent) now() int64 { return a.c.Now() }
+
+// applyInForce is runtime-limits.ts apply: a limit the owner tightened is in force for this step (a copy: the file's value is the base the changes are judged from). Called when
+// the step starts, and again when the owner's tap on a limit card changed one inside the step (the assistant's InForce hook).
+func (a *Agent) applyInForce() {
+	if v, ok := a.c.InForce("refund_limit"); ok && v != a.settings.RefundLimitInr {
+		cp := *a.settings
+		cp.RefundLimitInr = v
+		a.settings = &cp
+	}
+	if v, ok := a.c.InForce("waiver_limit"); ok && v != a.settings.WaiverLimitInr {
+		cp := *a.settings
+		cp.WaiverLimitInr = v
+		a.settings = &cp
+	}
+}
 
 // owner is the owner's number for this step.
 func (a *Agent) owner() string {

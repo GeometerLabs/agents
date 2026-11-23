@@ -1,9 +1,9 @@
 package fees
 
 // What a parent and the owner say: agent.ts onMessage (with the parent's intents: pay, I have paid, a discount, a refund, the owner, the menu, STOP, a voice note), the owner's
-// answers (the UPI marks, "approve q-3" / "deny q-3"), the panel's to-do list (onRecovery), the refund the owner decided (sendOwnerRefund) and the centre's public chat.
-// Read by the rules alone (reading.go): the model steps, the shop's assistant and its talk, voice notes heard by a speech service, the shop terms and the handover code are
-// not ported for Fees yet (Deferred.md); each says so in the record or answers as the TypeScript does without them.
+// answers (the UPI marks, "approve q-3" / "deny q-3", then the shop's assistant for what no fixed phrase is: agent_assistant.go), the panel's to-do list (onRecovery), the
+// refund the owner decided (sendOwnerRefund) and the centre's public chat. Read by the rules alone (reading.go): the model steps, voice notes heard by a speech service, the
+// shop terms and the handover code are not ported for Fees yet (Deferred.md); each says so in the record or answers as the TypeScript does without them.
 
 import (
 	"regexp"
@@ -538,6 +538,16 @@ func (a *Agent) onOwnerMessage(m messaging.InboundMessage) error {
 			return err
 		}
 	}
+	// item 11e: the shop's assistant reads what no fixed phrase is ("approve q-3" is one); a centre without an "assistant" block: exactly as before
+	if as := a.assistantOf(); as != nil && !ownerCommand.MatchString(m.Text) {
+		taken, err := as.OnOwnerMessage(m)
+		if err != nil {
+			return err
+		}
+		if taken {
+			return a.stepErr
+		}
+	}
 	g := ownerCommand.FindStringSubmatch(m.Text)
 	var command, ref string
 	var found *Due
@@ -631,14 +641,16 @@ func (a *Agent) onOwnerMessage(m messaging.InboundMessage) error {
 		return nil
 	}
 	a.log(d, owner, "owner_decision", "confirmed", map[string]any{"command": command}, logMore{decisions: []Decision{once, limit}, refs: said})
-	return a.sendOwnerRefund(d, r.PaymentID, r.AmountInr, "the owner approved the refund the parent asked for", []Decision{once, limit})
+	_, err := a.sendOwnerRefund(d, r.PaymentID, r.AmountInr, "the owner approved the refund the parent asked for", []Decision{once, limit})
+	return err
 }
 
-// sendOwnerRefund is agent.ts sendOwnerRefund: the one path for a refund the owner decided. A UPI centre's owner pays it back by hand; a gateway refund goes through Guard.
-func (a *Agent) sendOwnerRefund(d *Due, paymentID string, amountInr int64, why string, decisions []Decision) error {
+// sendOwnerRefund is agent.ts sendOwnerRefund: the one path for a refund the owner decided ("approve q-4", and the shop's assistant's refund card). A UPI centre's owner pays it
+// back by hand ("owed"); a gateway refund goes through Guard, and its result is RequestRefund's ("done", "held", ...).
+func (a *Agent) sendOwnerRefund(d *Due, paymentID string, amountInr int64, why string, decisions []Decision) (string, error) {
 	if a.ownerRefunds {
 		a.oweBack(d, paymentID, amountInr*100, why, decisions)
-		return nil
+		return "owed", nil
 	}
 	ds := make([]any, len(decisions))
 	for i, x := range decisions {
@@ -646,10 +658,10 @@ func (a *Agent) sendOwnerRefund(d *Due, paymentID string, amountInr int64, why s
 	}
 	result, err := a.refunds.RequestRefund(a.ctx, refundCase{d}, paymentID, amountInr, ds, a.refunds.OverLimit(amountInr), nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	a.refunds.AfterRefund(refundCase{d}, result, payments.RefundAfter{PaymentID: paymentID, AmountInr: amountInr, DoneCust: "fee_refund_approved", Held: "fee_refund_pending"})
-	return nil
+	return result, nil
 }
 
 // ---- the panel's to-do list ----

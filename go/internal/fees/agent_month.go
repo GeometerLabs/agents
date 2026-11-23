@@ -450,6 +450,9 @@ func (s *Store) parentOf(linkHash string) string {
 
 // onTick is agent.ts onTick.
 func (a *Agent) onTick() error {
+	if as := a.assistantOf(); as != nil {
+		as.OnTick() // item 11e: cards past their time close; the morning line is the runtime's own job (AfterTick)
+	}
 	now := a.now()
 	if a.store.StartedAtMs == nil {
 		a.store.StartedAtMs = N(now) // agent.ts `store.startedAtMs ??= clock.now()` at the agent's making, saved with the first step

@@ -193,6 +193,9 @@ type RuleWords struct {
 	// RouterOrders and KindsOrders are the same for an Orders shop's kinds (the listings-only kinds and open_orders; wave W4)
 	RouterOrders routerWords `json:"routerOrders"`
 	KindsOrders  []string    `json:"kindsOrders"`
+	// RouterFees and KindsFees are the same for a Fees centre's kinds (the listings-only kinds and owes; 23 Nov 2026)
+	RouterFees routerWords `json:"routerFees"`
+	KindsFees  []string    `json:"kindsFees"`
 	// LimitPhrasing are limits-card.ts PHRASING's words: a sentence with one of them, a digit and a declared limit's own word is a rule about that limit.
 	LimitPhrasing []string `json:"limitPhrasing"`
 	// TalkSchema is the owner's talk's answer schema (talk-prompt.ts ownerPrompt with no limits).

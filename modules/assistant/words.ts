@@ -73,7 +73,7 @@ export interface MessageData extends MemoryMessageData, ListingMessageData, Leav
   reopened: { date: LocalDate; told: number };
   past_day: { date: LocalDate };
   undo_none: Record<string, never>;
-  need_ref: { kind: "cancel" | "refund" | "message" | "move"; rows: DayRow[] };
+  need_ref: { kind: "cancel" | "refund" | "message" | "move"; rows: DayRow[]; /** The shop's own skill ("orders", "fees"): its example names its own kind of case (EXAMPLE_REF). */ skill?: string };
   need_when: { ref: string };
   moved: { ref: string; toMs: number };
   moved_back: { ref: string; toMs: number };
@@ -93,8 +93,8 @@ export interface MessageData extends MemoryMessageData, ListingMessageData, Leav
   /** Everything else about a limit the owner is told: Pending, Active, Failed, not tighter, which one (limits-card.ts). */
   limit: LimitSay;
   /** The greeting is the personality's (personality.ts); left out, the warm one. `name`: the character's, only when the Operator gave it one. */
-  help: { name?: string; shop: string; kinds: readonly string[]; personality?: Personality };
-  not_understood: { kinds: readonly string[] };
+  help: { name?: string; shop: string; kinds: readonly string[]; personality?: Personality; /** The shop's own skill: its examples name its own kind of case (EXAMPLE_REF). */ skill?: string };
+  not_understood: { kinds: readonly string[]; skill?: string };
   not_offered: Record<string, never>;
   voice_unheard: Record<string, never>;
   owner_words: { shop: string; words: string };
@@ -114,8 +114,14 @@ const EXAMPLES: Record<Language, Record<string, string>> = {
   ml: { day: "നാളെ", waiting: "എനിക്ക് എന്താണ് ബാക്കി", money: "ഇന്ന് എത്ര കിട്ടി", close_day: "ഞായറാഴ്ച അടച്ചിടുക", cancel: "b-14 റദ്ദാക്കുക", message: "b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും", move: "b-14 വൈകുന്നേരം 5-ലേക്ക് മാറ്റുക", owes: "ആരുടെ ഫീസ് ബാക്കി", open_orders: "ഓർഡറുകൾ", undo: "പഴയപടി" },
   kn: { day: "ನಾಳೆ", waiting: "ನನಗೆ ಏನು ಬಾಕಿ", money: "ಇಂದು ಎಷ್ಟು ಬಂತು", close_day: "ಭಾನುವಾರ ಮುಚ್ಚಿ", cancel: "b-14 ರದ್ದು", message: "b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ", move: "b-14 ಸಂಜೆ 5 ಕ್ಕೆ ಶಿಫ್ಟ್", owes: "ಯಾರ ಫೀಸ್ ಬಾಕಿ", open_orders: "ಆರ್ಡರ್‌ಗಳು", undo: "ಹಿಂದಿನಂತೆ" },
 };
+/**
+ * The case an example names, by the shop's own skill (23 Nov 2026): an Orders shop's owner is shown "cancel o-14" and a Fees centre's "cancel f-14", never a Bookings case
+ * ("b-14", the examples' own and every other shop's). Only the reference changes, so the examples' words stay as translated.
+ */
+const EXAMPLE_REF: Record<string, string> = { orders: "o-14", fees: "f-14" };
+const refFor = (text: string, skill: string | undefined): string => (skill && EXAMPLE_REF[skill] ? text.replaceAll("b-14", EXAMPLE_REF[skill]) : text);
 /** The examples for the kinds offered, each on its own line. Their digits are part of the example, so they are literals. */
-const examples = (w: Writer, kinds: readonly string[]) => Object.entries(EXAMPLES[w.language]).filter(([k]) => kinds.includes(k)).map(([, e]) => `• ${w.lit(e)}`).join("\n");
+const examples = (w: Writer, kinds: readonly string[], skill?: string) => Object.entries(EXAMPLES[w.language]).filter(([k]) => kinds.includes(k)).map(([, e]) => `• ${w.lit(refFor(e, skill))}`).join("\n");
 
 const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageData["refusal"]) => string>> = {
   en: {
@@ -300,25 +306,26 @@ const SKILL_ASK: Record<Language, Partial<Record<"fees" | "orders" | "stock-orde
     // Stock orders (17 Nov 2026): a supplier order, not a deposit or an advance. A cancel moves no money (the agent pays nobody); the approval is the order the owner will see on its own card.
     "stock-orders": (w, d) => (d.kind === "cancel" ? `Cancel order ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)})? Nothing has gone to the supplier.` : d.kind === "order" ? `Approve order ${w.lit(d.ref)}: ${w.lit(d.what)} from ${w.lit(d.who)}, ${w.inr(d.amountPaise)} in all? It goes to the supplier and the month's budget is kept for it.` : undefined),
     fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `Cancel fee ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) and waive the ${w.inr(d.amountPaise)} balance? No money moves.` : `Cancel fee ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)})? Nothing is owed.`) : d.kind === "refund" ? `Refund ${w.inr(d.amountPaise)} of the fee to ${w.lit(d.who)} (${w.lit(d.ref)})?` : undefined),
-    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `Cancel order ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) and refund the ${w.inr(d.amountPaise)} advance?` : `Cancel order ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)})? No advance was paid.`) : d.kind === "refund" ? `Refund ${w.inr(d.amountPaise)} of the advance to ${w.lit(d.who)} (${w.lit(d.ref)})?` : undefined),
+    // an order cancelled late (23 Nov 2026): the money the owner may give back is the order's advance, not a deposit
+    orders: (w, d) => (d.itemKind === "late_refund" ? `${w.lit(d.who)} cancelled order ${w.lit(d.ref)} late. Refund the ${w.inr(d.amountPaise)} advance?` : d.kind === "cancel" ? (d.amountPaise > 0 ? `Cancel order ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) and refund the ${w.inr(d.amountPaise)} advance?` : `Cancel order ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)})? No advance was paid.`) : d.kind === "refund" ? `Refund ${w.inr(d.amountPaise)} of the advance to ${w.lit(d.who)} (${w.lit(d.ref)})?` : undefined),
   },
   hi: {
     listings: (w, d) => listingCardLine("hi", w, d),
     "stock-orders": (w, d) => (d.kind === "cancel" ? `ऑर्डर ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें? सप्लायर को कुछ नहीं गया है।` : d.kind === "order" ? `ऑर्डर ${w.lit(d.ref)} मंज़ूर करें: ${w.lit(d.who)} से ${w.lit(d.what)}, कुल ${w.inr(d.amountPaise)}? यह सप्लायर को जाएगा और महीने का बजट इसके लिए रखा जाएगा।` : undefined),
     fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `फीस ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें और ${w.inr(d.amountPaise)} बकाया माफ़ करें? कोई पैसा नहीं जाता।` : `फीस ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें? कुछ बकाया नहीं है।`) : d.kind === "refund" ? `${w.lit(d.ref)} की फीस में से ${w.lit(d.who)} को ${w.inr(d.amountPaise)} लौटाएँ?` : undefined),
-    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ऑर्डर ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें और ${w.inr(d.amountPaise)} एडवांस लौटाएँ?` : `ऑर्डर ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें? कोई एडवांस नहीं दिया गया था।`) : d.kind === "refund" ? `${w.lit(d.ref)} के एडवांस में से ${w.lit(d.who)} को ${w.inr(d.amountPaise)} लौटाएँ?` : undefined),
+    orders: (w, d) => (d.itemKind === "late_refund" ? `${w.lit(d.who)} ने ऑर्डर ${w.lit(d.ref)} देर से रद्द किया। ${w.inr(d.amountPaise)} एडवांस लौटाएँ?` : d.kind === "cancel" ? (d.amountPaise > 0 ? `ऑर्डर ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें और ${w.inr(d.amountPaise)} एडवांस लौटाएँ?` : `ऑर्डर ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें? कोई एडवांस नहीं दिया गया था।`) : d.kind === "refund" ? `${w.lit(d.ref)} के एडवांस में से ${w.lit(d.who)} को ${w.inr(d.amountPaise)} लौटाएँ?` : undefined),
   },
   ml: {
     listings: (w, d) => listingCardLine("ml", w, d),
     "stock-orders": (w, d) => (d.kind === "cancel" ? `ഓർഡർ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കട്ടെ? സപ്ലയർക്ക് ഒന്നും പോയിട്ടില്ല.` : d.kind === "order" ? `ഓർഡർ ${w.lit(d.ref)} അനുവദിക്കട്ടെ: ${w.lit(d.who)}-ൽ നിന്ന് ${w.lit(d.what)}, ആകെ ${w.inr(d.amountPaise)}? ഇത് സപ്ലയർക്ക് പോകും, മാസത്തെ ബജറ്റ് ഇതിനായി മാറ്റിവയ്ക്കും.` : undefined),
     fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ഫീസ് ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കി ${w.inr(d.amountPaise)} ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല.` : `ഫീസ് ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.`) : d.kind === "refund" ? `${w.lit(d.ref)}-ന്റെ ഫീസിൽ നിന്ന് ${w.lit(d.who)}-ക്ക് ${w.inr(d.amountPaise)} തിരികെ നൽകട്ടെ?` : undefined),
-    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ഓർഡർ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കി ${w.inr(d.amountPaise)} അഡ്വാൻസ് തിരികെ നൽകട്ടെ?` : `ഓർഡർ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കട്ടെ? അഡ്വാൻസ് ഒന്നും അടച്ചിട്ടില്ല.`) : d.kind === "refund" ? `${w.lit(d.ref)}-ന്റെ അഡ്വാൻസിൽ നിന്ന് ${w.lit(d.who)}-ക്ക് ${w.inr(d.amountPaise)} തിരികെ നൽകട്ടെ?` : undefined),
+    orders: (w, d) => (d.itemKind === "late_refund" ? `${w.lit(d.who)} ഓർഡർ ${w.lit(d.ref)} വൈകി റദ്ദാക്കി. ${w.inr(d.amountPaise)} അഡ്വാൻസ് തിരികെ നൽകണോ?` : d.kind === "cancel" ? (d.amountPaise > 0 ? `ഓർഡർ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കി ${w.inr(d.amountPaise)} അഡ്വാൻസ് തിരികെ നൽകട്ടെ?` : `ഓർഡർ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കട്ടെ? അഡ്വാൻസ് ഒന്നും അടച്ചിട്ടില്ല.`) : d.kind === "refund" ? `${w.lit(d.ref)}-ന്റെ അഡ്വാൻസിൽ നിന്ന് ${w.lit(d.who)}-ക്ക് ${w.inr(d.amountPaise)} തിരികെ നൽകട്ടെ?` : undefined),
   },
   kn: {
     listings: (w, d) => listingCardLine("kn", w, d),
     "stock-orders": (w, d) => (d.kind === "cancel" ? `ಆರ್ಡರ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಲೇ? ಸರಬರಾಜುದಾರರಿಗೆ ಏನೂ ಹೋಗಿಲ್ಲ.` : d.kind === "order" ? `ಆರ್ಡರ್ ${w.lit(d.ref)} ಒಪ್ಪಲೇ: ${w.lit(d.who)} ಅವರಿಂದ ${w.lit(d.what)}, ಒಟ್ಟು ${w.inr(d.amountPaise)}? ಇದು ಸರಬರಾಜುದಾರರಿಗೆ ಹೋಗುತ್ತದೆ ಮತ್ತು ತಿಂಗಳ ಬಜೆಟ್ ಇದಕ್ಕಾಗಿ ಮೀಸಲಿಡಲಾಗುತ್ತದೆ.` : undefined),
     fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ಫೀಸ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಿ ${w.inr(d.amountPaise)} ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ.` : `ಫೀಸ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.`) : d.kind === "refund" ? `${w.lit(d.ref)} ಫೀಸ್‌ನಿಂದ ${w.lit(d.who)} ಅವರಿಗೆ ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಲೇ?` : undefined),
-    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ಆರ್ಡರ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಿ ${w.inr(d.amountPaise)} ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಲೇ?` : `ಆರ್ಡರ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಲೇ? ಅಡ್ವಾನ್ಸ್ ಪಾವತಿಸಿಲ್ಲ.`) : d.kind === "refund" ? `${w.lit(d.ref)} ಅಡ್ವಾನ್ಸ್‌ನಿಂದ ${w.lit(d.who)} ಅವರಿಗೆ ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಲೇ?` : undefined),
+    orders: (w, d) => (d.itemKind === "late_refund" ? `${w.lit(d.who)} ಆರ್ಡರ್ ${w.lit(d.ref)} ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ${w.inr(d.amountPaise)} ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?` : d.kind === "cancel" ? (d.amountPaise > 0 ? `ಆರ್ಡರ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಿ ${w.inr(d.amountPaise)} ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಲೇ?` : `ಆರ್ಡರ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಲೇ? ಅಡ್ವಾನ್ಸ್ ಪಾವತಿಸಿಲ್ಲ.`) : d.kind === "refund" ? `${w.lit(d.ref)} ಅಡ್ವಾನ್ಸ್‌ನಿಂದ ${w.lit(d.who)} ಅವರಿಗೆ ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಲೇ?` : undefined),
   },
 };
 
@@ -405,7 +412,7 @@ const W: Record<Language, Words> = {
     reopened: (d, w) => `Open again on ${w.date(d.date)}.${d.told > 0 ? ` I've told customers their booking stands: ${w.n(d.told)}.` : ""}`,
     past_day: (d, w) => `${w.date(d.date)} has already gone.`,
     undo_none: () => "There is nothing to undo.",
-    need_ref: (d, w) => `${w.lit(NEED_REF.en[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
+    need_ref: (d, w) => `${w.lit(refFor(NEED_REF.en[d.kind], d.skill))}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "Which day? For example: close Sunday." : "Which day? For example: reopen Sunday."),
     need_when: (d, w) => `To when? For example: ${w.lit(`move ${d.ref} to 5pm`)}, or ${w.lit(`move ${d.ref} to Friday`)}.`,
     moved: (d, w) => `Moved ${w.lit(d.ref)} to ${w.slot(d.toMs)}. I've told the customer. Reply undo to move it back.`,
@@ -423,8 +430,8 @@ const W: Record<Language, Words> = {
     card_unknown: () => "I have no card with that code.",
     limit_no: () => "Limits (refunds, deposits, caps) are changed by your Operator from their panel. I can't change them from here in this version.",
     limit: (d, w) => limitLine(d, "en", w),
-    help: (d, w) => `${greeting(d.personality ?? "warm", "en", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} You can say, for example:\n${examples(w, d.kinds)}`,
-    not_understood: (d, w) => `Sorry, I didn't get that. You can say, for example:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "en", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} You can say, for example:\n${examples(w, d.kinds, d.skill)}`,
+    not_understood: (d, w) => `Sorry, I didn't get that. You can say, for example:\n${examples(w, d.kinds, d.skill)}`,
     not_offered: () => "This shop's assistant doesn't handle that.",
     voice_unheard: () => "I couldn't make out that voice note. Please type it.",
     owner_words: (d, w) => `Message from ${w.lit(d.shop)}: ${w.lit(d.words)}`,
@@ -442,7 +449,7 @@ const W: Record<Language, Words> = {
     reopened: (d, w) => `${w.date(d.date)} फिर से खुला।${d.told > 0 ? ` मैंने ग्राहकों को बताया कि उनकी बुकिंग पक्की है: ${w.n(d.told)}।` : ""}`,
     past_day: (d, w) => `${w.date(d.date)} बीत चुका है।`,
     undo_none: () => "वापस लेने को कुछ नहीं है।",
-    need_ref: (d, w) => `${w.lit(NEED_REF.hi[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
+    need_ref: (d, w) => `${w.lit(refFor(NEED_REF.hi[d.kind], d.skill))}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "कौन-सा दिन? जैसे: रविवार बंद।" : "कौन-सा दिन? जैसे: रविवार फिर से खोल दो।"),
     need_when: (d, w) => `कब पर? जैसे: ${w.lit(`move ${d.ref} to 5pm`)}, या ${w.lit(`move ${d.ref} to Friday`)}।`,
     moved: (d, w) => `${w.lit(d.ref)} को ${w.slot(d.toMs)} पर कर दिया। ग्राहक को बता दिया। वापस करने के लिए undo लिखें।`,
@@ -460,8 +467,8 @@ const W: Record<Language, Words> = {
     card_unknown: () => "उस कोड का कोई कार्ड मेरे पास नहीं है।",
     limit_no: () => "सीमाएँ (रिफंड, जमा राशि, कैप) आपका ऑपरेटर अपने पैनल से बदलता है। इस वर्शन में मैं इन्हें यहाँ से नहीं बदल सकता।",
     limit: (d, w) => limitLine(d, "hi", w),
-    help: (d, w) => `${greeting(d.personality ?? "warm", "hi", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
-    not_understood: (d, w) => `माफ़ कीजिए, समझ नहीं आया। आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "hi", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} आप ऐसे कह सकते हैं:\n${examples(w, d.kinds, d.skill)}`,
+    not_understood: (d, w) => `माफ़ कीजिए, समझ नहीं आया। आप ऐसे कह सकते हैं:\n${examples(w, d.kinds, d.skill)}`,
     not_offered: () => "इस दुकान का असिस्टेंट यह काम नहीं करता।",
     voice_unheard: () => "वह वॉइस नोट समझ नहीं आया। कृपया लिखकर भेजें।",
     owner_words: (d, w) => `${w.lit(d.shop)} की ओर से संदेश: ${w.lit(d.words)}`,
@@ -479,7 +486,7 @@ const W: Record<Language, Words> = {
     reopened: (d, w) => `${w.date(d.date)} വീണ്ടും തുറന്നു.${d.told > 0 ? ` ബുക്കിംഗ് നിലനിൽക്കുമെന്ന് ഉപഭോക്താക്കളോട് പറഞ്ഞു: ${w.n(d.told)}.` : ""}`,
     past_day: (d, w) => `${w.date(d.date)} കഴിഞ്ഞുപോയി.`,
     undo_none: () => "പഴയപടിയാക്കാൻ ഒന്നുമില്ല.",
-    need_ref: (d, w) => `${w.lit(NEED_REF.ml[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
+    need_ref: (d, w) => `${w.lit(refFor(NEED_REF.ml[d.kind], d.skill))}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "ഏത് ദിവസം? ഉദാഹരണം: ഞായറാഴ്ച അടച്ചിടുക." : "ഏത് ദിവസം? ഉദാഹരണം: ഞായറാഴ്ച വീണ്ടും തുറക്കുക."),
     need_when: (d, w) => `എപ്പോഴേക്ക്? ഉദാഹരണം: ${w.lit(`move ${d.ref} to 5pm`)}, അല്ലെങ്കിൽ ${w.lit(`move ${d.ref} to Friday`)}.`,
     moved: (d, w) => `${w.lit(d.ref)} ${w.slot(d.toMs)}-ലേക്ക് മാറ്റി. ഉപഭോക്താവിനോട് പറഞ്ഞു. തിരികെ മാറ്റാൻ undo എന്ന് മറുപടി നൽകുക.`,
@@ -497,8 +504,8 @@ const W: Record<Language, Words> = {
     card_unknown: () => "ആ കോഡുള്ള കാർഡ് എന്റെ പക്കലില്ല.",
     limit_no: () => "പരിധികൾ (റീഫണ്ട്, ഡെപ്പോസിറ്റ്, ക്യാപ്) നിങ്ങളുടെ ഓപ്പറേറ്റർ അവരുടെ പാനലിൽ നിന്നാണ് മാറ്റുന്നത്. ഈ പതിപ്പിൽ എനിക്ക് ഇവിടെ നിന്ന് അവ മാറ്റാനാകില്ല.",
     limit: (d, w) => limitLine(d, "ml", w),
-    help: (d, w) => `${greeting(d.personality ?? "warm", "ml", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
-    not_understood: (d, w) => `ക്ഷമിക്കണം, മനസ്സിലായില്ല. ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "ml", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds, d.skill)}`,
+    not_understood: (d, w) => `ക്ഷമിക്കണം, മനസ്സിലായില്ല. ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds, d.skill)}`,
     not_offered: () => "ഈ കടയുടെ അസിസ്റ്റന്റ് അത് ചെയ്യുന്നില്ല.",
     voice_unheard: () => "ആ വോയ്സ് നോട്ട് മനസ്സിലായില്ല. ദയവായി ടൈപ്പ് ചെയ്യുക.",
     owner_words: (d, w) => `${w.lit(d.shop)}-ൽ നിന്നുള്ള സന്ദേശം: ${w.lit(d.words)}`,
@@ -516,7 +523,7 @@ const W: Record<Language, Words> = {
     reopened: (d, w) => `${w.date(d.date)} ಮತ್ತೆ ತೆರೆದಿದೆ.${d.told > 0 ? ` ಬುಕಿಂಗ್ ಉಳಿದಿದೆ ಎಂದು ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ: ${w.n(d.told)}.` : ""}`,
     past_day: (d, w) => `${w.date(d.date)} ಈಗಾಗಲೇ ಕಳೆದಿದೆ.`,
     undo_none: () => "ಹಿಂದಿನಂತೆ ಮಾಡಲು ಏನೂ ಇಲ್ಲ.",
-    need_ref: (d, w) => `${w.lit(NEED_REF.kn[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
+    need_ref: (d, w) => `${w.lit(refFor(NEED_REF.kn[d.kind], d.skill))}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "ಯಾವ ದಿನ? ಉದಾಹರಣೆಗೆ: ಭಾನುವಾರ ಮುಚ್ಚಿ." : "ಯಾವ ದಿನ? ಉದಾಹರಣೆಗೆ: ಭಾನುವಾರ ಮತ್ತೆ ತೆರೆ."),
     need_when: (d, w) => `ಯಾವಾಗಕ್ಕೆ? ಉದಾಹರಣೆಗೆ: ${w.lit(`move ${d.ref} to 5pm`)}, ಅಥವಾ ${w.lit(`move ${d.ref} to Friday`)}.`,
     moved: (d, w) => `${w.lit(d.ref)} ಅನ್ನು ${w.slot(d.toMs)} ಕ್ಕೆ ಬದಲಾಯಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಹಿಂದಿನಂತೆ ಮಾಡಲು undo ಎಂದು ಉತ್ತರಿಸಿ.`,
@@ -534,8 +541,8 @@ const W: Record<Language, Words> = {
     card_unknown: () => "ಆ ಕೋಡ್‌ನ ಕಾರ್ಡ್ ನನ್ನ ಬಳಿ ಇಲ್ಲ.",
     limit_no: () => "ಮಿತಿಗಳನ್ನು (ರೀಫಂಡ್, ಠೇವಣಿ, ಕ್ಯಾಪ್) ನಿಮ್ಮ ಪಾರ್ಟ್‌ನರ್ ಅವರ ಪ್ಯಾನೆಲ್‌ನಿಂದ ಬದಲಾಯಿಸುತ್ತಾರೆ. ಈ ಆವೃತ್ತಿಯಲ್ಲಿ ನಾನು ಇಲ್ಲಿಂದ ಅವುಗಳನ್ನು ಬದಲಾಯಿಸಲಾಗದು.",
     limit: (d, w) => limitLine(d, "kn", w),
-    help: (d, w) => `${greeting(d.personality ?? "warm", "kn", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds)}`,
-    not_understood: (d, w) => `ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "kn", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds, d.skill)}`,
+    not_understood: (d, w) => `ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds, d.skill)}`,
     not_offered: () => "ಈ ಅಂಗಡಿಯ ಸಹಾಯಕ ಅದನ್ನು ಮಾಡುವುದಿಲ್ಲ.",
     voice_unheard: () => "ಆ ವಾಯ್ಸ್ ನೋಟ್ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.",
     owner_words: (d, w) => `${w.lit(d.shop)} ಇಂದ ಸಂದೇಶ: ${w.lit(d.words)}`,

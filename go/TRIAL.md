@@ -1083,3 +1083,45 @@ Bookings has neither, and both need a shared runtime hook.
 - The Orders and Bookings unit tests these changes touch (plans, agent, channels, papers, report-go-live, assistant-acts, late-advance-card, bookings parser): 77 of 77.
 - The Bookings contract on Go: 151 of 151.
 - Before the fixes, both findings cases failed on the TypeScript; after them they pass on both runtimes.
+
+## go-fees-assistant-23nov (23 Nov 2026, stream FA): the shop's assistant on a Fees centre
+
+Started from agents main 077371a6. The two Fees contract tests that failed on Go ("the shop's assistant on a Fees centre": "who owes fees" with a waiver card, and "cancel f-2")
+needed the shop's assistant over a Fees skill. Built on W4's Orders pattern, through the one shared assistant (no third way of doing a skill):
+
+- **internal/fees/agent_assistant.go**: assistant.ts feesSkill and agent.ts feesActs: who owes (the open fees past their due date), what waits (from the owner page's own
+  list: a waiver or a refund a parent asked for, a UPI deposit to mark, a refund the owner owes), answered by the owner's own reply ("approve q-1", "deny q-1", the mark's button);
+  cancel (the owner's waiver of the whole balance, after the record is read again) and refund (checked and sent as "approve q-4": Guard holds it above the limit, a UPI owner owes
+  it) by card, bound to the fee's state, balance, payments, waiver and late fee; a message to a parent or a chat guest; the owner's talk's numbers (facts) and a parent's public
+  context; the morning line (AfterTick), the owner page's `app` view and the page head's `character` (read-only skill over the last saved state). `sendOwnerRefund` now returns
+  its result. The owner's talk box and a card's answer on the page go to the assistant (agent_page.go), and the owner's free words too (agent_talk.go, after Classes' words).
+- **Shared changes** (Stream FA owns them; every other template is answered as before): `runtime.AssistantHooks.Fees` and `assistant.OwnerReading.Fees` (a Fees centre's kinds
+  and router, generated); the "owes" kind and list and `OweSkill` (runtime/assistantowes.go), the morning line's Fees part (morning.go: only for a skill that is an OweSkill);
+  the "@fees" profile for the help and "didn't get that" lines; `runtime.PrepareGuestMessage` (wire.ts prepareGuestMessage once, for any skill; Bookings' and Orders' own copies
+  are left for the fold, internal/fees/Deferred.md). `go/scripts/gen_words.ts feesWords` renders the Fees words (help and not_understood @fees, owes_list.*, the waiver and
+  refund-request cards, card.cancel.*@fees, card.refund@fees, refusal.already_back@fees and cancel_first@fees, morning.owes, kindsFees, routerFees);
+  `gen_assistant_vectors.ts` adds Fees lines to the assistant line vectors (who owes in three shapes, the waiver, refund-request, cancel and refund cards, the help line).
+- **New contract cases, both runtimes** (`templates/education/fees/contract/assistant.contract.test.ts`, 6): the money paths TypeScript proved only in test/assistant.test.ts
+  and test/assistant-money.test.ts (a waiver card's Refuse; a cancel card void after a payment and the "cancel first" refusal; a refund card on a Razorpay centre held by Guard
+  and released once, then "already going back"; a refund card on a UPI centre owed by the owner, and "more than was paid"; a message card; the morning line's fees not paid).
+  6 of 6 on TypeScript before any Go (commit 69338221).
+
+**TypeScript findings (nothing changed; pinned as they are on both runtimes).** (a) A Fees cancel card reads "Cancel fee f-2 (Rohan Mehta, Sep 2026)? Nothing is owed." while it
+waives the whole balance: assistant.ts prepareMoney shows amount 0 ("a cancel refunds nothing"), so SKILL_ASK.fees takes its no-balance sentence; the card should show the balance
+it waives ("... and waive the ₹1,800 balance? No money moves.", which words.ts already has). (b) After that cancel's yes the owner reads "Done: ₹1,800 is on its way back to Rohan
+Mehta (f-2)." although no money moves: conversation.ts words a cancel with `fields.amountPaise > 0` as "refund_sent", and the Fees cancel binds the balance in that field; a Fees
+cancel should say "Cancelled f-2.". (c) "refund f-2 ₹2,000" above the payment answers "That is more than was paid on f-2 (₹0)." (the Fees skill's too_much refusal carries no
+`paidPaise`). (d) Help and "which one?" lines on a Fees centre gave Bookings' examples ("cancel b-14"), as OG found for Orders: fixed with OG's two below.
+
+**OG's two Orders findings, fixed on both sides (the lead's note; words.ts and gen_words.ts are this stream's).** (1) An Orders shop's help, "didn't get that" and "which
+one?" lines named a Bookings case ("cancel b-14"): words.ts now takes the shop's own skill (`skill` on help, not_understood and need_ref; conversation.ts passes the
+template's skill, first in wire.ts's order) and EXAMPLE_REF names its kind of case ("o-14" for Orders, and "f-14" for Fees, the same fault); only the reference changes, so
+the translated words stay. Go: the @orders/@fees help lines and new `need_ref.<kind>@orders|@fees` keys, read through `conv.ownKey`. (2) An Orders shop's late-refund card
+said "deposit": SKILL_ASK.orders words it "Ravi cancelled order o-5 late. Refund the ₹120 advance?" in four languages; Go reads `card.answer.late_refund@orders` (cardQuestion
+looks for the skill's own answer key first). Tests: modules/assistant/test/words.test.ts (two new tests, every language) and the assistant line vectors (help@orders, three
+"which one?" lines, the Orders late-refund card, in four languages; run by internal/runtime TestAssistantLinesAreTheTypeScriptsAndTheirCheckToo).
+
+**Measured at the end (on the branch merged with main 4421c2f5: OG, FR and SR in; through the heat lock).** Fees contract **73 of 73 on Go and 73 of 73 on TypeScript**
+(assistant.contract.test.ts 6 of 6 on both); Orders contract 94 of 94 on Go and on TypeScript; Bookings contract on Go 151 of 151; listings 208 of 208 (words-fresh included);
+modules/assistant/test 110 of 110; `go vet ./...` and `go test ./...` clean; `gen_words.ts --check` and `gen_assistant_vectors.ts --check` fresh. The Fees morning line runs
+after FR's monthly report in AfterTick. internal/fees/Deferred.md still lists the monthly report as not ported: that row is Stream FR's to remove.

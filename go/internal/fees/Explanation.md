@@ -20,6 +20,7 @@ HTTP face are the shared runtime's; this package is what is Fees' own. `cmd/fees
 | agent_marks.go | a UPI centre's money: the owner's one-use codes, parts, refunds the owner owes | agent.ts's owner-marked section |
 | agent_page.go | a parent's press on their page and the owner's presses on theirs (by digest), cash and bank marks | agent.ts onChannelFee, onOwnerAction, onOwnerCash |
 | agent_talk.go | what a parent and the owner say, the panel's to-do list, the public chat | agent.ts onMessage, onOwnerMessage, onRecovery, onChatTurn |
+| agent_assistant.go | Fees as a skill of the shop's assistant (23 Nov 2026): who owes, what waits (from the owner page's own list), cancel (the owner's waiver of the whole balance) and refund (the same refund as "approve q-4") by card, a message to a parent, the talk's numbers, the morning line, the app view and the page head's character | src/assistant.ts feesSkill, agent.ts feesActs and its assistant, server/runtime.ts skillOver |
 | channel.go | what the centre's page, a parent's page, a confirmation page and the owner's page read; documents and the accountant's files | src/channel.ts |
 | classes.go | Classes' state, and the reading material served to a parent's private link | classes/state.ts, view.ts materialView, server/materials.ts |
 
@@ -33,3 +34,21 @@ HTTP face are the shared runtime's; this package is what is Fees' own. `cmd/fees
   the receipts); the record keeps a parent's number only as the conversation, the inputs only as a keyed digest, a parent's link only as its hash; /status has counts only.
 - **Shared code is opened, not copied** (Deferred.md lists the doors): the settings readers and one step's watch from internal/bookings, the chat outbox in internal/runtime, the
   books' Fees map in internal/accounting.
+
+## The shop's assistant (23 Nov 2026, `go-fees-assistant-23nov`)
+
+There is one assistant (internal/runtime assistant.go): Fees hands it a skill, as Bookings and Orders do, through `StepContext.Assistant` with `AssistantHooks.Fees`, and the
+conversation, the cards, the binding and every word are the runtime's. What the owner reads is generated from modules/assistant/words.ts by `go/scripts/gen_words.ts feesWords`
+(the help and "didn't get that" lines for a Fees centre's kinds, `owes_list.*`, the waiver and refund-request cards, the Fees skill's own cancel and refund cards and two refusals,
+`morning.owes`) and written through the Writer, so the outgoing check finds every value noted. The runtime's part that is new for Fees is `assistantowes.go` (the "owes" kind and
+list, OweSkill, which the morning line also counts) and `PrepareGuestMessage` (a message to a chat guest, once for any skill).
+
+- **Answering what waits is the owner's own reply.** A card's yes on a waiver is "approve q-1" handed to onOwnerMessage (which lets "approve/deny q-N" pass the assistant), a
+  UPI mark's yes is the mark's button with its one-use code; a no is "deny q-1". Nothing else decides.
+- **Cancel and refund are the agent's own paths.** A cancel reads the payment record again and waives exactly the balance the card showed (checkWaiver with the owner's yes,
+  applyWaiver, the links closed); a refund is checked as "approve q-4" is (one refund for a payment, the limit with the owner's yes) and sent by sendOwnerRefund (now returning
+  its result: Guard holds it above the limit, a UPI owner owes it). The card is bound to the fee's state, balance, payments counted, waiver and late fee.
+- **Read-only where there is no step.** The morning line, the owner's app view and the page head's character use the skill with no acts over the last saved state
+  (`Kit.readSkill`); cancel and refund are then "not_here".
+
+Proved by `templates/education/fees/contract/assistant.contract.test.ts` (both runtimes) and owner.contract.test.ts's two cases.

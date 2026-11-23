@@ -165,6 +165,8 @@ export function createAssistant(deps: AssistantDeps) {
   const tz = shop.timezone;
   const state = (): AssistantState => assistantOf(deps.store);
   const context: OwnerContext = { kinds: kindsOf(skills) };
+  /** The shop's own skill (wire.ts puts the template's first): help, "didn't get that" and "which one?" name its kind of case in their examples (words.ts EXAMPLE_REF). */
+  const ownSkill = skills[0]?.name;
 
   // ---- saying ----
   const sayVoice = {
@@ -564,7 +566,7 @@ export function createAssistant(deps: AssistantDeps) {
 
   // ---- a booking moved by the owner (not money: done at once, said in passing, undoable) ----
   async function move(intent: OwnerIntent): Promise<void> {
-    if (!intent.ref) { await tell("need_ref", { kind: "move", rows: candidates(intent) }); return; }
+    if (!intent.ref) { await tell("need_ref", { kind: "move", rows: candidates(intent), ...(ownSkill ? { skill: ownSkill } : {}) }); return; }
     const skill = skillOf(intent.ref);
     if (!skill) { await tell("refusal", { why: "no_case", ref: intent.ref }); return; }
     if (!skill.move || !skill.moveTarget) { await tell("not_offered", {}); return; }
@@ -719,7 +721,7 @@ export function createAssistant(deps: AssistantDeps) {
     const offered = intent.kind === "unknown" || context.kinds.includes(intent.kind);
     if (!offered) { await tell("not_offered", {}); return true; }
     switch (intent.kind) {
-      case "help": await tell("help", { ...(shop.settings.character.name ? { name: shop.settings.character.name } : {}), shop: shop.name, kinds: context.kinds, personality: shop.settings.character.personality }); break;
+      case "help": await tell("help", { ...(shop.settings.character.name ? { name: shop.settings.character.name } : {}), shop: shop.name, kinds: context.kinds, personality: shop.settings.character.personality, ...(ownSkill ? { skill: ownSkill } : {}) }); break;
       case "limit": await onLimit(msg.text); break;
       case "remember": await notes.remember(intent.words); break;
       case "notes": await notes.list(); break;
@@ -741,7 +743,7 @@ export function createAssistant(deps: AssistantDeps) {
       case "undo": await undoLast(); break;
       case "move": await move(intent); break;
       case "cancel": case "refund": case "message": {
-        if (!intent.ref) { await tell("need_ref", { kind: intent.kind, rows: candidates(intent) }); break; }
+        if (!intent.ref) { await tell("need_ref", { kind: intent.kind, rows: candidates(intent), ...(ownSkill ? { skill: ownSkill } : {}) }); break; }
         if (intent.kind === "message" && !intent.words) { await tell("need_words", { ref: intent.ref }); break; }
         const proposal: Proposal = intent.kind === "cancel" ? { kind: "cancel", case: intent.ref }
           : intent.kind === "refund" ? { kind: "refund", case: intent.ref, ...(intent.amountPaise !== undefined ? { amountPaise: intent.amountPaise } : {}) }
@@ -749,7 +751,7 @@ export function createAssistant(deps: AssistantDeps) {
         await propose(proposal);
         break;
       }
-      default: if (!(await talkToOwner(msg.text, `o:${msg.id}`))) await tell("not_understood", { kinds: context.kinds });
+      default: if (!(await talkToOwner(msg.text, `o:${msg.id}`))) await tell("not_understood", { kinds: context.kinds, ...(ownSkill ? { skill: ownSkill } : {}) });
     }
     return true;
   }

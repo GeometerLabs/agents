@@ -114,3 +114,32 @@ test("the three templates: the text is the approved body filled in, it passes it
     assert.match(body.text, /^[^{].*[^}]$/su, "a body neither starts nor ends with a value");
   }
 });
+
+// 23 Nov 2026 (go/TRIAL.md, go-orders-gaps-23nov): an Orders shop's examples name an order and a Fees centre's a fee, never a Bookings case; a Bookings shop's stay as they were.
+test("help, \"didn't get that\" and \"which one?\" name the shop's own kind of case", () => {
+  const kinds = ["waiting", "cancel", "message", "open_orders"];
+  for (const lang of LANGUAGES) {
+    const help = write("help", { shop: "Ravi Bakery", kinds, skill: "orders" }, lang, TZ).text;
+    assert.ok(help.includes("o-14") && !help.includes("b-14"), help);
+    const lost = write("not_understood", { kinds, skill: "fees" }, lang, TZ).text;
+    assert.ok(lost.includes("f-14") && !lost.includes("b-14"), lost);
+    for (const kind of ["cancel", "refund", "message"] as const) {
+      const which = write("need_ref", { kind, rows: [], skill: "orders" }, lang, TZ).text;
+      assert.ok(which.includes("o-14") && !which.includes("b-14"), which);
+    }
+    assert.ok(write("help", { shop: "Glow Salon", kinds, skill: "bookings" }, lang, TZ).text.includes("b-14"));
+    assert.ok(write("need_ref", { kind: "cancel", rows: [] }, lang, TZ).text.includes("b-14"));
+  }
+  assert.equal(write("need_ref", { kind: "cancel", rows: [], skill: "orders" }, "en", TZ).text, "Which one? Reply like this: cancel o-14.");
+});
+
+test("an order cancelled late is an advance to give back, not a deposit; a booking's stays a deposit", () => {
+  const card = { kind: "answer", itemKind: "late_refund", who: "Ravi", ref: "o-5", what: "2 cakes", amountPaise: 12_000, code: "K7M2QX", hasNo: true } as const;
+  assert.match(write("card", { ...card, skill: "orders" }, "en", TZ).text, /^Ravi cancelled order o-5 late\. Refund the ₹120 advance\?\n/u);
+  assert.match(write("card", { ...card, skill: "bookings", ref: "b-5" }, "en", TZ).text, /^Ravi cancelled b-5 late\. Refund the ₹120 deposit\?\n/u);
+  for (const lang of LANGUAGES) {
+    const text = write("card", { ...card, skill: "orders" }, lang, TZ).text;
+    assert.ok(checkText(text, write("card", { ...card, skill: "orders" }, lang, TZ).facts).ok, text);
+    assert.notEqual(text, write("card", { ...card, skill: "bookings" }, lang, TZ).text, `${lang}: the Orders card has its own words`);
+  }
+});

@@ -36,6 +36,7 @@ attendance question, the missed-class notes, doubts waiting) and, after it, the 
 | `razorpay.contract.test.ts` | a Razorpay centre's money on the wire: one link per amount, paid from the provider's own list, a claim not believed, a Guard outage, refunds (owner's, refused, held by Guard, released once) |
 | `parent.contract.test.ts` | a parent's private page: what it opens, "show how to pay", "I have paid" and its confirmation page, another parent's fee, revoke and a new link, a restart |
 | `owner.contract.test.ts` | the licence, the owner's page, the shop's assistant over the Fees skill, the panel's to-do list, the monthly report |
+| `assistant.contract.test.ts` | the shop's assistant's money paths: a waiver card's Refuse, a cancel card void after a payment, refund cards on a Razorpay centre (held by Guard, released once) and a UPI centre (owed by the owner), a message card, the morning line's fees not paid |
 | `classes.contract.test.ts` | Classes: the class link and consent, the attendance and the missed-class note, a fee past its grace days, doubts, the reading material |
 | `chat.contract.test.ts` | the centre's public chat |
 | `record.contract.test.ts` | the store file, the saved state's members, what never leaves the centre (numbers, words, students' names) |

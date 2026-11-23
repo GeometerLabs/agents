@@ -805,6 +805,501 @@
   },
   {
    "lang": "hi",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Meera Nair",
+      "what": "Sep 2026",
+      "amountPaise": 150000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Rohan Mehta",
+      "what": "Sep 2026",
+      "amountPaise": 180050,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "बाकी फीस: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बाकी फीस: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बाकी फीस: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "बाकी फीस: 2\nMeera Nair, Sep 2026: ₹1,5009 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+     "problems": [
+      "The message says ₹15,009, but the record only has ₹1,500, ₹1,800.5."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Student 1",
+      "what": "Nov 2026",
+      "amountPaise": 120000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Student 2",
+      "what": "Nov 2026",
+      "amountPaise": 120100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-3",
+      "who": "Student 3",
+      "what": "Nov 2026",
+      "amountPaise": 120200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-4",
+      "who": "Student 4",
+      "what": "Nov 2026",
+      "amountPaise": 120300,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-5",
+      "who": "Student 5",
+      "what": "Nov 2026",
+      "amountPaise": 120400,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-6",
+      "who": "Student 6",
+      "what": "Nov 2026",
+      "amountPaise": 120500,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-7",
+      "who": "Student 7",
+      "what": "Nov 2026",
+      "amountPaise": 120600,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-8",
+      "who": "Student 8",
+      "what": "Nov 2026",
+      "amountPaise": 120700,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-9",
+      "who": "Student 9",
+      "what": "Nov 2026",
+      "amountPaise": 120800,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-10",
+      "who": "Student 10",
+      "what": "Nov 2026",
+      "amountPaise": 120900,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-11",
+      "who": "Student 11",
+      "what": "Nov 2026",
+      "amountPaise": 121000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-12",
+      "who": "Student 12",
+      "what": "Nov 2026",
+      "amountPaise": 121100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-13",
+      "who": "Student 13",
+      "what": "Nov 2026",
+      "amountPaise": 121200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-14",
+      "who": "Student 14",
+      "what": "Nov 2026",
+      "amountPaise": 121300,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "बाकी फीस: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nऔर 2 और",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "बाकी फीस: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nऔर 2 और 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "बाकी फीस: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nऔर 2 और https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "बाकी फीस: 14\nStudent 1, Nov 2026: ₹1,2009 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nऔर 2 और",
+     "problems": [
+      "The message says ₹12,009, but the record only has ₹1,200, ₹1,201, ₹1,202, ₹1,203, ₹1,204, ₹1,205, ₹1,206, ₹1,207, ₹1,208, ₹1,209, ₹1,210, ₹1,211."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "owes_list",
+   "go": {
+    "rows": []
+   },
+   "text": "अभी किसी की फीस बाकी नहीं है।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "अभी किसी की फीस बाकी नहीं है। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "अभी किसी की फीस बाकी नहीं है। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "waiver",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 50000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Rohan Mehta की फीस (Sep 2026, f-2) में ₹500 की छूट दें?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Rohan Mehta की फीस (Sep 2026, f-2) में ₹500 की छूट दें?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Rohan Mehta की फीस (Sep 2026, f-2) में ₹500 की छूट दें?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Rohan Mehta की फीस (Sep 2026, f-2) में ₹5009 की छूट दें?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "refund_request",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 40000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Rohan Mehta ने ₹400 वापस माँगे हैं (Sep 2026, f-2)। लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Rohan Mehta ने ₹400 वापस माँगे हैं (Sep 2026, f-2)। लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ने ₹400 वापस माँगे हैं (Sep 2026, f-2)। लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ने ₹4009 वापस माँगे हैं (Sep 2026, f-2)। लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹4,009, but the record only has ₹400."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 0,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें? कुछ बकाया नहीं है।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें? कुछ बकाया नहीं है।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें? कुछ बकाया नहीं है।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card",
+   "go": {
+    "kind": "refund",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 180000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "f-2 की फीस में से Rohan Mehta को ₹1,800 लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "f-2 की फीस में से Rohan Mehta को ₹1,800 लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "f-2 की फीस में से Rohan Mehta को ₹1,800 लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "f-2 की फीस में से Rohan Mehta को ₹1,8009 लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
+   },
+   "text": "मैं Ravi Bakery का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• o-14 रद्द करो\n• o-14 को बोलो 15 मिनट देर होगी\n• ऑर्डर\n• वापस लो",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "मैं Ravi Bakery का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• o-14 रद्द करो\n• o-14 को बोलो 15 मिनट देर होगी\n• ऑर्डर\n• वापस लो 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "मैं Ravi Bakery का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• o-14 रद्द करो\n• o-14 को बोलो 15 मिनट देर होगी\n• ऑर्डर\n• वापस लो https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "कौन-सी? ऐसे जवाब दें: cancel o-14।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: cancel o-14। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: cancel o-14। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "किस ग्राहक को? ऐसे जवाब दें: message o-14 15 मिनट देर होगी।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "किस ग्राहक को? ऐसे जवाब दें: message o-14 15 मिनट देर होगी। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "किस ग्राहक को? ऐसे जवाब दें: message o-14 15 मिनट देर होगी। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "कौन-सी? ऐसे जवाब दें: refund f-14।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: refund f-14। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "कौन-सी? ऐसे जवाब दें: refund f-14। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹120 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹120 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹120 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi ने ऑर्डर o-5 देर से रद्द किया। ₹1209 एडवांस लौटाएँ?\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• f-14 रद्द करो\n• f-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• f-14 रद्द करो\n• f-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "मैं Bright Tuition Centre का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• f-14 रद्द करो\n• f-14 को बोलो 15 मिनट देर होगी\n• किसकी फीस बाकी है\n• वापस लो https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "hi",
    "kind": "tmpl",
    "go": {
     "id": "day_closed",
@@ -1637,6 +2132,501 @@
      "text": "Which one? Reply like this: cancel b-14.\nThu 26 Nov, 10:30 am: Haircut, Asha (b-7)\nWed 25 Nov, 4:05 pm: Beard trim, Room 4 Ravi (b-12)",
      "problems": [
       "The message says the date \"Thu 26 Nov\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Meera Nair",
+      "what": "Sep 2026",
+      "amountPaise": 150000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Rohan Mehta",
+      "what": "Sep 2026",
+      "amountPaise": 180050,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "Fees not paid yet: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Fees not paid yet: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Fees not paid yet: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Fees not paid yet: 2\nMeera Nair, Sep 2026: ₹1,5009 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+     "problems": [
+      "The message says ₹15,009, but the record only has ₹1,500, ₹1,800.5."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Student 1",
+      "what": "Nov 2026",
+      "amountPaise": 120000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Student 2",
+      "what": "Nov 2026",
+      "amountPaise": 120100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-3",
+      "who": "Student 3",
+      "what": "Nov 2026",
+      "amountPaise": 120200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-4",
+      "who": "Student 4",
+      "what": "Nov 2026",
+      "amountPaise": 120300,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-5",
+      "who": "Student 5",
+      "what": "Nov 2026",
+      "amountPaise": 120400,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-6",
+      "who": "Student 6",
+      "what": "Nov 2026",
+      "amountPaise": 120500,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-7",
+      "who": "Student 7",
+      "what": "Nov 2026",
+      "amountPaise": 120600,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-8",
+      "who": "Student 8",
+      "what": "Nov 2026",
+      "amountPaise": 120700,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-9",
+      "who": "Student 9",
+      "what": "Nov 2026",
+      "amountPaise": 120800,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-10",
+      "who": "Student 10",
+      "what": "Nov 2026",
+      "amountPaise": 120900,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-11",
+      "who": "Student 11",
+      "what": "Nov 2026",
+      "amountPaise": 121000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-12",
+      "who": "Student 12",
+      "what": "Nov 2026",
+      "amountPaise": 121100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-13",
+      "who": "Student 13",
+      "what": "Nov 2026",
+      "amountPaise": 121200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-14",
+      "who": "Student 14",
+      "what": "Nov 2026",
+      "amountPaise": 121300,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "Fees not paid yet: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nand 2 more",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Fees not paid yet: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nand 2 more 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Fees not paid yet: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nand 2 more https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Fees not paid yet: 14\nStudent 1, Nov 2026: ₹1,2009 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nand 2 more",
+     "problems": [
+      "The message says ₹12,009, but the record only has ₹1,200, ₹1,201, ₹1,202, ₹1,203, ₹1,204, ₹1,205, ₹1,206, ₹1,207, ₹1,208, ₹1,209, ₹1,210, ₹1,211."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "owes_list",
+   "go": {
+    "rows": []
+   },
+   "text": "Nobody owes a fee right now.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Nobody owes a fee right now. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Nobody owes a fee right now. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "waiver",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 50000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Waive ₹500 of Rohan Mehta's fee (Sep 2026, f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Waive ₹500 of Rohan Mehta's fee (Sep 2026, f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Waive ₹500 of Rohan Mehta's fee (Sep 2026, f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Waive ₹5009 of Rohan Mehta's fee (Sep 2026, f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "refund_request",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 40000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Rohan Mehta asked for ₹400 back (Sep 2026, f-2). Refund it?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Rohan Mehta asked for ₹400 back (Sep 2026, f-2). Refund it?\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Rohan Mehta asked for ₹400 back (Sep 2026, f-2). Refund it?\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Rohan Mehta asked for ₹4009 back (Sep 2026, f-2). Refund it?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹4,009, but the record only has ₹400."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 0,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026)? Nothing is owed.\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026)? Nothing is owed.\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026)? Nothing is owed.\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card",
+   "go": {
+    "kind": "refund",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 180000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Refund ₹1,800 of the fee to Rohan Mehta (f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Refund ₹1,800 of the fee to Rohan Mehta (f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Refund ₹1,800 of the fee to Rohan Mehta (f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Refund ₹1,8009 of the fee to Rohan Mehta (f-2)?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
+   },
+   "text": "I'm Ravi Bakery's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel o-14\n• message o-14 Running 15 minutes late\n• open orders\n• undo",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "I'm Ravi Bakery's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel o-14\n• message o-14 Running 15 minutes late\n• open orders\n• undo 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "I'm Ravi Bakery's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel o-14\n• message o-14 Running 15 minutes late\n• open orders\n• undo https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "Which one? Reply like this: cancel o-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which one? Reply like this: cancel o-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which one? Reply like this: cancel o-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "Which customer? Reply like this: message o-14 Running 15 minutes late.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which customer? Reply like this: message o-14 Running 15 minutes late. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which customer? Reply like this: message o-14 Running 15 minutes late. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "Which one? Reply like this: refund f-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Which one? Reply like this: refund f-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Which one? Reply like this: refund f-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi cancelled order o-5 late. Refund the ₹120 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi cancelled order o-5 late. Refund the ₹120 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi cancelled order o-5 late. Refund the ₹120 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi cancelled order o-5 late. Refund the ₹1209 advance?\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "en",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel f-14\n• message f-14 Running 15 minutes late\n• who owes fees\n• undo",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel f-14\n• message f-14 Running 15 minutes late\n• who owes fees\n• undo 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "I'm Bright Tuition Centre's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel f-14\n• message f-14 Running 15 minutes late\n• who owes fees\n• undo https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
      ]
     }
    ]
@@ -2481,6 +3471,501 @@
   },
   {
    "lang": "ml",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Meera Nair",
+      "what": "Sep 2026",
+      "amountPaise": 150000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Rohan Mehta",
+      "what": "Sep 2026",
+      "amountPaise": 180050,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "അടയ്ക്കാത്ത ഫീസ്: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "അടയ്ക്കാത്ത ഫീസ്: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "അടയ്ക്കാത്ത ഫീസ്: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "അടയ്ക്കാത്ത ഫീസ്: 2\nMeera Nair, Sep 2026: ₹1,5009 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+     "problems": [
+      "The message says ₹15,009, but the record only has ₹1,500, ₹1,800.5."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Student 1",
+      "what": "Nov 2026",
+      "amountPaise": 120000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Student 2",
+      "what": "Nov 2026",
+      "amountPaise": 120100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-3",
+      "who": "Student 3",
+      "what": "Nov 2026",
+      "amountPaise": 120200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-4",
+      "who": "Student 4",
+      "what": "Nov 2026",
+      "amountPaise": 120300,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-5",
+      "who": "Student 5",
+      "what": "Nov 2026",
+      "amountPaise": 120400,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-6",
+      "who": "Student 6",
+      "what": "Nov 2026",
+      "amountPaise": 120500,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-7",
+      "who": "Student 7",
+      "what": "Nov 2026",
+      "amountPaise": 120600,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-8",
+      "who": "Student 8",
+      "what": "Nov 2026",
+      "amountPaise": 120700,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-9",
+      "who": "Student 9",
+      "what": "Nov 2026",
+      "amountPaise": 120800,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-10",
+      "who": "Student 10",
+      "what": "Nov 2026",
+      "amountPaise": 120900,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-11",
+      "who": "Student 11",
+      "what": "Nov 2026",
+      "amountPaise": 121000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-12",
+      "who": "Student 12",
+      "what": "Nov 2026",
+      "amountPaise": 121100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-13",
+      "who": "Student 13",
+      "what": "Nov 2026",
+      "amountPaise": 121200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-14",
+      "who": "Student 14",
+      "what": "Nov 2026",
+      "amountPaise": 121300,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "അടയ്ക്കാത്ത ഫീസ്: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nകൂടാതെ 2 എണ്ണം കൂടി",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "അടയ്ക്കാത്ത ഫീസ്: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nകൂടാതെ 2 എണ്ണം കൂടി 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "അടയ്ക്കാത്ത ഫീസ്: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nകൂടാതെ 2 എണ്ണം കൂടി https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "അടയ്ക്കാത്ത ഫീസ്: 14\nStudent 1, Nov 2026: ₹1,2009 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nകൂടാതെ 2 എണ്ണം കൂടി",
+     "problems": [
+      "The message says ₹12,009, but the record only has ₹1,200, ₹1,201, ₹1,202, ₹1,203, ₹1,204, ₹1,205, ₹1,206, ₹1,207, ₹1,208, ₹1,209, ₹1,210, ₹1,211."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "owes_list",
+   "go": {
+    "rows": []
+   },
+   "text": "ഇപ്പോൾ ആരുടെയും ഫീസ് ബാക്കിയില്ല.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഇപ്പോൾ ആരുടെയും ഫീസ് ബാക്കിയില്ല. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഇപ്പോൾ ആരുടെയും ഫീസ് ബാക്കിയില്ല. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "waiver",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 50000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Rohan Mehta-ന്റെ ഫീസിൽ (Sep 2026, f-2) ₹500 ഇളവ് നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Rohan Mehta-ന്റെ ഫീസിൽ (Sep 2026, f-2) ₹500 ഇളവ് നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Rohan Mehta-ന്റെ ഫീസിൽ (Sep 2026, f-2) ₹500 ഇളവ് നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Rohan Mehta-ന്റെ ഫീസിൽ (Sep 2026, f-2) ₹5009 ഇളവ് നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "refund_request",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 40000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Rohan Mehta ₹400 തിരികെ ചോദിച്ചു (Sep 2026, f-2). തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Rohan Mehta ₹400 തിരികെ ചോദിച്ചു (Sep 2026, f-2). തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ₹400 തിരികെ ചോദിച്ചു (Sep 2026, f-2). തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ₹4009 തിരികെ ചോദിച്ചു (Sep 2026, f-2). തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹4,009, but the record only has ₹400."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 0,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card",
+   "go": {
+    "kind": "refund",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 180000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "f-2-ന്റെ ഫീസിൽ നിന്ന് Rohan Mehta-ക്ക് ₹1,800 തിരികെ നൽകട്ടെ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "f-2-ന്റെ ഫീസിൽ നിന്ന് Rohan Mehta-ക്ക് ₹1,800 തിരികെ നൽകട്ടെ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "f-2-ന്റെ ഫീസിൽ നിന്ന് Rohan Mehta-ക്ക് ₹1,800 തിരികെ നൽകട്ടെ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "f-2-ന്റെ ഫീസിൽ നിന്ന് Rohan Mehta-ക്ക് ₹1,8009 തിരികെ നൽകട്ടെ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
+   },
+   "text": "ഞാൻ Ravi Bakery-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• o-14 റദ്ദാക്കുക\n• o-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ഓർഡറുകൾ\n• പഴയപടി",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഞാൻ Ravi Bakery-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• o-14 റദ്ദാക്കുക\n• o-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ഓർഡറുകൾ\n• പഴയപടി 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഞാൻ Ravi Bakery-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• o-14 റദ്ദാക്കുക\n• o-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ഓർഡറുകൾ\n• പഴയപടി https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel o-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel o-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel o-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message o-14 15 മിനിറ്റ് വൈകും.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message o-14 15 മിനിറ്റ് വൈകും. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message o-14 15 മിനിറ്റ് വൈകും. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund f-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund f-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund f-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹120 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹120 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹120 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi ഓർഡർ o-5 വൈകി റദ്ദാക്കി. ₹1209 അഡ്വാൻസ് തിരികെ നൽകണോ?\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• f-14 റദ്ദാക്കുക\n• f-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• f-14 റദ്ദാക്കുക\n• f-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ഞാൻ Bright Tuition Centre-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• f-14 റദ്ദാക്കുക\n• f-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• ആരുടെ ഫീസ് ബാക്കി\n• പഴയപടി https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "ml",
    "kind": "tmpl",
    "go": {
     "id": "day_closed",
@@ -3313,6 +4798,501 @@
      "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel b-14.\nಗುರುವಾರ, 26 ನವೆಂಬರ್, ಬೆಳಿಗ್ಗೆ 10:30: Haircut, Asha (b-7)\nಬುಧವಾರ, 25 ನವೆಂಬರ್, ಸಂಜೆ 4:05: Beard trim, Room 4 Ravi (b-12)",
      "problems": [
       "The message says the date \"ಗುರುವಾರ, 26 ನವೆಂಬರ್\", but the record has no date for this conversation."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Meera Nair",
+      "what": "Sep 2026",
+      "amountPaise": 150000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Rohan Mehta",
+      "what": "Sep 2026",
+      "amountPaise": 180050,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 2\nMeera Nair, Sep 2026: ₹1,500 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2) https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 2\nMeera Nair, Sep 2026: ₹1,5009 (f-1)\nRohan Mehta, Sep 2026: ₹1,800.5 (f-2)",
+     "problems": [
+      "The message says ₹15,009, but the record only has ₹1,500, ₹1,800.5."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "owes_list",
+   "go": {
+    "rows": [
+     {
+      "case": "f-1",
+      "who": "Student 1",
+      "what": "Nov 2026",
+      "amountPaise": 120000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-2",
+      "who": "Student 2",
+      "what": "Nov 2026",
+      "amountPaise": 120100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-3",
+      "who": "Student 3",
+      "what": "Nov 2026",
+      "amountPaise": 120200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-4",
+      "who": "Student 4",
+      "what": "Nov 2026",
+      "amountPaise": 120300,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-5",
+      "who": "Student 5",
+      "what": "Nov 2026",
+      "amountPaise": 120400,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-6",
+      "who": "Student 6",
+      "what": "Nov 2026",
+      "amountPaise": 120500,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-7",
+      "who": "Student 7",
+      "what": "Nov 2026",
+      "amountPaise": 120600,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-8",
+      "who": "Student 8",
+      "what": "Nov 2026",
+      "amountPaise": 120700,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-9",
+      "who": "Student 9",
+      "what": "Nov 2026",
+      "amountPaise": 120800,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-10",
+      "who": "Student 10",
+      "what": "Nov 2026",
+      "amountPaise": 120900,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-11",
+      "who": "Student 11",
+      "what": "Nov 2026",
+      "amountPaise": 121000,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-12",
+      "who": "Student 12",
+      "what": "Nov 2026",
+      "amountPaise": 121100,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-13",
+      "who": "Student 13",
+      "what": "Nov 2026",
+      "amountPaise": 121200,
+      "dueMs": 1795577400000
+     },
+     {
+      "case": "f-14",
+      "who": "Student 14",
+      "what": "Nov 2026",
+      "amountPaise": 121300,
+      "dueMs": 1795577400000
+     }
+    ]
+   },
+   "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nಇನ್ನೂ 2",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nಇನ್ನೂ 2 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 14\nStudent 1, Nov 2026: ₹1,200 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nಇನ್ನೂ 2 https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಪಾವತಿಯಾಗದ ಫೀಸ್: 14\nStudent 1, Nov 2026: ₹1,2009 (f-1)\nStudent 2, Nov 2026: ₹1,201 (f-2)\nStudent 3, Nov 2026: ₹1,202 (f-3)\nStudent 4, Nov 2026: ₹1,203 (f-4)\nStudent 5, Nov 2026: ₹1,204 (f-5)\nStudent 6, Nov 2026: ₹1,205 (f-6)\nStudent 7, Nov 2026: ₹1,206 (f-7)\nStudent 8, Nov 2026: ₹1,207 (f-8)\nStudent 9, Nov 2026: ₹1,208 (f-9)\nStudent 10, Nov 2026: ₹1,209 (f-10)\nStudent 11, Nov 2026: ₹1,210 (f-11)\nStudent 12, Nov 2026: ₹1,211 (f-12)\nಇನ್ನೂ 2",
+     "problems": [
+      "The message says ₹12,009, but the record only has ₹1,200, ₹1,201, ₹1,202, ₹1,203, ₹1,204, ₹1,205, ₹1,206, ₹1,207, ₹1,208, ₹1,209, ₹1,210, ₹1,211."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "owes_list",
+   "go": {
+    "rows": []
+   },
+   "text": "ಈಗ ಯಾರ ಫೀಸ್ ಕೂಡ ಬಾಕಿ ಇಲ್ಲ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಈಗ ಯಾರ ಫೀಸ್ ಕೂಡ ಬಾಕಿ ಇಲ್ಲ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಈಗ ಯಾರ ಫೀಸ್ ಕೂಡ ಬಾಕಿ ಇಲ್ಲ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "waiver",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 50000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Rohan Mehta ಅವರ ಫೀಸ್‌ನಲ್ಲಿ (Sep 2026, f-2) ₹500 ರಿಯಾಯಿತಿ ನೀಡಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Rohan Mehta ಅವರ ಫೀಸ್‌ನಲ್ಲಿ (Sep 2026, f-2) ₹500 ರಿಯಾಯಿತಿ ನೀಡಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ಅವರ ಫೀಸ್‌ನಲ್ಲಿ (Sep 2026, f-2) ₹500 ರಿಯಾಯಿತಿ ನೀಡಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ಅವರ ಫೀಸ್‌ನಲ್ಲಿ (Sep 2026, f-2) ₹5009 ರಿಯಾಯಿತಿ ನೀಡಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹5,009, but the record only has ₹500."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "refund_request",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 40000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "Rohan Mehta ಅವರು ₹400 ಹಿಂತಿರುಗಿಸಲು ಕೇಳಿದ್ದಾರೆ (Sep 2026, f-2). ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Rohan Mehta ಅವರು ₹400 ಹಿಂತಿರುಗಿಸಲು ಕೇಳಿದ್ದಾರೆ (Sep 2026, f-2). ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ಅವರು ₹400 ಹಿಂತಿರುಗಿಸಲು ಕೇಳಿದ್ದಾರೆ (Sep 2026, f-2). ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Rohan Mehta ಅವರು ₹4009 ಹಿಂತಿರುಗಿಸಲು ಕೇಳಿದ್ದಾರೆ (Sep 2026, f-2). ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹4,009, but the record only has ₹400."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card",
+   "go": {
+    "kind": "cancel",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 0,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card",
+   "go": {
+    "kind": "refund",
+    "ref": "f-2",
+    "who": "Rohan Mehta",
+    "what": "Sep 2026",
+    "amountPaise": 180000,
+    "hasNo": true,
+    "skill": "fees",
+    "code": "K7M2QX"
+   },
+   "text": "f-2 ಫೀಸ್‌ನಿಂದ Rohan Mehta ಅವರಿಗೆ ₹1,800 ಹಿಂತಿರುಗಿಸಲೇ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "f-2 ಫೀಸ್‌ನಿಂದ Rohan Mehta ಅವರಿಗೆ ₹1,800 ಹಿಂತಿರುಗಿಸಲೇ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "f-2 ಫೀಸ್‌ನಿಂದ Rohan Mehta ಅವರಿಗೆ ₹1,800 ಹಿಂತಿರುಗಿಸಲೇ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "f-2 ಫೀಸ್‌ನಿಂದ Rohan Mehta ಅವರಿಗೆ ₹1,8009 ಹಿಂತಿರುಗಿಸಲೇ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@orders",
+    "shop": "Ravi Bakery"
+   },
+   "text": "ನಾನು Ravi Bakery ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• o-14 ರದ್ದು\n• o-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಆರ್ಡರ್‌ಗಳು\n• ಹಿಂದಿನಂತೆ",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ನಾನು Ravi Bakery ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• o-14 ರದ್ದು\n• o-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಆರ್ಡರ್‌ಗಳು\n• ಹಿಂದಿನಂತೆ 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ನಾನು Ravi Bakery ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• o-14 ರದ್ದು\n• o-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಆರ್ಡರ್‌ಗಳು\n• ಹಿಂದಿನಂತೆ https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "need_ref",
+   "go": {
+    "kind": "cancel",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel o-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel o-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel o-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "need_ref",
+   "go": {
+    "kind": "message",
+    "rows": [],
+    "skill": "orders"
+   },
+   "text": "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message o-14 15 ನಿಮಿಷ ತಡ.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message o-14 15 ನಿಮಿಷ ತಡ. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message o-14 15 ನಿಮಿಷ ತಡ. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "need_ref",
+   "go": {
+    "kind": "refund",
+    "rows": [],
+    "skill": "fees"
+   },
+   "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund f-14.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund f-14. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund f-14. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "card",
+   "go": {
+    "kind": "answer",
+    "itemKind": "late_refund",
+    "ref": "o-5",
+    "who": "Ravi",
+    "what": "2 cakes",
+    "amountPaise": 12000,
+    "hasNo": true,
+    "skill": "orders",
+    "code": "K7M2QX"
+   },
+   "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹120 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹120 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹120 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Ravi ಆರ್ಡರ್ o-5 ತಡವಾಗಿ ರದ್ದು ಮಾಡಿದ್ದಾರೆ. ₹1209 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಬೇಕೆ?\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹1,209, but the record only has ₹120."
+     ]
+    }
+   ]
+  },
+  {
+   "lang": "kn",
+   "kind": "say",
+   "go": {
+    "key": "help.warm.plain@fees",
+    "shop": "Bright Tuition Centre"
+   },
+   "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• f-14 ರದ್ದು\n• f-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ",
+   "problems": [],
+   "tampered": [
+    {
+     "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• f-14 ರದ್ದು\n• f-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ 7",
+     "problems": [
+      "The message has the number 7, which is not in the record for this conversation."
+     ]
+    },
+    {
+     "text": "ನಾನು Bright Tuition Centre ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• f-14 ರದ್ದು\n• f-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಯಾರ ಫೀಸ್ ಬಾಕಿ\n• ಹಿಂದಿನಂತೆ https://pay.example.in/x",
+     "problems": [
+      "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
      ]
     }
    ]
