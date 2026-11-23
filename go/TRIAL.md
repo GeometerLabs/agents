@@ -1502,6 +1502,11 @@ is in `internal/fees/Explanation.md` § The credit book and `templates/education
   move onto the new main):** `go build/vet ./...` clean, `go test ./...` 40 packages ok; contracts (`node --test --test-concurrency=1 <folder>/`): Fees 111/111 (102 + the
   credit book's 9), Bookings 178/178, Orders 117/117, Stock orders 74/74, listings 208 pass, 2 skipped, directory 36/36; Fees units 245/245, channels units 218/218, panel
   268 pass, 1 skipped (the monorepo's price list, not set for that run); bundle 731: 722 pass, 9 skipped (REAL_CADDY); every Fees generator `--check` fresh.
+- **Merged with main 9ccb690d (the pickup hold and the push-refusal fix), merge 9142cebd; run of record on the merged tree (24 Nov 2026, 00:00-01:00 in India):**
+  `go build/vet ./...` clean, `go test ./...` 40 packages ok; contracts: Fees 111: 107 pass, 4 skipped (the differential's visitor walks, which skip before 06:00 in India,
+  saying so), Orders 136/136, Bookings 178/178, Stock orders 74/74, listings 210/210 (words-fresh included); panel 269/269; bundle 731: 722 pass, 9 skipped (REAL_CADDY);
+  every generator's `--check` fresh. One test fixed after the merge: the presets test compared the preset files (by name, "hardware-credit.json" first) with the ids (by id,
+  "hardware" first); both are now sorted the same way.
 
 ## pickup-hold-24nov: "keep one for me", the no-advance pickup hold (24 Nov 2026, stream PH; decision 63, catalogue job 3)
 
