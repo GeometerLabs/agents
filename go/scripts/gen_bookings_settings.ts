@@ -42,6 +42,9 @@ const MUTATIONS: Mut[] = [
   ["two chairs, a service on its own resource", (s) => { s.resources = { shop: 2, "pedicure-chair": 1 }; s.services[0].resource = "pedicure-chair"; s.services[1].resource = "shop"; }],
   ["a UPI ID in capitals and a payee with spaces", (s) => { s.payment = { module: "upi", upi: { id: "  GlowSalon@OkIcici ", payee: "  Glow Salon  " } }; }],
   ["a gateway shop", (s) => { s.payment = { module: "razorpay" }; }],
+  // a null block is the shape sentence, a block left out is asked for (23 Nov 2026: Go asked for it on null too)
+  ["a null payment block", (s) => { s.payment = null; }],
+  ["no payment block", (s) => { delete s.payment; }],
   ["approvers: one person with no language", (s) => { s.approvers = { people: [{ id: "ravi", whatsapp: "+919800000002" }] }; }],
   ["approvers: two people and a two-above amount", (s) => { s.approvers = { people: [ANYONE, { id: "meena", whatsapp: "+919800000003", language: "ml" }], twoAboveInr: 5000 }; }],
   ["approvers: nothing wrong with the shape but a two-above amount below the refund limit", (s) => { s.cancellation.refundLimitInr = 200; s.approvers = { people: [ANYONE], twoAboveInr: 100 }; }],

@@ -6,6 +6,7 @@ import { voiceCases } from "../../../../modules/voice/test/helpers/shared-cases.
 
 voiceCases({
   name: "fees", create: (o) => createWorld(o as never), customer: ROHAN_PARENT, greeting: "hello",
-  offLine: (w) => TEMPLATES[w.store.customers.get(ROHAN_PARENT)?.language ?? w.settings.languages[0]].voice_note({} as never),
+  // the parent's language as agent.ts languageOf reads it: their own, else their students' (23 Nov 2026), else the centre's first
+  offLine: (w) => TEMPLATES[w.store.customers.get(ROHAN_PARENT)?.language ?? w.settings.students.find((s) => s.parent === ROHAN_PARENT && s.language !== undefined)?.language ?? w.settings.languages[0]].voice_note({} as never),
   meterSpend: (entries) => summarizeUsage(entries, {}).modelMicroInr,
 });

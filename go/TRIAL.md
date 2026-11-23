@@ -1192,3 +1192,97 @@ Orders agent also reads it: it never relied on the queue's objects). `templates/
 - `go vet ./...` clean; `go test ./...` clean (internal/stockorders: vectors, skill vectors, settings vectors; internal/stock).
 - TypeScript unit tests (templates/commerce/stock-orders/test, modules/stock/test) and words-fresh (listings contract): all pass; one assertion of language.test.ts (a template with no value in it) was relaxed for the card that ran out and re-run alone.
 - Not run: the Bookings Go contract (nothing of Bookings was changed; only its exported settings reader is now called from Stock orders).
+
+## go-fees-gaps-23nov: Fees gaps before the deletion (23 Nov 2026, stream FG)
+
+Started from agents main 3d1cd970. The job: before the TypeScript Fees runtime and its unit tests are deleted, give every money, limit, approval, licence, recovery and privacy
+behaviour that only a unit test checked a check that runs on both runtimes; fix FA's and wave 3's TypeScript findings on both sides; close the Deferred items a centre would meet.
+
+**1. The owner is told what really moved (FA's findings, fixed in TypeScript and Go, a test on each side).**
+- A cancel card read "Nothing is owed." while it waived the whole balance: it now shows the balance ("Cancel fee f-2 (Rohan Mehta, Sep 2026) and waive the ₹1,800 balance? No
+  money moves."). The cancel's action carries the balance only as `balancePaise`, so the done line is "Cancelled f-2." instead of "₹1,800 is on its way back" (conversation.ts
+  words a cancel with an `amountPaise` as a refund). A card still open from before the change is void on its tap and made again (its action no longer matches).
+- "refund f-2 ₹2,000" answered "more than was paid on f-2 (₹0)": a refusal may now carry `paidPaise` (skill.ts; Go `Prepared.RefusedPaidPaise`, `conv.refusalPaid`), and Fees
+  passes the payment it would come from ("(₹1,800)").
+- Tests: owner.contract (the card's words, "Cancelled f-2.", no refund call), assistant.contract ("(₹1,800)"), test/assistant-money, the assistant line vectors (the cancel card
+  with its balance, four languages).
+- Left as it is: "Cancel fee f-2 (...)? Nothing is owed." (SKILL_ASK.fees with no balance) can no longer be shown on a Fees centre (a cancel with no balance is refused as
+  not_live); it stays in words.ts with its vectors. A cancel of a balance that is not whole rupees is refused as "too_much", whose sentence ("more than was paid") does not fit
+  it; rare (a gateway part payment in paise), noted, not changed.
+
+**2. Every unit-only behaviour, and what holds it now.** G is the new `contract/gaps.contract.test.ts` (17 cases, both runtimes); V is the new Go vectors
+(`go/scripts/gen_fees_vectors.ts` -> `internal/fees/testdata/rules-vectors.json.gz`, run by `internal/fees/rules_test.go`); other names are the contract's files.
+
+| unit test | behaviour | held by |
+| --- | --- | --- |
+| agent | fees open at the first reminder moment at the batch's fee; twice opens nothing; the reminder days, words and cap; a month first seen late is not chased | month; V (schedule, reminder-cap) |
+| agent | a payment event for a link the centre never made is ignored | G |
+| agent | a refund event is checked against the payments service's own list | razorpay (the webhook only makes the agent look) |
+| agent | Guard's 409 already_done: done by a person's word, recorded with who, the owner told, never sent again | G |
+| agent | a paid fee never opens again (no reminder after a payment, even after a refund) | partly: G (a refund refused at Guard leaves the fee paid), razorpay. Left: a beat after a refund on a fakes centre (fakes cannot be paid over HTTP) |
+| agent | a payment at the exact moment of a reminder is read first | NOT covered: needs a fakes payment at the reminder moment; the fakes take no payment over HTTP |
+| agent | button mode, the month's AI cap | not on Go: Go reads by the rules only (the model steps are Deferred), so there is nothing to switch or cap |
+| assistant, assistant-money | who owes; a waiver's Approve and Refuse; cancel by card, its second tap, void after a payment; not open; nothing paid; busy; never cash; refund held above the limit, once | owner, assistant, G |
+| cash-part | a part in cash, the rest later, a stale digest | upi ("paid another way?") |
+| cash-part | not whole rupees, nothing, more than owed: nothing marked | G |
+| channels, page-link, parent-push | a parent's link opens only their students; only its hash is kept | parent, month, record. Parent push: not ported (Deferred) |
+| chat, chat-parent, talk | the public chat; the talk is given "your child" | chat, record |
+| chat-parent | a parent's own chat (W2): only their open fees, nothing to WhatsApp, no payment request; a public guest reads no fee | G (ported to Go in this stream, agent_parentchat.go) |
+| classes | class-access (paid or within the grace days), consent, attendance and the note, doubts, the material | classes; V (checkClassAccess, isPastGrace) |
+| classes | a back due with and without oldDuesStopLink | V; G (the material closed with the stricter rule, open once paid) |
+| classes | STOP: no class link and no question | G |
+| family-and-joining | the part-month sum under every rule; a student not joined yet | V (feeForMonth, parseJoined) |
+| family-and-joining | joiningMidMonth prorata end to end (once, due on the joining day, no late fee yet) | G |
+| family-and-joining | back dues: a fee of their own, opened once, one message for a family, each paid on its own link | every guards centre (two back dues), month (one reminder a family), razorpay (f-2.1 settles f-2 only); V (the back due's reminder moment, the settings' back-due sentences) |
+| full-chain | the month, a payment, restarts, a waiver above the limit, a refund held and released | month, razorpay, upi, cross-restart |
+| full-chain | a refund the owner refuses at Guard is never sent; the parent is told | G |
+| full-chain | a forged webhook | the inbox's signature check (modules/inbox; its tests stay) |
+| guard-outage | the payments Guard down: the step waits | razorpay |
+| guard-outage | the WhatsApp Guard down past the 15-minute bound | NOT covered, as for Orders (OG): the bound runs on the real clock in guards mode and runtime.json cannot shorten it |
+| licence | the wind-down: nothing new, a parent told; the final stop closes links once; the owner's notice once | owner |
+| licence | a payment on a link sent before the wind-down is counted and receipted | G |
+| licence | Guard's own 402 for the licence: each link asked once, nothing reminded, the parent told | G |
+| limits | the link is for what is owed; one refund a payment; the waiver limit and never more than owed; the reminder cap; 'received' only when recorded | razorpay, upi, month; V (every check's verdict and words) |
+| limits | no reminder when the payment record cannot be read | NOT covered over HTTP (a record read that fails cannot be made from outside); Go's checkNoReminderOncePaid reads the step's record |
+| limits, approvals-guard-binary | the Guard spec, its threshold, the in-process Guard model, guard-spec.ts | the deployer's spec generator and the real Guard (they stay); the threshold is seen in razorpay |
+| money-clarity | a bank transfer; a cash mark from the page | upi |
+| money-clarity | a gateway centre's cash mark closes the open payment link | G |
+| money-clarity | a refund Guard holds on the owner's page, answered by digest | modules/channels' relay page (not the runtime; its tests stay) |
+| recovery | recheck_payment counts a payment the webhook never brought | G |
+| recovery | ask_owner_again | owner |
+| recovery | a recovery that does not fit (nothing waits, no refund problem, a Bookings action) | G (and smoke: a fee that is not there) |
+| recovery | "move CODE" from the owner: one line with the code's hash, no reply; a parent's same words are nothing | G (ported to Go in this stream) |
+| runtime | restarts; every field saved; a task saved and not run is run; status counts only | month, cross-restart, record, smoke |
+| runtime | a step cut off mid-way finds its own payment link | NOT covered: needs a crash inside a step |
+| settings | the examples valid; every mistake in plain words; the payment block | V (26 files: every sentence in order, the checked values); smoke (one refusal stops the start) |
+| upi | a restart keeps the UPI ledger | cross-restart, record |
+| papers, accounting-*, report*, old-dues-report | the statement, the receipts, the books, the report | parent (documents); the accounting and feesreport vectors (stream FR) |
+| situations, sell-guide, walkthrough, review-sheet, runtime-imports, language | the hand check, the guides, the words in four languages | not runtime behaviour, or the words vectors (gen_fees_words, words-fresh) |
+| voice-notes | a voice note | not on Go (voice is Deferred): the one line asking to type |
+
+**3. The Deferred items a centre would meet.**
+- Done: other approvers (B37: Geo-Requested-By on the owner's refunds, an approver's relay reply left alone; G), the daily settlement read (each day once; G), the handover code and
+  the shop terms (G; internal/runtime ownerwords.go, onto which Bookings' and Orders' copies of the terms adapters and Orders' handover code were moved and deleted), the settings'
+  sentences proved on vectors (V), a parent's own chat (W2, agent_parentchat.go; G), and the public chat's talk (Go never let the shop's talk answer the public chat; it now does
+  as agent.ts onChatTurn does, when the assistant is on).
+- Not done, with the reason in internal/fees/Deferred.md: the model steps of reading (no contract case gives Fees a model; the router, the budget and its record lines are a step of
+  their own), the button-mode notices (they wait for the model steps), the retention of confirmation pages and chat (the shared runtime has no daily compaction hook yet), and
+  voice (internal/voice fits, but hearing a note needs the listener wired into the step and a speech service case).
+
+**4. TypeScript findings fixed on both sides.**
+- A parent who had never written got replies in the centre's first language: languageOf now falls back to the language the settings give that parent's students before the
+  centre's first (agent.ts and agent.go). razorpay.contract now expects "Nothing is due from you right now. Thank you!" for Rohan's English-speaking parent; voice-notes.test.ts
+  reads the same chain.
+- Bookings' Go settings reader said "Add how customers pay" for `"payment": null`: `payment` takes `given`, so null gets the TypeScript's shape sentence (a vector each for null
+  and left out in gen_bookings_settings.ts; Fees' file gets the same through `SettingsReader.Payment(v, given, path)`).
+
+**New findings (not fixed).** Bookings' and Orders' skills also refuse "too_much" with no `paidPaise`, so their owners read "(₹0)" too; the field is now there for them to pass.
+Bookings on Go still has no handover code (agent_flow.go TODO); ownerwords.go is ready for it.
+
+**What passes.** These ran once at the end, through the heat lock, on the branch merged with main e4093b05 (stream SG in).
+- The Fees contract on Go (`FEES_IMPL=go FEES_GO_BIN=go/bin/fees node --test --test-concurrency=1 templates/education/fees/contract/`): **93 of 93**, up from 73 (gaps.contract.test.ts
+  holds 20 cases). On TypeScript (`FEES_IMPL=ts`): **93 of 93**. gaps.contract.test.ts was green on TypeScript before any of its Go was written.
+- The Bookings contract on Go: 151 of 151 (its settings reader and terms adapters changed). The Orders contract on Go: 94 of 94 (its handover code and terms adapters moved).
+- `go vet ./...` clean; `go test -count=1 ./...` passes (internal/fees now has rules_test.go: five tests over the TypeScript-made vectors).
+- Every go/scripts generator with `--check` is fresh; words-fresh 25 of 25.
+- The TypeScript unit tests these changes touch (fees assistant-money, voice-notes, family-and-joining, agent, recovery, classes; modules/assistant/test): 174 of 174.

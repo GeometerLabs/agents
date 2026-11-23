@@ -316,7 +316,7 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 	r.owner(in["owner"], keys("/owner"), s)
 	r.approvers(in["approvers"], hasKey(in, "approvers"), keys, s)
 	s.Reminders = r.reminders(in["reminders"], keys("/reminders"))
-	r.payment(in["payment"], keys("/payment"), keys("/payment/upi"), s)
+	r.payment(in["payment"], hasKey(in, "payment"), keys("/payment"), keys("/payment/upi"), s)
 	s.Calendar = "google"
 	if c, given := in["calendar"]; given {
 		m, ok := isObj(c)
@@ -651,10 +651,11 @@ func (r *reader) reminders(v any, order []string) []int64 {
 	return out
 }
 
-// payment is providers/index.ts readPaymentSettings for the two modules there are (upi, razorpay), with their sentences.
-func (r *reader) payment(v any, order, upiOrder []string, s *Settings) {
+// payment is providers/index.ts readPaymentSettings for the two modules there are (upi, razorpay), with their sentences. `given` tells a block left out (asked for) from
+// `"payment": null` (the shape sentence): the TypeScript asks for the block only when it is `undefined` (23 Nov 2026 fix; Go asked for it on null too).
+func (r *reader) payment(v any, given bool, order, upiOrder []string, s *Settings) {
 	examples := `{"module": "upi", "upi": {"id": "glowsalon@okicici", "payee": "Glow Salon"}} or {"module": "razorpay"}`
-	if v == nil {
+	if v == nil && !given {
 		r.add(`Add how customers pay ("payment"). UPI is the default: {"module": "upi", "upi": {"id": "glowsalon@okicici", "payee": "Glow Salon"}}, with the shop's own UPI ID and the name its customers see. A shop with its own gateway account names it instead: {"module": "razorpay"}.`)
 		return
 	}

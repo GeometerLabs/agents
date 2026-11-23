@@ -1080,24 +1080,30 @@
     "ref": "f-2",
     "who": "Rohan Mehta",
     "what": "Sep 2026",
-    "amountPaise": 0,
+    "amountPaise": 180000,
     "hasNo": true,
     "skill": "fees",
     "code": "K7M2QX"
    },
-   "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें? कुछ बकाया नहीं है।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+   "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें और ₹1,800 बकाया माफ़ करें? कोई पैसा नहीं जाता।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
    "problems": [],
    "tampered": [
     {
-     "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें? कुछ बकाया नहीं है।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
+     "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें और ₹1,800 बकाया माफ़ करें? कोई पैसा नहीं जाता।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें? कुछ बकाया नहीं है।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
+     "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें और ₹1,800 बकाया माफ़ करें? कोई पैसा नहीं जाता।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX। https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "फीस f-2 (Rohan Mehta, Sep 2026) रद्द करें और ₹1,8009 बकाया माफ़ करें? कोई पैसा नहीं जाता।\nबटन दबाएँ, या जवाब दें yes K7M2QX या no K7M2QX।",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
      ]
     }
    ]
@@ -2413,24 +2419,30 @@
     "ref": "f-2",
     "who": "Rohan Mehta",
     "what": "Sep 2026",
-    "amountPaise": 0,
+    "amountPaise": 180000,
     "hasNo": true,
     "skill": "fees",
     "code": "K7M2QX"
    },
-   "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026)? Nothing is owed.\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+   "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026) and waive the ₹1,800 balance? No money moves.\nTap a button, or reply yes K7M2QX or no K7M2QX.",
    "problems": [],
    "tampered": [
     {
-     "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026)? Nothing is owed.\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
+     "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026) and waive the ₹1,800 balance? No money moves.\nTap a button, or reply yes K7M2QX or no K7M2QX. 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026)? Nothing is owed.\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
+     "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026) and waive the ₹1,800 balance? No money moves.\nTap a button, or reply yes K7M2QX or no K7M2QX. https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "Cancel fee f-2 (Rohan Mehta, Sep 2026) and waive the ₹1,8009 balance? No money moves.\nTap a button, or reply yes K7M2QX or no K7M2QX.",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
      ]
     }
    ]
@@ -3746,24 +3758,30 @@
     "ref": "f-2",
     "who": "Rohan Mehta",
     "what": "Sep 2026",
-    "amountPaise": 0,
+    "amountPaise": 180000,
     "hasNo": true,
     "skill": "fees",
     "code": "K7M2QX"
    },
-   "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+   "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കി ₹1,800 ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
    "problems": [],
    "tampered": [
     {
-     "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
+     "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കി ₹1,800 ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
+     "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കി ₹1,800 ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX. https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ഫീസ് f-2 (Rohan Mehta, Sep 2026) റദ്ദാക്കി ₹1,8009 ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല.\nഒരു ബട്ടൺ അമർത്തുക, അല്ലെങ്കിൽ മറുപടി നൽകുക yes K7M2QX അല്ലെങ്കിൽ no K7M2QX.",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
      ]
     }
    ]
@@ -5079,24 +5097,30 @@
     "ref": "f-2",
     "who": "Rohan Mehta",
     "what": "Sep 2026",
-    "amountPaise": 0,
+    "amountPaise": 180000,
     "hasNo": true,
     "skill": "fees",
     "code": "K7M2QX"
    },
-   "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+   "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಿ ₹1,800 ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
    "problems": [],
    "tampered": [
     {
-     "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
+     "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಿ ₹1,800 ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. 7",
      "problems": [
       "The message has the number 7, which is not in the record for this conversation."
      ]
     },
     {
-     "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
+     "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಿ ₹1,800 ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX. https://pay.example.in/x",
      "problems": [
       "The message has the link \"https://pay.example.in/x\", which is not the payment link in the record."
+     ]
+    },
+    {
+     "text": "ಫೀಸ್ f-2 (Rohan Mehta, Sep 2026) ರದ್ದುಮಾಡಿ ₹1,8009 ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ.\nಬಟನ್ ಒತ್ತಿ, ಅಥವಾ ಉತ್ತರಿಸಿ yes K7M2QX ಅಥವಾ no K7M2QX.",
+     "problems": [
+      "The message says ₹18,009, but the record only has ₹1,800."
      ]
     }
    ]

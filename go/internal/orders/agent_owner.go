@@ -9,9 +9,6 @@ package orders
 // spread order (`{...(o.balance ?? {}), amountInr, ...}`: a member already there keeps its place, a new one goes last), so a store written back is the TypeScript's bytes.
 
 import (
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"regexp"
 	"strings"
@@ -24,28 +21,18 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/terms"
 )
 
-// The owner's fixed commands (agent.ts OWNER_COMMAND, BALANCE_COMMAND), the approvals relay's replies (approvals/code.ts RELAY_CODE_REPLY and buttons.ts's button id) and the handover
-// code (approvals/handover.ts HANDOVER_REPLY). `\s` is JavaScript's (language.JSSpace); `\d` is ASCII in both; (?i) folds case as the i (and iu) flags do.
+// The owner's fixed commands (agent.ts OWNER_COMMAND, BALANCE_COMMAND) and the approvals relay's replies (approvals/code.ts RELAY_CODE_REPLY and buttons.ts's button id); the
+// handover code is every template's (internal/runtime ownerwords.go, since 23 Nov 2026). `\s` is JavaScript's (language.JSSpace); `\d` is ASCII in both; (?i) folds case as the i (and iu) flags do.
 var (
-	sp            = "[" + language.JSSpace + "]"
-	ownerCommand  = regexp.MustCompile(`(?i)^` + sp + `*(approve|deny)` + sp + `+(o-[0-9]+)` + sp + `*$`)
-	balanceCmd    = regexp.MustCompile(`(?i)^` + sp + `*balance` + sp + `+(o-[0-9]+)` + sp + `+(cash|upi|link)` + sp + `*$`)
-	relayCode     = regexp.MustCompile(`(?i)^` + sp + `*(approve|deny)` + sp + `+([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})` + sp + `*$`)
-	relayButton   = regexp.MustCompile(`^appr-(approve|deny):([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})$`)
-	handoverReply = regexp.MustCompile(`(?i)^` + sp + `*move` + sp + `+([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})` + sp + `*$`)
+	sp           = "[" + language.JSSpace + "]"
+	ownerCommand = regexp.MustCompile(`(?i)^` + sp + `*(approve|deny)` + sp + `+(o-[0-9]+)` + sp + `*$`)
+	balanceCmd   = regexp.MustCompile(`(?i)^` + sp + `*balance` + sp + `+(o-[0-9]+)` + sp + `+(cash|upi|link)` + sp + `*$`)
+	relayCode    = regexp.MustCompile(`(?i)^` + sp + `*(approve|deny)` + sp + `+([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})` + sp + `*$`)
+	relayButton  = regexp.MustCompile(`^appr-(approve|deny):([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})$`)
 )
-
-// HandoverAction is handover.ts HANDOVER_ACTION.
-const HandoverAction = "handover_agreed"
 
 func isRelayReply(m messaging.InboundMessage) bool {
 	return relayCode.MatchString(m.Text) || (m.Reply != nil && relayButton.MatchString(m.Reply.ID))
-}
-
-// handoverHash is handover.ts handoverHash: its own prefix, so an approval code can never be replayed as a handover code or the reverse.
-func handoverHash(code string) string {
-	sum := sha256.Sum256([]byte("handover-code:" + strings.ToUpper(code)))
-	return hex.EncodeToString(sum[:])
 }
 
 // approverDigits is approvals/people.ts approverNumbers: the digits of every other approver's number.
@@ -272,14 +259,13 @@ func (a *Agent) onOwnerMessage(msg messaging.InboundMessage) error {
 		return nil
 	}
 	// "move K7M2QX" is the owner agreeing to hand the shop to another Operator or builder (approvals/handover.ts): the record keeps the owner's number and the code's hash
-	if m := handoverReply.FindStringSubmatch(msg.Text); m != nil {
-		a.log(nil, a.owner(), HandoverAction, "confirmed", map[string]any{"command": "handover"}, logMore{refs: map[string]string{"command": "handover", "handover": handoverHash(m[1])},
-			notes: "the owner agreed, from their own number, to hand the shop to another Operator or builder. The panel checks the code before it moves anything"})
+	if code, ok := runtime.HandoverCode(msg.Text); ok {
+		a.log(nil, a.owner(), runtime.HandoverAction, "confirmed", map[string]any{"command": "handover"}, logMore{refs: runtime.HandoverRefs(code), notes: runtime.HandoverNotes})
 		return nil
 	}
 	// B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (internal/terms). Off unless the shop was handed a terms file
 	if a.kit.Terms != nil {
-		if setup := a.kit.Terms(); setup != nil && terms.HandleOwner(a.ctx, termsMessage(msg), a.termsDeps(setup)) {
+		if setup := a.kit.Terms(); setup != nil && terms.HandleOwner(a.ctx, runtime.TermsMessage(msg), a.termsDeps(setup)) {
 			return nil
 		}
 	}
@@ -384,57 +370,14 @@ func without(ps []payments.Pending, p payments.Pending) []payments.Pending {
 	return out
 }
 
-// termsMessage is the owner's message as the terms read it: its id, its words, the button they tapped.
-func termsMessage(m messaging.InboundMessage) terms.Message {
-	out := terms.Message{ID: m.ID, Text: m.Text}
-	if m.Reply != nil {
-		id := m.Reply.ID
-		out.ReplyID = &id
-	}
-	return out
-}
-
 // termsDeps is agent.ts's handleOwnerTerms call: the shop's terms now, the agent's messaging, its record and its log (the case is none).
 func (a *Agent) termsDeps(setup *terms.File) terms.Deps {
 	return terms.Deps{
-		Setup: setup, ShopName: a.settings.Name, OwnerNumber: a.owner(), OwnerLanguage: a.settings.Owner.Language, Messaging: termsMessaging{a.msg}, Record: termsRecord{a},
+		Setup: setup, ShopName: a.settings.Name, OwnerNumber: a.owner(), OwnerLanguage: a.settings.Owner.Language, Messaging: runtime.TermsMessaging(a.msg), Record: runtime.TermsRecord(a.c.Rec.Entries),
 		Log: func(action, outcome string, in any, more terms.LogMore) {
 			a.log(nil, a.owner(), action, outcome, in, logMore{notes: more.Notes, refs: more.Refs})
 		},
 	}
-}
-
-// termsMessaging is the agent's messaging as the terms send with it (an interactive message when the provider has buttons).
-type termsMessaging struct{ m messaging.Messaging }
-
-func (t termsMessaging) SendText(ctx context.Context, to, body string) error {
-	_, err := t.m.SendText(ctx, to, body)
-	return err
-}
-
-func (t termsMessaging) SendInteractive(ctx context.Context, to string, m terms.Interactive) error {
-	inter, ok := t.m.(messaging.Interactive)
-	if !ok {
-		_, err := t.m.SendText(ctx, to, m.Body)
-		return err
-	}
-	var bs []messaging.Choice
-	for _, b := range m.Buttons {
-		bs = append(bs, messaging.Choice{ID: b.ID, Title: b.Title})
-	}
-	_, err := inter.SendInteractive(ctx, to, messaging.InteractiveMessage{Body: m.Body, Buttons: bs})
-	return err
-}
-
-// termsRecord is the step's record as the terms read it.
-type termsRecord struct{ a *Agent }
-
-func (t termsRecord) Entries() []terms.Entry {
-	var out []terms.Entry
-	for _, e := range t.a.c.Rec.Entries() {
-		out = append(out, terms.Entry{Action: e.Action, Outcome: e.Outcome, Refs: e.Refs})
-	}
-	return out
 }
 
 // ---- the balance, paid when the order is collected or delivered (17 Nov 2026) ----------------------------------------------------------------------------------------

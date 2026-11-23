@@ -32,7 +32,7 @@ import type { TermsFile } from "../../../../modules/terms/terms.ts";
 import { GUARD_WAIT_ENTRY, RECOVERY_ENTRY, guardWaitLine } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
-import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
+import { HOUR, MINUTE, localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
@@ -71,7 +71,7 @@ import { RULES } from "../../../../modules/understanding/model.ts";
 import { createReader } from "../../../../modules/understanding/reader.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
-import { CASH_LINK, balanceInr, balancePaise, duesOf, factsFor, monthKey, monthLabel, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";
+import { CASH_LINK, backDueReminderAt, balanceInr, balancePaise, dueMsOf as dueMsOfSettings, duesOf, factsFor, lateFeeFrom, monthKey, monthLabel, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register, reminderMomentsOf } from "./due.ts";
 import type { CountedPayment, Customer, Due, Pending, Store } from "./due.ts";
 import { LABELS, buttonsFor, intentFromReply } from "./language/interactive.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
@@ -191,7 +191,10 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!c) { c = { phone, optedOut: false }; store.customers.set(phone, c); }
     return c;
   };
-  const languageOf = (phone: string, due?: Due | null): Language => due?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
+  // The fee's language, else the language the parent last wrote in, else the language the settings give this parent's students (the first of their students, in the
+  // settings' order, that names one), else the centre's first. Before 23 Nov 2026 a parent who had never written in a language of their own was answered in the centre's
+  // first language about a fee-less matter, though their student's fees went in English (wave 3's TypeScript finding (a)).
+  const languageOf = (phone: string, due?: Due | null): Language => due?.language ?? store.customers.get(phone)?.language ?? settings.students.find((s) => s.parent === phone && s.language !== undefined)?.language ?? settings.languages[0];
 
   function log(due: Due | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: due?.id || null, action, inputs, outcome, language: languageOf(phone, due), ...more });
@@ -566,8 +569,9 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- opening the month's fees, late fees and reminders (the clock) --------------------------------------------------
 
   const dueDateOf = (year: number, month: number): LocalDate => ({ year, month, day: settings.due.day });
-  const dueMsOf = (date: LocalDate) => zonedToMs(date, MIDNIGHT, tz);
-  const reminderMoments = (date: LocalDate) => settings.reminders.daysFromDue.map((d) => zonedToMs(addDays(date, d), { hour: settings.reminders.hour, minute: 0 }, tz));
+  // the schedule's pure rules are due.ts's (dueMsOf, reminderMomentsOf, lateFeeFrom, backDueReminderAt), so the Go runtime is held to vectors of them
+  const dueMsOf = (date: LocalDate) => dueMsOfSettings(settings, date);
+  const reminderMoments = (date: LocalDate) => reminderMomentsOf(settings, date);
 
   /** The month this student's fee is due in, for this month and the next one, opened once the first reminder's moment has come. */
   function openMonthlyFees(): void {
@@ -587,7 +591,7 @@ export function createAgent(deps: AgentDeps): Agent {
         due.backDue = true;
         // Reminded at the centre's own reminder hour, not at whatever minute the agent first ran (a reminder at 09:00 when the centre said 10:00 is not what was promised, and
         // would go alone, an hour before the month's own reminder that lists it again). Started after that hour today: it goes now.
-        due.reminders = [{ atMs: Math.max(now, zonedToMs({ year: today.year, month: today.month, day: today.day }, { hour: settings.reminders.hour, minute: 0 }, tz)), sent: false }];
+        due.reminders = [{ atMs: backDueReminderAt(settings, now), sent: false }];
         books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m) => log(due, due.customer, "open_fee", "confirmed", { month: back.month, feeInr: due.feeInr, backDue: true }, { refs: { month: back.month, amountPaise: String(due.feeInr * 100), backDue: "true", ...m }, notes: `an earlier unpaid month for ${due.studentName} (${back.month}), entered by the owner in the settings, carried as a fee of its own` }));
       }
       const joined = rule !== "usual" && student.joined ? parseJoined(student.joined) : undefined;
@@ -616,7 +620,7 @@ export function createAgent(deps: AgentDeps): Agent {
   async function addLateFee(due: Due): Promise<void> {
     if (settings.lateFeeInr <= 0 || due.lateFeeInr > 0 || due.state !== "open" || due.backDue) return; // a carried back due has the amount the owner gave: no late fee on top
     if (customerOf(due.customer).optedOut) return; // a parent who has asked for no messages cannot be told of a new charge, so none is added
-    const after = zonedToMs(addDays(due.dueDate, settings.due.graceDays + 1), MIDNIGHT, tz);
+    const after = lateFeeFrom(settings, due.dueDate);
     if (clock.now() < after) return;
     const { fresh } = await reconcile(due);
     await settle(due, fresh);

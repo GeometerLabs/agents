@@ -353,7 +353,7 @@ export function createAssistant(deps: AssistantDeps) {
     const skill = skillOf(proposal.case);
     if (!skill) { await tell("refusal", { why: "no_case", ref: proposal.case }); return; }
     const prepared = skill.prepare(proposal);
-    if (!prepared.ok) { await tell("refusal", { why: prepared.why, ref: proposal.case, skill: skill.name }); return; }
+    if (!prepared.ok) { await tell("refusal", { why: prepared.why, ref: proposal.case, skill: skill.name, ...(prepared.paidPaise !== undefined ? { paidPaise: prepared.paidPaise } : {}) }); return; }
     if (prepared.action.kind === "message" && !(await windowOpen(String(prepared.action.fields.phone)))) { await tell("refusal", { why: "no_window", ref: proposal.case, who: prepared.shown.who }); return; }
     await offerCard(skill, proposal, prepared);
   }

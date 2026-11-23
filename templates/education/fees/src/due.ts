@@ -10,7 +10,7 @@
 import type { ChannelState } from "../../../../modules/channels/state.ts";
 import { formatDate, MONTH_NAMES } from "../../../../modules/language/format.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
-import { localParts } from "../../../../modules/core/time.ts";
+import { addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
@@ -239,3 +239,20 @@ export function newDue(settings: Settings, student: Student, language: Language,
 
 /** The date a message states for a due date is checked with `formatDate`; this is that date as a parent reads it, for the report and the tests. */
 export const dueDateText = (due: Due, settings: Settings, language: Language): string => formatDate(localParts(due.dueMs, settings.timezone), language);
+
+// ---- the month's schedule, as pure rules (23 Nov 2026: taken out of agent.ts openMonthlyFees and addLateFee unchanged, so the Go runtime's twins are held to vectors made by
+// running these: go/scripts/gen_fees_vectors.ts) ----
+
+const MIDNIGHT = { hour: 0, minute: 0 };
+/** The instant a fee due on `date` is due: the start of that day in the centre's time zone. */
+export const dueMsOf = (settings: Settings, date: LocalDate): number => zonedToMs(date, MIDNIGHT, settings.timezone);
+/** The moments a fee due on `date` is reminded at: each of the centre's reminder days from the due day, at its reminder hour, in its time zone. */
+export const reminderMomentsOf = (settings: Settings, date: LocalDate): number[] =>
+  settings.reminders.daysFromDue.map((d) => zonedToMs(addDays(date, d), { hour: settings.reminders.hour, minute: 0 }, settings.timezone));
+/** The moment the grace days are over: the start of the day after the due date and the grace days. From then the late fee is added once (classes' isPastGrace counts the same). */
+export const lateFeeFrom = (settings: Settings, dueDate: LocalDate): number => zonedToMs(addDays(dueDate, settings.due.graceDays + 1), MIDNIGHT, settings.timezone);
+/** When a back due (an earlier unpaid month the owner entered) is reminded: today at the centre's reminder hour, or now if that hour has passed. */
+export function backDueReminderAt(settings: Settings, nowMs: number): number {
+  const today = localParts(nowMs, settings.timezone);
+  return Math.max(nowMs, zonedToMs({ year: today.year, month: today.month, day: today.day }, { hour: settings.reminders.hour, minute: 0 }, settings.timezone));
+}

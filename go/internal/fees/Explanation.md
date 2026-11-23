@@ -52,3 +52,19 @@ list, OweSkill, which the morning line also counts) and `PrepareGuestMessage` (a
   (`Kit.readSkill`); cancel and refund are then "not_here".
 
 Proved by `templates/education/fees/contract/assistant.contract.test.ts` (both runtimes) and owner.contract.test.ts's two cases.
+
+## The gaps before the deletion (23 Nov 2026, `go-fees-gaps-23nov`)
+
+- **What the owner is told about money is what moved.** A cancel card shows the balance it waives ("... and waive the ₹1,800 balance? No money moves."); the cancel's action
+  carries that balance only as `balancePaise`, never as `amountPaise`, so the done line is "Cancelled f-2." and not a refund. A refund above the payment names the payment: the
+  refusal carries `Prepared.RefusedPaidPaise` (skill.ts `paidPaise`), which `runtime.refusalPaid` says. Fixed the same way in the TypeScript.
+- **A parent's language** (agent.go languageOf): the fee's, else the one they last wrote in, else their students' in the settings, else the centre's first.
+- **Other approvers (B37)**, agent_approvers.go: the owner's own refund names the owner in Geo-Requested-By; another approver's reply to the relay is the relay's.
+- **The daily settlement read**, agent_settlements.go: a Razorpay centre reads each settled day once through Bookings' books adapter, the gateway's call watched as the step's.
+- **The handover code and the shop terms**, agent_handover.go over internal/runtime ownerwords.go (Bookings and Orders read through the same file now).
+- **The month's schedule as pure rules** (agent_month.go dueMsOf, reminderMomentsOf, lateFeeFrom, backDueReminderAt; due.ts's twins, taken out of agent.ts unchanged).
+- **Vectors made by the TypeScript** (rules_test.go over testdata/rules-vectors.json.gz from go/scripts/gen_fees_vectors.ts): the month's fee under every joining rule, the
+  schedule (with a daylight-saving change), the limits' verdicts and words, the class-access rule, and the settings' sentences for wrong files and checked values for good ones.
+- **A parent's own chat (W2)**, agent_parentchat.go: the thread opened from a parent's private page is that parent's (parentOfChat, by the chat conversation of
+  parentChatHash(parentRef(parent))); it reads only their open fees, sends nothing to WhatsApp and makes no payment request. The public chat lets the shop's talk answer
+  when the assistant is on, as agent.ts onChatTurn does.

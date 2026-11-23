@@ -309,9 +309,10 @@ func (k *feesSkill) prepareMoney(p assistant.Raw, kind string, d *Due) (runtime.
 		if balancePaise(d)%100 != 0 {
 			return runtime.Prepared{}, "too_much"
 		}
-		// the card shows no money coming back (a cancel takes off what is owed; it refunds nothing: that is "refund f-3"), so its shown amount is 0; it is still bound to the
-		// balance (assistant.ts, word for word: the card then reads "Nothing is owed", TRIAL.md's TypeScript findings)
-		return runtime.Prepared{Action: k.action("cancel", d, assistant.Raw{"amountPaise": jnum(balancePaise(d))}), Shown: runtime.Shown{Who: d.StudentName, What: k.what(d)}}, ""
+		// The card shows the balance it waives ("... and waive the ₹1,800 balance? No money moves."). The action carries that balance only as `balancePaise` (standing), never
+		// as `amountPaise`: the done line words a cancel with an `amountPaise` as money on its way back, and a waiver moves no money (assistant.ts, 23 Nov 2026 fix of stream
+		// FA's finding: the card read "Nothing is owed." and the done line "₹1,800 is on its way back").
+		return runtime.Prepared{Action: k.action("cancel", d, assistant.Raw{}), Shown: runtime.Shown{Who: d.StudentName, What: k.what(d), AmountPaise: balancePaise(d)}}, ""
 	}
 	if kind != "refund" {
 		return runtime.Prepared{}, "not_here"
@@ -346,7 +347,8 @@ func (k *feesSkill) prepareMoney(p assistant.Raw, kind string, d *Due) (runtime.
 		amount = rawNum(v)
 	}
 	if amount < 100 || amount > target.AmountPaise || amount%100 != 0 { // refunds go in whole rupees, never above the payment
-		return runtime.Prepared{}, "too_much"
+		// the refusal names the payment ("more than was paid on f-2 (₹1,800)"), not ₹0 (assistant.ts prepareMoney's paidPaise)
+		return runtime.Prepared{RefusedPaidPaise: target.AmountPaise}, "too_much"
 	}
 	act := k.action("refund", d, assistant.Raw{"paymentId": mustJSON(target.ID), "amountPaise": jnum(amount), "availablePaise": jnum(target.AmountPaise)})
 	return runtime.Prepared{Action: act, Shown: runtime.Shown{Who: d.StudentName, What: k.what(d), AmountPaise: amount}, AboveLimit: k.aboveLimit(amount)}, ""
@@ -400,7 +402,9 @@ func (k *feesSkill) executeMoney(act assistant.Action, d *Due) runtime.Executed 
 	}
 	amountInr := rawNum(act.Fields["amountPaise"]) / 100
 	if act.Kind == "cancel" {
-		done, err := a.ownerCancelFee(d, amountInr)
+		// a cancel waives the balance the card was bound to (a card still open from before 23 Nov 2026 also carries `amountPaise`, so it no longer matches the action prepared
+		// now: it is void on its tap and a new card is made, as for any change)
+		done, err := a.ownerCancelFee(d, rawNum(act.Fields["balancePaise"])/100)
 		if err != nil {
 			a.stepErr = err
 			return runtime.Executed{OK: false, Note: "failed"}

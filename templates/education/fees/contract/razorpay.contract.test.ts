@@ -67,8 +67,9 @@ describe("a payment link and a payment", () => {
     const again = await c.events(events.map((event) => ({ kind: "payment_event", event })));
     assert.equal(again.body.duplicates, events.length);
     await c.inbound(ROHAN, "pay");
-    // nothing is due now; the parent never wrote in a language of their own, so the centre's first language (Hindi) is used, not the student's (src/agent.ts languageOf)
-    assert.equal(last(c, ROHAN), "अभी आपकी ओर से कुछ बाकी नहीं है। धन्यवाद!");
+    // nothing is due now; the parent never wrote in a language of their own, so their student's language (English) is used, not the centre's first (Hindi): src/agent.ts
+    // languageOf, fixed 23 Nov 2026 (it answered "अभी आपकी ओर से कुछ बाकी नहीं है। धन्यवाद!")
+    assert.equal(last(c, ROHAN), "Nothing is due from you right now. Thank you!");
     assert.equal(lines(c, "record_payment").length, 1);
   });
 
