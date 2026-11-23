@@ -1575,6 +1575,9 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   - **Fees on Razorpay**: when a fee is paid twice, the parent's messages about the extra payment go under the generic name outside the parent's 24 hours, which the
     provider refuses. Bright Tuition holds 24 of 25 on Go; pinned in `fees/test/situations.test.ts` (`KNOWN_ON_GO`). Both findings came from a check added here: a send the
     provider refused fails the situation unless it planned one (before, "nothing was sent" could pass because a send failed).
+  - **Bookings, the panel's test shop** (Hosahalli Beauty, owner in Malayalam): in the button-mode situations a message to the owner is refused by the WhatsApp stand-in,
+    "Variable parameter values formatted incorrectly" (Meta refuses a template parameter it cannot take, such as a line break), so three AI situations fail on Go for that
+    shop; Glow Salon's example holds all 40. Not chased to its message here; the panel's flow tests use a stand-in hand check (golive-go.test.ts runs the real one).
   - **Fees on Go reads with its rules alone** (go/internal/fees/Deferred.md: the model steps of reading), so "the model is down" is listed as not run there.
   - `geometer update` compares the hand checks of two versions: a situation that held before and is not run now holds the shop back, so a Fees centre's next update is
     held back by "the model is down" until that is decided (bundle/panel/Deferred.md).
