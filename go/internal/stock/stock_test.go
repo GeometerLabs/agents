@@ -101,3 +101,25 @@ func TestRestoreAfterYesOnlyAtZero(t *testing.T) {
 		t.Fatal("a listing above 0 was changed")
 	}
 }
+
+// TestPendingAlertsAreCopiesAndNoteAskedCounts is the Go side of modules/stock/test/stock.test.ts's test of the same name (23 Nov): an alert a caller holds is a copy, so the question
+// count comes from NoteAsked's return, never from the alert in hand (agent.ts lowStockTick used to read it from the queue's own object).
+func TestPendingAlertsAreCopiesAndNoteAskedCounts(t *testing.T) {
+	var st Stock
+	if err := json.Unmarshal([]byte(tsStock), &st); err != nil {
+		t.Fatal(err)
+	}
+	held := st.PendingAlerts("")[0]
+	if held.Asked != 2 {
+		t.Fatalf("the committed alert has asked 2, got %d", held.Asked)
+	}
+	if n := st.NoteAsked("listing:l-1", 1); n != 3 || held.Asked != 2 {
+		t.Fatalf("NoteAsked returned %d and the held copy says %d: want 3 and 2", n, held.Asked)
+	}
+	if got := st.PendingAlerts("")[0].Asked; got != 3 {
+		t.Fatalf("a fresh read says %d, want 3", got)
+	}
+	if n := st.NoteAsked("listing:l-1", 9); n != 0 {
+		t.Fatalf("no such crossing counted %d", n)
+	}
+}
