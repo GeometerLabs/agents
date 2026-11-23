@@ -6067,6 +6067,8 @@
   {"input":"panel-","hasPlan":true,"languages":["en","hi"],"output":{"read":null,"mentions":false}},
   {"input":"paper","hasPlan":false,"languages":["en","hi"],"output":{"read":null,"mentions":false}},
   {"input":"paper","hasPlan":true,"languages":["en","hi"],"output":{"read":null,"mentions":false}},
+  {"input":"parse(\"...\")","hasPlan":false,"languages":["en","hi"],"output":{"read":null,"mentions":false}},
+  {"input":"parse(\"...\")","hasPlan":true,"languages":["en","hi"],"output":{"read":null,"mentions":false}},
   {"input":"parseSettings throws one error that lists every problem","hasPlan":false,"languages":["en","hi"],"output":{"read":null,"mentions":false}},
   {"input":"parseSettings throws one error that lists every problem","hasPlan":true,"languages":["en","hi"],"output":{"read":null,"mentions":false}},
   {"input":"parser","hasPlan":false,"languages":["hi","en","ml","kn"],"output":{"read":null,"mentions":false}},

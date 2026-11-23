@@ -3443,6 +3443,7 @@
   {"ctx":"annapurna","input":"panch veg thali","output":{"intent":{"kind":"order","language":"en","items":[{"itemId":"veg-thali","qty":5}]},"sure":true,"paid":false}},
   {"ctx":"annapurna","input":"panel-","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"paper","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
+  {"ctx":"annapurna","input":"parse(\"...\")","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"parseSettings throws one error that lists every problem","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"parser","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
   {"ctx":"annapurna","input":"part","output":{"intent":{"kind":"unknown","language":"en"},"sure":false,"paid":false}},
