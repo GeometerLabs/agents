@@ -27,5 +27,3 @@ centre without the feature, and says so in the record. The contract tests that w
   opens one step's watch over its Guards and the owner's route. Both belong in a package of their own (internal/settingsread, internal/agentkit) once the TypeScript templates are gone.
 - `internal/runtime/chanmessaging.go` is outbox.ts channelMessaging over any store; Bookings has its own copy over its store (agent_channel.go chanMsg) and can move onto it.
 - The approvals relay's reply patterns (agent_talk.go relayCode, relayButton) are the same two expressions as internal/bookings agent_flow.go.
-- The owner's message to a chat guest ("message g-3 ...") is prepared by the shared `runtime.PrepareGuestMessage` (23 Nov 2026); internal/bookings and internal/orders still keep
-  their own copies of it (agent_assistant.go prepareGuestMessage, written before it) and can fold onto it.

@@ -5,5 +5,5 @@ The code that was in `internal/orders/agent_after.go` and `internal/bookings/age
 block of runtime.json (`ReadSetup`: modules/runtime/config.ts readReport and server/start.ts monthlyReportSetup, every problem said at once in the TypeScript's words), the report's name
 and badge read again whenever runtime.json changes (`optionsReader`), the failure told once an hour (`FailureLog`), and running a template's job on a beat (`Runner`, `Record`).
 
-It depends on `messaging`, `guard`, `runtime` and `report`, which is why it is not in `internal/report`. Bookings and Orders can move onto it and delete their copies (see
-`internal/feesreport/Deferred.md`).
+It depends on `messaging`, `guard`, `runtime` and `report`, which is why it is not in `internal/report`. Since 23 Nov (Stream CL) it is the ONE copy: Bookings, Orders, Fees and Stock orders use it and the other three copies (and `internal/runtime/reportwiring.go`) are deleted.
+It was chosen over the runtime's copy because it also holds the beat's runner and the failure log. `Setup.Token` is the test seam for a report folder's name.

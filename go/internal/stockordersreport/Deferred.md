@@ -11,12 +11,8 @@
 * **A rule id that is a member of `Object.prototype`**: `RULE_IDS.includes("constructor")` is false in the TypeScript and in Go alike, so it is counted under "other" in both (a vector holds it).
 * **An entry whose time does not parse** is left out of the month and of the counts (NaN comparisons are false in the TypeScript too); the ledger refuses such a record when the report is
   anchored (a vector holds it).
-* **Fold onto the shared piece (three copies of one thing).** `internal/orders/agent_after.go` and `internal/bookings` carry their own copies of what `internal/runtime/reportwiring.go` now holds
-  once (the `report` block reader, the options reader, the messaging adapter, the record adapter); this stream did not touch them. The by-action table of the page, the go-live lines and
-  block, `Fill`'s slot reading, `metaBody`/`fillBody`, `isoOf` and `decisionsOf` are copied from `internal/ordersreport` (which this stream was told not to change; Stream FR may move
-  them into `internal/report`); fold the copies onto the shared pieces when they exist.
 * **The `assistant` block of the digest is built for a valid block only** (`stockorders/settingstree.go assistantTree`): this package does not yet check the block (stockorders/Deferred.md),
   so a block the TypeScript would refuse gives some tree here and no error. The shared reader of that block is Orders' unexported one; move it to the runtime and use it here.
 * **Not tested at the exact limit.** No vector lands exactly on 1024 UTF-16 units for the check link; `<=` is held by reading the code.
-* **Depends on `internal/bookingsreport`** for the record's ledger head, `EntryDigest`, `GoLiveTree`, `Settings`, `ShopOf` and `Pathway` (generic). When those move to a shared package, only the
+* **Depends on `internal/bookingsreport`** for the record's ledger head, `GoLiveTree`, `Settings`, `ShopOf` and `Pathway` (generic). When those move to a shared package, only the
   imports here change.

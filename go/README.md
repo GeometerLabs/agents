@@ -99,7 +99,7 @@ internal/orders/words/   Orders' customer and owner messages in four languages, 
 internal/orders/reading/ how an Orders shop reads a message: the rule parser, the check on a model's answer, the router's reading, a tapped reply, the plan reading (GENERATED: scripts/gen_orders_reading.ts)
 internal/ordersreport/   Orders' monthly report (templates/commerce/orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job
 internal/feesreport/     Fees' monthly report (templates/education/fees/report): the data (old dues apart, Classes counts, no student's name), the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job; read Explanation.md and Deferred.md
-internal/reportwire/     what a template's runtime needs to run the monthly report: the runtime.json `report` block, the messaging adapter, the job on a beat (Fees uses it; Bookings and Orders carry copies)
+internal/reportwire/     what a template's runtime needs to run the monthly report: the runtime.json `report` block, the messaging adapter, the job on a beat (the one copy: Bookings, Orders, Fees and Stock orders all use it)
 internal/stockordersreport/  Stock orders' monthly report (templates/commerce/stock-orders/report): the data, the page, the owner's text, the WhatsApp message, the signed summary, the go-live reading, the monthly job
 internal/stock/          the shop's one stock count (modules/stock/stock.ts): the state under assistant.stock, the owner's acts, the shop's own record of a sale or a delivery (Orders,
                          Stock orders), the reconciles and their history rules, the low alerts once per crossing; listings keeps aliases of it (22 Nov)
