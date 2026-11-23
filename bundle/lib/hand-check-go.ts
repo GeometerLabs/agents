@@ -85,6 +85,6 @@ async function child(): Promise<HandCheckOutcome> {
 
 if (process.argv[1] === HERE) {
   const answer = await child().catch((e: Error): HandCheckOutcome => ({ ok: false, reason: `The hand check stopped with an error: ${e.message.split("\n")[0]}` }));
-  process.stdout.write(`${JSON.stringify(answer)}\n`);
-  process.exit(0); // every program the run started was stopped by its situation; nothing is left to wait for
+  // the line is written whole before the process ends (a pipe's write is not done when write returns); every program the run started was stopped by its situation
+  process.stdout.write(`${JSON.stringify(answer)}\n`, () => process.exit(0));
 }
