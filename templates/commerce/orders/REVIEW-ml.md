@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (82)
+## 1. Messages to the customer (92)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -94,8 +94,18 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `discount_approved` | The owner said yes to the price card: the agreed price (the quote and link follow) | സന്തോഷവാർത്ത: veg thali ഒന്നിന് ₹100 ഉടമ സമ്മതിച്ചു. | Good news: the owner agreed to ₹100 each for the veg thali. |  |
 | `discount_refused` | The owner said no to the price card: the lowest price, which is the list price (the quote follows) | ക്ഷമിക്കണം, ₹100-ന് ഉടമ സമ്മതിച്ചില്ല. veg thali-ന്റെ ഏറ്റവും കുറഞ്ഞ വില ₹120 ആണ്. | Sorry, the owner couldn't agree to ₹100. The lowest for the veg thali is ₹120. |  |
 | `discount_which` | The customer asked for a discount without naming a price, before saying which item: the agent asks which one | ഏത് സാധനത്തിനാണ്? എന്ത്, എത്ര വേണമെന്ന് പറയൂ, എത്രയ്ക്ക് തരാമെന്ന് ഞാൻ പറയാം. | Which item is it for? Tell me what you'd like and how many, and I'll tell you the price I can do. |  |
+| `hold_enquiry_asked` | The customer sent a photo or words naming no listed item (a model number): the shop is asked which item it is | നന്ദി! ഇത് ഏത് സാധനമാണെന്ന് ഞാൻ കടയോട് ചോദിച്ചിട്ടുണ്ട്. സാധനവും വിലയും അവർ ഇവിടെ അറിയിക്കും. | Thank you! I've asked the shop which item this is. They will tell you the item and its price here. |  |
+| `hold_still_asking` | The customer wrote again while the shop is still asked: no second ask | കട ഇപ്പോഴും നോക്കുകയാണ്. മറുപടി കിട്ടിയാലുടൻ ഞാൻ ഇവിടെ അറിയിക്കാം. | The shop is still checking. I'll message you here as soon as they answer. |  |
+| `hold_offer` | The owner picked the listed item a photo or model number shows: it is in stock, at its price (the ask for a day follows) | കടയിൽ veg thali സ്റ്റോക്കുണ്ട്, വില ₹120. | The shop has veg thali in stock at ₹120. |  |
+| `hold_usually` | A listed item the customer asked to keep has none that can be kept now: the shop usually carries it | veg thali (₹120) ഞങ്ങൾ സാധാരണ വയ്ക്കാറുണ്ട്, പക്ഷേ ഇപ്പോൾ ഒന്നും മാറ്റിവയ്ക്കാൻ കഴിയില്ല. ദയവായി പിന്നീട് വീണ്ടും ചോദിക്കൂ, അല്ലെങ്കിൽ ഉടമയോട് സംസാരിക്കൂ. | We usually carry veg thali (₹120), but none can be kept just now. Please ask again later, or talk to the owner. |  |
+| `hold_only_left` | Fewer of the item can be kept now than the customer asked for: how many | ഇപ്പോൾ 3 veg thali മാത്രമേ മാറ്റിവയ്ക്കാൻ കഴിയൂ. ദയവായി കുറച്ച് ചോദിക്കൂ. | Only 3 veg thali can be kept just now. Please ask for fewer. |  |
+| `hold_asked_shop` | The customer asked to keep a listed item for a pickup time: the shop is asked to say yes (not held yet) | 2 × veg thali (₹240) നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാൻ ഞാൻ കടയോട് ചോദിച്ചിട്ടുണ്ട്, പിക്കപ്പ് വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ. അവർ സമ്മതിച്ചാലുടൻ ഞാൻ അറിയിക്കാം. | I've asked the shop to keep 2 × veg thali (₹240) for you, for pickup Thu 12 Nov, 12:00 pm to 1:00 pm. I'll message you as soon as they say yes. |  |
+| `hold_held` | The shop said yes and the item is reserved: held until the end of the pickup time; nothing to pay now | നിങ്ങൾക്കായി മാറ്റിവച്ചു: 2 × veg thali, ₹240. വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ വന്ന് വാങ്ങൂ; അതുവരെ ഇത് നിങ്ങൾക്കായി വച്ചിരിക്കും. ഇപ്പോൾ ഒന്നും അടയ്ക്കേണ്ട: വാങ്ങുമ്പോൾ കടയിൽ അടച്ചാൽ മതി. | Held for you: 2 × veg thali, ₹240. Collect it Thu 12 Nov, 12:00 pm to 1:00 pm; it is kept for you until then. Nothing to pay now: you pay at the shop when you collect it. |  |
+| `hold_declined` | The shop said it cannot keep the item | ക്ഷമിക്കണം, ഈ സാധനം ഇപ്പോൾ നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാൻ കടയ്ക്ക് കഴിയില്ല. ഒന്നും അടയ്ക്കേണ്ട. | Sorry, the shop cannot keep this item for you just now. Nothing to pay. |  |
+| `hold_ended` | The pickup time ended and the item was not collected: it is no longer kept | നിങ്ങളുടെ പിക്കപ്പ് സമയം (വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ) കഴിഞ്ഞു, അതിനാൽ 2 × veg thali ഇനി നിങ്ങൾക്കായി വച്ചിട്ടില്ല. ഇപ്പോഴും വേണമെങ്കിൽ എനിക്ക് എഴുതൂ. | Your pickup time (Thu 12 Nov, 12:00 pm to 1:00 pm) has passed, so 2 × veg thali is no longer kept for you. Message me if you would still like it. |  |
+| `hold_cancelled` | The customer cancelled a hold: it is no longer kept | ശരി, 2 × veg thali ഇനി നിങ്ങൾക്കായി വച്ചിട്ടില്ല. ഒന്നും അടയ്ക്കേണ്ട. | Okay, 2 × veg thali is no longer kept for you. Nothing to pay. |  |
 
-## 2. Messages to the owner (44)
+## 2. Messages to the owner (52)
 
 Most owner messages are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -145,6 +155,14 @@ Most owner messages are also WhatsApp templates, because they are sent by the ag
 | `owner_discount_ask` | To the owner: the price card, with the exact price, answered with the reference and the card's code | ഒരു വിലയ്ക്ക് നിങ്ങളുടെ അനുമതി വേണം: +919811111111 veg thali ഒന്നിന് ₹100 ചോദിക്കുന്നു (നിങ്ങളുടെ വില ₹120), ഓർഡർ 2 × veg thali, ആകെ ₹240. കൃത്യം ₹240 സമ്മതിക്കാൻ "approve o-3 Q7RM2X", അല്ലെങ്കിൽ "deny o-3 Q7RM2X" എന്ന് മറുപടി അയയ്ക്കുക. | A price needs your OK: +919811111111 asks ₹100 each for veg thali (your price is ₹120) in an order of 2 × veg thali, ₹240 in all. Reply "approve o-3 Q7RM2X" to agree to exactly ₹240, or "deny o-3 Q7RM2X". |  |
 | `owner_discount_use_code` | To the owner: they wrote "approve" or "deny" with the reference alone while a price card waits: the exact words to send | വിലയെക്കുറിച്ചുള്ള o-3 ചോദ്യത്തിന് മറുപടി നൽകാൻ "approve o-3 Q7RM2X" അല്ലെങ്കിൽ "deny o-3 Q7RM2X" എന്ന് അയയ്ക്കുക. | To answer the price ask on o-3, reply "approve o-3 Q7RM2X" or "deny o-3 Q7RM2X". |  |
 | `owner_discount_stale` | To the owner: an answer to a price card that changed or was already answered: nothing was done | ഈ മറുപടി മാറിപ്പോയതോ ഇതിനകം മറുപടി നൽകിയതോ ആയ ഒരു വില ചോദ്യത്തിനുള്ളതാണ്, അതിനാൽ ഒന്നും ചെയ്തില്ല. | That answer is for a price ask that has changed or was already answered, so nothing was done. |  |
+| `owner_hold_enquiry` | To the owner: a customer sent a photo or a model number; which listed item is it ("pick" or "deny") | സാധനത്തെക്കുറിച്ചുള്ള ചോദ്യം o-3: +919811111111 ഒരു ഫോട്ടോയോ മോഡൽ നമ്പറോ അയച്ചു. അവരുമായുള്ള ചാറ്റിൽ നോക്കിയിട്ട് "pick o-3" എന്നും നിങ്ങളുടെ പട്ടികയിലുള്ളതുപോലെ സാധനത്തിന്റെ പേരും അയയ്ക്കൂ, ഇല്ലെങ്കിൽ "deny o-3" എന്ന് അയയ്ക്കൂ. | Item enquiry o-3: +919811111111 sent a photo or a model number. See it in your chat with them, then reply "pick o-3" and the item's name as you list it, or "deny o-3" if you do not have it. |  |
+| `owner_hold_ask` | To the owner: a customer asks to keep an item for a pickup time ("approve" or "deny") | ഒന്ന് മാറ്റിവയ്ക്കണോ? +919811111111 2 × veg thali (₹240) പിക്കപ്പ് വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ-ന് മാറ്റിവയ്ക്കാൻ ചോദിക്കുന്നു. മാറ്റിവയ്ക്കാൻ "approve o-3", അല്ലെങ്കിൽ "deny o-3" എന്ന് അയയ്ക്കൂ. | Keep one? +919811111111 asks you to keep 2 × veg thali (₹240) for pickup Thu 12 Nov, 12:00 pm to 1:00 pm. Reply "approve o-3" to keep it for them, or "deny o-3". |  |
+| `owner_hold_held` | To the owner: an item is now held for a customer; how to mark it collected | മാറ്റിവച്ചു o-3: 2 × veg thali, +919811111111-ന്, പിക്കപ്പ് വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ. അവർ വാങ്ങിക്കഴിഞ്ഞാൽ "collected o-3" എന്ന് അയയ്ക്കൂ. | Held o-3: 2 × veg thali for +919811111111, for pickup Thu 12 Nov, 12:00 pm to 1:00 pm. When they collect it, reply "collected o-3". |  |
+| `owner_hold_collected` | To the owner: their "collected" was recorded | വാങ്ങിയതായി രേഖപ്പെടുത്തി: o-3, 2 × veg thali. നന്ദി. | Marked collected: o-3, 2 × veg thali. Thank you. |  |
+| `owner_hold_ended` | To the owner: a held item was not collected by the end of its pickup time and is free again | മാറ്റിവച്ചത് o-3 അവസാനിച്ചു: +919811111111 വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ കഴിയുന്നതുവരെ 2 × veg thali വാങ്ങിയില്ല. ഇത് വീണ്ടും മറ്റുള്ളവർക്ക് ലഭ്യമാണ്. | Hold o-3 ended: +919811111111 did not collect 2 × veg thali by the end of Thu 12 Nov, 12:00 pm to 1:00 pm. It is free for others again. |  |
+| `owner_hold_cancelled` | To the owner: the customer no longer needs a held item, and it is free again | മാറ്റിവയ്ക്കൽ റദ്ദാക്കി: +919811111111-ന് ഇനി 2 × veg thali (o-3) വേണ്ട. ഇത് വീണ്ടും മറ്റുള്ളവർക്ക് ലഭ്യമാണ്. | Hold cancelled: +919811111111 no longer needs 2 × veg thali (o-3). It is free for others again. |  |
+| `owner_hold_none` | To the owner: "collected" for a number with no hold waiting: nothing was marked | ആ നമ്പറിൽ വാങ്ങാൻ ബാക്കിയുള്ള മാറ്റിവച്ച സാധനമൊന്നുമില്ല, അതിനാൽ ഒന്നും രേഖപ്പെടുത്തിയില്ല. | There is no hold with that number waiting to be collected, so nothing was marked. |  |
+| `owner_hold_pick_unclear` | To the owner: their "pick" named no listed item, or more than one | പട്ടികയിലെ ഏത് സാധനമാണ് ഉദ്ദേശിച്ചതെന്ന് മനസ്സിലായില്ല. "pick o-3" എന്നും പട്ടികയിലുള്ളതുപോലെ കൃത്യമായ പേരും അയയ്ക്കൂ. | I could not tell which listed item you mean. Reply "pick o-3" and the item's name exactly as you list it. |  |
 
 ### The words on the buttons and the lists
 
@@ -344,6 +362,10 @@ Annapurna Tiffins · ഫെബ്രുവരി 2027 · പരിശീലന �
 | `discounts.given` | നൽകിയ ഇളവുകൾ | Discounts given |  |
 | `discounts.asked` | നിങ്ങളോട് ചോദിച്ച ഇളവുകൾ | Discounts asked of you |  |
 | `discounts.refused` | നിരസിച്ച ഇളവുകൾ | Discounts refused |  |
+| `holds.collected` | മാറ്റിവച്ചത് വാങ്ങിയത് | Holds collected |  |
+| `holds.expired` | മാറ്റിവച്ചത് വാങ്ങാതെ പോയത് | Holds that ended uncollected |  |
+| `holds.enquiries` | സാധനത്തെക്കുറിച്ചുള്ള ചോദ്യങ്ങൾ | Item enquiries |  |
+| `holds.perTen` | പത്ത് ചോദ്യങ്ങൾക്ക് വാങ്ങിയത് | Collections per ten enquiries |  |
 | `moneyBlock.heading` | ഈ മാസത്തെ പണം | Money this month |  |
 | `moneyBlock.owedBack` | മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത് | Still owed back at the end of the month |  |
 | `moneyBlock.toCome` | മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത് | Still to come at the end of the month |  |
@@ -393,6 +415,7 @@ Annapurna Tiffins · ഫെബ്രുവരി 2027 · പരിശീലന �
 | `cert.orderLimits` | ഒരു ദിവസം പരമാവധി 8 ഓർഡറുകൾ, ഒരു ഓർഡറിൽ 10 സാധനങ്ങൾ, 7 ദിവസം മുൻകൂട്ടി വരെ | At most 8 orders a day, 10 items in one order, up to 7 days ahead |  |
 | `cert.cutoff` | സാധാരണ കട്ട്-ഓഫ്: 1 ദിവസം മുമ്പ് 20:00-ന് ഓർഡറുകൾ അടയ്ക്കും | The usual cut-off: orders close at 20:00, 1 day before |  |
 | `cert.advance` | വിലയുടെ 50% അഡ്വാൻസായി വാങ്ങുന്നു; അതിനായി ഓർഡർ 30 മിനിറ്റ് പിടിച്ചുവെക്കും | 50% of the price is paid as the advance; the order is held 30 minutes for it |  |
+| `cert.noAdvance` | മുൻകൂറായി ഒന്നും വാങ്ങില്ല: ഓരോ മാറ്റിവയ്ക്കലും നിങ്ങൾ അംഗീകരിക്കുന്നു, ഉപഭോക്താവ് തിരഞ്ഞെടുത്ത പിക്കപ്പ് സമയം കഴിയുന്നതുവരെ സാധനം മാറ്റിവയ്ക്കും | Nothing is paid ahead: you accept each hold, and the item is kept until the end of the pickup time the customer chose |  |
 | `cert.delivery` | ഡെലിവറി ഇവിടങ്ങളിൽ മാത്രം: Kakkanad, Edappally, Infopark | Delivery only to: Kakkanad, Edappally, Infopark |  |
 | `cert.noDelivery` | പിക്കപ്പ് മാത്രം, ഡെലിവറി ഇല്ല | Pickup only, no delivery |  |
 | `cert.window` | സ്ലോട്ടിന് കുറഞ്ഞത് 6 മണിക്കൂർ മുമ്പ് റദ്ദാക്കിയാൽ അഡ്വാൻസ് തിരികെ കിട്ടും; അതിനു ശേഷമുള്ളത് നിങ്ങളുടെ തീരുമാനം | Cancel at least 6 hours before the slot and the advance is refunded; later, it is your call |  |
