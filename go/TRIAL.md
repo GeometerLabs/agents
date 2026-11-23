@@ -1278,3 +1278,11 @@ behaviour that only a unit test checked a check that runs on both runtimes; fix 
 
 **New findings (not fixed).** Bookings' and Orders' skills also refuse "too_much" with no `paidPaise`, so their owners read "(₹0)" too; the field is now there for them to pass.
 Bookings on Go still has no handover code (agent_flow.go TODO); ownerwords.go is ready for it.
+
+**What passes.** These ran once at the end, through the heat lock, on the branch merged with main e4093b05 (stream SG in).
+- The Fees contract on Go (`FEES_IMPL=go FEES_GO_BIN=go/bin/fees node --test --test-concurrency=1 templates/education/fees/contract/`): **93 of 93**, up from 73 (gaps.contract.test.ts
+  holds 20 cases). On TypeScript (`FEES_IMPL=ts`): **93 of 93**. gaps.contract.test.ts was green on TypeScript before any of its Go was written.
+- The Bookings contract on Go: 151 of 151 (its settings reader and terms adapters changed). The Orders contract on Go: 94 of 94 (its handover code and terms adapters moved).
+- `go vet ./...` clean; `go test -count=1 ./...` passes (internal/fees now has rules_test.go: five tests over the TypeScript-made vectors).
+- Every go/scripts generator with `--check` is fresh; words-fresh 25 of 25.
+- The TypeScript unit tests these changes touch (fees assistant-money, voice-notes, family-and-joining, agent, recovery, classes; modules/assistant/test): 174 of 174.
