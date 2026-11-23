@@ -93,6 +93,33 @@ test("a deliberately broken setting fails the hand check on the program: a centr
   assert.ok(out.summary.failedTitles.length === out.summary.total - out.summary.held);
 });
 
+/** Run the hand check of `kind` on an example's settings changed by `breakIt`, through the panel's own runner. */
+async function brokenRun(kind: string, folder: string, example: string, breakIt: (raw: any) => void) {
+  const raw = JSON.parse(readFileSync(join(TEMPLATES, folder, "settings", example), "utf8"));
+  breakIt(raw);
+  const file = join(mkdtempSync(join(tmpdir(), `golive-go-broken-${kind}-`)), "settings.json");
+  writeFileSync(file, JSON.stringify(raw));
+  return runGoHandCheck(kind, file);
+}
+
+test("a deliberately broken setting fails the hand check of a Bookings shop: a deposit above what Guard lets be refunded in a day", { skip: goSkip("bookings") }, async () => {
+  // a deposit of ₹6,000 (every service at least that): the day's refund cap the deployer gives Guard (₹5,000) is below one deposit (src/guard-limits.ts), so a refund could be refused
+  const out = await brokenRun("bookings", "commerce/bookings", "glow-salon.example.json", (raw) => { raw.deposit.amountInr = 6000; for (const sv of raw.services) sv.priceInr = Math.max(sv.priceInr, 6000); });
+  assert.ok(out.ok && out.summary.total > 0 && out.summary.held < out.summary.total, JSON.stringify(out));
+});
+
+test("a deliberately broken setting is refused by the hand check of an Orders shop: one order could be refunded beyond the day's cap", { skip: goSkip("orders") }, async () => {
+  const out = await brokenRun("orders", "commerce/orders", "annapurna-tiffins-razorpay.example.json", (raw) => { raw.menu[0].priceInr = 60_000; });
+  assert.equal(out.ok, false, JSON.stringify(out));
+  if (!out.ok) assert.match(out.reason, /settings need fixing/u);
+});
+
+test("a deliberately broken setting leaves a Stock orders shop with nothing to check, so the gate refuses it: no catalogue line from an approved supplier", { skip: goSkip("stock-orders") }, async () => {
+  const out = await brokenRun("stock-orders", "commerce/stock-orders", "glow-salon.example.json", (raw) => { for (const sp of raw.suppliers) sp.approved = false; });
+  assert.equal(out.ok, false, JSON.stringify(out));
+  if (!out.ok) assert.match(out.reason, /approved supplier/u);
+});
+
 test("a hand check that cannot run is stored as nothing held, with the reason, and the gate refuses it; so is a stored check from before the switch to Go", async () => {
   const b = await boot({ handCheck: (kind, file) => runGoHandCheck(kind, file, { env: { GEOMETER_GO_PROGRAMS: join(tmpdir(), "no-programs-here") } }) }, { signing: true });
   try {
