@@ -352,7 +352,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
           if (advance <= settings.refund.limitInr) expect(`(b) The advance, ${advance} rupees, was refunded on the payment`, refundedPaise(gone) === advance * 100, `${refundedPaise(gone)}`);
           else expect("(b) The advance is above the refund limit: Guard holds the refund for the owner", held.length === 1, `${held.length}`);
           expect("(b) The customer was told the order is no longer available, not that it is confirmed", told(gone, "stock_gone_refund") === 1 && told(gone, "order_confirmed") === 0);
-          expect("(b) The owner was told", toOwner(gone).some((m) => m.text.includes(order(gone).id)));
+          expect("(b) The owner was told", toOwner(gone).some((m) => m.text.includes(order(gone).id)), toOwner(gone).map((m) => `${m.templateName ?? m.kind}: ${m.text}`).join(" | "));
         } else expect("(b) Other orders could not take the stock on this shop's limits", true);
         // (c) after the cut-off: give it back too
         const closed = await world({ nowMs: shop.at.cutoffMs - 5 * MINUTE });

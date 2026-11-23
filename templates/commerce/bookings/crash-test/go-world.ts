@@ -51,7 +51,7 @@ export async function createGoWorld(o: GoWorldOptions): Promise<GoWorld> {
   const base = await openGoWorld<Settings, Store>({
     program: PROGRAM, version: VERSION, settings, at: o.nowMs ?? START, customer: CUSTOMER, parseStore, parseSettings,
     gateway: capabilitiesOf(settings.payment).confirmsAutomatically,
-    spec: gatewayLimitsSpec(settings, { tenant: "hand-check", version: 1, reviewedBy: "hand-check" }),
+    spec: () => gatewayLimitsSpec(settings, { tenant: "hand-check", version: 1, reviewedBy: "hand-check" }),
     standins: (clock, fakes) => startStandins({ clock, razorpayWebhookSecret: "hand-check", whatsappAppSecret: "hand-check", phoneNumberId: "100000000000001", calendarId: "shop@example.com", fakes: { ...fakes, calendar } }, { port: 0 }),
     // a shop on its own booking list (calendar.module "own") has no calendar service
     services: (url) => (settings.calendar?.module === "own" ? {} : { calendar: { baseUrl: url, calendarId: "shop@example.com" } }),

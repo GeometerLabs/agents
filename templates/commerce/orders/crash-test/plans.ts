@@ -6,6 +6,7 @@ import { addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts
 import { checker } from "../../../../modules/crash-test/situations.ts";
 import type { Situation } from "../../../../modules/crash-test/situations.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
+import { live } from "../../../../modules/crash-test/go-world.ts";
 import { createGoWorld } from "./go-world.ts";
 import type { GoWorld as World } from "./go-world.ts";
 import { cutoffMsFor } from "../src/plans/ledger.ts";
@@ -25,7 +26,7 @@ export function planSituations(settings: Settings, customer: string): Situation[
   const world = (): Promise<World> => createGoWorld({ settings });
   const planOf = (w: World): Plan => Object.values(w.store.plans?.plans ?? {}).find((p) => p.customer === customer && !p.id.startsWith("pending"))!;
   const pay = async (w: World): Promise<void> => { if (isUpi) await w.ownerMarksReceived(customer); else { w.pays(customer); await w.deliverPaymentEvents(); } };
-  const subscribe = async (w: World): Promise<Plan> => { await w.say(`I want the monthly plan ${planName(type, lang0)}`, { from: customer }); await pay(w); return planOf(w); };
+  const subscribe = async (w: World): Promise<Plan> => { await w.say(`I want the monthly plan ${planName(type, lang0)}`, { from: customer }); await pay(w); return live(() => planOf(w)); }; // read afresh at each use (go-world.ts live)
   const goto = (w: World, ms: number) => { const p = localParts(ms, tz); return w.goto({ year: p.year, month: p.month, day: p.day }, { hour: p.hour, minute: p.minute }); };
   const lastDay = (plan: Plan, index = 0) => Object.keys(plan.periods[index].days).sort().at(-1)!;
   const refundedPaise = (w: World): number => (isUpi ? (w.store.upi?.refunds ?? []).reduce((n, r) => n + r.amountPaise, 0) : w.payments.refunds().reduce((n, r) => n + r.amount, 0) + w.heldForOwner().reduce((n, r) => n + r.amountPaise, 0));

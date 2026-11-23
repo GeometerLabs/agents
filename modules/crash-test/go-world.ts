@@ -59,8 +59,8 @@ export interface GoWorldBaseOptions<Settings> {
   customer: string;
   /** Start the template's stand-ins on this clock, in front of these fakes (each template's standins/server.ts). */
   standins: (clock: Clock, fakes: { payments: FakePayments; messaging: FakeMessaging }) => Promise<StandinsServer>;
-  /** The limits spec the deployer generates from the settings (src/guard-limits.ts gatewayLimitsSpec): the stub Guard holds and refuses by it. Left out: no payments Guard. */
-  spec?: LimitsSpec;
+  /** The limits spec the deployer generates from the settings (src/guard-limits.ts gatewayLimitsSpec): the stub Guard holds and refuses by it. Made only for a shop with a gateway (the deployer makes none for a UPI shop). */
+  spec?: () => LimitsSpec;
   /** The shop has a payment gateway (a UPI shop has none: the owner marks payments). */
   gateway: boolean;
   /** More services to name in runtime.json beside payments and messaging (Bookings' calendar), given the stand-ins' address. */
@@ -128,6 +128,15 @@ export function settingsJson(settings: unknown): Record<string, unknown> {
   return raw;
 }
 
+/**
+ * A value of the shop's saved state that is read again at every use: `live(() => w.orderOf(x))`. The demo engine's world handed out its live objects, so a situation could keep
+ * one and read it after the next step; the program's state is read from agent.db, so a kept copy would be the state of when it was read. Reading through this keeps the
+ * situation's words and always reads now. Throws, naming nothing, when the value is gone (a situation that reads a case that does not exist fails rather than reads undefined).
+ */
+export function live<T extends object>(read: () => T | undefined): T {
+  return new Proxy({} as T, { get: (_t, key) => { const v = read(); if (v === undefined) throw new Error("the value read from the shop's saved state is not there"); return (v as Record<PropertyKey, unknown>)[key]; } });
+}
+
 const PHONE_NUMBER_ID = "100000000000001";
 const PAGES = "https://reports.example.com/r";
 
@@ -151,7 +160,7 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   closers.push(() => standins.close());
   // a shop with a gateway reaches it through Guard: the stub Guard holds and refuses by the shop's own limits. A UPI shop has no gateway and so no payments Guard.
   const guard = o.gateway && o.spec ? await startStubGuard({
-    clock: viaShop, upstreamUrl: standins.url, spec: o.spec, agentToken,
+    clock: viaShop, upstreamUrl: standins.url, spec: o.spec(), agentToken,
     approver: { id: "owner", secret: randomBytes(16).toString("hex") }, readToken: randomBytes(16).toString("hex"),
   }) : undefined;
   if (guard) closers.push(() => guard.close());

@@ -10,8 +10,8 @@ import type { LocalDate } from "../../../../modules/core/time.ts";
 import { checker } from "../../../../modules/crash-test/situations.ts";
 import type { Situation } from "../../../../modules/crash-test/situations.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
-import { createWorld } from "../src/harness.ts";
-import type { World } from "../src/harness.ts";
+import { createGoWorld } from "./go-world.ts";
+import type { GoWorld as World } from "./go-world.ts";
 import { occurrencesBetween } from "../src/classes/rules.ts";
 import type { Occurrence } from "../src/classes/rules.ts";
 import { materialView } from "../src/classes/view.ts";
@@ -38,7 +38,8 @@ export function buildClassSituations(settings: Settings): Situation[] {
   const parent = student.parent;
   const lead = classes.linkLeadMinutes * MINUTE;
 
-  const world = (): World => createWorld({ settings, nowMs: startMs, pageBase: () => "https://pages.example/shop" });
+  // the centre's page is the shop folder's pages.json (go-shop.ts writes one), so the reminders carry each parent's private link as on a real centre
+  const world = (): Promise<World> => createGoWorld({ settings, nowMs: startMs });
   const at = async (w: World, ms: number) => { w.clock.set(ms); await w.tick(); };
   const links = (w: World, text: string) => w.messaging.sentTo(parent).filter((m) => m.text.includes(text)).length;
   const notes = (w: World) => w.record.entries().filter((e) => e.action === "send_message" && e.outcome === "confirmed" && e.conversation === parent && (e.refs.templates ?? "") === "class_missed_note").length;
@@ -56,7 +57,7 @@ export function buildClassSituations(settings: Settings): Situation[] {
     id: "class-link-unpaid", title: "A class link is not sent to a student whose fee is unpaid and past its grace days, and is sent once it is paid", how: "the clock reaches a class after the grace days; the fee is then paid",
     async run() {
       const { results, expect } = checker();
-      const w = world();
+      const w = await world();
       await agreed(w, late, LINK_A);
       await at(w, late.startMs - lead + 2 * MINUTE);
       expect("No class link reached the student", links(w, LINK_A) === 0, w.textsTo(parent).join(" | "));
@@ -74,7 +75,7 @@ export function buildClassSituations(settings: Settings): Situation[] {
     id: "class-material-access", title: "A student removed from a batch, or past their fee's grace days, loses the reading-material page", how: "the page's own read, before and after the student leaves the batch or the fee falls late",
     async run() {
       const { results, expect } = checker();
-      const w = world();
+      const w = await world();
       await w.say("yes", { from: parent }); // not asked yet: no agreement recorded, so nothing opens
       await agreed(w, early, LINK_A);
       await at(w, early.startMs - lead + 2 * MINUTE);
@@ -92,7 +93,7 @@ export function buildClassSituations(settings: Settings): Situation[] {
     id: "class-link-changed", title: "A class link the teacher changes after the reminders were queued is the one that is sent", how: "the link is changed before the lead window, and again after it was sent",
     async run() {
       const { results, expect } = checker();
-      const w = world();
+      const w = await world();
       await agreed(w, early, LINK_A); // the first question is asked at the lead window; the link was set before it
       await w.ownerSays(`link ${batch.id} ${LINK_B}`); // changed after A was queued and before anything was sent
       await at(w, early.startMs - lead + 2 * MINUTE);
@@ -108,7 +109,7 @@ export function buildClassSituations(settings: Settings): Situation[] {
     id: "class-link-lost-reply", title: "A reply lost on the way is not sent a second time", how: "the provider loses the reply to the class link's send",
     async run() {
       const { results, expect } = checker();
-      const w = world();
+      const w = await world();
       await agreed(w, early, LINK_A);
       w.messaging.inject("sendText", "lostReply");
       w.messaging.inject("sendTemplate", "lostReply");
@@ -124,7 +125,7 @@ export function buildClassSituations(settings: Settings): Situation[] {
     id: "class-missed-note", title: "A missed-class note goes only after the teacher marks the student absent", how: "the class ends and nothing is marked; the teacher then marks the student absent twice",
     async run() {
       const { results, expect } = checker();
-      const w = world();
+      const w = await world();
       await agreed(w, early, LINK_A);
       await at(w, early.startMs - lead + 2 * MINUTE);
       await at(w, early.endMs + 5 * MINUTE);

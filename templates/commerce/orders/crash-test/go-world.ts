@@ -49,7 +49,7 @@ export async function createGoWorld(o: GoWorldOptions): Promise<GoWorld> {
   const base = await openGoWorld<Settings, Store>({
     program: PROGRAM, version: VERSION, settings, at: o.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, settings.timezone), customer: AMIT, parseStore, parseSettings,
     gateway: capabilitiesOf(settings.payment).confirmsAutomatically,
-    spec: gatewayLimitsSpec(settings, { tenant: "hand-check", version: 1, reviewedBy: "hand-check" }),
+    spec: () => gatewayLimitsSpec(settings, { tenant: "hand-check", version: 1, reviewedBy: "hand-check" }),
     standins: (clock, fakes) => startStandins({ clock, gatewayWebhookSecret: "hand-check", whatsappAppSecret: "hand-check", phoneNumberId: "100000000000001", fakes }, { port: 0 }),
     ...(o.payments ? { payments: o.payments } : {}), ...(o.models ? { models: o.models } : {}), ...(o.runtime ? { runtime: o.runtime } : {}), ...(o.licence !== undefined ? { licence: o.licence } : {}),
   });
