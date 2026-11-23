@@ -1,6 +1,8 @@
 // Writes go/internal/stockorders/testdata/vectors.json: what the TypeScript of Stock orders makes of real facts and real words, for the Go twin to be proved equal on:
 //   - every message (src/language/templates.ts render) in en, hi, ml, kn, from the example shop's own order, with the outgoing check's verdict over it (limits.ts
 //     checkMessageMatchesRecord): the Go side renders from words.json and must write the same text, which the check must allow;
+//   - which WhatsApp template carries each message outside the 24-hour window and with what parameters (meta-templates.ts templateMessage), or the generic name when none fits: a
+//     message with no template of its own goes as the generic one with no parameters, which a real provider refuses, so every message the owner may get unasked has its own;
 //   - the owner's words read by the rules (src/reading.ts readOwnerText, quantityIn) over a list of phrases in four languages.
 // Run from the repository root:   node go/scripts/gen_stockorders_vectors.ts        (add --check to only compare with the committed file; words-fresh runs the check too)
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -9,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import { render } from "../../templates/commerce/stock-orders/src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../../templates/commerce/stock-orders/src/language/templates.ts";
+import { templateMessage } from "../../templates/commerce/stock-orders/src/language/meta-templates.ts";
 import { checkMessageMatchesRecord } from "../../templates/commerce/stock-orders/src/limits.ts";
 import { parseSettings } from "../../templates/commerce/stock-orders/src/settings.ts";
 import { quantityIn, readOwnerText } from "../../templates/commerce/stock-orders/src/reading.ts";
@@ -49,8 +52,13 @@ export function generate(): string {
     const text = render(id, facts);
     return { language, id, text, check: checkMessageMatchesRecord({ text, facts }).verdict };
   }));
+  const templates = LANGUAGES.flatMap((language) => IDS.map((id) => {
+    const facts = factsIn(language);
+    const m = templateMessage({ ids: [id], language, facts, text: render(id, facts), generic: "generic" });
+    return { language, id, name: m.name, parameters: m.parameters ?? null };
+  }));
   const readings = PHRASES.map((text) => ({ text, reading: readOwnerText(settings, text), qty: quantityIn(text) ?? null }));
-  return `${JSON.stringify({ settings: JSON.parse(readFileSync(SETTINGS_FILE, "utf8")), facts: Object.fromEntries(LANGUAGES.map((l) => [l, factsIn(l)])), messages, readings }, null, 1)}\n`;
+  return `${JSON.stringify({ settings: JSON.parse(readFileSync(SETTINGS_FILE, "utf8")), facts: Object.fromEntries(LANGUAGES.map((l) => [l, factsIn(l)])), messages, templates, readings }, null, 1)}\n`;
 }
 
 export function stale(file = OUT): boolean {

@@ -1151,3 +1151,71 @@ OwnerText keeps a local `nonEmpty` closure, and Bookings counts by action inside
 **Deferred.** Fold `go/cmd/bookings`, `cmd/orders` and `cmd/fees` owner-route code (about 25 lines each) onto `runtime/ownerroute.go` (`Runtime.OwnerPush`, `Runtime.OwnerRoute`) after
 Stream SG's branch merges (the lead's note; SG's file is not on main yet). Not folded, still copies of one thing: `sealWords`, `e`, `fign`, `amountCells`, `pair`, `NotCheckedList`
 and each package's `Fill`/`StringsOf` (they read each package's own generated strings type).
+
+
+## go-stockorders-gaps-23nov: Stock orders gaps before the deletion (23 Nov 2026, stream SG)
+
+Started from agents main 3d1cd970. The job: give every money, limit, approval, licence, recovery and stock-count behaviour of Stock orders that only a TypeScript unit test checked a
+check that survives the deletion of the TypeScript runtime and its unit tests; fix the TypeScript findings on both sides; port the parity items a shop would meet.
+
+**1. What held each unit-only behaviour** (`templates/commerce/stock-orders/test/`, `modules/stock/test/`). G is the new `contract/gaps.contract.test.ts` (both runtimes). V is a Go
+vector made by running the TypeScript (`go/scripts/gen_stockorders_*.ts`, words-fresh keeps them fresh).
+
+| unit test | behaviour | held by |
+| --- | --- | --- |
+| agent, channel | request, card, one approval, the supplier's OK is not receipt, button taps, a card that ran out, the page's items and digests, a stale press, a delivery to mark | F, O, T (as before) |
+| agent | words it cannot read get examples, never a guess | F; V (30 phrases read) |
+| limits, runtime | approved supplier, quantity, cap, budget in paise with the limit itself allowed, one order per request, approval matches, reply from the supplier's own number, send only when approved | L, F (as before); V (money written plainly or with two decimals) |
+| chat-limits | the budget cannot be set below the cap or loosened; a value inside the bounds makes a card, and its yes puts it in force | G (budget bounds) |
+| chat-limits | the cap cannot be set below the dearest line | NOT covered by the contract: every English word that names the cap contains "order", so the shop's own reader takes the sentence for an order request (both runtimes alike); the cap is reached only through the owner's limits page behind a passkey. The bound itself is `Kit.Limits` in Go and `src/chat-limits.ts` in TypeScript (the unit test stays with the TypeScript until the page is on the contract) |
+| chat-limits, settings | the limits are whole rupees; every settings sentence; a null or wrong `assistant` block | V (settings-vectors: 84 files through `validateSettings`, sentences in order, the checked tree) |
+| assistant | the skill's reads (`facts`, `publicContext` for a supplier, a stranger, nobody), open, waiting, problems | V (skill-vectors, an order in every state, en/hi/ml) |
+| assistant | prepare: a cancel only for an order that has not gone out, no money moving; an answer bound to the agent's own card's action; a limit is the limits skill's | V (skill-vectors: five proposals on every order and on a missing one) |
+| assistant | one card per order, a tap approves once, never stranded, a limit card reaches the assistant | A, T (as before) |
+| stock | goods received raise a counted item once per order; twice adds once; another unit not added and said once; an item nobody counts untouched | O (as before) |
+| stock | a low mark starts one reorder, one per crossing even if cancelled | O (as before) |
+| stock | an item with two suppliers asks which, once; the answer makes one card for the line's reorder quantity | G |
+| stock | a low question waits while the owner is in the middle of another, and is asked after | G |
+| stock | an owner who never answers is asked three times and left alone | G (fakes, the test clock) |
+| stock, kit (modules/stock) | the count's rules: a sale once, a cancel gives back, never below 0, a delivery as a cumulative total, a unit never converted, history before counting began, holds, the tidy, the low alerts and their ids | internal/stock vectors (as before); `pendingAlerts` copies: a unit test on both sides |
+| send-once | the happy path once; the intent holds the id, supplier, template and order; refused once then Try now; three refusals; Cancel order; a lost reply and its three endings; the supplier's OK settles it; killed on the wire | R, G (the intent's fields) |
+| send-once | a refusal tried again "an hour later"; a reminder left claimed is never sent | NOT covered by the contract: a fakes shop has no Guard to refuse on the test clock. Shared code, `internal/messaging/sendonce_test.go` |
+| runtime | the store round trip, the po-N counter across a restart, a step that fails before the send runs again, runtime.json must name WhatsApp | D, R, S (as before) |
+| language | every template renders and passes the outgoing check in four languages; WhatsApp template bodies start and end with fixed words and fill back | V (messages, and now every message's template name and parameters) |
+| language | no banned word | the words are generated from the TypeScript source, whose test stays with it |
+| guard-limits, hand-check, review-sheet, runtime-imports, sell-guide, report* | the deployer's Guard spec, the hand check and its certificate builder, the review sheets, the sell guide, the monthly report | they stay (the deployer and the TypeScript tools); the report has its own vectors |
+| modules/stock stock.test | only the owner starts, corrects or stops a count; customer-facing code never imports the module | structural tests of the TypeScript module, which stays; Go has no such path (the types make it) |
+| modules/stock kit.test | the page's op shapes and sentences | the Stock page cases in O (an op that starts, corrects, sells, stops) |
+
+**2. TypeScript findings, fixed on both sides.**
+- **Owner notices outside the 24-hour window that have no template went as the generic `stock_owner_notice` with no parameters, which a real provider refuses.** Added a template
+  each (with its values) for the supplier's STOP, a card that ran out, the four endings of the order's send (went, may not have reached, refused, held back) and a receipt (all, part):
+  eight in `src/language/meta-templates.ts` (`stock_owner_supplier_stopped`, `..._card_expired`, `..._order_sent`, `..._order_unconfirmed`, `..._order_refused`, `..._order_held`,
+  `..._received_all`, `..._received_part`), in four languages, in `whatsapp-templates.json` and the review sheets. Not given one on purpose: the replies to something the owner just wrote or
+  pressed (approved, declined, cancelled, paid-outside noted, "not open", "too many", the status), where the owner is in the window and the page shows the same. Go reads the templates
+  from words.json (generated); G holds a reorder card, its approval, a receipt and a STOP as templates, and a lost reply as its own, and V holds every message's template and
+  parameters.
+- **`lowStockTick` read the question count from the queue's own alert.** `pendingAlerts` now hands back copies (as the Go twin always did) and the tick uses what `noteAsked` returns.
+  Test: a unit test in `modules/stock/test/stock.test.ts` and `TestPendingAlertsAreCopiesAndNoteAskedCounts` in `internal/stock`.
+- **The order card quoted its code ("yes CODE") and the assistant's limit card did not.** The order card (four languages) now says `reply yes CODE` as the limit card does (the shared
+  line in modules/assistant/words.ts is every other template's; Orders, Bookings and Fees never quoted it). The quotes had been the only thing keeping the body from ending in a value,
+  which Meta refuses, so it now ends "... or use the other button" (four languages). The harness and three unit tests read the code without quotes.
+- **New finding, fixed on both sides: Go skipped an `assistant` block that is `null`;** the TypeScript refuses it ('"assistant" must be an object ...'). Found by the settings vectors;
+  the Go reader now uses the shared assistant-block reader (bookings.SettingsReader.Assistant, the one Fees uses), which also deleted its own 50-line unchecked copy.
+
+**3. Parity items ported** (internal/stockorders/Deferred.md has what is left).
+- The assistant block's own error sentences and the settings: V (84 variations of the example through `validateSettings`).
+- The assistant's talk reads (`facts`, `publicContext`) and the open list: skill.go, held by V. The routing words are not ported (Deferred.md says why).
+- The owner's push: an owner message goes by the owner's choice of WhatsApp, push or both (`runtime.OwnerPush`, `runtime.OwnerRoute`, new in `internal/runtime/ownerroute.go`; the
+  three other commands each still hold the same 25 lines: Shared changes). No contract case: the contract has no push Guard stand-in.
+- Waiting for a Guard that is down inside a step: the step's watch (`bookings.Watch`, shared) wraps the owner's route; a task's step waits and a tick only observes; G holds the
+  owner's message kept while the WhatsApp Guard is down, nothing answered meanwhile, one answer when it is back (it was a refusal of that one message before).
+
+**Shared changes (additions only).** `internal/runtime/ownerroute.go` (new): `Runtime.OwnerPush`, `Runtime.OwnerRoute`. `modules/stock/stock.ts` `pendingAlerts` copies (the
+Orders agent also reads it: it never relied on the queue's objects). `templates/commerce/listings/contract/words-fresh.test.ts`: one test for the two new vector files.
+
+**Measured at the end (through the heat lock, on this branch).**
+- Stock orders contract (`STOCK_ORDERS_IMPL=ts|go node --test --test-concurrency=1 templates/commerce/stock-orders/contract/`): **71 of 71 on TypeScript and 71 of 71 on Go** (63 before, plus the 8 cases of gaps.contract.test.ts).
+- `go vet ./...` clean; `go test ./...` clean (internal/stockorders: vectors, skill vectors, settings vectors; internal/stock).
+- TypeScript unit tests (templates/commerce/stock-orders/test, modules/stock/test) and words-fresh (listings contract): all pass; one assertion of language.test.ts (a template with no value in it) was relaxed for the card that ran out and re-run alone.
+- Not run: the Bookings Go contract (nothing of Bookings was changed; only its exported settings reader is now called from Stock orders).

@@ -35,6 +35,7 @@ Nothing here is TypeScript only.
 | `owner.contract.test.ts` | O | guards | the owner's page items and digests (a stale press does nothing, a press twice once), received from the page, the coming list, the talk box needs the assistant, the app view; the Stock page: candidates, deliveries added once by what was marked, a unit refused, a low mark starting one reorder |
 | `assistant.contract.test.ts` | A | guards | with an `assistant` block: "what needs me" keeps the order's card (one approval, one message), the assistant's card for the order pressed on the page, a rule about the budget making a limit card and the tighter budget in force |
 | `record.contract.test.ts` | D | guards | agent.db's format and the append-only record, the saved state member for member, the owner's words only as a keyed digest, a restore moving the counter on by 100000 |
+| `gaps.contract.test.ts` | G | guards, one fakes | the behaviours only a TypeScript unit test checked before the deletion (23 Nov): the owner told outside their window by a template of its own (a reorder card, the send's ending, a receipt from the page, a supplier's STOP, a lost reply), the order cap and the budget keeping their bounds, the low-stock question (which supplier, waiting behind another question, three asks then left alone), the WhatsApp Guard down while the owner writes, the send-once intent's own fields |
 | `cross-restart.test.ts` | | guards | the TypeScript and Go runtimes in turn on one folder, both ways |
 
 ## What the harness imports, and a deletion wave must keep
@@ -45,8 +46,10 @@ fixture `test/fixtures/guard-responses.json` (Guard's captured answers), `module
 
 ## What the TypeScript does that the suite pins (nothing was changed)
 
-* A message to the owner outside their 24-hour window that has no WhatsApp template of its own (for example "the supplier asked for no more messages") goes as the generic
-  `stock_owner_notice` with no parameters; a provider that knows only the real templates refuses it, so the owner is not told. The tests open the owner's window first.
+* (Changed 23 Nov.) A message to the owner outside their 24-hour window used to go as the generic `stock_owner_notice` with no parameters when it had no template of its own, and a
+  provider that knows only the real templates refused it. Now the supplier's STOP, a card that ran out, the four endings of the order's send and a receipt have a template each
+  (`src/language/meta-templates.ts`); what still goes generic is a reply to something the owner just wrote or pressed (approved, declined, cancelled, paid-outside noted, "not open",
+  the status), when the owner is inside the window and the page shows the same answer.
 * A request delivered twice with the same message id is a duplicate at the queue (`/internal/events` answers `duplicates: 1`); the agent never sees it, so its own "delivered twice"
   line is for a provider that redelivers under a new task.
 * A press on the owner's page for a card that was replaced keeps its own digest, so it is judged (and answered "already answered or replaced"), not refused as stale; only a digest

@@ -189,6 +189,13 @@ test("words-fresh: the Stock orders vectors (go/internal/stockorders/testdata) e
   assert.equal(stockOrdersVectors.stale(), false, "the Stock orders vectors are out of date: run  node go/scripts/gen_stockorders_vectors.ts  and commit the result");
 });
 
+test("words-fresh: the Stock orders skill's reads and the settings check's vectors (go/internal/stockorders/testdata) equal a fresh run of the TypeScript", async () => {
+  const skillVectors = await import("../../../../go/scripts/gen_stockorders_skill_vectors.ts");
+  assert.equal(skillVectors.stale(), false, "the Stock orders skill vectors are out of date: run  node go/scripts/gen_stockorders_skill_vectors.ts  and commit the result");
+  const settingsVectors = await import("../../../../go/scripts/gen_stockorders_settings.ts");
+  assert.equal(settingsVectors.stale(), false, "the Stock orders settings vectors are out of date: run  node go/scripts/gen_stockorders_settings.ts  and commit the result");
+});
+
 test("words-fresh: the Stock orders monthly report's words and test vectors (go/internal/stockordersreport) equal a fresh run of the TypeScript", async () => {
   const reportWords = await import("../../../../go/scripts/gen_stockorders_report_words.ts");
   assert.deepEqual(reportWords.staleFiles(reportWords.OUT), [], "the Stock orders report's words are out of date: run  node go/scripts/gen_stockorders_report_words.ts  and commit the result");

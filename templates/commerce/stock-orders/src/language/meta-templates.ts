@@ -16,7 +16,7 @@ import { inr, need, money, render } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use. */
-export type Slot = "business" | "supplier" | "item" | "unit" | "qty" | "price" | "total" | "ref" | "code" | "budget" | "reserved" | "left" | "hours";
+export type Slot = "business" | "supplier" | "item" | "unit" | "qty" | "price" | "total" | "ref" | "code" | "budget" | "reserved" | "left" | "hours" | "receivedQty" | "moreQty";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   supplier: (f) => need(f, "supplierName"),
@@ -31,17 +31,19 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   reserved: (f) => inr(f, "reservedInr"),
   left: (f) => inr(f, "leftInr"),
   hours: (f) => String(need(f, "hours")),
+  receivedQty: (f) => String(need(f, "receivedQty")),
+  moreQty: (f) => String(need(f, "moreQty")),
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
 const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", supplier: "§supplier§", item: "§item§", unit: "§unit§", ref: "§ref§", code: "§code§" };
 const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { price: 7_000_001, total: 7_000_002, budget: 7_000_003, reserved: 7_000_004, left: 7_000_005 };
-const STAND_IN_COUNT: Partial<Record<Slot, number>> = { qty: 7_000_006, hours: 7_000_007 };
+const STAND_IN_COUNT: Partial<Record<Slot, number>> = { qty: 7_000_006, hours: 7_000_007, receivedQty: 7_000_008, moreQty: 7_000_009 };
 
 function standInFacts(language: Language): MessageFacts {
   return {
     language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, supplierName: STAND_IN_TEXT.supplier, itemName: STAND_IN_TEXT.item, unitName: STAND_IN_TEXT.unit,
-    qty: STAND_IN_COUNT.qty, hours: STAND_IN_COUNT.hours, unitPriceInr: STAND_IN_AMOUNT.price, totalInr: STAND_IN_AMOUNT.total, budgetInr: STAND_IN_AMOUNT.budget,
+    qty: STAND_IN_COUNT.qty, hours: STAND_IN_COUNT.hours, receivedQty: STAND_IN_COUNT.receivedQty, moreQty: STAND_IN_COUNT.moreQty, unitPriceInr: STAND_IN_AMOUNT.price, totalInr: STAND_IN_AMOUNT.total, budgetInr: STAND_IN_AMOUNT.budget,
     reservedInr: STAND_IN_AMOUNT.reserved, leftInr: STAND_IN_AMOUNT.left, orderRef: STAND_IN_TEXT.ref, code: STAND_IN_TEXT.code, monthLabel: "§month§", refs: ["§refs§"],
   };
 }
@@ -67,6 +69,18 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("stock_owner_supplier_confirmed", "owner_supplier_accepted", "owner"),
   template("stock_owner_supplier_declined", "owner_supplier_declined", "owner"),
   template("stock_owner_supplier_silent", "owner_supplier_silent", "owner"),
+  // 23 Nov (stream SG): what the owner is told when they did not just write, so the window may be closed. Each used to go as the generic stock_owner_notice with no parameters, which
+  // a real provider refuses (it knows only approved templates), so the owner was not told. The supplier's STOP, a card that ran out, the four endings of the order's send, and a
+  // receipt marked from the owner's page. NOT here, on purpose: the replies to something the owner just wrote or pressed (approved, declined, cancelled, paid-outside noted,
+  // "not open", "too many", the status): the owner is in the window, and the page shows the same answer.
+  template("stock_owner_supplier_stopped", "owner_supplier_stopped", "owner"),
+  template("stock_owner_card_expired", "card_expired", "owner"),
+  template("stock_owner_order_sent", "sent_ok", "owner"),
+  template("stock_owner_order_unconfirmed", "sent_unknown", "owner"),
+  template("stock_owner_order_refused", "send_failed", "owner"),
+  template("stock_owner_order_held", "send_blocked", "owner"),
+  template("stock_owner_received_all", "received_full", "owner"),
+  template("stock_owner_received_part", "received_part", "owner"),
 ];
 
 const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ templates: META_TEMPLATES, values: VALUE });
@@ -88,7 +102,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
   return {
     language, timeZone: settings.timezone, businessName: settings.name, supplierName: supplier.name, itemName: nameIn(itemOf(settings, line.item).names, language), unitName: nameIn(unitOf(settings, line.unit).names, language),
     qty, unitPriceInr: line.priceInr, totalInr: total, orderRef: "po-3", code: "K7M2QX", budgetInr: settings.limits.monthlyBudgetInr, reservedInr: 0, leftInr: Math.max(0, settings.limits.monthlyBudgetInr - total),
-    hours: settings.followUpHours.at(-1) ?? 24, monthLabel: "Nov 2026", refs: ["po-3"],
+    hours: settings.followUpHours.at(-1) ?? 24, receivedQty: Math.max(1, Math.floor(qty / 2)), moreQty: qty - Math.max(1, Math.floor(qty / 2)), monthLabel: "Nov 2026", refs: ["po-3"],
   };
 }
 

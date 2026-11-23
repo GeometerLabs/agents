@@ -215,7 +215,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "मंज़ूरी के लिए ऑर्डर {{1}}: {{2}} × {{3}} ({{4}}), {{5}} प्रति {{6}}, कुल {{7}}, {{8}} से। इस महीने आपके {{9}} बजट में से {{10}} रखा जा चुका है, इस ऑर्डर के बाद {{11}} बचेगा। बटन से मंज़ूर करें, या \"yes {{12}}\" लिखें। मना करने के लिए \"no {{13}}\" लिखें।",
+        "text": "मंज़ूरी के लिए ऑर्डर {{1}}: {{2}} × {{3}} ({{4}}), {{5}} प्रति {{6}}, कुल {{7}}, {{8}} से। इस महीने आपके {{9}} बजट में से {{10}} रखा जा चुका है, इस ऑर्डर के बाद {{11}} बचेगा। बटन से मंज़ूर करें, या yes {{12}} लिखें। मना करने के लिए no {{13}} लिखें, या दूसरा बटन दबाएँ।",
         "example": {
           "body_text": [
             [
@@ -246,7 +246,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Order {{1}} for your approval: {{2}} × {{3}} ({{4}}), {{5}} per {{6}}, total {{7}}, from {{8}}. This month {{9}} of your {{10}} budget is reserved, so {{11}} is left after this order. Approve with the button, or reply \"yes {{12}}\". To decline reply \"no {{13}}\".",
+        "text": "Order {{1}} for your approval: {{2}} × {{3}} ({{4}}), {{5}} per {{6}}, total {{7}}, from {{8}}. This month {{9}} of your {{10}} budget is reserved, so {{11}} is left after this order. Approve with the button, or reply yes {{12}}. To decline reply no {{13}}, or use the other button.",
         "example": {
           "body_text": [
             [
@@ -277,7 +277,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "അനുമതിക്കായി ഓർഡർ {{1}}: {{2}} × {{3}} ({{4}}), ഒരു {{5}}-ന് {{6}}, ആകെ {{7}}, {{8}}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {{9}} ബജറ്റിൽ {{10}} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {{11}} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ \"yes {{12}}\" എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ \"no {{13}}\" എന്ന് നൽകൂ.",
+        "text": "അനുമതിക്കായി ഓർഡർ {{1}}: {{2}} × {{3}} ({{4}}), ഒരു {{5}}-ന് {{6}}, ആകെ {{7}}, {{8}}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {{9}} ബജറ്റിൽ {{10}} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {{11}} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ yes {{12}} എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ no {{13}} എന്ന് നൽകൂ, അല്ലെങ്കിൽ മറ്റേ ബട്ടൺ അമർത്തൂ.",
         "example": {
           "body_text": [
             [
@@ -308,7 +308,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {{1}}: {{2}} × {{3}} ({{4}}), ಒಂದು {{5}}ಗೆ {{6}}, ಒಟ್ಟು {{7}}, {{8}} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {{9}} ಬಜೆಟ್‌ನಲ್ಲಿ {{10}} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {{11}} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ \"yes {{12}}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ \"no {{13}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {{1}}: {{2}} × {{3}} ({{4}}), ಒಂದು {{5}}ಗೆ {{6}}, ಒಟ್ಟು {{7}}, {{8}} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {{9}} ಬಜೆಟ್‌ನಲ್ಲಿ {{10}} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {{11}} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ yes {{12}} ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ no {{13}} ಎಂದು ಉತ್ತರಿಸಿ, ಅಥವಾ ಇನ್ನೊಂದು ಬಟನ್ ಒತ್ತಿ.",
         "example": {
           "body_text": [
             [
@@ -645,6 +645,694 @@
               "ಬಾಕ್ಸ್",
               "₹450",
               "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_stopped",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सप्लायर {{1}} ने और संदेश न भेजने को कहा है, इसलिए मैं उन्हें दोबारा संदेश नहीं भेजूँगा। उनके लिए रुका हुआ ऑर्डर नहीं भेजा जाएगा, मैं बताऊँगा कौन सा।",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_stopped",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Supplier {{1}} asked for no more messages, so I will not message them again. Any order waiting for them stays unsent, and I will tell you which.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_stopped",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "വിതരണക്കാരൻ {{1}} ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞു, അതിനാൽ ഞാൻ അവർക്ക് വീണ്ടും സന്ദേശം അയയ്ക്കില്ല. അവർക്കുള്ള ഓർഡർ അയയ്ക്കാതെ കിടക്കും, ഏതെന്ന് ഞാൻ പറയാം.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_stopped",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೂರೈಕೆದಾರ {{1}} ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದಿದ್ದಾರೆ, ಹಾಗಾಗಿ ನಾನು ಅವರಿಗೆ ಮತ್ತೆ ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಅವರಿಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಆರ್ಡರ್ ಕಳುಹಿಸಲ್ಪಡದೆ ಉಳಿಯುತ್ತದೆ, ಯಾವುದೆಂದು ತಿಳಿಸುತ್ತೇನೆ.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_card_expired",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "उस कार्ड का समय ख़त्म हो गया, इसलिए कुछ नहीं भेजा गया। अगर अब भी चाहिए तो फिर कहें।",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_card_expired",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "That card ran out, so nothing was sent. Ask me again if you still want it.",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_card_expired",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ആ കാർഡിന്റെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും അയച്ചില്ല. ഇപ്പോഴും വേണമെങ്കിൽ വീണ്ടും പറയൂ.",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_card_expired",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆ ಕಾರ್ಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ, ಹಾಗಾಗಿ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಈಗಲೂ ಬೇಕಿದ್ದರೆ ಮತ್ತೆ ಹೇಳಿ.",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_sent",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ऑर्डर {{1}} {{2}} को भेज दिया गया। उन्होंने अभी जवाब नहीं दिया है। चुप रहने पर मैं फिर पूछूँगा।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_sent",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Order {{1}} went to {{2}}. They have not answered yet. I will ask again if they stay silent.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_sent",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർഡർ {{1}} {{2}}-ന് അയച്ചു. അവർ ഇതുവരെ മറുപടി തന്നിട്ടില്ല. മിണ്ടാതിരുന്നാൽ ഞാൻ വീണ്ടും ചോദിക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_sent",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆರ್ಡರ್ {{1}} ಅನ್ನು {{2}} ಅವರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ. ಅವರು ಇನ್ನೂ ಉತ್ತರಿಸಿಲ್ಲ. ಮೌನವಾಗಿದ್ದರೆ ನಾನು ಮತ್ತೆ ಕೇಳುತ್ತೇನೆ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_unconfirmed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ऑर्डर {{1}} {{2}} तक पहुँचा या नहीं, WhatsApp ने पक्का नहीं बताया। मैं ऑर्डर दोबारा नहीं भेजूँगा। इसके बदले {{3}} से {{4}} के बारे में पूछूँगा और आपको बताऊँगा।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_unconfirmed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Order {{1}} may or may not have reached {{2}}: WhatsApp did not confirm it. I will not send the order again. I will ask {{3}} about {{4}} instead, and tell you what they say.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_unconfirmed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർഡർ {{1}} {{2}}-ൽ എത്തിയോ എന്ന് WhatsApp ഉറപ്പിച്ചില്ല. ഞാൻ ഓർഡർ വീണ്ടും അയയ്ക്കില്ല. പകരം {{3}}-നോട് {{4}}-നെക്കുറിച്ച് ചോദിച്ച് അവർ പറയുന്നത് നിങ്ങളെ അറിയിക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_unconfirmed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆರ್ಡರ್ {{1}} {{2}} ಅವರಿಗೆ ತಲುಪಿತೇ ಎಂದು WhatsApp ಖಚಿತಪಡಿಸಲಿಲ್ಲ. ನಾನು ಆರ್ಡರ್ ಅನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಬದಲಿಗೆ {{3}} ಅವರನ್ನು {{4}} ಬಗ್ಗೆ ಕೇಳಿ, ಅವರು ಹೇಳಿದ್ದನ್ನು ನಿಮಗೆ ತಿಳಿಸುತ್ತೇನೆ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_refused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ऑर्डर {{1}} {{2}} को नहीं गया: WhatsApp ने मना कर दिया, इसलिए कुछ नहीं भेजा गया। बजट रखा हुआ है। फिर कोशिश के लिए \"send {{3}}\" लिखें, या छोड़ने के लिए \"cancel {{4}}\"।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_refused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Order {{1}} did not go to {{2}}: WhatsApp refused it, so nothing was sent. The budget stays reserved. Reply \"send {{3}}\" to try again, or \"cancel {{4}}\" to release it.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_refused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർഡർ {{1}} {{2}}-ന് പോയില്ല: WhatsApp നിരസിച്ചു, അതിനാൽ ഒന്നും അയച്ചില്ല. ബജറ്റ് മാറ്റിവച്ചതായി തുടരുന്നു. വീണ്ടും ശ്രമിക്കാൻ \"send {{3}}\" എന്നും ഒഴിവാക്കാൻ \"cancel {{4}}\" എന്നും നൽകൂ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_refused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆರ್ಡರ್ {{1}} {{2}} ಅವರಿಗೆ ಹೋಗಲಿಲ್ಲ: WhatsApp ನಿರಾಕರಿಸಿತು, ಹಾಗಾಗಿ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ಬಜೆಟ್ ಮೀಸಲಾಗಿಯೇ ಇದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು \"send {{3}}\" ಎಂದು, ಬಿಡಲು \"cancel {{4}}\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_held",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ऑर्डर {{1}} {{2}} को नहीं भेजा गया: एक जाँच ने रोक दिया, जैसे उन्होंने और संदेश न भेजने को कहा हो। कुछ नहीं गया। बजट छोड़ने के लिए \"cancel {{3}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_held",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Order {{1}} was not sent to {{2}}: a check held it back, for example because they asked for no more messages. Nothing went out. Reply \"cancel {{3}}\" to release the budget.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_held",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർഡർ {{1}} {{2}}-ന് അയച്ചില്ല: ഒരു പരിശോധന തടഞ്ഞു, ഉദാഹരണത്തിന് അവർ ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞതിനാൽ. ഒന്നും പോയില്ല. ബജറ്റ് വിടുവിക്കാൻ \"cancel {{3}}\" എന്ന് നൽകൂ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_order_held",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆರ್ಡರ್ {{1}} ಅನ್ನು {{2}} ಅವರಿಗೆ ಕಳುಹಿಸಲಿಲ್ಲ: ಒಂದು ಪರಿಶೀಲನೆ ತಡೆಯಿತು, ಉದಾಹರಣೆಗೆ ಅವರು ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದಿದ್ದರೆ. ಏನೂ ಹೋಗಿಲ್ಲ. ಬಜೆಟ್ ಬಿಡುಗಡೆ ಮಾಡಲು \"cancel {{3}}\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_all",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "पूरा माल आया दर्ज: ऑर्डर {{1}}, {{2}} × {{3}} ({{4}}), {{5}} प्रति {{6}}, कुल {{7}}। यह आपका दर्ज किया हुआ है, सप्लायर का नहीं। भुगतान अलग बात है: भुगतान करने पर \"paid {{8}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "हेयर कलर",
+              "डिब्बा",
+              "₹450",
+              "डिब्बा",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_all",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Marked received, all of it: order {{1}}, {{2}} × {{3}} ({{4}}), {{5}} per {{6}}, total {{7}}. This is your mark, not the supplier's. Payment is separate: reply \"paid {{8}}\" when you have paid.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "hair colour",
+              "box",
+              "₹450",
+              "box",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_all",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "മുഴുവൻ സാധനവും കിട്ടി എന്ന് രേഖപ്പെടുത്തി: ഓർഡർ {{1}}, {{2}} × {{3}} ({{4}}), ഒരു {{5}}-ന് {{6}}, ആകെ {{7}}. ഇത് നിങ്ങളുടെ രേഖപ്പെടുത്തലാണ്, വിതരണക്കാരന്റേതല്ല. പണമടയ്ക്കൽ വേറെയാണ്: അടച്ചാൽ \"paid {{8}}\" എന്ന് നൽകൂ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "ഹെയർ കളർ",
+              "ബോക്സ്",
+              "ബോക്സ്",
+              "₹450",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_all",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೂರ್ತಿ ಸರಕು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ {{1}}, {{2}} × {{3}} ({{4}}), ಒಂದು {{5}}ಗೆ {{6}}, ಒಟ್ಟು {{7}}. ಇದು ನಿಮ್ಮ ದಾಖಲೆ, ಪೂರೈಕೆದಾರರದ್ದಲ್ಲ. ಪಾವತಿ ಬೇರೆ ವಿಷಯ: ಪಾವತಿಸಿದಾಗ \"paid {{8}}\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "ಹೇರ್ ಕಲರ್",
+              "ಬಾಕ್ಸ್",
+              "ಬಾಕ್ಸ್",
+              "₹450",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_part",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "दर्ज: ऑर्डर {{1}} ({{2}}) के {{3}} में से {{4}} आए। {{5}} आना बाकी है। बाकी आने पर \"received {{6}} {{7}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "हेयर कलर",
+              "10",
+              "5",
+              "5",
+              "po-3",
+              "5"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_part",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Marked: {{1}} of {{2}} received for order {{3}} ({{4}}). {{5}} still to come. Reply \"received {{6}} {{7}}\" when the rest arrives.",
+        "example": {
+          "body_text": [
+            [
+              "5",
+              "10",
+              "po-3",
+              "hair colour",
+              "5",
+              "po-3",
+              "5"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_part",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "രേഖപ്പെടുത്തി: ഓർഡർ {{1}} ({{2}}) ലെ {{3}}-ൽ {{4}} കിട്ടി. {{5}} വരാനുണ്ട്. ബാക്കി വരുമ്പോൾ \"received {{6}} {{7}}\" എന്ന് നൽകൂ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "ഹെയർ കളർ",
+              "10",
+              "5",
+              "5",
+              "po-3",
+              "5"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_received_part",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ದಾಖಲಿಸಲಾಗಿದೆ: ಆರ್ಡರ್ {{1}} ({{2}}) ನ {{3}} ರಲ್ಲಿ {{4}} ಬಂದಿದೆ. {{5}} ಬರಬೇಕಿದೆ. ಉಳಿದದ್ದು ಬಂದಾಗ \"received {{6}} {{7}}\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "ಹೇರ್ ಕಲರ್",
+              "10",
+              "5",
+              "5",
+              "po-3",
+              "5"
             ]
           ]
         }
