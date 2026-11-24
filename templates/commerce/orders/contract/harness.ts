@@ -121,6 +121,9 @@ export interface ShopOptions {
   at?: number;
   /** Guards (live) mode: ask for the test clock ANYWAY, to see that a live shop refuses to start on it. */
   forceClock?: boolean;
+  /** Guards mode, on the TEST clock: the shop runs as the hand check's does (runtime.json "fakes" with "standins": "http"), reaching these fake Guards over HTTP, at `at` (default START).
+   * A customer's 24-hour window is the shop's own record of when they last wrote, so moving the clock a day closes it, and `sent` shows the template each message went as. */
+  onClock?: boolean;
   /** Guards mode: how long the Guard's approval of a held refund lasts, in seconds (60 at least). */
   approvalSeconds?: number;
   /** `terms.json` as the Operator writes it. */
@@ -228,7 +231,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
 
   const parsed = parseSettings(settingsJson);
   const guards = mode === "guards" ? await startGuards(parsed, o.approvalSeconds !== undefined ? { approvalTtlSeconds: o.approvalSeconds } : {}) : undefined;
-  const runtime: Record<string, any> = { mode: mode === "guards" ? "live" : "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600 };
+  const runtime: Record<string, any> = { mode: mode === "guards" && !o.onClock ? "live" : "fakes", ...(o.onClock ? { standins: "http" } : {}), host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600 };
   if (guards) {
     const upi = given.payment?.module === "upi";
     const tokenFile = join(secrets, "agent_razorpay");
@@ -251,8 +254,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   if (o.terms !== undefined) writeFileSync(join(client, "terms.json"), JSON.stringify(o.terms));
   writeFileSync(join(client, "pathway.lock"), VIA_PARTS ? `parts@${PARTS_VERSION}\n` : `orders@${VERSION}\n`); // written last, as the deployer does
 
-  const clock = (mode === "fakes" && o.clock !== false) || o.forceClock ? makeTestClockFile(join(root, "clock")) : undefined;
-  if (clock && mode === "fakes") clock.advance((o.at ?? START) - Date.now());
+  const clock = (mode === "fakes" && o.clock !== false) || o.forceClock || o.onClock ? makeTestClockFile(join(root, "clock")) : undefined;
+  if (clock && (mode === "fakes" || o.onClock)) clock.advance((o.at ?? START) - Date.now());
   const put = (name: string, value: unknown): void => {
     const file = join(client, name);
     if (value === undefined) { rmSync(file, { force: true }); return; }
@@ -306,6 +309,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
       // in guards mode the message is made by the WhatsApp stand-in, which also opens the customer's 24-hour window there
       const made = guards ? guards.standins.fakes.messaging.receive(from, text, { ...(m.id ? { id: m.id } : {}), ...(m.reply ? { reply: m.reply } : {}) } as never) : undefined;
       const message = made ?? { id: m.id ?? uid("wamid"), from, text, timestamp: m.timestamp ?? shop.now(), ...(m.reply ? { reply: m.reply } : {}) };
+      if (o.onClock) message.timestamp = shop.now(); // the stand-in stamps the machine's time; the shop's window is kept in its own (moved) clock
       Object.assign(message, m.extra ?? {});
       const a = await shop.events([{ kind: "message", message }]);
       if (a.status === 200) await shop.settle();

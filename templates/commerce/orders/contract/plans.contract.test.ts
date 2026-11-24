@@ -5,7 +5,8 @@
 // test/plans. Observed through the record's sent templates, /status, the owner's page and the page's offer.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOMER, RAJESH, at, beat, contract, makeShop } from "./harness.ts";
+import { readFileSync } from "node:fs";
+import { CUSTOMER, HOUR, MIN, RAJESH, at, beat, contract, makeShop } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -151,5 +152,72 @@ describe("a monthly plan", () => {
     await s.inbound(CUSTOMER, "I want the monthly lunch plan");
     assert.ok(!s.templatesTo(CUSTOMER).some((t) => t.startsWith("plan_")));
     assert.ok(!s.record().some((r) => r.action.startsWith("plan")));
+  });
+});
+
+// 25 Nov 2026: the four plan messages that go to the customer unasked, outside their 24-hour window (the lapse, the hold that ran out, and the credit going back, done or waiting
+// for the owner). They had no WhatsApp template, so they went under the generic name, which WhatsApp refuses outside the window. These cases run the shop as the hand check does,
+// on the test clock with its Guards as stand-ins (`onClock`): the shop's window is the day since the customer last wrote, so a month on the clock closes it, and the stand-in
+// WhatsApp shows the name each message went under and the values it carried. Each case checks the name, that the list to submit to Meta (whatsapp-templates.json) holds that
+// name with as many values as the shop sent, and that the body filled with them is the very text the shop wrote.
+describe("the plan messages that go out unasked, in a closed window, go as their own templates", () => {
+  const registered = JSON.parse(readFileSync(new URL("../whatsapp-templates.json", import.meta.url), "utf8")) as { name: string; language: string; components: { type: string; text?: string }[] }[];
+  const bodyOf = (name: string): string => registered.find((t) => t.name === name && t.language === "en")?.components.find((c) => c.type === "BODY")?.text ?? assert.fail(`${name} is not in the list to submit`);
+  const MONTH = "weekday lunch"; // the plan the example shop quotes for "the monthly lunch plan" (the messages add the word "plan" themselves)
+  const count = (s: Shop, template: string) => s.templatesTo(CUSTOMER).filter((t) => t === template).length;
+  const DEC8 = at({ year: 2026, month: 12, day: 8 }, 21); // the last cut-off of the first month, as above
+  /** The one message the shop sent the customer under `name`: it went as a template, with these values, filling the registered body into the text it wrote. */
+  function wentAs(s: Shop, name: string, values: string[]): void {
+    const sent = s.sent(CUSTOMER).filter((m) => m.templateName === name);
+    assert.equal(sent.length, 1, `${name} went ${sent.length} times: ${JSON.stringify(s.sent(CUSTOMER).map((m) => [m.kind, m.templateName]))}`);
+    const wire = s.guards!.of("messaging", "POST").map((c) => c.body).filter((b) => b.to === CUSTOMER && b.type === "template" && b.template?.name === name);
+    assert.equal(wire.length, 1, `${name} went to WhatsApp ${wire.length} times`);
+    const sentValues = wire[0].template.components.filter((c: { type: string }) => c.type === "body").flatMap((c: { parameters: { text: string }[] }) => c.parameters.map((p) => p.text));
+    assert.deepEqual(sentValues, values, `${name}'s values`);
+    const body = bodyOf(name);
+    assert.equal((body.match(/\{\{\d+\}\}/gu) ?? []).length, values.length, `${name}: the registered body has as many values as the shop sent`);
+    assert.ok(!/^\{\{|\}\}$/u.test(body), `${name} starts or ends with a value, which Meta rejects`);
+    assert.equal(body.replace(/\{\{(\d+)\}\}/gu, (_m, n: string) => values[Number(n) - 1]), sent[0].text, `${name}: the registered body filled is the text the shop wrote`);
+  }
+  /** A plan on the test clock whose customer last wrote at the start (and then skips `skipDays` days, carried as credit); the month's renewal is asked for, never paid, and lapses. */
+  async function lapsedPlan(razorpay: boolean, skipDays: number): Promise<Shop> {
+    const s = await boot({ mode: "guards", onClock: true, tickSeconds: 1, ...(razorpay ? RAZORPAY : {}) });
+    await s.inbound(CUSTOMER, "I want the monthly lunch plan");
+    if (razorpay) await payFirstLink(s); else await s.ownerPress("deposit", "received");
+    assert.equal(s.templatesTo(CUSTOMER).at(-1), "plan_active");
+    for (const d of ["12", "13", "16"].slice(0, skipDays)) await s.inbound(CUSTOMER, `skip ${d} nov`);
+    s.advance(DEC8 - s.now()); await beat();
+    assert.equal(count(s, "plan_renewal"), 1);
+    s.advance(at({ year: 2026, month: 12, day: 9 }, 21) - s.now()); await beat();
+    assert.ok(s.record().some((r) => r.action === "plan_lapse" && r.refs.period === "1"));
+    return s;
+  }
+  const payFirstLink = async (s: Shop): Promise<void> => { await s.events(s.guards!.pay(s.guards!.standins.fakes.payments.links()[0].id).map((event) => ({ kind: "payment_event", event }))); await s.settle(); };
+  const RAZORPAY = { example: "plans", settings: { payment: { module: "razorpay", upi: null } } } as const;
+
+  contract("a renewal not paid in time: 'not renewed' goes as plan_lapsed, with the plan's name", async () => {
+    const s = await lapsedPlan(false, 1);
+    wentAs(s, "plan_lapsed", [MONTH]);
+  });
+
+  contract("a first payment that never came: the hold that ran out goes as plan_hold_expired, with the plan's name", async () => {
+    const s = await boot({ mode: "guards", onClock: true, tickSeconds: 1 });
+    // the hold is 30 minutes, so the window the customer's own message opened would still be open when it ends: their message is stamped a day old, as a customer who wrote
+    // yesterday and left it (the shop keeps the window from that stamp)
+    await s.inbound(CUSTOMER, "I want the monthly lunch plan", { extra: { timestamp: s.now() - 25 * HOUR } });
+    s.advance(40 * MIN); await beat();
+    assert.ok(s.record().some((r) => r.action === "plan_lapse" && r.refs.period === "0"));
+    wentAs(s, "plan_hold_expired", [MONTH]);
+  });
+
+  // ₹109 is a day of the ₹2,400 plan (floor(2400 / 22)), and the shop's own refund limit is ₹300: one carried day goes back at once, three (₹327) wait for the owner
+  contract("the credit of a lapsed plan going back, within the refund limit: plan_credit_refund, with the amount and the plan's name", async () => {
+    const s = await lapsedPlan(true, 1);
+    wentAs(s, "plan_credit_refund", ["₹109", MONTH]);
+  });
+
+  contract("the credit of a lapsed plan above the refund limit waits for the owner: plan_credit_refund_pending, with the amount and the plan's name", async () => {
+    const s = await lapsedPlan(true, 3);
+    wentAs(s, "plan_credit_refund_pending", ["₹327", MONTH]);
   });
 });

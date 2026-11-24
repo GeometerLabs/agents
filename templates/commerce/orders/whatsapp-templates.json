@@ -2856,6 +2856,318 @@
     ]
   },
   {
+    "name": "plan_lapsed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका {{1}} प्लान समय पर नवीनीकृत नहीं हुआ, इसलिए बंद हो गया है। फिर शुरू करने के लिए \"monthly plan\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_lapsed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your {{1}} plan was not renewed in time, so it has stopped. Write \"monthly plan\" to start again.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_lapsed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പ്ലാൻ സമയത്തിന് പുതുക്കിയില്ല, അതിനാൽ നിലച്ചു. വീണ്ടും തുടങ്ങാൻ \"monthly plan\" എന്ന് എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_lapsed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪ್ಲಾನ್ ಸಮಯಕ್ಕೆ ನವೀಕರಣವಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ನಿಂತಿದೆ. ಮತ್ತೆ ಶುರು ಮಾಡಲು \"monthly plan\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_hold_expired",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपके {{1}} प्लान की रोक खत्म हो गई क्योंकि भुगतान समय पर नहीं मिला। फिर शुरू करने के लिए \"monthly plan\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_hold_expired",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The hold on your {{1}} plan has ended because the payment was not received in time. Write \"monthly plan\" to start again.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_hold_expired",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പ്ലാനിന്റെ കാത്തിരിപ്പ് അവസാനിച്ചു, കാരണം പണം സമയത്തിന് കിട്ടിയില്ല. വീണ്ടും തുടങ്ങാൻ \"monthly plan\" എന്ന് എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_hold_expired",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪ್ಲಾನ್‌ನ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದಿದೆ, ಏಕೆಂದರೆ ಪಾವತಿ ಸಮಯಕ್ಕೆ ಬರಲಿಲ್ಲ. ಮತ್ತೆ ಶುರು ಮಾಡಲು \"monthly plan\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपके {{1}} प्लान के अनुपयोगी {{2}} आपको वापस किए जा रहे हैं।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The {{1}} of your {{2}} plan that was not used is being refunded.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പ്ലാനിൽ ഉപയോഗിക്കാത്ത {{2}} തിരികെ നൽകുന്നു.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪ್ಲಾನ್‌ನಲ್ಲಿ ಬಳಸದ {{2}} ನಿಮಗೆ ಮರಳಿಸಲಾಗುತ್ತಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund_pending",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपके {{1}} प्लान के {{2}} की वापसी की पुष्टि मालिक जल्द करेंगे।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund_pending",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner will confirm your {{1}} refund for your {{2}} plan shortly.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund_pending",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പ്ലാനിലെ {{2}} റീഫണ്ട് ഉടമ ഉടൻ സ്ഥിരീകരിക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_credit_refund_pending",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪ್ಲಾನ್‌ನ {{2}} ರೀಫಂಡ್ ಅನ್ನು ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ಖಚಿತಪಡಿಸುತ್ತಾರೆ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_hold_enquiry",
     "language": "hi",
     "category": "UTILITY",

@@ -168,6 +168,12 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   // cancelled; both had no template, went under the generic name and were refused outside the window
   template("plan_active", "plan_active", "customer"),
   template("owner_plan_cancelled", "owner_plan_cancelled", "owner"),
+  // 25 Nov 2026: the four plan messages that go out unasked with nothing the customer just wrote before them: the renewal that was not paid (the plan stopped), the first payment
+  // that did not come (the plan never started), and the credit going back (done, or waiting for the owner above the refund limit); each went under the generic name outside the window
+  template("plan_lapsed", "plan_lapsed", "customer"),
+  template("plan_hold_expired", "plan_hold_expired", "customer"),
+  template("plan_credit_refund", "plan_credit_refund", "customer"),
+  template("plan_credit_refund_pending", "plan_credit_refund_pending", "customer"),
   // "keep one for me", the pickup hold (24 Nov 2026): what the owner is asked and told unasked (a customer's photo, a hold to accept, a hold that ended or was let go), and the
   // customer's "held for you", which can come long after they wrote when the owner answers late, and the end of the hold
   template("owner_hold_enquiry", "owner_hold_enquiry", "owner"),
