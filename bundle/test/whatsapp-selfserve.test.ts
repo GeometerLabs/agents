@@ -72,7 +72,8 @@ test("with the app id given, the template list is read by id; a '+' in the numbe
   const id = "07c7c72d-20e3-4ff9-a5a1-14d1186eeec8";
   const wa = plan({ ...MESSAGING, sourceNumber: `+${SOURCE}`, appId: id }).guards.find((g) => g.kind === "whatsapp")!;
   assert.deepEqual(wa.spec.routes[2], { method: "GET", path: "/wa/app/{app_id}/template", operation: "read_number" });
-  assert.deepEqual(wa.spec.rules.map((x: any) => [x.field, x.allowed_values]), [["source", [SOURCE]], ["app_id", [id]]]);
+  // 25 Nov 2026: with the app id, the panel may also submit the shop's templates to that app, pinned to it (wa-templates.ts; the panel's agent only)
+  assert.deepEqual(wa.spec.rules.map((x: any) => [x.operation, x.field, x.allowed_values]), [["send", "source", [SOURCE]], ["read_number", "app_id", [id]], ["submit_template", "app_id", [id]]]);
   assert.deepEqual(plan({ ...MESSAGING, appName: "Glow Salon" }).problems.map((x) => x.rule), ["whatsapp-provider"]);
   assert.deepEqual(plan({ ...MESSAGING, sourceNumber: "n/a" }).problems.map((x) => x.rule), ["whatsapp-provider"]);
   assert.deepEqual(plan({ ...MESSAGING }, false).problems, [], "no Meta number id is needed with a number of its own");
