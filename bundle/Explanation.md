@@ -1480,3 +1480,43 @@ Of the 98 MB asleep, 50 MB is bare Node and about 26 MB is Node stripping the ty
 Sum of idle: 892 MB to 552 MB (-340 MB). Of the saving, stripping alone gives about 40 MB a process (inbox 126 to 87, door 115 to 72, panel 172 to 125) and the semi-space flag the rest (inbox 87 to 79, relay 112 to 97, panel 125 to 104, and 15 to 60 MB less after load). Start time to first answer: 130 to 600 ms before, 110 to 430 ms after. Answer times are unchanged (differences of 0.03 ms are noise): the smaller young generation does more scavenges, which cost microseconds on heaps this small. The harness is not in the repository (it started the real service files with minimal configs and a stub runtime); the panel's idle-asleep figure is stream N2's.
 
 **Lazy loading, measured.** The heap each rarely used import adds, with the shared graph already loaded: `character/render` (DiceBear) 0.7 MB, `panel/papers` 0.3, `panel/server-setup` 0.0, `panel/presets` 0.0, the Hindi, Malayalam and Kannada word tables 0.3 to 0.5 each alone and 0.0 after the shared words, each further template's approvals relay 0.0 to 1 MB (the shared module is the cost). The big numbers (the panel's 17 MB, the relay's 16 MB, the inbox's `front`) are one shared graph every path needs. Nothing saves several MB, so no import was made lazy (each would turn a synchronous function into an async one for under 1 MB). The panel's real saving is stream N2's: it does not load that graph while asleep.
+
+## Several template parts in one shop (decision 65, stream `d65-parts-25nov`, 25 Nov 2026)
+
+Owner, 24 Nov: one shop can run several template parts (the credit book, Stock orders and the pickup hold) behind its one WhatsApp number and one assistant; the higher price
+slabs pay for it. Which slab allows how many parts is economics' to set, so no number is built in: the limit is one setting (below), and absent means no limit.
+
+### The choice: one Go program hosting the parts (b), not one process per part behind a router (a)
+
+| | (a) a process per part, a router in front | (b) one program, the parts inside it (chosen) |
+|---|---|---|
+| Memory per shop | about 3 x 18.5 MB idle for three parts (the measured floor of one Go shop, go/TRIAL.md), plus the router | one process: about one shop's figure plus the parts' state (measured in go/TRIAL.md § decision 65) |
+| One record, one stock count, one sign-in, one assistant | each process has its own `agent.db` (record, snapshot with the stock count under `assistant.stock`), its own `owner-access.sqlite` and its own assistant state: sharing them means several processes writing one SQLite file, or a router that owns most of the runtime | all four are already one per process: the step runner, the snapshot (and so the stock count), the record and the owner's assistant are shared by construction |
+| Failure isolation | a part that crashes leaves the others running | a step that panics is already caught by the step runner (`internal/runtime` recover), the task ends failed and the next one runs; a part that keeps failing does not stop the others' steps (each event is one part's) |
+| What the existing parts must change | the router must reproduce sign-in, the owner's page and the stock count across processes | nothing in their rules, words, snapshot or record of a single-part shop; each gains one small file (`part.go`: "is this message mine?" by rules only, which cases are its own, its assistant hooks) and its program's wiring moves from `cmd/<x>/main.go` into the package so `cmd/parts` can reuse it |
+
+(b) wins on memory, on "one record, one stock count, one assistant" without new cross-process machinery, and on how little of the parts changes. Its cost is isolation: a bug
+that crashes the whole process (not a panic inside a step) stops every part of that shop, where (a) would stop one. The step runner already turns a panic into a failed task.
+
+### How it fits together
+
+- **The program.** `go/cmd/parts` with `go/internal/parts`: a Kit (the `runtime.Kit` seam every template implements) made of the parts' own Kits. A shop of several parts is
+  pinned to the `parts` template (`templates/commerce/parts`, `pathway.lock` `parts@0.1.0`); a single-part shop keeps its own template and program and is not touched.
+- **Settings.** One `settings.json`: the shared keys every template reads (name, time zone, owner, assistant, languages, terms) at the top, and each part's own keys in
+  `parts.<template>` (`fees`, `orders`, `stock-orders`). Each part is checked by its own template's check on the shared keys plus its block, so a part's settings mean exactly
+  what they mean in a single-part shop.
+- **The snapshot.** One top-level member `parts` holds each part's members, by template; `assistant` (the owner's assistant, the stock count, the listings) and `ai` (the month's
+  AI counts) stay shared. A shop that had one template and takes a second keeps its old state: members found outside `parts` belong to the part named in `settings.carried`
+  (the template the shop was before), and are written back inside `parts` from the first step on.
+- **The record.** One record per shop. A line a part writes carries `refs.part` (the template); each part reads back only its own lines (and, for the carried part, the lines from
+  before the shop had parts), so its counts, reports and "was this sent" memory are exactly a single-part shop's. Document numbers (receipts, bills, refund notes) are worked out
+  over the WHOLE record, so a series stays gap-free and unique for the business. Shared beat work (the licence notice, the morning line) runs once per shop.
+- **The router.** Every inbound message goes to exactly one part: (1) the part that has an open conversation with that number (an order or hold waiting, a credit account
+  the customer said yes to or was asked about, a supplier with a purchase order open); (2) for the owner, the part whose command word it is (`approve o-3`, `po-3`, a name
+  with "owes"); (3) a customer with nothing open goes to the one part that takes new customers. When two parts could take it, the shop asks one short question (to the owner:
+  which part; to a customer: the shop will reply), and nothing about money happens on a guess. A redelivered message goes to the part it went to the first time.
+- **One assistant.** The owner's assistant hosts every part's skill (what waits, who owes, the open orders, the morning line), so the owner talks to one assistant.
+- **Guard's limits are per shop.** One WhatsApp Guard for the number (any recipient when any part writes to customers; Stock orders' fixed list then no longer narrows it); no
+  payment gateway in a parts shop yet (UPI only, conservative); the shop's model budget and message allowance are the shop's, not split.
+- **The parts limit.** One setting, `parts` in a plan of the price list in force (`prices/<date>.json`), read the way the budget is read; absent means no limit. A deploy or
+  the panel refuses one part too many when it is set.
