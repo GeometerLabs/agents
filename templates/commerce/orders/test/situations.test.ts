@@ -7,11 +7,12 @@ import { annapurna, annapurnaPlans, annapurnaRazorpay, sweetCrumbs } from "../sr
 import { notTestedOf } from "../crash-test/not-tested.ts";
 
 for (const [name, settings, held, skipped] of [
-  ["Annapurna Tiffins (UPI)", annapurna(), 17, 2],
-  ["Annapurna Tiffins (Razorpay)", annapurnaRazorpay(), 18, 1],
-  ["Sweet Crumbs Bakery (Razorpay, pickup only, no approval line)", sweetCrumbs(), 16, 3],
+  ["Annapurna Tiffins (UPI)", annapurna(), 18, 2],
+  ["Annapurna Tiffins (Razorpay)", annapurnaRazorpay(), 19, 1],
+  ["Sweet Crumbs Bakery (Razorpay, pickup only, no approval line)", sweetCrumbs(), 17, 3],
   // 24 Nov 2026: the plans shop (UPI) on Go; its renewal, "your plan is on" and the owner's "plan cancelled" were refused outside the window until each had a template
-  ["Annapurna Tiffins with monthly plans (UPI)", annapurnaPlans(), 22, 2],
+  ["Annapurna Tiffins with monthly plans (UPI)", annapurnaPlans(), 23, 2],
+  // 25 Nov 2026: each shop runs one more, a stranger naming an order (modules/crash-test/case-asked.ts)
 ] as const) {
   test(`every situation holds on ${name}`, { skip: goSkip("orders") }, async () => {
     const run = await runOn(settings);

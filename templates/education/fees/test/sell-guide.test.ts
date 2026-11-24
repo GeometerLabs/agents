@@ -352,14 +352,14 @@ test("sell guide: the hand-check numbers in section 11 and on the sheets are the
   const total = bright.results.length;
   const checks = bright.results.reduce((n, r) => n + r.checks.length, 0);
   const notTested = NOT_TESTED.length; // the hand check's own "NOT TESTED" list, not the situations it could not run
-  assert.deepEqual([held, total, bright.skipped.length], [26, 26, 0], "a situation fails or was added: the guide, the sheets and the READMEs quote these numbers, so change them together");
-  assert.deepEqual([checks, notTested], [209, 12]);
+  assert.deepEqual([held, total, bright.skipped.length], [27, 27, 0], "a situation fails or was added: the guide, the sheets and the READMEs quote these numbers, so change them together");
+  assert.deepEqual([checks, notTested], [216, 12]);
 
   const maths = parseSettings(JSON.parse(readFileSync(new URL("../settings/maths-circle.example.json", import.meta.url), "utf8")));
   const second = await runOn(maths);
   const mHeld = second.results.filter((r) => r.held).length;
   const mTotal = second.results.length;
-  assert.deepEqual([mHeld, mTotal, second.skipped.length], [23, 23, 3]);
+  assert.deepEqual([mHeld, mTotal, second.skipped.length], [24, 24, 3]);
 
   const en = section("en", 11);
   assert.ok(en.includes(`${held} of ${total} situations (${checks} checks), with ${notTested} listed as not tested`));

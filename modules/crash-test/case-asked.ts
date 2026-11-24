@@ -5,7 +5,8 @@
 //   - the owner got exactly one message (the first ask), the template's notice about this stranger;
 //   - the record has the ask with the case in refs.case, `booking` left null, outcome confirmed, then blocked (the hour), and no number of the customer's in its refs or notes;
 //   - the case is as it was (the template says what "as it was" reads), and nothing moved money;
-//   - the false reference reached nobody: no ask line, nothing more to the owner.
+//   - the false reference gets the shop's usual answer: no ask line, no second notice to the owner (a pickup-hold shop's usual answer to words it cannot place is
+//     an enquiry card to the owner, so the notice itself is counted, not every owner message).
 // Each template's situations.ts gives the world, how its case is opened and the template ids its words go under.
 import { checker } from "./situations.ts";
 import type { Situation } from "./situations.ts";
@@ -59,7 +60,9 @@ export function caseAskedSituation<W extends GoWorldBase<unknown, unknown>>(o: C
       expect("The same ask again within the hour: the same line to the stranger, and the owner is not told again", w.textsTo(STRANGER).length === 2 && ownerSends(w) === ownerBefore + 1 && lines().at(-1)?.outcome === "blocked", JSON.stringify(lines().map((e) => e.outcome)));
       expect(`The ${o.noun} is as it was, and no money moved`, o.state(w, ref) === before && w.payments.refunds().length === 0, `${before} → ${o.state(w, ref)}`);
       await w.say(o.ask(o.falseRef), { from: STRANGER });
-      expect(`A reference the shop does not hold (${o.falseRef}) tells the owner nothing and writes no ask`, ownerSends(w) === ownerBefore + 1 && lines().length === 2, JSON.stringify(lines().map((e) => e.refs)));
+      // judged by the notice itself, not by every owner message: a shop whose usual answer to unplaced words involves the owner (the pickup hold's enquiry card) still does
+      const notices = (): number => sends(w, STRANGER, "owner").filter((t) => t === o.ownerTemplate).length;
+      expect(`A reference the shop does not hold (${o.falseRef}) sends the owner no notice about a ${o.noun} and writes no ask`, notices() === 1 && lines().length === 2, JSON.stringify(lines().map((e) => e.refs)));
       return results;
     },
   };

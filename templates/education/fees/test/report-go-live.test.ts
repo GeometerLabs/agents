@@ -183,7 +183,7 @@ test("go-live-certificate.ts runs the real hand check on a centre's own settings
   assert.ok(verified.unchanged && verified.signed);
   const cert = verified.envelope!.document as ReturnType<typeof buildGoLiveCertificate>;
   assert.equal(cert.checks.total, cert.checks.held);
-  assert.equal(cert.checks.total + (cert.checks.notRun?.length ?? 0), 26, "every situation is either run or named as not run");
+  assert.equal(cert.checks.total + (cert.checks.notRun?.length ?? 0), 27, "every situation is either run or named as not run");
   assert.equal(cert.policyDigest, cert.checkedPolicyDigest, "the checks ran on this centre's own settings, and the digest survived being written down");
 
   // the report script reads it back
@@ -213,7 +213,7 @@ test("go-live-certificate.ts runs the real hand check on a centre's own settings
 test("go-live-certificate.ts exits 1 when a situation does not hold, and says no situation could be run when none can", { skip: goSkip("fees") }, async () => {
   const ran = await runOn(bright);
   assert.equal(summariseRun(ran).held, summariseRun(ran).total);
-  assert.equal(summariseRun(ran).total, 26);
+  assert.equal(summariseRun(ran).total, 27);
   const dir = mkdtempSync(join(tmpdir(), "fees-golive-bad-"));
   const bad = run("go-live-certificate.ts", ["--settings", join(dir, "nowhere.json"), "--lang", "en", "--out", dir]);
   assert.equal(bad.status, 64);

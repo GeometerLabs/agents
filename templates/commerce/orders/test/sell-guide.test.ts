@@ -376,13 +376,13 @@ test("sell guide: the hand-check numbers in section 11 and on the sheets are the
   const uTotal = upi.results.length;
   const uChecks = upi.results.reduce((n, r) => n + r.checks.length, 0);
   const uNotTested = notTestedOf(annapurna()).length;
-  assert.deepEqual([uHeld, uTotal, upi.skipped.length, uChecks, uNotTested], [17, 17, 2, 82, 14], "a situation fails or was added: the guide and the sheets quote these numbers, so change them together");
+  assert.deepEqual([uHeld, uTotal, upi.skipped.length, uChecks, uNotTested], [18, 18, 2, 89, 14], "a situation fails or was added: the guide and the sheets quote these numbers, so change them together");
 
   const razorpay = await runOn(annapurnaRazorpay());
   const rHeld = razorpay.results.filter((r) => r.held).length;
   const rTotal = razorpay.results.length;
   const rChecks = razorpay.results.reduce((n, r) => n + r.checks.length, 0);
-  assert.deepEqual([rHeld, rTotal, razorpay.skipped.length, rChecks, notTestedOf(annapurnaRazorpay()).length], [18, 18, 1, 89, 14]);
+  assert.deepEqual([rHeld, rTotal, razorpay.skipped.length, rChecks, notTestedOf(annapurnaRazorpay()).length], [19, 19, 1, 96, 14]);
 
   const en = section("en", 11);
   assert.ok(en.includes(`holds ${uHeld} of ${uTotal} situations (${uChecks} checks), with ${uNotTested} listed as not tested and ${upi.skipped.length} not run on those settings`));
@@ -457,7 +457,7 @@ test("one-pagers: the not-checked line is dated, says the checks were run by han
     const line = /<div class="not-checked">([\s\S]*?)<\/div>/.exec(html)?.[1] ?? "";
     assert.ok(line.startsWith(`<b>${STRINGS[l].label.notChecked}</b> (${DATE[l]}): `), `${l}: the line starts with the "Not checked" label and the date`);
     assert.ok(line.includes(STRINGS[l].handRun), `${l}: the line says the checks were run by hand`);
-    assert.ok(line.includes("WhatsApp") && line.includes("UPI") && line.includes("17 of 17"), `${l}: the line names real WhatsApp, a real UPI app and the count`);
+    assert.ok(line.includes("WhatsApp") && line.includes("UPI") && line.includes("18 of 18"), `${l}: the line names real WhatsApp, a real UPI app and the count`);
     assert.equal(line.split(" · ").length, 6, `${l}: six things not checked`);
   }
 });
