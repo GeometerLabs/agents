@@ -22,5 +22,5 @@
 
 * A day the morning line finds quiet (nothing to say) is remembered by the process only (`runMorning` sets `morningDone`; no record line), as the deleted `morning.ts` did (`finished`). A shop
   restarted inside the four-hour window looks again, so a day that was quiet at 08:00 can still get its line later that morning, counting what happened since. Never a second line
-  (a line sent is in the record) and never outside the window. Whether a quiet day should be written down so a restart does not look again is the owner's call; the hand check's
-  situations do not restart a shop inside a morning window.
+  (a line sent is in the record) and never outside the window. Whether a quiet day should be written down so a restart does not look again is the owner's call. (The Bookings
+  hand check's monthly-report situation restarts its shop at 09:00 on 1 December, inside the window; it judges the report, not the morning line.)
