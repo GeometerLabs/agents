@@ -116,6 +116,13 @@ export const BY_DESIGN: Record<string, { match: RegExp; why: string; last?: bool
   ],
 };
 
+/** A record line's refs as the template's own program writes them: through the parts program every line also carries refs.part (the part that wrote it), left out here. */
+export function ownRefs(refs: Record<string, string>): Record<string, string> {
+  if (!VIA_PARTS) return refs;
+  const { part: _part, ...own } = refs;
+  return own;
+}
+
 /** The by-design reason this case is not run through the parts program, or undefined. */
 export function byDesign(name: string): string | undefined {
   if (!VIA_PARTS) return undefined;
