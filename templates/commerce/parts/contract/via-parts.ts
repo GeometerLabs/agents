@@ -97,6 +97,11 @@ export const BY_DESIGN: Record<string, { match: RegExp; why: string }[]> = {
   common: [
     { match: /a folder pinned to another version or another pathway/u, why: "it writes a single template's pathway.lock and settings.json into the folder itself; a parts shop's folder is pinned to parts@ and its settings are the parts'" },
     { match: /^in (en|hi|ml|kn)[:,] /u, why: "the differential test compares the settings file and the demo's single-template shop step for step; a parts shop's file wraps it as one part" },
+    { match: /^with the owner in (en|hi|ml|kn): /u, why: "the differential test compares the settings file and the demo's single-template shop step for step; a parts shop's file wraps it as one part" },
+    { match: /a restart on new settings|approval-matches-order: the catalogue's price moved after the card/u, why: "it rewrites the folder's settings.json as a single template's and starts again" },
+    { match: /the public offer names the shop only/u, why: "the shop's public offer is its customer part's (the pickup hold's)" },
+    { match: /the owner's page refuses a stranger and a wrong link, and opens with the owner's link/u, why: "it compares the owner's page whole; a parts shop's page is one page joined over its parts" },
+    { match: /made once on the first morning of the next month/u, why: "each part makes its own monthly report, so the shop's report folders are one per part" },
     { match: /settings the template refuses stop the start/u, why: "it writes a single template's settings.json into the folder itself" },
     { match: /the saved state is the TypeScript runtime's, member for member/u, why: "a parts shop's saved state keeps the part's members under parts.<name>" },
     { match: /the morning line counts/u, why: "a parts shop's morning line is the shop's, over every part (the other parts' lines are in it)" },
