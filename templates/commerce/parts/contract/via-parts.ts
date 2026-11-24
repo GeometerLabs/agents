@@ -93,7 +93,7 @@ export function partStatus(body: any, part: string, casesName: string): any {
  * The cases of a template's own suite that test what a parts shop is not, by design, with the reason: they are SKIPPED through the parts program (never passed). Each reason is
  * a decision 65 design point (bundle/Explanation.md), not a fault.
  */
-export const BY_DESIGN: Record<string, { match: RegExp; why: string }[]> = {
+export const BY_DESIGN: Record<string, { match: RegExp; why: string; last?: boolean }[]> = {
   common: [
     { match: /a folder pinned to another version or another pathway/u, why: "it writes a single template's pathway.lock and settings.json into the folder itself; a parts shop's folder is pinned to parts@ and its settings are the parts'" },
     { match: /^in (en|hi|ml|kn)[:,] /u, why: "the differential test compares the settings file and the demo's single-template shop step for step; a parts shop's file wraps it as one part" },
@@ -107,7 +107,7 @@ export const BY_DESIGN: Record<string, { match: RegExp; why: string }[]> = {
     { match: /the morning line counts/u, why: "a parts shop's morning line is the shop's, over every part (the other parts' lines are in it)" },
     { match: /'move CODE' from the owner's number is one record line/u, why: "it compares the line's refs whole; a parts shop's lines also carry refs.part" },
     // the shop's page and chat are its customer part's (the hold's when there is one); a Fees part beside it has no centre page, no parent's private link and no chat here
-    { match: /the centre's page says what it is|the chat opened from a parent's link|a guest's question gets the chat's fixed line|the parent was sent|only that parent's students and fees|a link survives a restart|a press on another parent's fee|'I have paid' marks nothing: a confirmation page|'show how to pay' makes the UPI request|the page lists the centre, every parent once|a reminder is pushed to the parent's page conversation|STOP ends every message to that parent, and with them the pushes|nothing opens before the first reminder moment|a UPI centre started on go and started again on go/u, why: "the shop's page and chat are its customer part's (the pickup hold's); a Fees part beside it has no centre page, private links or chat in this shop (bundle Deferred.md)" },
+    { last: true, match: /the centre's page says what it is|the chat opened from a parent's link|a guest's question gets the chat's fixed line|the parent was sent|only that parent's students and fees|a link survives a restart|a press on another parent's fee|'I have paid' marks nothing: a confirmation page|'show how to pay' makes the UPI request|the page lists the centre, every parent once|a reminder is pushed to the parent's page conversation|STOP ends every message to that parent, and with them the pushes|nothing opens before the first reminder moment|a UPI centre started on go and started again on go/u, why: "the shop's page and chat are its customer part's (the pickup hold's); a Fees part beside it has no centre page, private links or chat in this shop (bundle Deferred.md)" },
     { match: /names its cases/u, why: "a parts shop's /status names its cases \"cases\", by part" },
     { match: /one report folder appears/u, why: "each part sends its own monthly report, so a parts shop's report folder has one per part" },
     { match: /Stock page offers/u, why: "the shop's one Stock page offers every part's items, the other parts' too" },
@@ -118,5 +118,12 @@ export const BY_DESIGN: Record<string, { match: RegExp; why: string }[]> = {
 /** The by-design reason this case is not run through the parts program, or undefined. */
 export function byDesign(name: string): string | undefined {
   if (!VIA_PARTS) return undefined;
-  return BY_DESIGN.common.find((d) => d.match.test(name))?.why;
+  // `last`: by design only when the part runs LAST (then an earlier part is the shop's page: CONTRACT_PARTS=last)
+  return BY_DESIGN.common.find((d) => (!d.last || VIA_PARTS === "last") && d.match.test(name))?.why;
 }
+
+/**
+ * The same for a case a suite starts with node's test() itself (outside its harness's contract()): its skip, when it runs through the parts program, by design. These cases
+ * run a gateway (Razorpay) shop, which a parts shop does not take.
+ */
+export const gatewayCaseThroughParts = (): string | undefined => (VIA_PARTS ? "not run through the parts shop, by design: it runs a payment gateway (Razorpay) shop, which a shop of several parts does not take" : undefined);
