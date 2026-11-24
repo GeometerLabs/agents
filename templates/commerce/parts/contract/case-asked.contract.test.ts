@@ -2,18 +2,22 @@
 // CaseHolder). Whether a conversation "holds a case" is the shop's question, over ALL its parts: a number that holds no case in any part and names a case one part's record
 // holds gets that part's one line (nothing of the case shown), and the owner that part's notice, at most once an hour per asker and case; a number that holds a case in any
 // part is answered as before. On the starter shop (the credit book, Stock orders and the pickup hold), over HTTP and the shop's own files, on its Go program.
-import { test } from "node:test";
+import { afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createPartsWorld } from "../crash-test/go-world.ts";
 import type { PartsFile, PartsWorld } from "../crash-test/go-world.ts";
 import { goProgramsDir } from "../../../../modules/crash-test/programs.ts";
+import { closeOpened } from "../../../../modules/crash-test/situations.ts";
 
 if (process.env.PARTS_GO_BIN) process.env.GEOMETER_GO_PROGRAMS = join(process.env.PARTS_GO_BIN, "..");
 const SKIP = existsSync(join(goProgramsDir(), "parts")) ? undefined : "the Go program parts is not built (cd go && go build -o bin/ ./cmd/parts, or set PARTS_GO_BIN)";
 const starter = JSON.parse(readFileSync(new URL("../settings/ganesh-electricals-starter.example.json", import.meta.url), "utf8")) as PartsFile;
 type Obj = Record<string, any>;
+
+// each test's world (its shop program and stand-ins) is closed when the test ends, so the file ends by itself (go-world.ts registers every world it opens)
+afterEach(async () => { await closeOpened(); });
 
 const STRANGER = "+919877766655"; // a number the starter shop does not name
 const fees = starter.parts.fees as Obj;
