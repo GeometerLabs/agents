@@ -481,6 +481,9 @@ var creditTwins = map[string]string{
 	"owner_opted_out": "owner_credit_opted_out", "owner_wants_to_talk": "owner_credit_wants_to_talk", "owner_request_stale": "owner_credit_request_stale",
 	"owner_fee_upi_refund_owed": "owner_credit_upi_refund_owed", "owner_fee_upi_refund_reminder": "owner_credit_upi_refund_reminder",
 	"owner_fee_upi_refund_marked": "owner_credit_upi_refund_marked",
+	// 25 Nov 2026: an account named from a number that holds none (agent_talk.go onCaseAsked)
+	"fee_case_other_number": "credit_case_other_number", "fee_case_other_number_untold": "credit_case_other_number_untold",
+	"owner_case_other_number": "owner_credit_case_other_number",
 }
 
 // creditTwin is the template list with each Fees message replaced by its credit twin, for a credit book's message about this fee or this number.

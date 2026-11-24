@@ -31,6 +31,7 @@ import type { Says } from "./says.ts";
 import { checker, runOnProgram } from "../../../../modules/crash-test/situations.ts";
 import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
 import { discountSituations } from "./discounts.ts";
+import { caseAskedSituation } from "../../../../modules/crash-test/case-asked.ts";
 import { planShop } from "./shop.ts";
 import { RAZORPAY_ONLY, buildUpiSituations } from "./upi.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
@@ -1159,6 +1160,17 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
     : build(planned.shop);
   // E1 (decision 64): a shop that turns discounts on gets the discount authority's own situations, on Razorpay and on UPI alike (crash-test/discounts.ts)
   all.push(...discountSituations(planned.shop, planned.shop.pick()));
+  // 25 Nov 2026 (modules/crash-test/case-asked.ts): a booking named from a number that holds none; the customer's words open it (an enquiry is a booking already)
+  const askSlot = planned.shop.pick();
+  if (askSlot) {
+    all.push(caseAskedSituation({
+      noun: "booking", world: () => createGoWorld({ settings: planned.shop.settings }),
+      open: async (w) => { await w.say(sayings(planned.shop, "en", askSlot).book); return { ref: "b-1", customer: CUSTOMER }; },
+      state: (w, ref) => { const b = w.store.bookings.get(ref); return JSON.stringify([b?.state, b?.depositPaymentId ?? null, b?.startMs ?? null]); },
+      customerTemplate: "case_other_number", ownerTemplate: "owner_case_other_number",
+      ask: (ref) => `Hi, what about ${ref.toUpperCase().replace("-", "")}? My son booked it`, falseRef: "b-9",
+    }));
+  } else skipped.push({ id: "case-asked-elsewhere", title: "A stranger names a real booking", reason: "the shop has no day in the next two weeks with a time that fits the service on its slot grid" });
   for (const built of all) {
     if ("skip" in built) skipped.push({ id: built.id, title: built.title, reason: built.skip });
     else situations.push(built);

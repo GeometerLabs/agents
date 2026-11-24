@@ -63,7 +63,9 @@ import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
 import { checkFactsOf } from "./language/check.ts";
 import { buttonsFor, intentFromReply, ownerMarkButtons, serviceList, slotList } from "./language/interactive.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
-import { emptyMarkState, markReceived, markRefund, oweRefund, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { emptyMarkState, markReceived, markRefund, oweRefund, refundSource, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { CASE_ASKED, caseKey, namedCase, recordKeys, toldLately } from "../../../../modules/record/case-asked.ts";
+import type { CaseForms } from "../../../../modules/record/case-asked.ts";
 import type { OwedRefund, OwnerMark, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { markButtonId, parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
 import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
@@ -247,7 +249,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * With an `offer`, the text the limits read is the whole message the customer will see: the words, then each option.
    * What is Bookings' own is given here: the facts, the offers, and the two gates (no reminder after a cancellation, "booked" only when recorded).
    */
-  interface SayArgs { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"]; /** item 11h: never in inputsOf, so never in the record */ pageLink?: string }
+  interface SayArgs { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"]; /** item 11h: never in inputsOf, so never in the record */ pageLink?: string; /** 25 Nov 2026: a case asked about from another number, and a UPI refund's payment (CaseFacts) */ bookingRef?: string; customerPhone?: string; askerPhone?: string; paidAtMs?: number; upiNote?: string }
   const say = createSay<SayArgs, MessageFacts>({
     messaging,
     voice: {
@@ -259,7 +261,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, booking) => languageOf(phone, booking),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings, ...(a.pageLink ? { pageLink: a.pageLink } : {}) }),
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.customerPhone ?? shownPhone(a.phone, a.booking), bookingRef: a.bookingRef, askerPhone: a.askerPhone, paidAtMs: a.paidAtMs, upiNote: a.upiNote, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings, ...(a.pageLink ? { pageLink: a.pageLink } : {}) }),
     interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
     inputsOf: (a) => ({ refundInr: a.refundInr, slotMs: a.slotMs, ...(a.markedInr !== undefined ? { markedInr: a.markedInr } : {}) }), // never the owner's code
     gates: (a, optedOut) => [
@@ -277,8 +279,18 @@ export function createAgent(deps: AgentDeps): Agent {
 
   const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: SayArgs["image"]; markedInr?: number; pageLink?: string } = {}) =>
     say({ booking: b, phone, to: "customer", templates, ...more });
-  const tellOwner = (b: Booking | null, phone: string, template: TemplateId, more: { refundInr?: number; slotMs?: number; offer?: Offer; upiCode?: string; markedInr?: number; leftInr?: number } = {}) =>
+  /** The facts of an owner's message that are not the booking's own (25 Nov 2026): a case named from another number, and a UPI refund's payment. */
+  type CaseFacts = { bookingRef?: string; customerPhone?: string; askerPhone?: string; paidAtMs?: number; upiNote?: string };
+  const tellOwner = (b: Booking | null, phone: string, template: TemplateId, more: { refundInr?: number; slotMs?: number; offer?: Offer; upiCode?: string; markedInr?: number; leftInr?: number } & CaseFacts = {}) =>
     say({ booking: b, phone, to: "owner", templates: [template], ...more });
+  /**
+   * 25 Nov 2026: what the owner's UPI refund message says about the payment it gives back (ledger.ts refundSource): the amount and the day the owner marked it, and the
+   * note it carried, so the owner sends the money back to the account it came from (a family member may have paid) and not to the customer's number.
+   */
+  const refundFacts = (r: OwedRefund): { markedInr?: number; paidAtMs?: number; upiNote?: string } => {
+    const src = refundSource(markState!, r);
+    return src ? { markedInr: src.paidPaise / 100, paidAtMs: src.paidAtMs, upiNote: src.note } : {};
+  };
 
   // ---- what to offer: the shop's services, free times, and a few buttons ----------------------------------------------
 
@@ -619,7 +631,7 @@ export function createAgent(deps: AgentDeps): Agent {
     books.post({ kind: "refund_owed", case: b.id, owed: r.id, paymentId, amountPaise }, (m) => log(b, b.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions: o.decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise), ...m }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` }));
     const refundInr = amountPaise / 100;
     await tellCustomer(b, b.customer, [o.customer], { refundInr, markedInr: o.markedInr });
-    await tellOwner(b, b.customer, o.ownerTemplate ?? "owner_upi_refund_owed", { refundInr, upiCode: r.code ?? undefined, markedInr: o.markedInr, offer: refundButtons(r) });
+    await tellOwner(b, b.customer, o.ownerTemplate ?? "owner_upi_refund_owed", { refundInr, upiCode: r.code ?? undefined, ...refundFacts(r), ...(o.markedInr !== undefined ? { markedInr: o.markedInr } : {}), offer: refundButtons(r) });
     return r;
   }
 
@@ -716,7 +728,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (owed.length === 0 && !open) return false;
     note("attempted", "telling the owner again about a UPI payment or refund");
     let told = true;
-    for (const r of owed) told = (await tellOwner(b, b.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code!, offer: refundButtons(r) })) && told;
+    for (const r of owed) told = (await tellOwner(b, b.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code!, ...refundFacts(r), offer: refundButtons(r) })) && told;
     if (open) {
       const markedPaise = open.marks.reduce((n, m) => n + m.amountPaise, 0);
       const left = depositPaise - markedPaise;
@@ -733,7 +745,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (const r of remindersDue(markState!, now)) {
       const b = store.bookings.get(r.caseId) ?? null;
       reminded(r, now);
-      const told = await tellOwner(b, r.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
+      const told = await tellOwner(b, r.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, ...refundFacts(r), offer: refundButtons(r) });
       log(b, r.customer, MARK_ACTIONS.refundReminder, told ? "confirmed" : "failed", { refundId: r.id }, { refs: { refundId: r.id, amountPaise: String(r.amountPaise) }, notes: `reminder ${r.reminders} of a refund the owner still owes` });
     }
   }
@@ -1114,6 +1126,30 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /**
+   * A booking asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts). Only for a conversation that holds no booking of its own: the words
+   * name a booking the shop holds, by its reference ("b-3", "B3"; "booking 3" only when `words`), a receipt's number, a payment id the record holds, or the UPI reference
+   * a customer typed. The asker gets one line that shows nothing of the booking (no service, time, amount, name or number) and nothing about it changes; the owner is
+   * told, at most once an hour for this asker and booking (read from the record), with both numbers. The record line keeps the booking in `refs.case` and leaves `booking`
+   * null, so the booking's own lines stay its customer's. False: nothing was named (or this conversation has bookings of its own), and the message goes on as before.
+   */
+  async function onCaseAsked(phone: string, text: string, words: boolean): Promise<boolean> {
+    if ([...store.bookings.values()].some((x) => x.customer === phone)) return false;
+    const keys = new Map(recordKeys(record.entries()));
+    for (const x of store.bookings.values()) if (x.claimRef) keys.set(caseKey(x.claimRef), x.id);
+    const named = namedCase(text, { forms: CASE_FORMS, isCase: (id) => store.bookings.has(id), keys, words });
+    if (!named) return false;
+    const b = store.bookings.get(named.case)!;
+    const lately = toldLately(record.entries(), phone, b.id, clock.now());
+    const told = lately || await tellOwner(null, phone, "owner_case_other_number", { bookingRef: b.id, customerPhone: shownPhone(b.customer, b), askerPhone: shownPhone(phone, null) });
+    log(null, phone, CASE_ASKED, lately ? "blocked" : told ? "confirmed" : "failed", { case: b.id, via: named.via }, {
+      refs: { case: b.id, via: named.via, to: "owner" },
+      notes: `another conversation named ${b.id} (${named.via}); nothing of the booking was shown and nothing changed; ${lately ? "the owner was already told in the last hour" : told ? "the owner was told" : "the owner could not be told"}`,
+    });
+    await tellCustomer(null, phone, [told ? "case_other_number" : "case_other_number_untold"]);
+    return true;
+  }
+
+  /**
    * "Talk to the owner": the owner is told, once an hour for the same customer, and the customer is told the owner will message them. The agent does not reply on the
    * owner's behalf and decides nothing. If the owner could not be told, the customer is told that, and not that the owner will write.
    */
@@ -1430,6 +1466,8 @@ export function createAgent(deps: AgentDeps): Agent {
     try {
       if (intent.kind === "stop") return await onStop(phone);
       if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
+      // 25 Nov 2026: a conversation that holds no booking names one (a reference, a receipt, a payment id); the word form ("booking 3") only when nothing else was read
+      if (!msg.reply && await onCaseAsked(phone, msg.text, intent.kind === "unknown" || intent.kind === "greeting")) return;
 
       switch (intent.kind) {
         case "book": return await onBook(phone, intent);
@@ -1787,4 +1825,7 @@ export function createAgent(deps: AgentDeps): Agent {
 }
 
 /** The owner's fixed command about something the agent asked them ("approve b-3", "deny b-3", "retry b-3"). Item 11e names it so the assistant lets it pass. */
+/** How a customer names a booking (modules/record/case-asked.ts): "b-3", and the word before the number in each language. */
+const CASE_FORMS: CaseForms = { prefix: "b", words: ["booking", "बुकिंग", "ബുക്കിംഗ്", "ಬುಕಿಂಗ್"] };
+
 const OWNER_COMMAND = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i;

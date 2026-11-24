@@ -249,6 +249,10 @@ func (a *Agent) onMessage(msg messaging.InboundMessage, audio *runtime.PageAudio
 	if customer.OptedOut {
 		return nil // STOP means STOP: nothing goes to them, even if they write again
 	}
+	// 25 Nov 2026: a conversation that holds no order names one (a reference, a receipt, a payment id); the word form ("order 5") only when nothing else was read
+	if msg.Reply == nil && a.onCaseAsked(phone, msg.Text, in.Kind == "unknown" || in.Kind == "greeting") {
+		return nil
+	}
 	if in.AskDiscount && a.settings.Discounts != nil && (in.Kind == "unknown" || in.Kind == "greeting") {
 		in.Kind = "order" // E1: "any discount?" in a shop with the discount authority is about the order (offerPrice answers it); without one, exactly as before
 	}

@@ -513,7 +513,7 @@ test("variant guide: the Hindi, Malayalam and Kannada variants carry the machine
 test("variant guide: what it says about the example shop and the check is what the settings and the hand check say today", { skip: goSkip("bookings") }, async () => {
   const shop = rentalSettings();
   const run = await runOn(shop);
-  assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [35, 35, 0]);
+  assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [36, 36, 0]);
   // on the Go program the monthly report's situation leaves out the process dying mid-send (it cannot be made from outside), on every shop
   assert.deepEqual(run.results.filter((r) => r.situation.leftOut).map((r) => r.situation.id), ["outside-hours", "monthly-report-once"]);
   const [job] = shop.services;

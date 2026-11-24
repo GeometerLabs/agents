@@ -127,6 +127,10 @@ type MessageFacts struct {
 	HasClassLines                                                    bool
 	LeadMinutes, PresentCount, AbsentCount, NotedCount, WaitingCount *int64
 	SentCount, HeldCount                                             *int64
+	// 25 Nov 2026: the number (or chat guest) that asked about a fee from another conversation (runtime/caseasked.go), only in a message to the owner; and a UPI refund's
+	// payment (ownermarked.RefundSource): the day the owner marked it and the note it carried (its amount is ReceivedInr)
+	AskerPhone, UpiNote *string
+	PaidAtMs            *int64
 }
 
 // S and N make an optional fact.
@@ -240,6 +244,16 @@ func (f *MessageFacts) value(w *Words, name string) (string, error) {
 		return needS(f.RequestRef, name)
 	case "customerPhone":
 		return needS(f.CustomerPhone, name)
+	case "askerPhone":
+		return needS(f.AskerPhone, name)
+	case "upiNote":
+		return needS(f.UpiNote, name)
+	case "paidDate": // templates.ts paidDate: the day a UPI refund's payment was marked
+		ms, err := needN(f.PaidAtMs, "paidAtMs")
+		if err != nil {
+			return "", err
+		}
+		return f.date(ms), nil
 	case "approvalCode":
 		return needS(f.ApprovalCode, name)
 	case "approvalHours":
@@ -379,6 +393,9 @@ func checkFactsOf(f *MessageFacts) language.Facts {
 	for _, l := range f.ClassLines {
 		out.MomentsMs = append(out.MomentsMs, l.StartMs)
 	}
+	if f.PaidAtMs != nil {
+		out.MomentsMs = append(out.MomentsMs, *f.PaidAtMs) // 25 Nov 2026: the day a UPI refund's payment was marked
+	}
 	out.Loc = f.zone()
 	for _, l := range []*string{f.Link, f.PageLink, f.ClassLink, f.MaterialLink} {
 		if l != nil {
@@ -392,7 +409,7 @@ func checkFactsOf(f *MessageFacts) language.Facts {
 		out.Literals = append(out.Literals, l.StudentName, l.BatchName, l.MonthLabel, l.DueRef)
 	}
 	out.Literals = append(out.Literals, f.BusinessName)
-	for _, l := range []*string{f.StudentName, f.BatchName, f.MonthLabel, f.DueRef, f.RequestRef, f.CustomerPhone, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.Roster, f.DoubtText} {
+	for _, l := range []*string{f.StudentName, f.BatchName, f.MonthLabel, f.DueRef, f.RequestRef, f.CustomerPhone, f.AskerPhone, f.UpiNote, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.Roster, f.DoubtText} {
 		if l != nil {
 			out.Literals = append(out.Literals, *l)
 		}

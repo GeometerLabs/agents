@@ -21,6 +21,7 @@ import { takenOf } from "../src/order.ts";
 import { advanceFor, itemName } from "../src/settings.ts";
 import type { MenuItem, Settings } from "../src/settings.ts";
 import { discountSituations } from "./discounts.ts";
+import { caseAskedSituation } from "../../../../modules/crash-test/case-asked.ts";
 import { holdSituations } from "./hold.ts";
 import { planSituations } from "./plans.ts";
 import { inLanguage, momentsOf, planShop } from "./shop.ts";
@@ -609,6 +610,14 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   for (const s of planSituations(settings, shop.customer)) add(s);
   // E1 (decision 64): a shop that turns discounts on gets the discount authority's own three (crash-test/discounts.ts), so every other shop's count is as it was
   list.push(...discountSituations(shop));
+  // 25 Nov 2026 (modules/crash-test/case-asked.ts): an order named from a number that holds none; the customer's words open it
+  add(caseAskedSituation({
+    noun: "order", world: () => world(),
+    open: async (w) => { await place(w); return { ref: order(w).id, customer: shop.customer }; },
+    state: (w, ref) => { const x = w.store.orders.get(ref); return JSON.stringify([x?.state, x?.linkId ?? null, x?.handledPayments ?? []]); },
+    customerTemplate: "case_other_number", ownerTemplate: "owner_case_other_number",
+    ask: (ref) => `Where is ${ref.toUpperCase().replace("-", "")}? My mother ordered it`, falseRef: "o-9",
+  }));
 
   const situations: Situation[] = [];
   const skipped: Skipped[] = [];

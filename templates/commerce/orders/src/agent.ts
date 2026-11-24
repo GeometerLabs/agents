@@ -72,7 +72,10 @@ import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { PaymentEvent, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds, recheckLine } from "../../../../modules/payments/refunds.ts";
 import { ordersAccounting } from "./accounting.ts";
-import { emptyMarkState, markReceived, markRefund, oweRefund, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { emptyMarkState, markReceived, markRefund, oweRefund, refundSource, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { CASE_ASKED, caseKey, namedCase, recordKeys, toldLately } from "../../../../modules/record/case-asked.ts";
+import { plansOf } from "./plans/ledger.ts";
+import type { CaseForms } from "../../../../modules/record/case-asked.ts";
 import type { OwedRefund, OwnerMark, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
 import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
@@ -251,6 +254,14 @@ export function createAgent(deps: AgentDeps): Agent {
 
   const tellCustomer = (o: Order | null, phone: string, templates: TemplateId[], more: More = {}) => say({ booking: o, phone, to: "customer", templates, ...more });
   const tellOwner = (o: Order | null, phone: string, template: TemplateId, more: More = {}) => say({ booking: o, phone, to: "owner", templates: [template], ...more });
+  /**
+   * 25 Nov 2026: what the owner's UPI refund message says about the payment it gives back (ledger.ts refundSource): the amount and the day the owner marked it, and the note
+   * it carried, so the owner sends the money back to the account it came from (a family member may have paid) and not to the customer's number.
+   */
+  const refundFacts = (r: OwedRefund): More => {
+    const src = refundSource(markState!, r);
+    return src ? { markedInr: src.paidPaise / 100, facts: { paidAtMs: src.paidAtMs, upiNote: src.note } } : {};
+  };
 
   const itemsOffer = (body: TemplateId[]): Offer => ({ kind: "items", body });
   const yesNo = (body: TemplateId[]): Offer => ({ kind: "buttons", buttons: ["yes", "no"], body });
@@ -761,7 +772,7 @@ export function createAgent(deps: AgentDeps): Agent {
     books.post({ kind: "refund_owed", case: o.id, owed: r.id, paymentId, amountPaise }, (m) => log(o, o.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions: x.decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise), ...m }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` }));
     const refundInr = amountPaise / 100;
     await tellCustomer(o, o.customer, [x.customer], { refundInr, markedInr: x.markedInr });
-    await tellOwner(o, o.customer, x.ownerTemplate ?? "owner_upi_refund_owed", { refundInr, upiCode: r.code ?? undefined, markedInr: x.markedInr, offer: refundButtons(r) });
+    await tellOwner(o, o.customer, x.ownerTemplate ?? "owner_upi_refund_owed", { refundInr, upiCode: r.code ?? undefined, ...refundFacts(r), ...(x.markedInr !== undefined ? { markedInr: x.markedInr } : {}), offer: refundButtons(r) });
     return r;
   }
 
@@ -837,7 +848,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (owed.length === 0 && !open) return false;
     note("attempted", "telling the owner again about a UPI payment or refund");
     let told = true;
-    for (const r of owed) told = (await tellOwner(o, o.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code!, offer: refundButtons(r) })) && told;
+    for (const r of owed) told = (await tellOwner(o, o.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code!, ...refundFacts(r), offer: refundButtons(r) })) && told;
     if (open) {
       const markedPaise = open.marks.reduce((n, m) => n + m.amountPaise, 0);
       const left = advancePaise(o) - markedPaise;
@@ -854,7 +865,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (const r of remindersDue(markState!, now)) {
       const o = store.orders.get(r.caseId) ?? null;
       reminded(r, now);
-      const told = await tellOwner(o, r.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
+      const told = await tellOwner(o, r.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, ...refundFacts(r), offer: refundButtons(r) });
       log(o, r.customer, MARK_ACTIONS.refundReminder, told ? "confirmed" : "failed", { refundId: r.id }, { refs: { refundId: r.id, amountPaise: String(r.amountPaise) }, notes: `reminder ${r.reminders} of a refund the owner still owes` });
     }
   }
@@ -910,6 +921,34 @@ export function createAgent(deps: AgentDeps): Agent {
     const o = cancellable(phone);
     if (!o || o.slotStartMs === undefined) { await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) }); return; }
     await tellCustomer(o, phone, ["kept"]);
+  }
+
+  /**
+   * An order asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts). Only for a conversation that holds no order and no plan of its own: the words
+   * name an order the shop holds (a pickup hold and a plan's period are orders too) by its reference ("o-5", "O5", "o-5.b"; "order 5" only when `words`), a plan by its
+   * own ("p-5"), a receipt's number, a payment id the record holds, or the UPI reference a customer typed. The asker gets one line that shows nothing of it and nothing
+   * changes; the owner is told, at most once an hour for this asker and case (read from the record), with both numbers. The record line keeps the case in `refs.case` and
+   * leaves `booking` null, so the order's own lines stay its customer's. False: nothing was named, and the message goes on as before.
+   */
+  async function onCaseAsked(phone: string, text: string, words: boolean): Promise<boolean> {
+    const plansNow = plansOf(store.plans);
+    if ([...store.orders.values()].some((x) => x.customer === phone) || plansNow.some((x) => x.customer === phone)) return false;
+    const keys = new Map(recordKeys(record.entries()));
+    for (const x of store.orders.values()) if (x.claimRef) keys.set(caseKey(x.claimRef), x.id);
+    const named = namedCase(text, { forms: ORDER_FORMS, isCase: (id) => store.orders.has(id), keys, words })
+      ?? namedCase(text, { forms: PLAN_FORMS, isCase: (id) => plansNow.some((x) => x.id === id), keys: new Map(), words });
+    if (!named) return false;
+    const order = store.orders.get(named.case) ?? null;
+    const plan = order ? undefined : plansNow.find((x) => x.id === named.case)!;
+    const caseCustomer = order ? shownPhone(order.customer, order) : shownPhone(plan!.customer, null);
+    const lately = toldLately(record.entries(), phone, named.case, clock.now());
+    const told = lately || await tellOwner(null, phone, "owner_case_other_number", { facts: { orderRef: named.case, customerPhone: caseCustomer, askerPhone: shownPhone(phone, null) } });
+    log(null, phone, CASE_ASKED, lately ? "blocked" : told ? "confirmed" : "failed", { case: named.case, via: named.via }, {
+      refs: { case: named.case, via: named.via, to: "owner" },
+      notes: `another conversation named ${named.case} (${named.via}); nothing of it was shown and nothing changed; ${lately ? "the owner was already told in the last hour" : told ? "the owner was told" : "the owner could not be told"}`,
+    });
+    await tellCustomer(null, phone, [told ? "case_other_number" : "case_other_number_untold"]);
+    return true;
   }
 
   /**
@@ -1195,6 +1234,8 @@ export function createAgent(deps: AgentDeps): Agent {
     try {
       if (intent.kind === "stop") return await onStop(phone);
       if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
+      // 25 Nov 2026: a conversation that holds no order names one (a reference, a receipt, a payment id); the word form ("order 5") only when nothing else was read
+      if (!msg.reply && await onCaseAsked(phone, msg.text, intent.kind === "unknown" || intent.kind === "greeting")) return;
 
       switch (intent.kind) {
         case "order": return await onOrder(phone, intent);
@@ -1611,6 +1652,10 @@ export function createAgent(deps: AgentDeps): Agent {
 }
 
 /** The owner's fixed command about something the agent asked them ("approve o-3", "deny o-3"). Item 11e names it so the assistant lets it pass. */
+/** How a customer names an order and a plan (modules/record/case-asked.ts): "o-5" and "p-5", and the word before the number in each language. */
+const ORDER_FORMS: CaseForms = { prefix: "o", words: ["order", "ऑर्डर", "ഓർഡർ", "ಆರ್ಡರ್"] };
+const PLAN_FORMS: CaseForms = { prefix: "p", words: ["plan", "प्लान", "പ്ലാൻ", "ಪ್ಲಾನ್"] };
+
 const OWNER_COMMAND = /^\s*(approve|deny)\s+(o-\d+)\s*$/i;
 /** The owner's word that the balance was paid at pickup or delivery ("balance o-3 cash"), or that a link for it is wanted ("balance o-3 link", a gateway shop). */
 const BALANCE_COMMAND = /^\s*balance\s+(o-\d+)\s+(cash|upi|link)\s*$/i;

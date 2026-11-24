@@ -113,7 +113,7 @@ Settings `glow-salon-upi.example.json` with deposit, price and refund at ₹1. C
 
 **B5. The hold runs out, then the owner marks.** Set the hold to 2 minutes for this step; mark after it. O sees `You marked ₹1 from <C> as received after their hold had ended, so it wasn't booked by itself...`. Record: `owner_marked_paid`, `upi_request_closed`, `upi_refund_owed`; no `confirm_booking`.
 
-**B6. A UPI refund (and a retry of the owner's mark).** Cancel a paid booking inside the window. C is told the owner will send it; nothing says "sent". O sees `Refund to send: ₹1 by UPI to <C>. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded <code>).` O sends ₹1 back by hand and replies `refunded <code>`. Record: `upi_refund_owed` (held_for_owner), then `upi_refund_marked_done`. A repeated `refunded <code>` adds no second entry. No gateway, so Guard holds nothing here: the owner is the check.
+**B6. A UPI refund (and a retry of the owner's mark).** Cancel a paid booking inside the window. C is told the owner will send it; nothing says "sent". O sees `Refund to send: ₹1 back to the account that paid you ₹1 on <day> with the note b-<n>. Find that payment in your UPI app and send it back to that account. I never send money myself, and I'll tell the customer (<C>) once it's marked sent. When you've sent it, tap Refund sent (or reply: refunded <code>).` O sends ₹1 back by hand and replies `refunded <code>`. Record: `upi_refund_owed` (held_for_owner), then `upi_refund_marked_done`. A repeated `refunded <code>` adds no second entry. No gateway, so Guard holds nothing here: the owner is the check.
 
 **B7. Kept.** On another: reply `kept <code>`: `upi_refund_kept`; O sees `Noted. The ₹1 ... is kept for a booking you make yourself.`
 

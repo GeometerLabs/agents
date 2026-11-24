@@ -21,7 +21,7 @@ import { ownerMarkedOf } from "../providers/index.ts";
 import { ownerMarkChoices } from "./buttons.ts";
 import type { MarkButtonLabels } from "./buttons.ts";
 import type { Choice } from "../../language/interactive.ts";
-import { closeRequest, leftOn, markReceived, markRefund, openRequest, owedOn, reminded, remindersDue, requestOfMark, oweRefund } from "./ledger.ts";
+import { closeRequest, leftOn, markReceived, markRefund, openRequest, owedOn, refundSource, reminded, remindersDue, requestOfMark, oweRefund } from "./ledger.ts";
 import type { MarkState, MarkedRequest, OwedRefund } from "./ledger.ts";
 import { parseMarkReply } from "./owner.ts";
 import { MARK_ACTIONS } from "./obligations.ts";
@@ -143,9 +143,15 @@ export function createDesk(o: DeskOptions) {
     const refund = oweRefund(state, { caseId: r.reference, customer: customerOf(r), paymentId: mark.id, amountPaise: body.amount_paise, why: typeof body.why === "string" ? body.why.slice(0, 120) : "the agent asked" }, o.clock.now());
     o.save(state);
     log(refund, MARK_ACTIONS.refundOwed, "held_for_owner", { refundId: refund.id, paymentId: mark.id, amountPaise: String(refund.amountPaise) }, "owed back by the owner, who sends it from their own UPI app; the agent never sends money");
-    await o.tellOwner({ template: "owner_upi_refund_owed", facts: { bookingRef: r.reference, customerPhone: refund.customer, refundInr: refund.amountPaise / 100, upiCode: refund.code ?? undefined }, choices: ownerMarkChoices(o.labels, { kind: "refund", code: refund.code!, keepAllowed: false }) });
+    await o.tellOwner({ template: "owner_upi_refund_owed", facts: { bookingRef: r.reference, customerPhone: refund.customer, refundInr: refund.amountPaise / 100, upiCode: refund.code ?? undefined, ...sourceFacts(refund) }, choices: ownerMarkChoices(o.labels, { kind: "refund", code: refund.code!, keepAllowed: false }) });
     return { status: 200, body: refundView(refund) };
   }
+
+  /** 25 Nov 2026 (ledger.ts refundSource): the payment a refund gives back, as the owner's message names it: the amount and day the owner marked it, and the note it carried. */
+  const sourceFacts = (r: OwedRefund): Record<string, unknown> => {
+    const src = refundSource(state, r);
+    return src ? { markedInr: src.paidPaise / 100, paidAtMs: src.paidAtMs, upiNote: src.note } : {};
+  };
 
   const refundView = (r: OwedRefund): DeskRefund => ({ id: r.id, reference: r.caseId, payment_id: r.paymentId, amount_paise: r.amountPaise, state: r.state, sent: r.state === "done", owed_at_ms: r.owedAtMs, ...(r.doneAtMs !== undefined ? { settled_at_ms: r.doneAtMs } : {}) });
 
@@ -191,7 +197,7 @@ export function createDesk(o: DeskOptions) {
     for (const r of remindersDue(state, o.clock.now())) {
       reminded(r, o.clock.now());
       o.save(state);
-      const told = await o.tellOwner({ template: "owner_upi_refund_reminder", facts: { bookingRef: r.caseId, customerPhone: r.customer, refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined }, ...(r.code ? { choices: ownerMarkChoices(o.labels, { kind: "refund", code: r.code, keepAllowed: false }) } : {}) });
+      const told = await o.tellOwner({ template: "owner_upi_refund_reminder", facts: { bookingRef: r.caseId, customerPhone: r.customer, refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, ...sourceFacts(r) }, ...(r.code ? { choices: ownerMarkChoices(o.labels, { kind: "refund", code: r.code, keepAllowed: false }) } : {}) });
       log(r, MARK_ACTIONS.refundReminder, told ? "confirmed" : "blocked", { refundId: r.id, amountPaise: String(r.amountPaise) }, `reminder ${r.reminders} of a refund the owner still owes`);
     }
   }

@@ -212,7 +212,7 @@ test("B71 part 2: outside the owner's 24-hour window the desk's own notices go a
       clock.advance(25 * HOUR);
       await host.tick(); // the first reminder of the refund still owed
       const templates = wa.sent.filter((m) => m.template).map((m) => m.template);
-      assert.deepEqual(templates, ["owner_upi_check", "owner_upi_customer_says_paid", "owner_upi_refund_to_send", "owner_upi_refund_reminder"], `${language}: each as its own template, never the generic one`);
+      assert.deepEqual(templates, ["owner_upi_check", "owner_upi_customer_says_paid", "owner_upi_refund_to_account", "owner_upi_refund_account_reminder"], `${language}: each as its own template, never the generic one`);
       assert.deepEqual(lines.filter((l) => /could not be worded|did not match|not sent/u.test(l)), [], language);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   }

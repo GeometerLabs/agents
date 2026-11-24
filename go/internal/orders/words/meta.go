@@ -190,5 +190,7 @@ func ExampleFacts(s *Shop, lang string) *MessageFacts {
 		Plan: &PlanFacts{Meals: N(ex.Meals), FromMs: N(day(ex.Date, "00:00")), ToMs: N(day(ex.PlanToDate, "00:00"))},
 		// E1: the item, its price, the price asked and the card's code (meta-templates.ts exampleFacts)
 		ItemName: S(ItemName(item, lang)), PriceInr: N(item.PriceInr), OfferedInr: N(item.PriceInr - ex.OfferedLess), DiscountCode: S(ex.DiscountCode),
+		// 25 Nov 2026: the asker and a UPI refund's payment (meta-templates.ts exampleFacts)
+		AskerPhone: S(ex.AskerPhone), PaidAtMs: N(day(ex.PaidDate, ex.PaidClock)), UpiNote: S(ex.UpiNote),
 	}
 }

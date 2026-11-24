@@ -34,6 +34,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(here, "..", "..");
 const TZ = "Asia/Kolkata";
 const SLOT_MS = Date.UTC(2026, 10, 10, 12, 30); // Tue 10 Nov 2026, 6:00 pm in India
+const PAID_MS = Date.UTC(2026, 10, 3, 6, 0); // Tue 3 Nov 2026 in India: the day a UPI refund's payment was marked (a date alone, unlike the slot)
 
 type Fact = keyof MessageFacts;
 type Bag = Record<string, string>;
@@ -48,11 +49,12 @@ function probe(language: Language): MessageFacts {
     customerPhone: "+919000000001", approvalCode: "QZCODE", approvalHours: 8803, approvalsLeft: 8804, upiId: "qzupi@bank", payee: "qzpayee",
     upiCode: "QZUPICODE", markedInr: 7770004, leftInr: 7770005, partner: "qzpartner", upcomingCount: 8805,
     offeredInr: 7770006, discountCode: "QZDISCODE",
+    askerPhone: "+919000000009", paidAtMs: PAID_MS, upiNote: "qznote",
   };
 }
 
 /** Every fact `need()` can ask for. */
-const NEEDED: Fact[] = ["serviceName", "priceInr", "depositInr", "refundInr", "slotMs", "link", "pageLink", "holdMinutes", "windowHours", "bookingRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiId", "payee", "upiCode", "markedInr", "leftInr", "partner", "upcomingCount", "offeredInr", "discountCode"];
+const NEEDED: Fact[] = ["serviceName", "priceInr", "depositInr", "refundInr", "slotMs", "link", "pageLink", "holdMinutes", "windowHours", "bookingRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiId", "payee", "upiCode", "markedInr", "leftInr", "partner", "upcomingCount", "offeredInr", "discountCode", "askerPhone", "paidAtMs", "upiNote"];
 
 /** The slots, in the order they are looked for: [the probe's text, the slot's name]. The fact a slot reads (and so what a refusal names) is in `FACT`. */
 function slotTable(f: MessageFacts): [string, string][] {
@@ -63,7 +65,8 @@ function slotTable(f: MessageFacts): [string, string][] {
     [f.link!, "link"], [f.pageLink!, "pageLink"],
     rupees("priceInr"), rupees("depositInr"), rupees("refundInr"), rupees("markedInr"), rupees("leftInr"), rupees("offeredInr"),
     [String(f.holdMinutes), "holdMinutes"], [String(f.windowHours), "windowHours"], [String(f.approvalHours), "approvalHours"], [String(f.approvalsLeft), "approvalsLeft"], [String(f.upcomingCount), "upcomingCount"],
-    [groupPhone(f.customerPhone!), "customerPhone"], [f.customerPhone!, "customerPhoneRaw"],
+    [groupPhone(f.customerPhone!), "customerPhone"], [f.customerPhone!, "customerPhoneRaw"], [groupPhone(f.askerPhone!), "askerPhone"],
+    [formatDate(localParts(PAID_MS, TZ), f.language), "paidDate"], [f.upiNote!, "upiNote"],
     [f.upiCode!, "upiCode"], [f.approvalCode!, "approvalCode"], [f.discountCode!, "discountCode"], [f.upiId!, "upiId"], [f.payee!, "payee"], [f.partner!, "partner"], [f.bookingRef!, "bookingRef"], [f.businessName, "businessName"],
     ["Qzservice", "Service"], [f.serviceName!, "serviceName"],
   ];
@@ -75,7 +78,7 @@ const FACT: Record<string, Fact | null> = {
   menuList: null, slot: "slotMs", link: "link", pageLink: "pageLink", priceInr: "priceInr", depositInr: "depositInr", refundInr: "refundInr", markedInr: "markedInr", leftInr: "leftInr",
   holdMinutes: "holdMinutes", windowHours: "windowHours", approvalHours: "approvalHours", approvalsLeft: "approvalsLeft", upcomingCount: "upcomingCount", customerPhone: "customerPhone",
   customerPhoneRaw: "customerPhone", upiCode: "upiCode", offeredInr: "offeredInr", discountCode: "discountCode", approvalCode: "approvalCode", upiId: "upiId", payee: "payee", partner: "partner", bookingRef: "bookingRef", businessName: null,
-  Service: "serviceName", serviceName: "serviceName", dayList: null,
+  Service: "serviceName", serviceName: "serviceName", dayList: null, askerPhone: "askerPhone", paidDate: "paidAtMs", upiNote: "upiNote",
 };
 
 /** A probe's text turned into slots. Throws when braces are left over (a word that looks like a slot) so a slot is never confused with a word. */

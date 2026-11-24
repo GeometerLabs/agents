@@ -10,7 +10,8 @@
 // This file imports only TYPES from templates.ts (and writes its own `need`), because templates.ts imports this file's sets at load: a runtime import back would make a loop.
 // Hindi, Malayalam and Kannada are MACHINE-WRITTEN and wait for a native speaker (REVIEW-hi.md, REVIEW-ml.md, REVIEW-kn.md list every line). No message says "safe",
 // "guaranteed" or promises a payment: it says what the shop's record shows.
-import { formatInr } from "../../../../../modules/language/format.ts";
+import { formatDate, formatInr } from "../../../../../modules/language/format.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import type { MessageFacts } from "../language/templates.ts";
 
@@ -27,7 +28,10 @@ export type CreditTemplateId =
   | "owner_credit_help" | "owner_credit_wrote" | "owner_credit_claim" | "owner_credit_upi_claim" | "owner_credit_upi_expected" | "owner_credit_upi_marked"
   | "owner_credit_upi_part" | "owner_credit_link_failed" | "owner_credit_discount_note" | "owner_credit_refund_request" | "owner_credit_overpayment"
   | "owner_credit_opted_out" | "owner_credit_wants_to_talk" | "owner_credit_request_stale" | "owner_credit_upi_refund_owed" | "owner_credit_upi_refund_reminder"
-  | "owner_credit_upi_refund_marked";
+  | "owner_credit_upi_refund_marked"
+  // 25 Nov 2026 (modules/record/case-asked.ts): an account named from a number that holds none: the asker's line (nothing of the account), the same when the owner could not be
+  // told, and the owner's notice
+  | "credit_case_other_number" | "credit_case_other_number_untold" | "owner_credit_case_other_number";
 
 type Template = (f: MessageFacts) => string;
 type Set = Record<CreditTemplateId, Template>;
@@ -47,6 +51,10 @@ const ref = (f: MessageFacts) => need(f, "dueRef");
 const req = (f: MessageFacts) => need(f, "requestRef");
 const code = (f: MessageFacts) => need(f, "upiCode");
 const payee = (f: MessageFacts) => need(f, "payee");
+/** 25 Nov 2026: templates.ts paidDate and upiNote, written again for the same reason as payTo: the day a UPI refund's payment was marked, the note it carried. */
+const paidDate = (f: MessageFacts) => formatDate(localParts(need(f, "paidAtMs"), f.timeZone), f.language);
+const note = (f: MessageFacts) => need(f, "upiNote");
+const asker = (f: MessageFacts) => need(f, "askerPhone");
 
 const en: Set = {
   credit_consent_ask: (f) => `Hello ${name(f)}, this is ${f.businessName}. Our book shows ${inr(f, "balanceInr")} to pay on your account. May we send you payment reminders on WhatsApp? Reply YES, or reply STOP and we will not message you.`,
@@ -104,8 +112,11 @@ const en: Set = {
   owner_credit_opted_out: (f) => `Credit book: ${name(f)} (${phone(f)}) sent STOP. No more messages will go to them.`,
   owner_credit_wants_to_talk: (f) => `Credit book: ${name(f)} (${phone(f)}) would like to talk to you. Please message them.`,
   owner_credit_request_stale: (f) => `Not done: ${name(f)}'s account (${phone(f)}) changed since you were asked, so nothing was applied.`,
-  owner_credit_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to ${name(f)} (${phone(f)}). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded ${code(f)}".`,
-  owner_credit_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to ${name(f)} (${phone(f)}). When you have sent it by UPI, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_credit_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} back to the account that paid you ${inr(f, "receivedInr")} on ${paidDate(f)} with the note ${note(f)} (${name(f)}, ${phone(f)}). Find that payment in your UPI app and send it back to that account. The agent never sends money. When you have sent it, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_credit_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to the account that paid you ${inr(f, "receivedInr")} on ${paidDate(f)} with the note ${note(f)} (${name(f)}, ${phone(f)}). When you have sent it by UPI, tap Refund sent or reply "refunded ${code(f)}".`,
+  credit_case_other_number: () => "I can't show that account to this number. I have told the owner, and they will contact you.",
+  credit_case_other_number_untold: () => "I can't show that account to this number, and I couldn't reach the owner just now. Please try again in a few minutes.",
+  owner_credit_case_other_number: (f) => `Credit book: someone at ${asker(f)} asks about ${name(f)}'s account (${ref(f)}, ${phone(f)}). Check before you help.`,
   owner_credit_upi_refund_marked: (f) => `Thank you. The ${inr(f, "refundInr")} refund to ${name(f)} is marked sent, and they have been told.`,
 };
 
@@ -165,8 +176,11 @@ const hi: Set = {
   owner_credit_opted_out: (f) => `खाता: ${name(f)} (${phone(f)}) ने STOP भेजा। उन्हें अब कोई संदेश नहीं जाएगा।`,
   owner_credit_wants_to_talk: (f) => `खाता: ${name(f)} (${phone(f)}) आपसे बात करना चाहते हैं। कृपया उन्हें संदेश भेजें।`,
   owner_credit_request_stale: (f) => `नहीं हुआ: आपसे पूछे जाने के बाद ${name(f)} का खाता (${phone(f)}) बदल गया, इसलिए कुछ लागू नहीं किया गया।`,
-  owner_credit_upi_refund_owed: (f) => `भेजना है: ${inr(f, "refundInr")} UPI से ${name(f)} (${phone(f)}) को। एजेंट कभी पैसे नहीं भेजता। भेज दें तो Refund sent दबाएँ या "refunded ${code(f)}" लिखें।`,
-  owner_credit_upi_refund_reminder: (f) => `याद: ${name(f)} (${phone(f)}) को ${inr(f, "refundInr")} अभी लौटाने बाकी हैं। UPI से भेज दें तो Refund sent दबाएँ या "refunded ${code(f)}" लिखें।`,
+  owner_credit_upi_refund_owed: (f) => `भेजना है: ${inr(f, "refundInr")}, उस खाते में जिससे आपको ${paidDate(f)} को ${inr(f, "receivedInr")} मिले थे, नोट ${note(f)} के साथ (${name(f)}, ${phone(f)})। अपने UPI ऐप में वह भुगतान ढूँढें और उसी खाते में लौटाएँ। एजेंट कभी पैसे नहीं भेजता। भेज दें तो Refund sent दबाएँ या "refunded ${code(f)}" लिखें।`,
+  owner_credit_upi_refund_reminder: (f) => `याद: ${inr(f, "refundInr")} अभी उस खाते में लौटाने बाकी हैं जिससे आपको ${paidDate(f)} को ${inr(f, "receivedInr")} मिले थे, नोट ${note(f)} के साथ (${name(f)}, ${phone(f)})। UPI से भेज दें तो Refund sent दबाएँ या "refunded ${code(f)}" लिखें।`,
+  credit_case_other_number: () => "मैं वह खाता इस नंबर पर नहीं दिखा सकता। मैंने मालिक को बता दिया है, वे आपसे संपर्क करेंगे।",
+  credit_case_other_number_untold: () => "मैं वह खाता इस नंबर पर नहीं दिखा सकता, और अभी मालिक तक बात नहीं पहुँची। थोड़ी देर बाद फिर कोशिश करें।",
+  owner_credit_case_other_number: (f) => `खाता: कोई ${asker(f)} से ${name(f)} के खाते (${ref(f)}, ${phone(f)}) के बारे में पूछ रहा है। मदद करने से पहले जाँच लें।`,
   owner_credit_upi_refund_marked: (f) => `धन्यवाद। ${name(f)} का ${inr(f, "refundInr")} का रिफंड भेजा हुआ दर्ज है, और उन्हें बता दिया गया है।`,
 };
 
@@ -226,8 +240,11 @@ const ml: Set = {
   owner_credit_opted_out: (f) => `കണക്ക്: ${name(f)} (${phone(f)}) STOP അയച്ചു. അവർക്ക് ഇനി സന്ദേശങ്ങൾ പോകില്ല.`,
   owner_credit_wants_to_talk: (f) => `കണക്ക്: ${name(f)} (${phone(f)}) നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ.`,
   owner_credit_request_stale: (f) => `ചെയ്തില്ല: നിങ്ങളോട് ചോദിച്ചതിനു ശേഷം ${name(f)}-ന്റെ അക്കൗണ്ട് (${phone(f)}) മാറി, അതിനാൽ ഒന്നും പ്രയോഗിച്ചില്ല.`,
-  owner_credit_upi_refund_owed: (f) => `അയയ്ക്കാനുള്ള റീഫണ്ട്: ${inr(f, "refundInr")} UPI വഴി ${name(f)} (${phone(f)})-ന്. ഏജന്റ് ഒരിക്കലും പണം അയയ്ക്കില്ല. അയച്ചു കഴിഞ്ഞാൽ Refund sent അമർത്തുക അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി നൽകുക.`,
-  owner_credit_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${name(f)} (${phone(f)})-ന് ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ചു കഴിഞ്ഞാൽ Refund sent അമർത്തുക അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി നൽകുക.`,
+  owner_credit_upi_refund_owed: (f) => `അയയ്ക്കാനുള്ള റീഫണ്ട്: ${inr(f, "refundInr")}, ${paidDate(f)} തീയതിയിൽ ${note(f)} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് ${inr(f, "receivedInr")} അയച്ച അക്കൗണ്ടിലേക്ക് (${name(f)}, ${phone(f)}). നിങ്ങളുടെ UPI ആപ്പിൽ ആ പേയ്മെന്റ് കണ്ടെത്തി അതേ അക്കൗണ്ടിലേക്ക് തിരികെ അയയ്ക്കുക. ഏജന്റ് ഒരിക്കലും പണം അയയ്ക്കില്ല. അയച്ചു കഴിഞ്ഞാൽ Refund sent അമർത്തുക അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി നൽകുക.`,
+  owner_credit_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${paidDate(f)} തീയതിയിൽ ${note(f)} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് ${inr(f, "receivedInr")} അയച്ച അക്കൗണ്ടിലേക്ക് ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട് (${name(f)}, ${phone(f)}). UPI വഴി അയച്ചു കഴിഞ്ഞാൽ Refund sent അമർത്തുക അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി നൽകുക.`,
+  credit_case_other_number: () => "ആ കണക്ക് ഈ നമ്പറിൽ കാണിക്കാൻ എനിക്ക് കഴിയില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും.",
+  credit_case_other_number_untold: () => "ആ കണക്ക് ഈ നമ്പറിൽ കാണിക്കാൻ എനിക്ക് കഴിയില്ല, ഇപ്പോൾ ഉടമയെ അറിയിക്കാനും കഴിഞ്ഞില്ല. കുറച്ച് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ.",
+  owner_credit_case_other_number: (f) => `കണക്ക്: ഒരാൾ ${asker(f)} എന്ന നമ്പറിൽ നിന്ന് ${name(f)}-ന്റെ കണക്കിനെക്കുറിച്ച് (${ref(f)}, ${phone(f)}) ചോദിക്കുന്നു. സഹായിക്കുന്നതിന് മുമ്പ് പരിശോധിക്കുക.`,
   owner_credit_upi_refund_marked: (f) => `നന്ദി. ${name(f)}-നുള്ള ${inr(f, "refundInr")} റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, അവരെ അറിയിച്ചിട്ടുണ്ട്.`,
 };
 
@@ -287,8 +304,11 @@ const kn: Set = {
   owner_credit_opted_out: (f) => `ಲೆಕ್ಕ: ${name(f)} (${phone(f)}) STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಅವರಿಗೆ ಇನ್ನು ಸಂದೇಶಗಳು ಹೋಗುವುದಿಲ್ಲ.`,
   owner_credit_wants_to_talk: (f) => `ಲೆಕ್ಕ: ${name(f)} (${phone(f)}) ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.`,
   owner_credit_request_stale: (f) => `ಆಗಲಿಲ್ಲ: ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ${name(f)} ಅವರ ಖಾತೆ (${phone(f)}) ಬದಲಾಗಿದೆ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಅನ್ವಯಿಸಿಲ್ಲ.`,
-  owner_credit_upi_refund_owed: (f) => `ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: ${inr(f, "refundInr")} UPI ಮೂಲಕ ${name(f)} (${phone(f)}) ಅವರಿಗೆ. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ Refund sent ಒತ್ತಿ ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
-  owner_credit_upi_refund_reminder: (f) => `ನೆನಪು: ${name(f)} (${phone(f)}) ಅವರಿಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಹಿಂತಿರುಗಿಸಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ Refund sent ಒತ್ತಿ ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_credit_upi_refund_owed: (f) => `ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: ${inr(f, "refundInr")}, ${paidDate(f)} ರಂದು ${note(f)} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ ${inr(f, "receivedInr")} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ (${name(f)}, ${phone(f)}). ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಆ ಪಾವತಿಯನ್ನು ಹುಡುಕಿ ಅದೇ ಖಾತೆಗೆ ಹಿಂತಿರುಗಿಸಿ. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ Refund sent ಒತ್ತಿ ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_credit_upi_refund_reminder: (f) => `ನೆನಪು: ${paidDate(f)} ರಂದು ${note(f)} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ ${inr(f, "receivedInr")} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಹಿಂತಿರುಗಿಸಬೇಕಿದೆ (${name(f)}, ${phone(f)}). UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ Refund sent ಒತ್ತಿ ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  credit_case_other_number: () => "ಆ ಲೆಕ್ಕವನ್ನು ಈ ನಂಬರ್‌ಗೆ ತೋರಿಸಲು ಆಗುವುದಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.",
+  credit_case_other_number_untold: () => "ಆ ಲೆಕ್ಕವನ್ನು ಈ ನಂಬರ್‌ಗೆ ತೋರಿಸಲು ಆಗುವುದಿಲ್ಲ, ಮತ್ತು ಈಗ ಮಾಲೀಕರನ್ನು ತಲುಪಲು ಆಗಲಿಲ್ಲ. ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  owner_credit_case_other_number: (f) => `ಲೆಕ್ಕ: ಯಾರೋ ${asker(f)} ನಂಬರ್‌ನಿಂದ ${name(f)} ಅವರ ಲೆಕ್ಕದ (${ref(f)}, ${phone(f)}) ಬಗ್ಗೆ ಕೇಳುತ್ತಿದ್ದಾರೆ. ಸಹಾಯ ಮಾಡುವ ಮೊದಲು ಪರಿಶೀಲಿಸಿ.`,
   owner_credit_upi_refund_marked: (f) => `ಧನ್ಯವಾದ. ${name(f)} ಅವರಿಗೆ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಮತ್ತು ಅವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ.`,
 };
 
@@ -313,8 +333,11 @@ export const CREDIT_META: readonly [string, CreditTemplateId, "customer" | "owne
   ["owner_credit_wants_you", "owner_credit_wants_to_talk", "owner"],
   ["owner_credit_overpaid", "owner_credit_overpayment", "owner"],
   ["owner_credit_discount_asked", "owner_credit_discount_note", "owner"],
-  ["owner_credit_refund_owed", "owner_credit_upi_refund_owed", "owner"],
-  ["owner_credit_refund_due", "owner_credit_upi_refund_reminder", "owner"],
+  // 25 Nov 2026: new words under new names (the money goes back to the account it came from, found by its note, amount and date); the bodies approved under
+  // owner_credit_refund_owed and owner_credit_refund_due stay registered and unused (Deferred.md)
+  ["owner_credit_refund_to_account", "owner_credit_upi_refund_owed", "owner"],
+  ["owner_credit_refund_account_due", "owner_credit_upi_refund_reminder", "owner"],
+  ["owner_credit_asked_elsewhere", "owner_credit_case_other_number", "owner"],
   ["owner_credit_link_failed", "owner_credit_link_failed", "owner"],
 ];
 

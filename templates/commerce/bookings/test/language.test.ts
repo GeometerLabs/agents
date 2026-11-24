@@ -36,9 +36,12 @@ function factsFor(language: Language, id: TemplateId): MessageFacts {
   const licence = id.startsWith("owner_licence_") ? { partner: "Divya, local Operator", upcomingCount: 3 } : {};
   // E1: the price the customer asked and the owner's card's code go only to the discount messages, so every other message is checked against the record it always was
   const discount = id.startsWith("discount_") || id.startsWith("owner_discount_") ? { offeredInr: 377, discountCode: "Q7RM2X" } : {}; // 377: no other amount of the record is near it, so a changed amount is never one the record holds
+  // 25 Nov 2026: a UPI refund's payment (its note and the day it was marked, Tue 3 Nov) and the number that asked about a booking from elsewhere, only to their own messages
+  const refund = id.startsWith("owner_upi_refund_") ? { paidAtMs: Date.UTC(2026, 10, 3, 6, 0), upiNote: "b-3" } : {};
+  const asked = id === "owner_case_other_number" ? { askerPhone: "+919822222222" } : {};
   return id === "menu"
     ? facts(language, { services: [{ name: HAIRCUT[language], priceInr: 450 }, { name: FACIAL[language], priceInr: 900 }] })
-    : facts(language, { ...upi, ...licence, ...discount });
+    : facts(language, { ...upi, ...licence, ...discount, ...refund, ...asked });
 }
 
 test("every template exists in every language", () => {

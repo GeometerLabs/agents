@@ -5,6 +5,7 @@
 //   2. the owner's tap sends the first question and only it, and no reminder goes before the customer's yes;
 //   3. after the yes, a reminder goes on the day the interval is up, at the reminder hour, not before;
 //   4. after a payment the owner marks ("<name> paid <amount>"), not one reminder more.
+import { caseAskedSituation } from "../../../../modules/crash-test/case-asked.ts";
 import { DAY, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import { checker } from "../../../../modules/crash-test/situations.ts";
 import type { Situation, Skipped } from "../../../../modules/crash-test/situations.ts";
@@ -103,6 +104,19 @@ export function creditSituations(settings: Settings): { situations: Situation[];
         return results;
       },
     },
+    // 25 Nov 2026 (modules/crash-test/case-asked.ts): an account named from a number that holds none, in the credit book's own words; the owner's entry opens the account's fee
+    caseAskedSituation({
+      noun: "account", world,
+      open: async (w) => {
+        const theirs = () => [...w.store.dues.values()].reverse().find((d) => d.customer === person.phone)?.id;
+        if (!theirs()) await w.ownerSays(`${person.name} owes 500`); // the settings' amount opened one already, unless it was zero
+        const ref = theirs() ?? "f-1";
+        return { ref, customer: person.phone };
+      },
+      state: (w, ref) => { const d = w.store.dues.get(ref); return JSON.stringify([d?.state, d?.payments.length ?? 0]); },
+      customerTemplate: "credit_case_other_number", ownerTemplate: "owner_credit_case_other_number",
+      ask: (ref) => `What about ${ref}? It is my father's account`, falseRef: "f-99",
+    }),
   ];
   return { situations, skipped: [] };
 }

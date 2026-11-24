@@ -144,7 +144,7 @@ func (a *Agent) oweBack(d *Due, paymentID string, amountPaise int64, why string,
 			notes: "owed back by the owner, who sends it from their own UPI app (" + why + "); the agent never sends it and tracks it until the owner marks it done"})
 	})
 	a.tellCustomer(d, d.Customer, []string{"fee_upi_refund_owed"}, sayOpts{refundInr: N(amountPaise / 100)})
-	a.tellOwner(d, d.Customer, "owner_fee_upi_refund_owed", sayOpts{refundInr: N(amountPaise / 100), upiCode: codeOf(r.Code), offer: a.refundButtons(r)})
+	a.tellOwner(d, d.Customer, "owner_fee_upi_refund_owed", a.refundFacts(r, sayOpts{refundInr: N(amountPaise / 100), upiCode: codeOf(r.Code), offer: a.refundButtons(r)}))
 	return r
 }
 
@@ -246,7 +246,7 @@ func (a *Agent) remindOwedRefunds(now int64) {
 	for _, r := range ownermarked.RemindersDue(a.marks, now) {
 		d := a.store.Due(r.CaseID)
 		ownermarked.Reminded(r, now)
-		told := a.tellOwner(d, r.Customer, "owner_fee_upi_refund_reminder", sayOpts{refundInr: N(r.AmountPaise / 100), upiCode: codeOf(r.Code), offer: a.refundButtons(r)})
+		told := a.tellOwner(d, r.Customer, "owner_fee_upi_refund_reminder", a.refundFacts(r, sayOpts{refundInr: N(r.AmountPaise / 100), upiCode: codeOf(r.Code), offer: a.refundButtons(r)}))
 		outcome := "failed"
 		if told {
 			outcome = "confirmed"
@@ -275,7 +275,7 @@ func (a *Agent) markAskAgain(d *Due, note func(outcome, notes string)) bool {
 	note("attempted", "telling the owner again about a UPI payment or refund")
 	told := true
 	for _, r := range owed {
-		told = a.tellOwner(d, r.Customer, "owner_fee_upi_refund_reminder", sayOpts{refundInr: N(r.AmountPaise / 100), upiCode: *r.Code, offer: a.refundButtons(r)}) && told
+		told = a.tellOwner(d, r.Customer, "owner_fee_upi_refund_reminder", a.refundFacts(r, sayOpts{refundInr: N(r.AmountPaise / 100), upiCode: *r.Code, offer: a.refundButtons(r)})) && told
 	}
 	if open != nil {
 		told = a.tellOwner(d, d.Customer, "owner_fee_upi_claim", sayOpts{upiCode: *open.Code, offer: a.receivedButtons(open, balancePaise(d))}) && told
@@ -286,4 +286,13 @@ func (a *Agent) markAskAgain(d *Due, note func(outcome, notes string)) bool {
 		note("failed", "the owner could not be told (the limits or the provider said no)")
 	}
 	return true
+}
+
+// refundFacts is agent.ts refundFacts (25 Nov 2026): the owner's UPI refund message names the payment it gives back (ownermarked.RefundSource): its amount (receivedInr) and
+// the day the owner marked it, and the note it carried ("f-3.2"), so the money goes back to the account it came from (a family member may have paid), not to the parent's number.
+func (a *Agent) refundFacts(r *ownermarked.OwedRefund, o sayOpts) sayOpts {
+	if note, paid, at, ok := ownermarked.RefundSource(a.marks, r); ok {
+		o.receivedInr, o.paidAtMs, o.upiNote = N(paid/100), N(at), note
+	}
+	return o
 }

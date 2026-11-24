@@ -96,6 +96,12 @@ type MessageFacts struct {
 	// E1, the discount authority (24 Nov 2026): the price of one the customer asked for (PriceInr stays the menu price) and the owner's card's code
 	OfferedInr   *int64  `json:"offeredInr,omitempty"`
 	DiscountCode *string `json:"discountCode,omitempty"`
+
+	// 25 Nov 2026: the number (or chat guest) that asked about an order from another conversation (runtime/caseasked.go), only in a message to the owner; and a UPI refund's
+	// payment (ownermarked.RefundSource): the day the owner marked it and the note it carried
+	AskerPhone *string `json:"askerPhone,omitempty"`
+	PaidAtMs   *int64  `json:"paidAtMs,omitempty"`
+	UpiNote    *string `json:"upiNote,omitempty"`
 }
 
 // S makes a pointer to a text: a fact the record has.
@@ -215,6 +221,15 @@ func (f *MessageFacts) value(w *Words, name string) (string, error) {
 		return needS(f.OrderRef, name)
 	case "customerPhone":
 		return needS(f.CustomerPhone, name)
+	case "askerPhone":
+		return needS(f.AskerPhone, name)
+	case "paidNote": // the fact upiNote ("upiNote" is the words' UPI sentence)
+		return needS(f.UpiNote, "upiNote")
+	case "paidDate": // templates.ts paidDate: the day a UPI refund's payment was marked, "Tue 3 Nov"
+		if f.PaidAtMs == nil {
+			return "", &MissingFact{"paidAtMs"}
+		}
+		return f.moment("date", *f.PaidAtMs)
 	case "approvalCode":
 		return needS(f.ApprovalCode, name)
 	case "upiCode":
