@@ -31,9 +31,18 @@ export interface LiveMessagingConfig {
   timeoutMs?: number;
 }
 
+/**
+ * 25 Nov 2026: Meta's id of the shop's WhatsApp Business Account (Meta's pages now also call it the "Messaging account ID"), digits like every Graph id. Only runtime.json
+ * written by the panel carries it (services.messaging.wabaId, Meta direct only): the deploy bundle pins the WhatsApp Guard's template routes to it and never hands it to a
+ * runtime, which sends messages and makes no templates. Meta documents no read from the phone number id to the account, so the panel asks for it (bundle/lib/wa-templates.ts).
+ */
+export const META_WABA_ID = /^\d{6,20}$/u;
+
 /** Why services.messaging's provider fields cannot be used, in plain words, or null. Read by runtime.json's check (modules/runtime/config.ts) and the bundle. */
-export function messagingConfigProblem(c: { provider?: unknown; appId?: unknown; appName?: unknown; sourceNumber?: unknown }): string | null {
+export function messagingConfigProblem(c: { provider?: unknown; appId?: unknown; appName?: unknown; sourceNumber?: unknown; wabaId?: unknown }): string | null {
   if (c.provider !== undefined && !(MESSAGING_PROVIDERS as readonly unknown[]).includes(c.provider)) return `services.messaging.provider must be one of ${MESSAGING_PROVIDERS.map((p) => `"${p}"`).join(", ")} ("meta" when left out).`;
+  if (c.wabaId !== undefined && (c.provider ?? "meta") !== "meta") return 'services.messaging.wabaId is only for Meta direct (no "provider", or "provider": "meta").';
+  if (c.wabaId !== undefined && (typeof c.wabaId !== "string" || !META_WABA_ID.test(c.wabaId))) return "services.messaging.wabaId must be the WhatsApp Business Account id as Meta shows it (digits only).";
   if (c.provider === "gupshup" && (typeof c.appId !== "string" || !GUPSHUP_APP_ID.test(c.appId))) return 'services.messaging.appId is needed with "provider": "gupshup": the shop\'s Gupshup app id, as Gupshup shows it (letters, digits and hyphens).';
   if (c.provider === "gupshup-selfserve") {
     if (typeof c.appName !== "string" || !GUPSHUP_APP_NAME.test(c.appName)) return 'services.messaging.appName is needed with "provider": "gupshup-selfserve": the shop\'s Gupshup app name, as Gupshup shows it (letters, digits and underscores).';

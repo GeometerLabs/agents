@@ -155,6 +155,9 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
     : messaging.provider === "gupshup" ? { provider: "gupshup", appId: messaging.appId as string }
     : messaging.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve", appName: messaging.appName as string, sourceNumber: messaging.sourceNumber as string, ...(typeof messaging.appId === "string" ? { appId: messaging.appId } : {}) }
     : undefined;
+  // 25 Nov 2026: Meta direct only, the shop's WhatsApp Business Account (checked by messagingConfigProblem above): the WhatsApp Guard's template routes are pinned to it.
+  // It is for the Guard alone: the runtime's own messaging block below is built from these facts and never carries it.
+  const wabaId = !providerProblem && whatsappRoute === undefined && typeof messaging.wabaId === "string" ? messaging.wabaId : undefined;
 
   // B29: voice notes are OFF unless runtime.json has a `speech` block, and the block is refused unless the server holds the provider's key and places the speech Guards.
   if (panel.speech !== undefined) {
@@ -196,7 +199,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
     else talk = { wire: p.wire as string, model: p.model as string, ...(typeof p.timeoutMs === "number" ? { timeoutMs: p.timeoutMs } : {}) };
     if (p.baseUrl !== undefined || p.agentTokenFile !== undefined) notes.push("talk: the bundle sets baseUrl and agentTokenFile itself (the server's model Guard).");
   }
-  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, hasWhatsApp, whatsappRoute, timeoutMs: timeoutMs as number, parser, talk, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
+  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, hasWhatsApp, whatsappRoute, ...(wabaId ? { wabaId } : {}), timeoutMs: timeoutMs as number, parser, talk, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
 }
 
 /** The pathway's own check of a runtime config (server/config.ts). A parameter so a test can stand in for a pathway version that knows more. */
@@ -372,7 +375,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     // went out. So a gateway shop needs WhatsApp for now; a shop with no WhatsApp takes UPI (the owner marks payments and refunds on their page). Refused by name.
     if (razorpay && !facts.hasWhatsApp) problems.push({ rule: "whatsapp-none-gateway", message: `${shop.name} has no WhatsApp number but takes payments through a gateway. A refund the gateway's Guard holds is asked of the owner on WhatsApp, so a gateway shop needs its WhatsApp number for now. Give it its number, or take UPI (the owner marks payments and refunds on their page).` });
     if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
-    if (facts.hasWhatsApp) specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}), ...(template.guardRecipients && !facts.whatsappRoute ? { recipients: template.guardRecipients(shop.settings) } : {}) });
+    if (facts.hasWhatsApp) specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}), ...(template.guardRecipients && !facts.whatsappRoute ? { recipients: template.guardRecipients(shop.settings) } : {}), ...(facts.wabaId ? { wabaId: facts.wabaId } : {}) });
     specs.push = pushSpec(identity("push"), PUSH_LIMITS);
     if (kinds.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of kinds) {

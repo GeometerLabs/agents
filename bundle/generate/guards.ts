@@ -131,12 +131,38 @@ export function gatewaySpec(settings: Settings, id: SpecIdentity, approvalHours:
 export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GATEWAYS.map((g) => [g.id, g.gateway!.guard.reads.panel])), whatsapp: ["read_number"], calendar: ["get_calendar", "list"] };
 
 /**
+ * 25 Nov 2026: the WhatsApp Guard's template operations: the panel reads the state of a shop's message templates and submits the ones not yet with the provider
+ * (bundle/lib/wa-templates.ts says how). They exist in a spec only when runtime.json names the account they go to (Meta's WhatsApp Business Account id, or the Gupshup
+ * app's id), each pinned to exactly that account. They belong to the PANEL's agent only: a shop's runtime sends messages and never makes templates, so where a spec has
+ * them, the runtime's agent is given an explicit list without them (agentOperations below). The panel holds no key: the Guard adds it, as for every other call.
+ */
+export const TEMPLATE_OPERATIONS: readonly string[] = ["list_templates", "submit_template"];
+/** Meta allows a WhatsApp Business Account 100 new templates an hour (developers.facebook.com, "Message templates", read 25 Nov 2026); the Guard holds the panel to the same. */
+export const TEMPLATES_PER_HOUR = 100;
+
+/**
+ * The operations each of a Guard's agents may call, from its spec: `undefined` means every operation (what guard.toml writes when it lists none). Only a spec with
+ * template operations changes anything: the runtime's agent then gets every other operation of the spec, and the panel's agent its reads plus those operations. Every
+ * other Guard keeps today's lists exactly, so no other shop's guard.toml changes.
+ */
+export function agentOperations(kind: string, spec: { routes?: { operation: string }[] }): { runtime?: string[]; panel: string[] } {
+  const ops = [...new Set((spec.routes ?? []).map((r) => r.operation))];
+  const templates = ops.filter((o) => TEMPLATE_OPERATIONS.includes(o));
+  const reads = PANEL_READS[kind] ?? [];
+  if (templates.length === 0) return { panel: reads };
+  return { runtime: ops.filter((o) => !TEMPLATE_OPERATIONS.includes(o)), panel: [...new Set([...reads, ...templates])] };
+}
+
+/** The template routes of Meta's Graph API (the WhatsApp Business Management API): one path, GET lists a WABA's templates, POST creates one. */
+export const META_TEMPLATE_ROUTE = "/{version}/{waba_id}/message_templates";
+
+/**
  * The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own.
  * Through Gupshup (`route`) the same two operations name the shop's own Gupshup app instead, exactly: Gupshup's paths carry the app, not the number
  * (modules/messaging/gupshup.ts GUPSHUP_ROUTES), and its read is the app's health, which says nothing about the number: the panel's check for such a shop says "Gupshup
  * answered for app <id>", never that the number is confirmed (panel/checks.ts checkGupshup).
  */
-export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute; /** Stock orders: the only numbers a message may go to (its owner and its approved suppliers); Meta direct only. */ recipients?: string[] }): LimitsSpec {
+export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute; /** Stock orders: the only numbers a message may go to (its owner and its approved suppliers); Meta direct only. */ recipients?: string[]; /** 25 Nov 2026: Meta direct: the shop's WhatsApp Business Account id (runtime.json services.messaging.wabaId), which its templates go to. Left out: no template routes. */ wabaId?: string }): LimitsSpec {
   if (o.route?.provider === "gupshup-selfserve") {
     // Item 11c. The self-serve API carries the app in the BODY of both send routes, as form fields (`source`, the app's number, and `src.name`, its name), and in the PATH of
     // the template list. Guard's compiler refuses an exact rule on a dotted field name ("a dotted (nested) name is not followed"), so `src.name` cannot be pinned: the send is
@@ -144,14 +170,19 @@ export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messa
     // stop and the hourly cap hold templates too; the read is the template list (the key and app name, never the number).
     const r = o.route;
     const read = r.appId ? { path: GUPSHUP_SELFSERVE_ROUTES.listById, field: "app_id", value: r.appId } : { path: GUPSHUP_SELFSERVE_ROUTES.listByName, field: "app_name", value: r.appName };
+    // 25 Nov 2026: Gupshup's create call (POST /wa/app/{app_id}/template) needs the app's id, so only a shop with one gets it, pinned to that app. The panel reads the
+    // templates' state with the same list the connection check reads (read_number), so the one new operation is the submission.
+    const submit = r.appId !== undefined;
     return {
       ...base(whatsappGuardDef(r), id),
-      routes: [{ method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.send, operation: "send" }, { method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.template, operation: "send" }, { method: "GET", path: read.path, operation: "read_number" }],
+      routes: [{ method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.send, operation: "send" }, { method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.template, operation: "send" }, { method: "GET", path: read.path, operation: "read_number" },
+        ...(submit ? [{ method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.listById, operation: "submit_template" }] : [])],
       rules: [
         { id: "own-source-only", kind: "argument_allowlist", operation: "send", field: "source", match: "exact", allowed_values: [r.sourceNumber.replace(/\D/gu, "")] },
         { id: "own-app-read", kind: "argument_allowlist", operation: "read_number", field: read.field, match: "exact", allowed_values: [read.value] },
+        ...(submit ? [{ id: "own-app-templates", kind: "argument_allowlist", operation: "submit_template", field: "app_id", match: "exact", allowed_values: [r.appId as string] }] : []),
       ],
-      limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600)],
+      limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600), ...(submit ? [count("templates-per-hour", "submit_template", TEMPLATES_PER_HOUR, 3600)] : [])],
       intents: [], fail_policy: [],
     };
   }
@@ -169,14 +200,20 @@ export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messa
   }
   return {
     ...base(guardDef("whatsapp"), id),
-    routes: [{ method: "POST", path: "/{version}/{phone_number_id}/messages", operation: "send" }, { method: "GET", path: "/{version}/{phone_number_id}", operation: "read_number" }],
+    routes: [{ method: "POST", path: "/{version}/{phone_number_id}/messages", operation: "send" }, { method: "GET", path: "/{version}/{phone_number_id}", operation: "read_number" },
+      // 25 Nov 2026: the shop's templates, in its own WhatsApp Business Account only (the panel's agent; agentOperations)
+      ...(o.wabaId ? [{ method: "GET", path: META_TEMPLATE_ROUTE, operation: "list_templates" }, { method: "POST", path: META_TEMPLATE_ROUTE, operation: "submit_template" }] : [])],
     rules: [
       { id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] },
       { id: "own-number-read", kind: "argument_allowlist", operation: "read_number", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] },
       // Stock orders writes only to its owner and its approved suppliers: the list is exact, so a send to anyone else is refused whatever the agent does
       ...(o.recipients && o.recipients.length > 0 ? [{ id: "approved-recipients-only", kind: "argument_allowlist" as const, operation: "send", field: "to", match: "exact" as const, allowed_values: o.recipients }] : []),
+      ...(o.wabaId ? [
+        { id: "own-account-templates-read", kind: "argument_allowlist" as const, operation: "list_templates", field: "waba_id", match: "exact" as const, allowed_values: [o.wabaId] },
+        { id: "own-account-templates", kind: "argument_allowlist" as const, operation: "submit_template", field: "waba_id", match: "exact" as const, allowed_values: [o.wabaId] },
+      ] : []),
     ],
-    limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600)],
+    limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600), ...(o.wabaId ? [count("templates-per-hour", "submit_template", TEMPLATES_PER_HOUR, 3600)] : [])],
     intents: [], fail_policy: [],
   };
 }
