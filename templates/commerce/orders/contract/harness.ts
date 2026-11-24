@@ -23,6 +23,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { PARTS_VERSION, VIA_PARTS, gatewayOf, notThroughParts, track, viaParts } from "../../parts/contract/via-parts.ts";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
 import { OWNER_GRANTS_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { guestHash, handleHash, newGuestHandle, newHandle } from "../../../../modules/channels/handle.ts";
@@ -47,13 +48,14 @@ export const REPO = join(here, "..", "..", "..", "..");
 /** Which runtime the tests start: the Go program, the only one since 24 Nov 2026. */
 export const IMPL = "go" as const;
 if (process.env.ORDERS_IMPL !== undefined && process.env.ORDERS_IMPL !== "go") throw new Error(`ORDERS_IMPL is "${process.env.ORDERS_IMPL}": the TypeScript runtime was deleted on 24 Nov 2026, so only go is left.`);
-const GO_BIN = process.env.ORDERS_GO_BIN ?? join(REPO, "go", "bin", "orders");
+// decision 65: CONTRACT_PARTS runs this suite through the shop of several parts (go/cmd/parts), this template one of its parts (templates/commerce/parts/contract/via-parts.ts)
+const GO_BIN = VIA_PARTS ? (process.env.PARTS_GO_BIN ?? join(REPO, "go", "bin", "parts")) : (process.env.ORDERS_GO_BIN ?? join(REPO, "go", "bin", "orders"));
 
 /** Why every test is skipped (undefined: they run). */
 export const SKIP: string | undefined = !existsSync(GO_BIN) ? `the Go Orders program is not built (go build -o go/bin/ ./cmd/orders, or set ORDERS_GO_BIN)` : undefined;
 
 /** The ONE wrapper every contract test goes through: a test is skipped only when what it needs is not there, and says so. */
-export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, fn); };
+export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, (t) => track(t, fn)); };
 
 export const PAGE = "https://pages.example/annapurna";
 export const OWNER_BASE = "https://pages.example/owner";
@@ -221,7 +223,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(secrets, "record_key"), hex(32));
   const given = merge(exampleOf(o.example ?? (mode === "guards" ? "razorpay" : "upi")), { ...(o.settings ?? {}) });
   const settingsJson = { ...given, owner: { ...given.owner, language: o.ownerLanguage ?? given.owner.language, ...(o.owner ? { whatsapp: o.owner } : {}) } };
-  writeFileSync(join(client, "settings.json"), JSON.stringify(settingsJson));
+  if (VIA_PARTS && gatewayOf(settingsJson)) notThroughParts("a shop of several parts takes UPI payments only (no payment gateway yet)");
+  writeFileSync(join(client, "settings.json"), JSON.stringify(VIA_PARTS ? viaParts("orders", settingsJson) : settingsJson));
 
   const parsed = parseSettings(settingsJson);
   const guards = mode === "guards" ? await startGuards(parsed, o.approvalSeconds !== undefined ? { approvalTtlSeconds: o.approvalSeconds } : {}) : undefined;
@@ -246,7 +249,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(client, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setup), createdAt: new Date(now0).toISOString(), expiresAt: new Date(now0 + SETUP_MS).toISOString() } }));
   if (o.licence !== undefined) writeFileSync(join(client, "licence.json"), JSON.stringify(o.licence));
   if (o.terms !== undefined) writeFileSync(join(client, "terms.json"), JSON.stringify(o.terms));
-  writeFileSync(join(client, "pathway.lock"), `orders@${VERSION}\n`); // written last, as the deployer does
+  writeFileSync(join(client, "pathway.lock"), VIA_PARTS ? `parts@${PARTS_VERSION}\n` : `orders@${VERSION}\n`); // written last, as the deployer does
 
   const clock = (mode === "fakes" && o.clock !== false) || o.forceClock ? makeTestClockFile(join(root, "clock")) : undefined;
   if (clock && mode === "fakes") clock.advance((o.at ?? START) - Date.now());

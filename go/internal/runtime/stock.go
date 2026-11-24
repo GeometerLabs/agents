@@ -43,6 +43,10 @@ func (r *Runtime) ownerStock(snap *Snap, rec *recorder, ev map[string]any, now i
 			}
 		}
 	}
+	// decision 65: in a shop of several parts an item two parts know by one id is ONE count (the line is the supplier's item, so Stock orders' low mark reorders it)
+	if sa, ok := r.o.Kit.(StockAliaser); ok && op.Op == "start" {
+		op.ID, op.Aliases = sa.StockAliases(op.ID, lang)
+	}
 	change, why := listings.ApplyStockOp(st, op, rid, now)
 	if why != "" {
 		rec.append(NewLine{Conversation: number, Action: "stock", Outcome: "blocked", Inputs: map[string]any{"op": op.Op, "item": op.ID, "why": string(why)}, Language: lang,

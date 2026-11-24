@@ -20,6 +20,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { PARTS_VERSION, VIA_PARTS, gatewayOf, notThroughParts, track, viaParts } from "../../parts/contract/via-parts.ts";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
 import { OWNER_GRANTS_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { TEST_CLOCK_FILE, TEST_SWITCH } from "../../../../modules/runtime/test-clock.ts";
@@ -39,7 +40,8 @@ export const REPO = join(here, "..", "..", "..", "..");
 /** Which runtime the tests start: the Go program, the only one since 24 Nov 2026. */
 export const IMPL = "go" as const;
 if (process.env.STOCK_ORDERS_IMPL !== undefined && process.env.STOCK_ORDERS_IMPL !== "go") throw new Error(`STOCK_ORDERS_IMPL is "${process.env.STOCK_ORDERS_IMPL}": the TypeScript runtime was deleted on 24 Nov 2026, so only go is left.`);
-const GO_BIN = process.env.STOCK_ORDERS_GO_BIN ?? join(REPO, "go", "bin", "stock-orders");
+// decision 65: CONTRACT_PARTS runs this suite through the shop of several parts (go/cmd/parts), this template one of its parts (templates/commerce/parts/contract/via-parts.ts)
+const GO_BIN = VIA_PARTS ? (process.env.PARTS_GO_BIN ?? join(REPO, "go", "bin", "parts")) : (process.env.STOCK_ORDERS_GO_BIN ?? join(REPO, "go", "bin", "stock-orders"));
 
 /** Why every test is skipped (undefined: they run). */
 export const SKIP: string | undefined = !existsSync(GO_BIN) ? "the Go Stock orders program is not built (go build -o go/bin/ ./cmd/stock-orders, or set STOCK_ORDERS_GO_BIN)" : undefined;
@@ -47,7 +49,7 @@ export const SKIP: string | undefined = !existsSync(GO_BIN) ? "the Go Stock orde
 export const BOTH = existsSync(GO_BIN);
 
 /** The ONE wrapper every contract test goes through. */
-export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, fn); };
+export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, (t) => track(t, fn)); };
 
 export const TZ = "Asia/Kolkata";
 /** The unit tests' instant (test/runtime.test.ts): Mon 9 Nov 2026, 10:00 in India. A "fakes" shop starts here. */
@@ -173,7 +175,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(secrets, "channel_token"), channel);
   writeFileSync(join(secrets, "record_key"), hex(32));
   const given = merge(SETTINGS, o.settings ?? {});
-  writeFileSync(join(client, "settings.json"), JSON.stringify(given));
+  if (VIA_PARTS && gatewayOf(given)) notThroughParts("a shop of several parts takes UPI payments only (no payment gateway yet)");
+  writeFileSync(join(client, "settings.json"), JSON.stringify(VIA_PARTS ? viaParts("stock-orders", given) : given));
   const guard = mode === "guards" ? await startWhatsAppGuard() : undefined;
   const runtime: Record<string, any> = { mode: mode === "guards" ? "live" : "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600 };
   if (guard) runtime.services = { ...(o.noWhatsApp ? {} : { messaging: { baseUrl: guard.url, phoneNumberId: guard.phoneNumberId } }), timeoutMs: 3000 };
@@ -184,7 +187,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   const now0 = Date.now();
   writeFileSync(join(client, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setup), createdAt: new Date(now0).toISOString(), expiresAt: new Date(now0 + SETUP_MS).toISOString() } }));
   if (o.licence !== undefined) writeFileSync(join(client, "licence.json"), JSON.stringify(o.licence));
-  writeFileSync(join(client, "pathway.lock"), `stock-orders@${VERSION}\n`); // written last, as the deployer does
+  writeFileSync(join(client, "pathway.lock"), VIA_PARTS ? `parts@${PARTS_VERSION}\n` : `stock-orders@${VERSION}\n`); // written last, as the deployer does
 
   const clock = mode === "fakes" ? makeTestClockFile(join(root, "clock")) : undefined;
   if (clock) clock.advance((o.at ?? START) - Date.now());

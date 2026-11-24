@@ -138,3 +138,9 @@ func CardCode(m messaging.InboundMessage) string {
 	}
 	return ""
 }
+
+// StockAliaser is a Kit of several parts whose items may be one item known to two parts (the pickup hold's "menu:mcb-16a" and Stock orders' "supply:mcb-16a"): the owner's
+// "start counting" names one of them, and the line is made under the canonical id with the others as its aliases, so every part reads and moves the one count.
+type StockAliaser interface {
+	StockAliases(id, lang string) (canonical string, aliases []string)
+}

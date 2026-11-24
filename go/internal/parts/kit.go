@@ -6,6 +6,7 @@ package parts
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
@@ -208,4 +209,37 @@ func (k *Kit) partIndex(name string) int {
 		}
 	}
 	return -1
+}
+
+var _ runtime.StockAliaser = (*Kit)(nil)
+
+// StockAliases: an item id two parts share ("mcb-16a" in the hold's menu and in Stock orders' items) is one item. The count is kept under the supplier's id when there is one
+// (Stock orders' low mark reorders a "supply:" line), with the other parts' ids as its aliases; an id only one part knows is itself, with none.
+func (k *Kit) StockAliases(id, lang string) (string, []string) {
+	plain := id
+	if i := strings.IndexByte(id, ':'); i >= 0 {
+		plain = id[i+1:]
+	}
+	var same []string
+	for _, it := range k.StockItems(lang) {
+		if j := strings.IndexByte(it.ID, ':'); j >= 0 && it.ID[j+1:] == plain {
+			same = append(same, it.ID)
+		}
+	}
+	if len(same) < 2 {
+		return id, nil
+	}
+	canonical := id
+	for _, s := range same {
+		if strings.HasPrefix(s, "supply:") {
+			canonical = s
+		}
+	}
+	var aliases []string
+	for _, s := range same {
+		if s != canonical {
+			aliases = append(aliases, s)
+		}
+	}
+	return canonical, aliases
 }
