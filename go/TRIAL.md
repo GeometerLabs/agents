@@ -1663,5 +1663,11 @@ process per part behind a router, and why) is bundle/Explanation.md "Several tem
 - **One owner's page**: every part's items, coming list, credit rows, parents and cash in the shop's order, the one assistant's view (Stock orders' order cards left out as its
   own page leaves them), the Money section summed over the parts.
 
+- **Memory** (25 Nov 2026, this Mac, RSS after five beats): the starter shop on `parts` **48.5 MB**; its parts each on its own program 40.7 (Fees) + 39.3 (Stock orders)
+  + 33.2 (Orders) = 113.2 MB.
+- **Each part's own contract suite through the parts program** (`CONTRACT_PARTS=first|last`, templates/commerce/parts/contract/via-parts.ts): the harness wraps the test's
+  settings as one part beside two quiet companions; cases that test what a parts shop is not by design are SKIPPED with the reason (via-parts.ts BY_DESIGN: the status's
+  name, a settings file the test writes itself, the differential against the demo's single shop, refs compared whole, one report per part, the shop's one page and chat).
+
 TypeScript findings: none in the templates' code. One thing worth knowing: the Orders skill owns `g-` references (`^[og]-`) and so does the Fees skill (`^[fqg]-`); in a
 parts shop a press on a `g-` case is owned by two parts and is recorded and not done (the router never guesses).
