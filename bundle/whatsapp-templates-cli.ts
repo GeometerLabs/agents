@@ -63,7 +63,7 @@ export async function whatsappTemplatesCommand(appDir: string, serverDir: string
   if (missing === "app-id") throw new Error(`The Gupshup app ${account.provider === "gupshup-selfserve" ? account.appName : ""} has no app id in runtime.json, and Gupshup's create call needs it. Add it in the panel's WhatsApp step (Gupshup shows it on the app's page).`);
   // the shop's own set (its parts, in its languages), unless --template names one template; --languages and --only narrow it for a careful first try
   const languages = list(flags.languages);
-  const all = flags.template ? templateSet(shopParts(flags.template, (id) => checkoutDirOf(appDir, id)), languages)
+  const all = flags.template ? templateSet(shopParts({ templateId: flags.template, settings: undefined, folderOf: (id) => checkoutDirOf(appDir, id) }), languages)
     : shopTemplateSet({ templateId: templateOf(serverDir, shop), settings: readJson(join(dir, "settings.json")), folderOf: (id) => checkoutDirOf(appDir, id) });
   const entries = select(all, { languages, only: list(flags.only) });
   if (entries.length === 0) throw new Error(all.length === 0 ? `There is no list of WhatsApp templates for ${shop} in this checkout (templates/<domain>/<template>/whatsapp-templates.json).` : "No template matches --languages / --only.");

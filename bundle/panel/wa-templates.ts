@@ -365,7 +365,7 @@ ${counts ? html`<ul class="plain">${BUCKETS.filter((b) => counts[b] > 0 || b ===
 <p class="note">${s?.provider ? w.asOf(s.provider, when(s.at)) : ""}</p>
 <p>${counts.approved === s!.total ? w.allApproved : counts.pending > 0 || notSent > 0 ? w.pendingHelp : ""}</p>` : !v.busy && !s?.blocked && !s?.stop ? html`<p>${w.never}</p>` : ""}
 ${s?.blocked ? html`<p class="warn">${w.blocked[s.blocked]}</p>` : ""}
-${stopLine ? html`<p class="warn">${stopLine}</p>` : ""}
+${stopLine ? html`<p class="warn">${stopLine}${s?.stop && (s.stop.kind === "other" || s.stop.kind === "guard") ? html`<br><small class="note">${s.stop.message}</small>` : ""}</p>` : ""}
 ${list(w.rejectedHead, (s?.rejected ?? []).map((r) => html`<li><code>${r.name}</code> (${r.language}): ${r.reason ?? w.noReason}</li>`), counts?.rejected ?? 0)}
 ${(s?.rejected ?? []).length > 0 ? html`<p class="note">${w.rejectedHelp}</p>` : ""}
 ${list(w.stoppedHead, (s?.stopped ?? []).map((r) => html`<li><code>${r.name}</code> (${r.language}): ${r.state.toLowerCase()}</li>`), counts?.stopped ?? 0)}

@@ -100,18 +100,21 @@ export function shopLanguages(settings: unknown): string[] {
   return [...found];
 }
 
+/** What a shop is, for its template set: the template it is set up from, its settings (decision 65 will read its parts there), and where a template's folder is. */
+export interface ShopTemplates { templateId: string; settings: unknown; folderOf: (id: string) => string | undefined }
+
 /**
- * The template parts a shop has. Today one: the template it is set up from (its pathway.lock, or the panel's record of its kind). Decision 65 (a shop of several
- * parts) changes this one function, and every caller (the panel, the command line) then submits the union.
+ * The template parts a shop has. Today one: the template it is set up from (its pathway.lock, or the panel's record of its kind); `settings` is not read yet. Decision 65
+ * (a shop of several parts) changes this one body, and every caller (the panel, the command line) then submits the union.
  */
-export function shopParts(templateId: string, folderOf: (id: string) => string | undefined): TemplatePart[] {
-  const folder = folderOf(templateId);
-  return folder ? [{ id: templateId, folder }] : [];
+export function shopParts(o: ShopTemplates): TemplatePart[] {
+  const folder = o.folderOf(o.templateId);
+  return folder ? [{ id: o.templateId, folder }] : [];
 }
 
 /** A shop's template set: its parts' templates, in its languages. The one function the panel and the command line ask. */
-export function shopTemplateSet(o: { templateId: string; settings: unknown; folderOf: (id: string) => string | undefined }): Entry[] {
-  return templateSet(shopParts(o.templateId, o.folderOf), shopLanguages(o.settings));
+export function shopTemplateSet(o: ShopTemplates): Entry[] {
+  return templateSet(shopParts(o), shopLanguages(o.settings));
 }
 
 // ---- 2. the shop's account -----------------------------------------------------------------------------------------------------------------------------

@@ -3,9 +3,16 @@
 // (the WhatsApp Business Account id) and Gupshup self-serve (the app id) both. Without the built program the test says it was skipped and why.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { agentOperations, whatsappGuardDef, whatsappSpec } from "../generate/guards.ts";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { deploy } from "../deploy.ts";
+import { panelRuntime } from "./helpers.ts";
+import { read, world } from "./world.ts";
+import { agentOperations, guardToml, whatsappGuardDef, whatsappSpec } from "../generate/guards.ts";
 import { STANDIN_PROVIDER_AUTHORIZATION } from "../agent/guard-process.ts";
-import { credential, skipWithoutBinary, startRealGuard } from "./real-guard.ts";
+import { BINARY, credential, skipWithoutBinary, startRealGuard } from "./real-guard.ts";
 import { startMetaTemplateStandin } from "../../modules/standins/meta-templates.ts";
 import { startGupshupTemplateStandin } from "../../modules/standins/gupshup-templates.ts";
 import { guardCall, gupshupProvider, metaProvider, readEntries, run, select } from "../lib/wa-templates.ts";
@@ -15,6 +22,7 @@ const PHONE = "100000000000001";
 const APP = "11111111-aaaa-bbbb-cccc-222222222222";
 const ID = { tenant: "glow-salon", name: "glow-salon-whatsapp", version: 1, reviewedBy: "builder-arjun" };
 const ORDERS = new URL("../../templates/commerce/orders/", import.meta.url).pathname;
+const metaOne = () => { const e = readEntries(ORDERS).find((x) => x.name === "order_confirmed" && x.language === "kn")!; return { name: e.name, language: e.language, category: e.category, parameter_format: e.parameter_format, components: e.components }; };
 const two = () => select(readEntries(ORDERS), { languages: ["en"], only: ["order_confirmed", "order_hold_ended"] });
 
 test("the spec has template routes only when the account is named, and only the panel's agent may use them", () => {
@@ -48,6 +56,11 @@ test("Meta direct through the real Guard: the panel lists and submits in the sho
     // the runtime's own credential: its send and read are as before, a template is refused by the Guard and never reaches Meta
     const asRuntime = await run({ entries: select(readEntries(ORDERS), { languages: ["hi"], only: ["order_confirmed"] }), provider: metaProvider(guardCall(guard.agentUrl, runtime.token), WABA), mode: "submit" });
     assert.equal(asRuntime.stopped?.kind, "guard", asRuntime.lines.join("\n"));
+    // and a create straight from the runtime's credential, without the list first: denied by the Guard and not sent (the count below), never reaching Meta. The Guard of
+    // 15 Nov answers an operation outside the agent's list with HTTP 500 "internal error in the Guard" and decision "deny", not a 403 (reported to the monorepo).
+    const post = await fetch(`${guard.agentUrl}/v26.0/${WABA}/message_templates`, { method: "POST", headers: { authorization: `Bearer ${runtime.token}`, "content-type": "application/json" }, body: JSON.stringify(metaOne()) });
+    const denied = await post.json() as { guard?: { decision?: string; sent?: string } };
+    assert.ok(post.status >= 400 && denied.guard?.decision === "deny" && denied.guard.sent === "no", JSON.stringify(denied));
     // another account than the shop's: refused by the exact rule, for the panel too
     const other = await run({ entries: two(), provider: metaProvider(guardCall(guard.agentUrl, panel.token), "999999999999"), mode: "status" });
     assert.equal(other.stopped?.kind, "guard", other.lines.join("\n"));
@@ -74,4 +87,45 @@ test("Gupshup self-serve through the real Guard: the panel submits to the shop's
     assert.equal(asRuntime.stopped?.kind, "guard", asRuntime.lines.join("\n"));
     assert.equal(g.created.length, 2);
   } finally { await guard.stop(); await g.close(); }
+});
+
+test("the real Guard compiles both template specs, and their tripwires hold with the agents' operation lists in guard.toml (a deploy and go-live's 'every limit proven' need it)", { skip: skipWithoutBinary }, () => {
+  const specs = [
+    { spec: whatsappSpec(ID, { phoneNumberId: PHONE, messagesPerHour: 200, wabaId: WABA }), def: whatsappGuardDef(), upstream: "graph.facebook.com:443" },
+    (() => { const route = { provider: "gupshup-selfserve" as const, appName: "Glow_Salon", sourceNumber: "919876543210", appId: APP }; return { spec: whatsappSpec(ID, { phoneNumberId: "919876543210", messagesPerHour: 200, route }), def: whatsappGuardDef(route), upstream: "api.gupshup.io:443" }; })(),
+  ];
+  for (const { spec, def, upstream } of specs) {
+    const dir = mkdtempSync(join(tmpdir(), "geo-wa-templates-"));
+    try {
+      writeFileSync(join(dir, "spec.json"), JSON.stringify(spec));
+      const compiled = JSON.parse(execFileSync(BINARY, ["compile", "--spec", join(dir, "spec.json"), "--out", join(dir, "bundle.json")], { encoding: "utf8" })) as { digest: string; tripwires: { passed: number; of: number } };
+      assert.equal(compiled.tripwires.passed, compiled.tripwires.of, `${upstream}: every tripwire passes`);
+      const ops = agentOperations("whatsapp", spec);
+      const toml = guardToml({ def, tenant: ID.tenant, deployment: "glow-salon-whatsapp", bundleDigest: compiled.digest, upstream: { host: upstream, tls: true }, adminSha: "b".repeat(64),
+        agents: [{ id: "runtime-glow-salon", sha: "c".repeat(64), operations: ops.runtime }, { id: "panel-glow-salon", sha: "d".repeat(64), operations: ops.panel }] });
+      writeFileSync(join(dir, "guard.toml"), toml);
+      assert.match(execFileSync(BINARY, ["verify-bundle", join(dir, "bundle.json"), "--config", join(dir, "guard.toml")], { encoding: "utf8" }), /tripwires: passed/);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  }
+});
+
+test("deployed, a Meta-direct shop with its WhatsApp Business Account id: the Guard has the template routes, guard.toml lists each agent's operations, and the runtime's own config never carries the id", async () => {
+  const shop = panelRuntime({ services: { payments: {}, calendar: { calendarId: "glow@example.com" }, messaging: { phoneNumberId: "100000000000001", wabaId: WABA }, timeoutMs: 20_000 } as never });
+  const w = world({ "glow-salon": shop }, { panel: { enabled: true } });
+  try {
+    w.handIn("glow-salon");
+    const [r] = await deploy(w.ctx);
+    assert.equal(r.shop, "glow-salon");
+    const spec = JSON.parse(read(join(w.paths.generated, "guards", "g-glow-salon-whatsapp", "spec.json")));
+    assert.ok(spec.routes.some((x: { operation: string; path: string }) => x.operation === "submit_template" && x.path === "/{version}/{waba_id}/message_templates"));
+    assert.ok(spec.rules.some((x: { operation: string; allowed_values: string[] }) => x.operation === "submit_template" && x.allowed_values[0] === WABA));
+    const toml = read(join(w.paths.generated, "guards", "g-glow-salon-whatsapp", "guard.toml"));
+    assert.match(toml, /id = "runtime-glow-salon"\n[^\[]*operations = \["send", "read_number"\]/u, "the runtime may send and read, and not make templates");
+    assert.match(toml, /id = "panel-glow-salon"\n[^\[]*operations = \["read_number", "list_templates", "submit_template"\]/u);
+    const other = read(join(w.paths.generated, "guards", "g-glow-salon-razorpay", "guard.toml"));
+    assert.doesNotMatch(other, /template/u, "another Guard of the shop is as it was");
+    const runtime = JSON.parse(read(join(w.paths.generated, "shops", "glow-salon", "client", "runtime.json")));
+    assert.equal(runtime.services.messaging.wabaId, undefined, "the runtime never sees the account id");
+    assert.equal(runtime.services.messaging.phoneNumberId, "100000000000001");
+  } finally { w.done(); }
 });
