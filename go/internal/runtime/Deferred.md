@@ -17,3 +17,10 @@
 |------|-----------|-------------|----------------------|
 | The outgoing check's facts of a packed line, key by key | words.ts Writer (each call notes its own value) | the Go side fills packed words, so a key's fixed facts are generated from every value the TypeScript noted in that language (gen_words.ts factsOf, kept where their text is in the key's words) and a slot is typed by its name | a fixed number equal to one noted elsewhere in the same language would pass in Go and be held back in TypeScript; none does today (the generator proves each key passes with exactly its facts) |
 
+
+## The morning line's quiet day (25 Nov 2026, morning-clock-25nov)
+
+* A day the morning line finds quiet (nothing to say) is remembered by the process only (`runMorning` sets `morningDone`; no record line), as the deleted `morning.ts` did (`finished`). A shop
+  restarted inside the four-hour window looks again, so a day that was quiet at 08:00 can still get its line later that morning, counting what happened since. Never a second line
+  (a line sent is in the record) and never outside the window. Whether a quiet day should be written down so a restart does not look again is the owner's call. (The Bookings
+  hand check's monthly-report situation restarts its shop at 09:00 on 1 December, inside the window; it judges the report, not the morning line.)

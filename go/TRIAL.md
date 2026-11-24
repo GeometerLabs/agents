@@ -1648,3 +1648,17 @@ about one time in 4,000, so the record's own link was cut in two and read as a l
 (`owner_message_held`, unasked, outside the owner's window) had no WhatsApp template and went under the generic name. Fixed in both runtimes at once (the check is shared, so
 the TypeScript change is the same fix, with a test): the record's own links are read whole first. `owner_message_held` is now the template `owner_fee_message_held`, its
 hi/ml/kn words starting with fixed words; whatsapp-templates.json, the review sheets and the Go words regenerated. TypeScript finding: the same bug, fixed (above).
+
+## morning-clock-25nov: the assistant hand check's evening failure, found at its cause (25 Nov 2026)
+
+Bookings with the assistant held 40 of 40 in the morning runs of 24 Nov and 39 of 40 in the evening ones ("The model is down mid-conversation": the owner got the morning line
+after the heads-up). Not the time of day: the same situation held alone at 19:25 and failed in the full run at 19:28. The shop's beat runs on a real-time timer from the process's
+start (0.2 s in the hand check), the world opens at 10:00 on the shop's clock, inside the owner's morning window, and the situation books and pays in some 0.15 s. In the failing
+run the booking was confirmed at .226 and the first beat claimed the morning line at .230, counting it; when the beat came first, the day was quiet and the process did not look
+again (`runtime/morning.go`, as `morning.ts` did). A margin of milliseconds, so any change in start-up or step speed flipped it. Fixed in the hand check, not the program: a
+hand-check shop's start (`modules/crash-test/go-shop.ts`, also after a restart) now returns once its first beat has ended, as a running shop has beaten before its customer
+writes; every template's world shares it. The owner link file is now made at the shop's start instant too (it was the machine's time; the program only checks it is there).
+Test: `templates/commerce/bookings/test/first-beat.test.ts` (a 2 s beat; before the fix the morning line always went, after it never). A live shop saw nothing wrong: its line
+goes once, inside the window. The quiet day kept per process only is noted in `internal/runtime/Deferred.md`. The cost: about 0.25 s a world (one beat), so the Bookings hand
+check takes some 27 s instead of 17 s, Orders' 9 s instead of 5 s.
+
