@@ -8,7 +8,8 @@
 //   2. runtime.json says `"mode": "fakes"` and `"standins": "http"` (go/internal/runtime/config.go): a fakes shop may run on the TEST clock, and its services are the
 //      stand-ins named in `services`, on 127.0.0.1, reached through the same clients a live shop uses. So a stand-in can fail on purpose (a lost reply, a calendar that saves
 //      nothing) and keeps the records each situation is judged from, while the shop runs the code a real shop runs;
-//   3. starts the program with an environment written out in full (never this process's: no NODE_ENV, nothing passed through), the test clock switched on for it alone;
+//   3. starts the program with an environment written out in full (never this process's: no NODE_ENV, nothing passed through), the test clock switched on for it alone,
+//      and waits for its first beat to end, so what that beat decides for the day is decided before the situation's first step;
 //   4. feeds it events over HTTP as the inbox and the channel do, waits until its queue is empty, waits for a beat of its clock, and reads its record and its saved state from
 //      agent.db read-only (the same file the TypeScript runtime wrote: a shop moves between the two and loses nothing, so the TypeScript readers read it).
 // The clock: the program reads the machine's clock plus an offset from a file (go/internal/testclock); this side's stand-ins read the same offset, so both see one time. Time
@@ -132,7 +133,9 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   const pagesDir = join(root, "pages");
   const report = o.report ? { report: { preparedBy: "the hand check", pageBaseUrl: "https://reports.example.com/r", pagesDir } } : {};
   writeFileSync(join(client, "runtime.json"), JSON.stringify({ mode: "fakes", standins: "http", host: "127.0.0.1", port, dataDir, tickSeconds: BEAT_SECONDS, services, ...report, ...(o.runtime ?? {}) }));
-  writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));
+  // made at the shop's start instant, not the machine's: the hand check writes nothing from real time into a shop that runs on the test clock (the program only checks that
+  // `createdAt` is there, go/internal/access OwnerLinkMatches, so this was not what made the morning line race; see `firstBeat` below)
+  writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date(o.at))));
   const page = `https://pages.example/${o.slug}`;
   writeFileSync(join(client, "pages.json"), JSON.stringify({ schema: 1, base: page, ownerBase: "https://pages.example/owner", slug: o.slug, url: page, ...(o.character ? { character: { version: o.character } } : {}) }));
   for (const [name, value] of Object.entries(o.files ?? {})) writeFileSync(join(client, name), JSON.stringify(value));
@@ -151,7 +154,24 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
     [TEST_SWITCH]: "1", [TEST_CLOCK_FILE]: file.file, HOME: root, TMPDIR: tmpdir(),
   };
   let running: RuntimeProcess | undefined;
-  const start = async (): Promise<void> => { running = await startRuntimeProcess(o.program, ["--client", client], env, url, `the hand check's ${o.pathway} shop in ${root}`, printed); };
+  // A start returns only once the program's FIRST beat has ended (/status `ticks`, the beats that have ended, counted again from 0 by every process). Why (25 Nov 2026): the beat
+  // runs on its own timer (go/internal/runtime Start, every BEAT_SECONDS of real time from the process's start), and what the first beat decides once for the day (the owner's
+  // morning line: silent on a day with nothing to say, and then not looked at again by that process) depended on whether it came before or after the situation's first steps.
+  // A situation that books and pays in under 0.2 s raced it: in the evening runs of 24 Nov the booking was confirmed 4 ms before the first beat, so the morning line counted it
+  // and went to the owner mid-situation (Bookings with the assistant, "The model is down mid-conversation", 39 of 40). A real shop has been beating before its customer writes;
+  // so has this one now, whatever the speed of the machine.
+  const firstBeat = async (): Promise<void> => {
+    const until = Date.now() + SETTLE_MS;
+    while (Date.now() < until) {
+      const s = await callRuntime(url, "/status", { token: internal });
+      if (s.status === 200 && Number(s.body?.ticks ?? 0) >= 1) return;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    throw new Error(`the shop's first beat did not end in ${SETTLE_MS / 1000} s`);
+  };
+  const start = async (): Promise<void> => { running = await startRuntimeProcess(o.program, ["--client", client], env, url, `the hand check's ${o.pathway} shop in ${root}`, printed);
+    try { await firstBeat(); } catch (e) { await running.stop(); running = undefined; throw e; }
+  };
   try {
     try { await start(); } catch (e) {
       // the program serves one version of its template and refuses a folder pinned to another (runtime.LoadClientKit). The hand check runs the program that is here, so the
