@@ -9,6 +9,10 @@
 // Ways in: an invitation then a passphrase (both modes); a reset link for a forgotten passphrase (both modes, made on the command line); and, on Geometer's
 // Operator server only, a local Operator's geometer.dev sign-in (fleet-signin.ts, plan decision 53). A shop OWNER never signs in here: owners use their own view's
 // setup QR and passkey.
+import { addPart, addable, exampleBlock, openCasesOf, partsOf, removePart } from "./parts.ts";
+import { partsLinkWord, partsPage } from "./views-parts.ts";
+import { partsLimitFor } from "../lib/parts-limit.ts";
+import { isPartName } from "../../templates/commerce/parts/src/settings.ts";
 import { panelServer } from "./ondemand.ts";
 import { LOGIN_WINDOW_MS } from "./ratelimit.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -178,6 +182,8 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
   const loginByAddress = createLimiter(20, LOGIN_WINDOW_MS, now);
   const loginByName = createLimiter(5, LOGIN_WINDOW_MS, now);
   const templates = () => discoverTemplates(config.templatesDir);
+  // decision 65: the parts template is not one an Operator starts a shop with (the owner never chooses a template): a shop becomes one by taking a second part (/shops/<id>/parts)
+  const offerable = () => templates().filter((t) => t.id !== "parts");
   // the trades of the first set-up question (presets.ts): data files next to the panel, read once; a broken one stops the panel here, naming the file
   const presets = loadPresets(PRESETS_DIR, ["bookings", ...Object.keys(SETUPS)]);
   const offeredPresets = () => presets.filter((p) => templates().some((t) => t.id === p.template));
@@ -563,7 +569,9 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const month = settings ? monthOf(now(), settings.timezone) : "";
     const kindId = shops.kind(id);
     const own = setupOf(kindId);
-    const report = settings && data && !own ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
+    // decision 65: a shop of several parts has no one template's summary, cost table, report or limit lines here: its parts page says what it runs (/shops/<id>/parts)
+    const isParts = kindId === "parts";
+    const report = settings && data && !own && !isParts ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
     const pagesNotice = new URL(r.req.url ?? "/", "http://x").searchParams.get("pages");
     const plan = planView(shops.fleet(id), prices, config.mode === "own", counts?.ai?.budget, shops.budgetOverride(id)); // a panel on a builder's own server: the builder licence; the shop's own model budget comes from its runtime's status (decision 60)
@@ -572,9 +580,9 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const view: ShopView = {
       id, name: settings?.name ?? id, live, ...(wa.state || wa.busy ? { waTemplates: wa } : {}), status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
       ...(tradeLabel(shops.meta(id).trade, presets, c.lang) ? { trade: tradeLabel(shops.meta(id).trade, presets, c.lang) } : {}),
-      summary: settings && !own ? summaryOf(c, settings) : undefined,
+      summary: settings && !own && !isParts ? summaryOf(c, settings) : undefined,
       // a Fees or Orders shop: its own pieces, with the plan's allowance from the price list in force; Bookings: the cost table
-      ...(own ? (settings ? { own: own.pieces(c, settings, data, month, prices.rates["plan.business.allowance"]?.count ?? null, now()) } : {}) : { cost: costFor(id, settings ?? ({ reminders: { hoursBefore: [24, 2] }, deposit: { amountInr: 0 } } as unknown as Settings)) }),
+      ...(isParts ? {} : own ? (settings ? { own: own.pieces(c, settings, data, month, prices.rates["plan.business.allowance"]?.count ?? null, now()) } : {}) : { cost: costFor(id, settings ?? ({ reminders: { hoursBefore: [24, 2] }, deposit: { amountInr: 0 } } as unknown as Settings)) }),
       ...(plan ? { plan } : {}),
       ...(licence ? { licence } : {}),
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
@@ -582,6 +590,8 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
       ...(leave.view(id) ? { leave: leave.view(id)! } : {}),
       ...(counts ? { liveCounts: { bookings: counts[kindFor(kindId)!.casesName] ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
+      // decision 65: every shop whose template can be a part (and every parts shop) has the parts page
+      ...(isParts || isPartName(kindId) ? { partsLink: partsLinkWord(c.lang) } : {}),
       // item 11d: a shop whose template has a page (Bookings; item 11h: Orders and Fees too), and only a panel that knows the server's public address can show its links
       // Stock orders has an owner's page and no public page, so there is no booking-page block to show for it
       ...(hasPage(kindId) && kindId !== "stock-orders" && kindId !== "listings" && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
@@ -594,7 +604,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings) && kindId !== "listings", month },
       isBuilder: r.account!.role === "builder",
       ...(r.account!.role === "builder" ? { details: { statusJson: read.ok ? JSON.stringify(read.status, null, 2) : "—", pins: JSON.stringify(shops.pins(id) ?? {}, null, 2), runtimeJson: JSON.stringify(counts ?? {}, null, 2) } } : {}),
-      limitsText: !settings ? [] : own ? own.limitLines({} as unknown as Draft, settings, c.lang, settings) : Object.values(limitList(c, { form: { deposit: String(settings.deposit.amountInr) }, windowHours: String(settings.cancellation.windowHours) } as unknown as Draft, settings.deposit.holdMinutes)),
+      limitsText: !settings || isParts ? [] : own ? own.limitLines({} as unknown as Draft, settings, c.lang, settings) : Object.values(limitList(c, { form: { deposit: String(settings.deposit.amountInr) }, windowHours: String(settings.cancellation.windowHours) } as unknown as Draft, settings.deposit.holdMinutes)),
       ...(notice && NOTICES.has(notice) ? { notice: c.w.shop.reportMade } : {}),
     };
     page(r, 200, shopPage(c, view));
@@ -788,6 +798,51 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     if (made) log(`shop terms copy of ${ref.id} downloaded by ${r.account!.id}`);
     sendPaper(r, made);
   });
+  // decision 65: the shop's template parts (panel/parts.ts says the rules): which it runs, add one, take one out. Writes settings.json and pathway.lock; the deployer then runs
+  // the shop on go/cmd/parts at its next pass. The parts limit is the plan's (lib/parts-limit.ts, from the price list in force); the open cases are the runtime's own count.
+  const partsPageFor = async (r: Req, id: string, o: { saved?: boolean; problems?: string[]; block?: { part: string; text: string } } = {}): Promise<void> => {
+    const raw = rawSettings(shops, id) ?? {};
+    const lock = shops.lock(id) ?? "";
+    const limit = partsLimitFor(shops.fleet(id)?.plan, prices);
+    const examples = addable(raw, lock).map((part) => {
+      const t = templates().find((x) => x.id === part);
+      let block: Record<string, unknown> = {};
+      try { if (t?.settingsExample) block = exampleBlock(part, JSON.parse(readFileSync(join(t.folder, t.settingsExample), "utf8")) as Record<string, unknown>); } catch { block = {}; }
+      return { part, block: o.block?.part === part ? o.block.text : JSON.stringify(block, null, 2) };
+    });
+    const carried = typeof raw.carried === "string" ? raw.carried : undefined;
+    page(r, o.problems ? 400 : 200, partsPage(r.ctx(), { id, name: shops.settings(id)?.name ?? id, parts: partsOf(raw, lock), ...(carried ? { carried } : {}), addable: examples, ...(limit !== undefined ? { limit } : {}), ...(o.saved ? { saved: true } : {}), ...(o.problems ? { problems: o.problems } : {}) }));
+  };
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/parts$/u, "user", async (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    await partsPageFor(r, ref.id, { saved: new URL(r.req.url ?? "/", "http://x").searchParams.get("saved") === "1" });
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/parts\/add$/u, "user", async (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const part = String(r.form.part ?? "");
+    const text = String(r.form.block ?? "");
+    let block: unknown;
+    try { block = JSON.parse(text); } catch { return partsPageFor(r, ref.id, { problems: ["The part's settings are not valid JSON."], block: { part, text } }); }
+    const made = addPart({ settings: rawSettings(shops, ref.id) ?? {}, lock: shops.lock(ref.id) ?? "", part, block, plan: shops.fleet(ref.id)?.plan ?? null, limit: partsLimitFor(shops.fleet(ref.id)?.plan, prices) });
+    if (!made.ok) return partsPageFor(r, ref.id, { problems: made.errors, block: { part, text } });
+    shops.writeFolder(ref.id, { settings: made.settings, runtime: shops.runtime(ref.id) ?? {}, lock: made.lock }, undefined, r.account!);
+    log(`part ${part} added to ${ref.id} by ${r.account!.id}`);
+    redirect(r, `/shops/${ref.id}/parts?saved=1`);
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/parts\/remove$/u, "user", async (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const part = String(r.form.part ?? "");
+    const { counts } = await shops.probeRuntime(ref.id);
+    const cases = counts ? (counts[kindFor("parts")!.casesName] as Record<string, unknown> | undefined) : undefined;
+    const made = removePart({ settings: rawSettings(shops, ref.id) ?? {}, lock: shops.lock(ref.id) ?? "", part, openCases: counts ? openCasesOf(cases, part) : undefined });
+    if (!made.ok) return partsPageFor(r, ref.id, { problems: made.errors });
+    shops.writeFolder(ref.id, { settings: made.settings, runtime: shops.runtime(ref.id) ?? {}, lock: made.lock }, undefined, r.account!);
+    log(`part ${part} taken out of ${ref.id} by ${r.account!.id}`);
+    redirect(r, `/shops/${ref.id}/parts?saved=1`);
+  });
   // B29: the shop's voice-notes switch. A block in the shop's runtime.json; no block means off. The deployer refuses it unless the server holds the speech key and places the Guards.
   const voicePageFor = (r: Req, id: string, problem = false): void => {
     const c = r.ctx();
@@ -967,7 +1022,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
   });
 
   on("GET", /^\/setup$/u, "user", (r) => page(r, 200, setupStartPage(r.ctx(), offeredPresets())));
-  on("GET", /^\/setup\/other$/u, "user", (r) => page(r, 200, setupOtherPage(r.ctx(), templates(), { trade: "", problems: [] })));
+  on("GET", /^\/setup\/other$/u, "user", (r) => page(r, 200, setupOtherPage(r.ctx(), offerable(), { trade: "", problems: [] })));
   // A new shop starts from a trade button (`preset`: the form is prefilled with that trade's examples), or from "Something else" (`trade`: the Operator's own words, and `template`: the kind
   // of work; the form starts empty). A bare `template` (a builder's own start, the old form) starts as it always did, with no trade.
   on("POST", /^\/setup$/u, "user", async (r) => {
@@ -979,7 +1034,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const template = templates().find((t) => t.id === (preset ? preset.template : r.form.template) && (t.setup === "bookings" || setupOf(t.setup)));
     if (typedGiven && (typed === undefined || (!template && (r.form.template ?? "") === ""))) {
       // the box is empty, or Enter was pressed before a kind of work was picked: ask again, keeping what was written
-      return page(r, 400, setupOtherPage(c, templates(), { trade: typed ?? "", problems: [typed === undefined ? presetWords(c.w).typedEmpty : presetWords(c.w).kindQuestion] }));
+      return page(r, 400, setupOtherPage(c, offerable(), { trade: typed ?? "", problems: [typed === undefined ? presetWords(c.w).typedEmpty : presetWords(c.w).kindQuestion] }));
     }
     if (!template) return notFound(r);
     const id = randomBytes(12).toString("hex");

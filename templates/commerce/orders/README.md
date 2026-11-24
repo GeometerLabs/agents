@@ -147,6 +147,13 @@ Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada peop
 | `report/`, `server/`, `inbox/`, `approvals/` | The monthly report, certificate and papers; what the deployer and the panel read of a shop's folder (the runtime is the Go program `go/cmd/orders` since 0.2.0); the entry points and the relay's voice |
 | `sell/`, `whatsapp-templates.json`, `REVIEW-*.md` | The sell guide, the list to submit to Meta, the review sheets |
 
+## As one part of a shop of several parts (decision 65)
+
+An Orders shop, and in the shop starter its pickup hold, can be one part of a shop that also runs the credit book and Stock orders behind one number
+([templates/commerce/parts](../parts/README.md)). Nothing in its rules changes: `go/internal/orders/part.go` says, by its rules alone, which messages and cases are its own
+(its commands with an `o-` reference, a mark code in its own ledger, an order its reader reads, a picture on a hold shop, a new customer), and `wire.go` is its program's
+wiring, which the parts program reuses. Its contract suite runs through the parts program too: `CONTRACT_PARTS=first node --test --test-concurrency=1 contract/`.
+
 ## What is not done yet
 
 See [Deferred.md](Deferred.md).

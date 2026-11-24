@@ -8,7 +8,8 @@ import { KINDS } from "../lib/kinds.ts";
 import { REVIEW_STATE } from "../panel/languages.ts";
 
 test("the card is made for exactly the templates the bundle can run", () => {
-  assert.deepEqual([...CARD_TEMPLATES].sort(), Object.keys(KINDS).sort());
+  // a shop of several parts (decision 65) takes the cards of the templates it runs as parts, so it has none of its own
+  assert.deepEqual([...CARD_TEMPLATES].sort(), Object.keys(KINDS).filter((k) => k !== "parts").sort());
 });
 
 test("the card's machine-written markers are the panel's REVIEW_STATE: change both together, when a named reader has signed", () => {

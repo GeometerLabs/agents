@@ -313,6 +313,14 @@ type recordAdapter struct{ r RecordSource }
 
 func (a recordAdapter) Entries() []accounting.Entry { return a.r.Entries() }
 
+// ShopEntries is the shop's whole record when the source is one part's view of a shop of several parts (decision 65: document numbers are the business's), else Entries.
+func (a recordAdapter) ShopEntries() []accounting.Entry {
+	if s, ok := a.r.(interface{ ShopEntries() []store.Entry }); ok {
+		return s.ShopEntries()
+	}
+	return a.r.Entries()
+}
+
 // Append is record.ts append: a line without a case is written with a null `booking`.
 func (a recordAdapter) Append(n accounting.NewEntry) accounting.Entry {
 	booking := ""

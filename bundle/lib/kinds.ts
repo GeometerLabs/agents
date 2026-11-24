@@ -50,6 +50,11 @@ import { writeGoLiveCertificate as feesWrite } from "../../templates/education/f
 import { gatewayLimitsSpec as feesSpec } from "../../templates/education/fees/src/guard-limits.ts";
 import { validateSettings as feesSettings } from "../../templates/education/fees/src/settings.ts";
 import { validateRuntimeConfig as feesRuntime } from "../../templates/education/fees/server/config.ts";
+// decision 65: a shop of several template parts (templates/commerce/parts): its settings check, runtime check, limits and papers are its parts' own, joined
+import { validateSettings as partsSettings } from "../../templates/commerce/parts/src/settings.ts";
+import { validateRuntimeConfig as partsRuntime } from "../../templates/commerce/parts/server/config.ts";
+import { partsLimits } from "../../templates/commerce/parts/src/limits.ts";
+import { buildGoLiveCertificate as partsCertificate, policyDigest as partsDigest, summariseRun as partsSummary, writeGoLiveCertificate as partsWrite } from "../../templates/commerce/parts/report/papers.ts";
 
 /** The services a template calls, each of which has a Guard. The order fixes each Guard's address on the admin network (generate/compose.ts). */
 export type ServiceKind = "razorpay" | "whatsapp" | "calendar";
@@ -93,7 +98,7 @@ export interface GoLiveCertificateLike { checks: { failed: number }; notTested: 
 export interface CarriedState { assistant?: unknown; ai?: unknown }
 
 export interface Kind {
-  id: "bookings" | "fees" | "orders" | "stock-orders" | "listings";
+  id: "bookings" | "fees" | "orders" | "stock-orders" | "listings" | "parts";
   /**
    * True for a template that runs on the server's ONE shared process (templates/commerce/listings): no Guard, no container, no network of its own, a folder in the shared data
    * volume. Everything that is per shop for the other templates (compose services, secrets folders, the data volume, the client folder) asks this first (lib/shared.ts).
@@ -102,7 +107,7 @@ export interface Kind {
   /** The file the deployer exports this template's cases to (backup/export.ts), and what the runtime's status and the export call them. Left out: a template with no cases (listings-only). */
   casesFile?: "bookings.json" | "dues.json" | "orders.json" | "purchase-orders.json";
   /** What the runtime's status calls the cases. Stock orders says "orders" too (its status counts its purchase orders by state under that name). */
-  casesName: "bookings" | "fees" | "orders" | "listings";
+  casesName: "bookings" | "fees" | "orders" | "listings" | "cases";
   /**
    * A new store of THIS template that holds `carried` and nothing else, as the saved text the runtime reads: how a listings-only shop that takes an agent keeps its listings
    * (bundle/lib/listings-move.ts). Left out by the listings template itself (a shop never moves into it from another template).
@@ -185,6 +190,24 @@ export const KINDS: Record<string, Kind> = {
     storeWith: carry(stockStore, stockSerialize),
     validateRuntimeConfig: stockRuntime,
     papers: { runOn: (settings) => import("../../templates/commerce/stock-orders/crash-test/situations.ts").then((m) => m.runOn(settings)), summariseRun: stockSummary, buildGoLiveCertificate: stockCertificate, policyDigest: stockDigest, writeGoLiveCertificate: stockWrite },
+  },
+  // Decision 65 (25 Nov 2026): ONE shop of several template parts behind its one number (templates/commerce/parts; go/cmd/parts): the credit book, Stock orders and the pickup
+  // hold, or any of Fees, Orders and Stock orders. WhatsApp only: a parts shop takes UPI (no gateway Guard yet) and has no calendar. Its WhatsApp Guard writes to any number
+  // when any part writes to customers (Stock orders' fixed list then no longer narrows it: the owner's to confirm, go/TRIAL.md); its limits are each part's own, under the
+  // part's name; its papers run every part's situations on the shop's own program (templates/commerce/parts/report/papers.ts). Its cases are counted by part ("orders:held").
+  parts: {
+    id: "parts",
+    casesName: "cases",
+    guards: ["whatsapp"],
+    guardRecipients: (settings: { parts: { name: string; settings: unknown }[] }) => {
+      // a fixed list only when EVERY part writes to a fixed list (a shop of Stock orders parts alone); otherwise any number, as a customer-facing part needs
+      const lists = settings.parts.map((p) => KINDS[p.name]?.guardRecipients?.(p.settings));
+      return lists.every((l) => l !== undefined) ? [...new Set(lists.flat() as string[])] : (undefined as unknown as string[]);
+    },
+    validateSettings: partsSettings,
+    chatLimits: partsLimits({ fees: feesChatLimits, "stock-orders": stockChatLimits, orders: [...ordersChatLimits, ...DISCOUNT_CHAT_LIMITS] }),
+    validateRuntimeConfig: partsRuntime,
+    papers: { runOn: (settings) => import("../../templates/commerce/parts/crash-test/hand-check.ts").then((m) => m.runOn(settings)), summariseRun: partsSummary, buildGoLiveCertificate: partsCertificate, policyDigest: partsDigest, writeGoLiveCertificate: partsWrite },
   },
   // Listings only (18 Nov 2026): a shop that only shows what it has. No Guard, no money, no WhatsApp: it runs on the server's one shared process (go/cmd/listings-shared) and is free.
   // It has no hand check or go-live paper (nothing it does can move money or send a message), so `papers` is left out and every place that makes one asks first.

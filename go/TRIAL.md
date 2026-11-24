@@ -1648,6 +1648,110 @@ about one time in 4,000, so the record's own link was cut in two and read as a l
 (`owner_message_held`, unasked, outside the owner's window) had no WhatsApp template and went under the generic name. Fixed in both runtimes at once (the check is shared, so
 the TypeScript change is the same fix, with a test): the record's own links are read whole first. `owner_message_held` is now the template `owner_fee_message_held`, its
 hi/ml/kn words starting with fixed words; whatsapp-templates.json, the review sheets and the Go words regenerated. TypeScript finding: the same bug, fixed (above).
+## d65-parts-25nov: several template parts in one shop (25 Nov 2026, decision 65)
+
+Owner, 24 Nov: "one shop can run several template parts, thats what the higher tier price slab is for". The design note (one Go program hosting the parts, not one
+process per part behind a router, and why) is bundle/Explanation.md "Several template parts in one shop"; what is left, with the owner's questions, is bundle/Deferred.md.
+
+- **The program.** `cmd/parts` with `internal/parts`: a `runtime.Kit` made of the parts' own Kits (Fees for the credit book, Orders for the pickup hold, Stock orders),
+  unchanged. The settings keep the shop's keys at the top and each part's own in `parts.<template>`, each checked by its own template; the saved state keeps each part's
+  members under `parts`, the router's under `router`, and the shared assistant and AI counts as every shop does; `carried` names the template the shop was before it took a
+  second part (its flat state and its record lines from then are that part's).
+- **The seam in the runtime** (`runtime/parts.go`, `record.go`, `serve.go`; nothing changes for a single-part shop): a part's view of the one record (its lines carry
+  `refs.part`, it reads only its own; document numbers over the whole record through accounting `ShopReader`); a beat per part, each its own step (a panic in one part's
+  beat does not skip the others' with OnPanic set); the owner's ONE assistant hosting every part's skill (StepContext.SetCoParts; its record lines written by the part that
+  owns the case); the licence notice and the morning line said once per shop, by the first part (the morning line over every part's skill and the whole record); each part's
+  limits under its own id (`LimitID`: `orders_refund_limit`); one stock count for an item two parts know (StockAliaser: the line under `supply:<id>` with `menu:<id>` as its
+  alias, so the hold's collection lowers it and Stock orders' low mark reorders it once); `CardCode`; `Serve`, the one start of Orders', Fees', Stock orders' and the parts
+  programs (each package's `wire.go` is its main's wiring, moved unchanged).
+- **Each part's `part.go`** says by its rules alone, with no effect, how sure it is a message is its own (runtime.Claim: its command with its own case, its words or an open
+  conversation, a customer's words about what is open, a new customer), which cases and page requests are its own, and hands its skill to the one assistant.
+- **The router** (`internal/parts` router.go, agent.go): the highest claim takes a message; a tie asks one short question with a button per part (words generated from
+  templates/commerce/parts/src/words.ts by scripts/gen_parts_words.ts, `--check`), keeps the message per number for 30 minutes and hands it to the part the answer names; a
+  message no part claims goes to the first part; a STOP goes to every part that knows the number; a redelivery goes where the message went; an owner's press goes to the
+  part that owns the case, a card's answer to the part whose skill made it; a payment event, an approval or a recovery whose case no single part owns is recorded and not done.
+- **One owner's page**: every part's items, coming list, credit rows, parents and cash in the shop's order, the one assistant's view (Stock orders' order cards left out as its
+  own page leaves them), the Money section summed over the parts.
+
+- **Memory** (25 Nov 2026, this Mac, RSS after five beats): the starter shop on `parts` **48.5 MB**; its parts each on its own program 40.7 (Fees) + 39.3 (Stock orders)
+  + 33.2 (Orders) = 113.2 MB.
+- **Each part's own contract suite through the parts program** (`CONTRACT_PARTS=first|last`, templates/commerce/parts/contract/via-parts.ts): the harness wraps the test's
+  settings as one part beside two quiet companions; cases that test what a parts shop is not by design are SKIPPED with the reason (via-parts.ts BY_DESIGN: the status's
+  name, a settings file the test writes itself, the differential against the demo's single shop, refs compared whole, one report per part, the shop's one page and chat).
+
+Findings in the templates' own situations (both fixed at their cause in part B, below):
+- **Stock orders read the digit in an item's name as a quantity.** On the starter shop, "LED bulb 9W is low" was read as an order of 9 (reading.ts `quantityIn`
+  took the first run of digits not after a word character; its Go twin did the same), so the low-stock situation (#15) ordered 9 where the usual quantity is 10.
+- **Stock orders' "the catalogue's price moves" situation (#5) could not run on a shop with the assistant:** it read the settings back with `parseSettings` after its
+  change, and the checked assistant block (`morningAt`) is not a settings key, so it threw before it ran.
+
+TypeScript findings: none in the templates' code. One thing worth knowing: the Orders skill owns `g-` references (`^[og]-`) and so does the Fees skill (`^[fqg]-`); in a
+parts shop a press on a `g-` case is owned by two parts and is recorded and not done (the router never guesses).
+- **Run of record** (25 Nov 2026, through the heat lock, GEO_GUARD_BIN and GEOMETER_MONOREPO set; scratchpad d65-final.sh, the 24 Nov run's script with the parts lines
+  added): `go build/vet ./...` clean, `go test ./...` 41 packages ok; contracts: Bookings 178/178, Orders 136/136, Fees 111/111, Stock orders 74/74, listings 210/210
+  (words-fresh included), directory 36/36, parts 14/14; every generator's `--check` (42) fresh; template units: Bookings 838/838, Orders 216/216, Stock orders 124/124,
+  Fees 244 of 245 (the sell guide's hand-check count, 25 of 26 under load: the Fees flake stream fees-flake-25nov's); bundle 745: 733 pass, 9 skipped (REAL_CADDY), 3
+  failed, each since fixed and passed alone (the kinds list and the ask card now count parts; update.test's copy of the running programs lacked the parts program);
+  panel 288: 286 pass, the two new golive-parts cases since corrected; every hand check on Go as on 24 Nov holds all, and the parts shop's holds 26 of 28 (the shop's own
+  6 of 6, fees 4 of 4, orders 4 of 4, stock-orders 12 of 14: its two findings above, which Stock orders' own program also fails on the starter's stock settings).
+  Through the parts program (`CONTRACT_PARTS=first`): Stock orders 66 pass, 8 skipped by design, 0 fail; Orders 87 pass, 48 skipped (39 gateway cases a parts shop does not
+  take, the rest by design), 1 fail (a Razorpay restart case that starts with test() outside the harness's skip, by design). After the last fixes (targeted rerun, same
+  day): parts 14/14, Orders 136/136 on its own program, bundle update.test 14/14; Fees through the parts program 48 pass, 55 skipped (gateway or by design), 8 fail: 5 by
+  design but outside the skip (the four gateway differential cases and the restart case use test() directly), and 3 open: a picture from a parent the hold could also
+  take is asked about instead of read as "I paid", the owner page's Received press on a parent's claim, and the reminders' words with no page link (bundle Deferred.md).
+
+### Part B (25 Nov 2026): the starter shop passes its own gate
+
+- **A number written against a letter or in a fraction is part of a name, never a quantity** (reading.ts `quantityIn` and reading.go, the same rule): "9W", "5L", "2kg",
+  "16A", "1/2 inch" are names; "2x" keeps its 2; "order 10 LED bulb 9W" is 10. Vectors in en/hi/ml/kn (gen_stockorders_vectors.ts), a Go test
+  (reading_names_test.go) and a contract case (an item named "shampoo 5L": its low mark orders the line's usual 12).
+- **The price situation reads the edited settings back in their file's shape** (`settingsJson`, as the go world writes them), and Stock orders' stand-in knows the
+  assistant's templates when the shop has the assistant. Tests: Stock orders' hand check on a single shop with the assistant, and on items named with a number, holds all.
+- **A Fees part behaves as a Fees shop through the router.** Cause of all three open cases: the shop's customer side was the hold's when the shop had one, so the
+  credit book's parents got no page link and the owner page's items were read as the hold's. The customer side is now the FIRST Orders or Fees part in the shop's order
+  (`customerPart`, Go and TypeScript `customerPartOf`); a customer-facing part that is not it gets no page address. A picture from someone the hold has nothing open with
+  is the hold's only as a new customer (ClaimNew), so a parent's picture is the centre's ("I paid", which the owner still confirms; nothing is settled on a picture).
+- **The by-design cases a suite starts with `test()` itself** (a gateway shop's restart, the gateway differential) are skipped through the parts program with the
+  reason (via-parts.ts `gatewayCaseThroughParts`); the page and link cases are by design only for a part that is not the shop's page (`CONTRACT_PARTS=last`).
+
+- **Owner's words no part claims are the first part's** (a card code no part made, words no part reads): by design, so three cases are skipped with that reason only when
+  the part under test runs last (`CONTRACT_PARTS=last`); they run and pass when it is first.
+- **Run of record** (part B's, through the heat lock, scratchpad d65-final.sh): `go build/vet ./...` clean, `go test ./...` 41 ok; contracts Bookings 178/178,
+  Orders 136/136, Fees 111/111, Stock orders 75/75, listings 210/210, parts 14/14, directory 36/36; generators 42 fresh; units Bookings 838/838, Orders 216/216, Fees
+  245/245, Stock orders 126/126; bundle 745: 736 pass, 9 skipped (REAL_CADDY), 0 fail; panel 288/288. Through the parts program (`first`): Orders 87 pass, 49 skipped,
+  Fees 64 pass, 47 skipped, Stock orders 67 pass, 8 skipped, 0 fail each, every skip named (a payment gateway, which a parts shop does not take, or by design);
+  `last` (six files) 3 failed in that run, then 59 pass, 11 skipped, 0 fail rerun after the entry above. Hand checks on Go: every one holds all, the starter shop 28 of 28 (its own 6, fees 4, stock-orders
+  14, orders 4) and Stock orders on the starter's stock settings 15 of 15, but Bookings with the assistant 39 of 40 ("the model is down mid-conversation": the owner is not
+  told a second time), which main fails the same way (not this stream's). 0 shop programs left.
+
+
+### Part C (25 Nov 2026): main merged again; a case asked about from another number, through the router
+
+- **Merge** of main at ef302cca (morning-clock-25nov, refund-paths-25nov) with `-X no-renames`: two conflicts, both kept whole. `modules/crash-test/go-shop.ts`: main's
+  first-beat wait (a start returns after the program's first beat) around this branch's start, which keeps its own `program` and `pathway` (the parts program, and a part's
+  hand check run on it); go/TRIAL.md: both sections. Every generator's `--check` fresh after the merge (43), so nothing generated was edited by hand.
+- **The router asks every part** (`internal/parts` agent.go `caseAskedPart`, runtime `CaseHolder`): before the claims, a customer's message from a number that holds no
+  case in any part (an order or plan, a fee or credit account or a person in the credit book, a supplier) and names a case a part's own reading finds (`NamesCase`: its
+  `onCaseAsked` rule with no effect) goes to that part, which writes `case_asked_elsewhere`, sends its one line and its owner notice (once an hour by the record). Each
+  part's own `onCaseAsked` also asks `CaseHeldElsewhere`, so a number with another part's case is answered as before whichever part takes it. Stock orders names no case
+  (its cases are the owner's and the suppliers') and counts its suppliers as holding one. A single-part shop is unchanged (`CaseHeldElsewhere` is false there).
+- Contract cases (templates/commerce/parts/contract/case-asked.contract.test.ts): a stranger naming the credit book's entry gets the credit book's line and notice though
+  the hold takes new customers (before this, the hold took it as new business); the hold's order; someone with a case in one part naming another's: no ask, no notice.
+
+- **Found by the run of record, fixed:** the owner's page listed what waits and today's rows of the first part's skill only (each part's app view has its own), so a credit
+  book waiver was missing when the hold came first: they are joined over every part (channel.go). A part's own hand check on the starter shop read the shop's whole outbox,
+  and after main's first-beat wait the credit book's morning line (said by the first part, over every part) reached three Stock orders supplier situations: a part's
+  situation now reads its own outbox, as it reads its own record (go-world.ts, by the send line's fingerprinted messageId, GoShop `messageRef`). The case-asked contract
+  file kept its worlds open and never ended: each test's world is closed. Fees' other-number case compares refs without refs.part (via-parts.ts `ownRefs`).
+- **`CONTRACT_PARTS=last` over whole suites** (before: six files): the page, offer and chat cases of a part that is not the shop's page, and the owner's words no part
+  claims (terms, a code no part gave), are skipped by design with the reason; they run when the part is first.
+- **Run of record** (scratchpad d65-final.sh, every step time-limited): go build/vet/test 41 ok; contracts Bookings 183/183, Orders 139/139, Fees 111 + 4 skipped (the
+  differential's own "before 06:00 in India" skip; the run was at night), Stock orders 75/75, listings 210/210, parts 17/17, directory 36/36; generators 43 fresh; units
+  Bookings 840, Orders 216, Fees 246, Stock orders 126, all pass; bundle 736 + 9 skipped (REAL_CADDY); panel 287 of 288; hand checks all hold (Bookings with the
+  assistant 41/41) but the parts shop 27 of 30. Through the parts program first: Orders 88 + 51 skipped, Stock orders 67 + 8, 0 fail; Fees 1 fail; last: Stock orders
+  65 + 10, Orders 11 fail, Fees 6 fail. After the fixes above, rerun: go test (parts, fees, orders, stockorders, runtime) ok, parts contract 17/17, first Fees 68 + 47
+  skipped, last Orders 77 + 62, last Fees 50 + 65, 0 fail each; the parts shop's hand check 30 of 30 (shop 6, fees 5, stock-orders 14, orders 5), Stock orders 17/17,
+  the panel's golive-parts 2/2. 0 shop programs left.
 
 ## morning-clock-25nov: the assistant hand check's evening failure, found at its cause (25 Nov 2026)
 

@@ -421,7 +421,7 @@ test("with a real fault in the new version's program that only a client with a 4
     assert.ok(image, "the deployed compose file names the programs' image");
     const running = `${programs}-running`;
     mkdirSync(running, { recursive: true });
-    for (const p of ["bookings", "orders", "fees", "stock-orders"]) cpSync(join(REPO_ROOT, "go", "bin", p), join(running, p));
+    for (const p of ["bookings", "orders", "fees", "stock-orders", "parts"]) cpSync(join(REPO_ROOT, "go", "bin", p), join(running, p)); // every hand-check program the image holds (parts: decision 65)
     writeFileSync(join(running, "image.txt"), `${image}\n`);
     const next = w.ctx.runner.run.bind(w.ctx.runner);
     w.ctx.runner.run = (command, args, options) => (command === process.execPath ? realRunner.run(command, args, options) : next(command, args, options));

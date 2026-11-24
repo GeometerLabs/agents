@@ -1,0 +1,62 @@
+{
+  "name": "Ganesh Electricals",
+  "address": "12 Market Road, Tumakuru",
+  "timezone": "Asia/Kolkata",
+  "languages": ["en", "kn"],
+  "owner": { "whatsapp": "+919800000001", "language": "en" },
+  "assistant": {},
+  "parts": {
+    "fees": {
+      "creditBook": {
+        "maxPerPersonInr": 50000,
+        "remindEveryDays": 7,
+        "people": [
+          { "name": "Ramesh", "phone": "+919845011111", "amountInr": 2400, "language": "kn" },
+          { "name": "Suresh Electricals", "phone": "+919845022222", "amountInr": 7850, "language": "en" }
+        ]
+      },
+      "reminders": { "hour": 10, "maxPerMonth": 4 },
+      "partPayments": { "allowed": true, "minInr": 100 },
+      "refund": { "limitInr": 500 },
+      "payment": { "module": "upi", "upi": { "id": "ganesh@okaxis", "payee": "Ganesh Electricals" } }
+    },
+    "stock-orders": {
+      "items": [
+        { "id": "led-9w", "names": { "en": ["LED bulb 9W", "9W bulb"], "kn": ["ಎಲ್ಇಡಿ ಬಲ್ಬ್ 9W"] } },
+        { "id": "mcb-16a", "names": { "en": ["MCB 16A", "16A MCB"], "kn": ["ಎಂಸಿಬಿ 16A"] } }
+      ],
+      "units": [
+        { "id": "box", "names": { "en": ["box"], "kn": ["ಬಾಕ್ಸ್"] } },
+        { "id": "piece", "names": { "en": ["piece", "pc"], "kn": ["ತುಂಡು"] } }
+      ],
+      "suppliers": [
+        { "id": "ravi-traders", "name": "Ravi Traders", "aliases": ["ravi"], "whatsapp": "+919876500001", "language": "en", "approved": true }
+      ],
+      "catalogue": [
+        { "item": "led-9w", "supplier": "ravi-traders", "unit": "box", "priceInr": 900, "reorderQty": 10 },
+        { "item": "mcb-16a", "supplier": "ravi-traders", "unit": "piece", "priceInr": 180, "reorderQty": 5 }
+      ],
+      "limits": { "maxPerOrderInr": 12000, "monthlyBudgetInr": 20000, "maxQuantity": 200 },
+      "followUpHours": [4, 24]
+    },
+    "orders": {
+      "menu": [
+        { "id": "led-9w", "names": { "en": ["LED bulb 9W", "9W bulb"], "kn": ["ಎಲ್ಇಡಿ ಬಲ್ಬ್ 9W"] }, "priceInr": 120, "dailyStock": 5 },
+        { "id": "mcb-16a", "names": { "en": ["MCB 16A", "16A MCB"], "kn": ["ಎಂಸಿಬಿ 16A"] }, "priceInr": 250, "dailyStock": 1 }
+      ],
+      "orders": { "maxPerDay": 50, "maxItemsPerOrder": 5, "daysAhead": 2 },
+      "cutoff": { "daysBefore": 0, "time": "18:00" },
+      "pickup": {
+        "slots": [
+          { "id": "morning", "from": "10:00", "to": "13:00", "names": { "en": ["morning"], "kn": ["ಬೆಳಿಗ್ಗೆ"] }, "cutoff": { "daysBefore": 0, "time": "12:00" } },
+          { "id": "evening", "from": "16:00", "to": "19:00", "names": { "en": ["evening"], "kn": ["ಸಂಜೆ"] } }
+        ]
+      },
+      "advance": { "mode": "none" },
+      "cancellation": { "windowHours": 0 },
+      "refund": { "limitInr": 0 },
+      "payment": { "module": "upi", "upi": { "id": "ganesh@okaxis", "payee": "Ganesh Electricals" } },
+      "owner": { "approveOverInr": 0 }
+    }
+  }
+}

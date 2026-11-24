@@ -1,0 +1,186 @@
+package runtime
+
+// The seam for a shop of several template parts (decision 65, owner 24 Nov 2026: "one shop can run several template parts"; stream d65-parts-25nov). A part is a template
+// (the credit book, Stock orders, the pickup hold) run inside ONE shop program (go/internal/parts, go/cmd/parts) behind the shop's one number, one record, one stock count, one
+// owner's sign-in and one assistant. Nothing here changes a single-part shop: every field is zero for it and every check below falls through to what it did before.
+//
+// What a part's agent gives the shop's router (PartAgent): how sure it is that a message is its own, read by its rules alone and with no effect (Claim); which case references
+// are its own; which public-page requests it takes; and its hooks for the shop's one assistant. What the runtime does for a parts shop: the clock's beat once per part, each its
+// own step (so a part whose beat keeps failing does not hold back the others' beats); the owner's assistant hosting every part's skill (Assistant, assistantkit.go); the shared
+// beat work (the licence notice, the morning line) said once for the shop (record.go SharedBeatOff).
+
+import (
+	"strings"
+
+	"github.com/GeometerLabs/agents/go/internal/messaging"
+	"github.com/GeometerLabs/agents/go/internal/store"
+)
+
+// PartsKit is a Kit made of several template parts (internal/parts). Parts is the parts' names in the shop's order (the first is the one that says the shop's shared beat work).
+type PartsKit interface {
+	Kit
+	Parts() []string
+}
+
+// Claim is how sure a part is that a message is its own, by its rules alone. The router takes the highest; two parts at the same level above ClaimNew is a message the shop
+// asks about rather than guesses (internal/parts router.go).
+type Claim int
+
+const (
+	// ClaimNone: not this part's.
+	ClaimNone Claim = iota
+	// ClaimNew: a customer this part has never met, and this part is one that takes new customers (the pickup hold does; the credit book and Stock orders do not).
+	ClaimNew
+	// ClaimWords: this part's own reader read the words as its own (a name with "owes" for the credit book, an order of an item from a supplier for Stock orders), or the part
+	// has an open conversation with the number (a question waiting for the owner's answer, a customer's account or hold).
+	ClaimWords
+	// ClaimOpen: a customer's words this part reads as about what is open with them (a credit customer's yes to the first question, "I paid" on an account).
+	ClaimOpen
+	// ClaimCommand: the part's own command word with the part's own case reference ("approve o-3", "receive po-4", a mark code in its own ledger, a tap on its own button).
+	ClaimCommand
+)
+
+// PartAgent is a template's agent that can be one part of a shop of several parts. Every method reads only; none writes a record line or changes the state.
+type PartAgent interface {
+	Agent
+	// ClaimOwner is how sure the part is that the owner's message is its own.
+	ClaimOwner(msg messaging.InboundMessage) Claim
+	// ClaimCustomer is how sure the part is that a message from anyone but the owner (a customer, a supplier) is its own.
+	ClaimCustomer(msg messaging.InboundMessage) Claim
+	// OwnsCase: a case reference ("o-3", "f-2", "po-4", "q-1", a card's case) is this part's.
+	OwnsCase(ref string) bool
+	// TakesChannel: a public page's request (`channel_request`'s op) is this part's.
+	TakesChannel(op string) bool
+	// AssistantHooks is the part's skill and ways out for the shop's one assistant; ok false when the part has no assistant (its settings have no "assistant" block).
+	AssistantHooks() (h AssistantHooks, ok bool)
+	// PartMessaging is the part's own WhatsApp for this step (watched for a Guard that is down, the owner's messages by the owner's route): the shop's router asks its one
+	// question through the part the message could belong to.
+	PartMessaging() messaging.Messaging
+}
+
+// CaseHolder is a part that answers a case asked about from another conversation (caseasked.go). In a shop of several parts the question "does this conversation hold a
+// case?" is the shop's, over ALL its parts: a conversation that holds a case in one part is answered as before by whichever part takes it, and one that holds none anywhere
+// and names a case one part's record holds goes to that part, which gives its one line and tells the owner (internal/parts agent.go caseAskedPart). Both methods read only.
+type CaseHolder interface {
+	// HoldsCase: this conversation holds a case of this part (an order or a plan, a fee or a credit account or a person in the credit book, a supplier's orders).
+	HoldsCase(conversation string) bool
+	// NamesCase: the words name one of this part's cases by the part's own reading (its onCaseAsked rule, with no effect), the conversation holding no case of this part.
+	NamesCase(m messaging.InboundMessage) bool
+}
+
+// SetCaseHeldElsewhere hands a part's step context the shop's question "does another part hold a case of this conversation?" (internal/parts), so the part's own
+// onCaseAsked never answers a conversation the shop already has a case with.
+func (c *StepContext) SetCaseHeldElsewhere(f func(conversation string) bool) { c.heldElsewhere = f }
+
+// CaseHeldElsewhere: in a shop of several parts, another part holds a case of this conversation. Always false in a single-part shop.
+func (c *StepContext) CaseHeldElsewhere(conversation string) bool {
+	return c.heldElsewhere != nil && c.heldElsewhere(conversation)
+}
+
+// SetCoParts hands a part's step context the other parts' assistant hooks (internal/parts), so the assistant this part makes hosts every part's skill. Each is called only
+// when the assistant is made.
+func (c *StepContext) SetCoParts(co []func() (AssistantHooks, bool)) { c.coParts = co }
+
+// LimitID is a part's declared limit as a shop of several parts declares it: "<part>_<id>" ("stock_orders_order_cap"), so two parts' limits of one kind are two limits, each
+// read only by its own part. The limit ids stay what the owner's page and changes may carry (limits.go limitID: lower-case letters and "_").
+func LimitID(part, id string) string { return strings.ReplaceAll(part, "-", "_") + "_" + id }
+
+// SetLimitPart makes this step context's InForce read part's own limits (LimitID).
+func (c *StepContext) SetLimitPart(part string) { c.limitNS = LimitID(part, "") }
+
+// TickPart is the part whose beat this step is, in a shop of several parts ("" for every other step, and for every single-part shop).
+func (c *StepContext) TickPart() string { return c.tickPart }
+
+// tickParts runs the clock's beat of a shop of several parts: one step per part, in the shop's order, each saved on its own. A part's failed beat is said and the next part's
+// beat still runs; the morning line and the licence notice ride on the first part's beat (record.go SharedBeatOff).
+//
+// A panic in one part's beat (with the program's OnPanic, as go/cmd/parts sets it) is said and the next part's beat still runs; without OnPanic it goes on up, as every other
+// panic of the runner does.
+func (r *Runtime) tickParts(pk PartsKit) {
+	for _, p := range pk.Parts() {
+		func() {
+			r.tickPart = p
+			defer func() {
+				r.tickPart = ""
+				if r.o.OnPanic != nil {
+					if v := recover(); v != nil {
+						r.stepSince.Store(0)
+						r.panicked("beat of the "+p+" part", v)
+					}
+				}
+			}()
+			if err := r.step(nil, ""); err != nil {
+				r.fail("A tick of the "+p+" part failed", err)
+			}
+		}()
+	}
+}
+
+// joinHooks is the hooks of the shop's one assistant when the step's part has co-parts: the step's part's own hooks, with each record line of a case written by the part that
+// owns the case (so the line carries that part's name), and a number opted out when ANY part has it opted out (a STOP is never forgotten by the assistant of another part).
+func joinHooks(own AssistantHooks, co []AssistantHooks) AssistantHooks {
+	out := own
+	if own.Log != nil {
+		out.Log = func(caseID, phone, action, outcome string, inputs any, more messaging.LogMore) {
+			for _, h := range co {
+				if caseID != "" && h.Skill != nil && h.Skill.Owns(caseID) && h.Log != nil {
+					h.Log(caseID, phone, action, outcome, inputs, more)
+					return
+				}
+			}
+			own.Log(caseID, phone, action, outcome, inputs, more)
+		}
+	}
+	out.OptedOut = func(phone string) bool {
+		if own.OptedOut != nil && own.OptedOut(phone) {
+			return true
+		}
+		for _, h := range co {
+			if h.OptedOut != nil && h.OptedOut(phone) {
+				return true
+			}
+		}
+		return false
+	}
+	return out
+}
+
+// Wiring is what a template's program hands its Kit before the runtime is made: the client folder (settings, runtime.json), the template's own settings (Settings.Own, or one
+// part's in a shop of several), the store, the clock and the log. RT is the runtime once runtime.New has returned (no step runs before then, so a closure may call it).
+// Each template's wire.go does with it what its cmd/<template>/main.go did inline, so cmd/parts wires every part the same way and no wiring is copied.
+type Wiring struct {
+	Client *Client
+	Own    any
+	Store  *store.Store
+	Now    func() int64
+	Log    func(string)
+	RT     func() *Runtime
+}
+
+// WiredKit is a Kit that wires itself (wire.go of internal/orders, internal/fees, internal/stockorders): Wire before runtime.New, Started after it.
+type WiredKit interface {
+	Kit
+	Wire(w Wiring) error
+	Started(rt *Runtime)
+}
+
+// CardCode is the code of a card of the shop's assistant that a message answers: a tap on its button ("card-yes:K7M2QX") or the typed "yes K7M2QX" (cards.ts BUTTON_RE and
+// the typed reply, the same patterns the assistant reads: assistant.go). "" when the message answers no card's code. The shop of several parts sends such a message to the part
+// whose skill made the card.
+func CardCode(m messaging.InboundMessage) string {
+	if m.Reply != nil {
+		if g := buttonReply.FindStringSubmatch(m.Reply.ID); g != nil {
+			return g[2]
+		}
+	}
+	if g := typedReply.FindStringSubmatch(m.Text); g != nil {
+		return g[2]
+	}
+	return ""
+}
+
+// StockAliaser is a Kit of several parts whose items may be one item known to two parts (the pickup hold's "menu:mcb-16a" and Stock orders' "supply:mcb-16a"): the owner's
+// "start counting" names one of them, and the line is made under the canonical id with the others as its aliases, so every part reads and moves the one count.
+type StockAliaser interface {
+	StockAliases(id, lang string) (canonical string, aliases []string)
+}

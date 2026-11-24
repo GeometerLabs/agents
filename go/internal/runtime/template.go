@@ -132,6 +132,13 @@ type StepContext struct {
 	Clock  budget.Clock
 	// rt is the runtime that made the step: a customer's talk (talkcustomer.go) asks it for the model, the budget and the clock. Unset in a step a test builds by hand.
 	rt *Runtime
+	// Decision 65 (parts.go): in a shop of several parts, the other parts' assistant hooks (SetCoParts) and the part whose beat this step is (TickPart). Zero otherwise.
+	coParts  []func() (AssistantHooks, bool)
+	tickPart string
+	// limitNS leads every limit id this step's agent asks for (InForce): a part's own limits in a shop of several parts, each declared as "<part>_<id>" (SetLimitPart)
+	limitNS string
+	// heldElsewhere: in a shop of several parts, whether another part holds a case of a conversation (SetCaseHeldElsewhere, parts.go CaseHolder). Nil otherwise.
+	heldElsewhere func(conversation string) bool
 }
 
 // AfterTicker is an Agent with work that rides on the clock's beat AFTER its own and saves for itself (core.ts step: the licence notice and the monthly report, each with

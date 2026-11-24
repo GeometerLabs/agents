@@ -38,7 +38,14 @@ func (a *Agent) assistantOf() *runtime.Assistant {
 		return a.asst
 	}
 	a.asstMade = true
-	a.asst = a.c.Assistant(runtime.AssistantHooks{
+	a.asst = a.c.Assistant(a.assistantHooks())
+	return a.asst
+}
+
+// assistantHooks is what the agent hands the shop's assistant (wire.ts AgentAssistantDeps): its skill and its ways out. Decision 65: also what this agent gives the ONE
+// assistant of a shop of several parts (part.go AssistantHooks).
+func (a *Agent) assistantHooks() runtime.AssistantHooks {
+	return runtime.AssistantHooks{
 		Skill: &feesSkill{a: a, acts: true}, Fees: true, Messaging: a.msg,
 		Log: func(caseID, phone, action, outcome string, inputs any, more messaging.LogMore) {
 			m := logMore{refs: more.Refs, language: more.Language}
@@ -55,8 +62,7 @@ func (a *Agent) assistantOf() *runtime.Assistant {
 		// a limit the owner tightened by a tap is in force for the rest of the same step (runtime-limits.ts applyInForce)
 		InForce: a.applyInForce,
 		// Listen is left out: the owner's voice notes are not heard on Go for Fees (Deferred.md), so a voice note gets the line asking to type, as with voice off
-	})
-	return a.asst
+	}
 }
 
 // morning is the owner's morning line (morning.ts createMorningJob over the Fees skill, read-only), on the beat after the agent's own work, through the owner's route and with

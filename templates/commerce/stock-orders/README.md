@@ -85,6 +85,16 @@ English, Hindi, Malayalam and Kannada. All messages are fixed templates; every i
 
 `geometer shop add --template stock-orders` finds it from `template.json` (the panel's phone form has two steps: the shop with its suppliers and catalogue lines, then the cap and the budget). A shop's WhatsApp is required: runtime.json must name `messaging`, and there is no payment service. The Guard in front of WhatsApp is given the owner's number and the approved suppliers' numbers only (`approved-recipients-only`, from `src/guard-limits.ts`); the per-order cap and the month's budget are held by the agent and the approval card, not by Guard (a WhatsApp message carries no amount Guard can read). The owner's page lists orders waiting for their yes, orders no supplier has answered, and deliveries to mark; there is no public page for this template.
 
+## As one part of a shop of several parts (decision 65)
+
+Stock orders can be one part of a shop that also runs the credit book and the pickup hold behind one number ([templates/commerce/parts](../parts/README.md)), with the one
+stock count shared: an item the hold and Stock orders both list (the same id) is one count, kept under its supplier's id, so a collected hold lowers it and its low mark
+starts one reorder. Nothing in its rules changes: `go/internal/stockorders/part.go` says, by its rules alone, which messages and cases are its own (its cards, a command
+naming its `po-` order, an order of an item or from a supplier, a question it asked the owner, a listed supplier's message; a command with no reference only while it has an
+order open), and `wire.go` is its program's wiring, which the parts program reuses. Its contract suite runs through the parts program too:
+`CONTRACT_PARTS=first node --test --test-concurrency=1 contract/`. In a parts shop with a customer-facing part, the WhatsApp Guard writes to any number (the fixed list of
+the owner and the suppliers no longer narrows it; the owner's to confirm).
+
 ## What is not done yet
 
 See [Deferred.md](Deferred.md).

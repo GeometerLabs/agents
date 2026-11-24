@@ -450,27 +450,14 @@ var feeForms = runtime.CaseForms{Prefix: "f", Words: []string{"fee", "fees", "рд
 // onCaseAsked is agent.ts onCaseAsked (25 Nov 2026, runtime/caseasked.go): only for a conversation that holds no fee and no credit account, words that name one of the
 // centre's fees (a credit account's entries are fees too) get one line that shows nothing of it, and the owner is told (at most once an hour for this asker and fee, by the
 // record) with both numbers; a credit account's notice names the account (credit.go creditTwins). The record line keeps the fee in refs.case and leaves `booking` null.
-// False: nothing was named, and the message goes on as before.
+// False: nothing was named, and the message goes on as before. In a shop of several parts (decision 65) a conversation that holds another part's case is answered as
+// before too (caseNamed).
 func (a *Agent) onCaseAsked(phone, text string, words bool) bool {
-	if a.creditAccountOf(phone) != nil {
-		return false
-	}
-	for _, x := range a.store.Dues {
-		if x.Customer == phone {
-			return false
-		}
-	}
-	entries := a.c.Rec.Entries()
-	keys := runtime.RecordCaseKeys(entries)
-	for _, x := range a.store.Dues {
-		if x.ClaimRef != "" {
-			keys[runtime.CaseKey(x.ClaimRef)] = x.ID
-		}
-	}
-	named := runtime.NamedCase(text, feeForms, func(id string) bool { return a.store.Due(id) != nil }, keys, words)
+	named := a.caseNamed(phone, text, words)
 	if named == nil {
 		return false
 	}
+	entries := a.c.Rec.Entries()
 	d := a.store.Due(named.Case)
 	lately := runtime.ToldLately(entries, phone, d.ID, a.now())
 	// agent.ts `shown`: a chat guest is named by its label (chat-guest.ts guestLabel), never "chat:..."
@@ -500,6 +487,34 @@ func (a *Agent) onCaseAsked(phone, text string, words bool) bool {
 	}
 	a.tellCustomer(nil, phone, []string{t}, sayOpts{})
 	return true
+}
+
+// holdsCase: this number holds a fee or a credit account of this centre (onCaseAsked answers only a number that holds none).
+func (a *Agent) holdsCase(phone string) bool {
+	if a.creditAccountOf(phone) != nil {
+		return true
+	}
+	for _, x := range a.store.Dues {
+		if x.Customer == phone {
+			return true
+		}
+	}
+	return false
+}
+
+// caseNamed is onCaseAsked's reading with no effect: the fee these words name, when the number holds none here and (in a shop of several parts) no other part's case
+// either (runtime CaseHeldElsewhere). part.go NamesCase asks it for the shop's router.
+func (a *Agent) caseNamed(phone, text string, words bool) *runtime.Named {
+	if a.holdsCase(phone) || a.c.CaseHeldElsewhere(phone) {
+		return nil
+	}
+	keys := runtime.RecordCaseKeys(a.c.Rec.Entries())
+	for _, x := range a.store.Dues {
+		if x.ClaimRef != "" {
+			keys[runtime.CaseKey(x.ClaimRef)] = x.ID
+		}
+	}
+	return runtime.NamedCase(text, feeForms, func(id string) bool { return a.store.Due(id) != nil }, keys, words)
 }
 
 func (a *Agent) onTalkToOwner(phone, replyTo string) error {

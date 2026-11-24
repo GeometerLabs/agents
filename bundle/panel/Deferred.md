@@ -148,3 +148,11 @@ Not built, or built only as far as said. The first block needs another part of t
 | The contract harnesses (templates/*/contract/harness.ts) still write their shop folders themselves; the hand check's runner (modules/crash-test/go-shop.ts) uses the same shared pieces but is a second writer of the folder | Moving four suites of contract tests onto it is a change to every template's contract; not this stream's | Both use modules/test/contract (process tracker, starter, clock file, free port) |
 | Fees' "not tested" line for the model says the stand-in decision and language models were run; on Go the Fees program reads by its rules alone, so none is asked | The words are in four languages and the review sheets; a wording change of its own | "The model is down" runs and checks that no model is asked and the limits hold |
 | The morning line's mood sticker inside the owner's window (morning.ts sent it before the words when the pictures were drawn); the Go port sends the words alone | Not a refusal (inside the window the words go as text); a port item of its own | The template outside the window now carries the picture |
+
+## The shop's parts page (decision 65, 25 Nov 2026)
+
+| Not done | Why |
+|---|---|
+| A form per part with the setup steps' fields (menu, slots, suppliers, the credit book's people) | The page takes a part's own settings as JSON, started from its template's example, and every part is checked by its own template before anything is written. The setup steps' forms are each template's and write a whole single-template settings file; reusing them for one block of a parts shop is the next step. |
+| The shop page's summary, cost table, report and limit lines for a parts shop | They are each one template's. A parts shop's page shows the plan, the go-live gate, the papers and the parts link; what each part runs is on its parts page. |
+| Starting a NEW shop as a parts shop | Decision 65 says the owner never chooses a template: a shop starts with one and takes a second part on its parts page (the parts template is not offered in "Other"). |

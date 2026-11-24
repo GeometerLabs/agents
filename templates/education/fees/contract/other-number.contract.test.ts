@@ -5,6 +5,7 @@
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
 import { MEERA, OWNER_NUMBER, ROHAN, contract, lines, makeCentre } from "./harness.ts";
+import { ownRefs } from "../../../commerce/parts/contract/via-parts.ts";
 import type { Centre, CentreOptions } from "./harness.ts";
 
 const centres: Centre[] = [];
@@ -35,7 +36,7 @@ describe("a fee named from a number that holds none", () => {
     const asked = lines(c, "case_asked_elsewhere");
     assert.equal(asked.length, 1);
     assert.deepEqual([asked[0].outcome, asked[0].booking, asked[0].conversation], ["confirmed", null, STRANGER]);
-    assert.deepEqual(asked[0].refs, { case: "f-1", via: "reference", to: "owner" });
+    assert.deepEqual(ownRefs(asked[0].refs), { case: "f-1", via: "reference", to: "owner" }); // through the parts program the line also names its part
     assert.doesNotMatch(asked[0].notes + JSON.stringify(asked[0].refs), /9822222222/u, "no other number in the line");
     await c.inbound(STRANGER, "fee f-1");
     assert.equal(texts(c, STRANGER).at(-1), NOT_SHOWN);

@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { REPO, makeShop } from "./harness.ts";
+import { gatewayCaseThroughParts } from "../../parts/contract/via-parts.ts";
 import type { Shop } from "./harness.ts";
 
 const GO = process.env.ORDERS_GO_BIN ?? join(REPO, "go", "bin", "orders");
@@ -15,7 +16,7 @@ const shops: Shop[] = [];
 after(async () => { for (const s of shops) { await s.stop(); await s.cleanup(); } });
 
 for (const [first, second] of [["go", "go"]] as const) {
-  test(`an Orders shop started on ${first} and started again on ${second} keeps its order, its payment, its record and its queue, and goes on`, { skip: SKIP }, async () => {
+  test(`an Orders shop started on ${first} and started again on ${second} keeps its order, its payment, its record and its queue, and goes on`, { skip: SKIP ?? gatewayCaseThroughParts() }, async () => {
     const s = await makeShop({ mode: "guards" }); shops.push(s);
     await s.start(first);
     const { hash } = await s.order();

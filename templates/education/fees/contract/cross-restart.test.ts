@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { OWNER_NUMBER, REPO, ROHAN, lines, makeCentre } from "./harness.ts";
+import { byDesign } from "../../../commerce/parts/contract/via-parts.ts";
 import type { Centre } from "./harness.ts";
 
 const GO = process.env.FEES_GO_BIN ?? join(REPO, "go", "bin", "fees");
@@ -15,7 +16,9 @@ const centres: Centre[] = [];
 after(async () => { for (const c of centres) await c.cleanup(); });
 
 for (const [first, second] of [["go", "go"]] as const) {
-  test(`a UPI centre started on ${first} and started again on ${second} keeps its fees, the owner's code, the parent's link, its record and its queue, and goes on`, { skip: SKIP }, async () => {
+  const name = `a UPI centre started on ${first} and started again on ${second} keeps its fees, the owner's code, the parent's link, its record and its queue, and goes on`;
+  const why = byDesign(name); // through the parts program (CONTRACT_PARTS), a case the parts shop does not take by design is skipped with its reason
+  test(name, { skip: SKIP ?? (why ? `not run through the parts shop, by design: ${why}` : undefined) }, async () => {
     const c = await makeCentre({ mode: "guards" }); centres.push(c);
     await c.start(first);
     await c.waitFor(() => lines(c, "open_fee", "confirmed").length === 2, "the two earlier months opened");

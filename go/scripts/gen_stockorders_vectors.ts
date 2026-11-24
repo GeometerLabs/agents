@@ -43,6 +43,8 @@ const PHRASES = [
   "paid po-3", "cancel po-3", "send po-3", "change po-3 12", "status", "what is open", "good morning", "order 5 soap", "order 10 boxes of hair colour from Sharma Stores",
   "order 201 bottles of shampoo from ravi", "send me 10 boxes of hair colour", "received", "monthly budget at most ₹15000", "order twelve towels from meena", "order 1,000 towels",
   "po 12 received 4", "हेयर कलर खत्म", "रवि से 10 डिब्बा हेयर कलर मंगाओ", "ഷാംപൂ തീർന്നു", "ಶಾಂಪೂ ಮುಗಿದಿದೆ", "order ₹450 hair colour 3 box", "order 10.5 towels", "order 2x towels",
+  // 25 Nov 2026: a number written against a letter or in a fraction is part of a name, never a quantity (the starter shop's "LED bulb 9W is low")
+  "hair colour 9W is low", "5L shampoo is low", "1/2 inch towel is low", "order 3 2kg hair colour", "order 16A towels 4", "9W हेयर कलर खत्म", "9W ഷാംപൂ തീർന്നു", "9W ಶಾಂಪೂ ಮುಗಿದಿದೆ",
 ];
 
 export function generate(): string {

@@ -299,3 +299,14 @@ func RefundSource(s *State, r *OwedRefund) (note string, paidPaise, paidAtMs int
 
 // floorSeconds is Math.floor(ms / 1000).
 func floorSeconds(ms int64) int64 { return int64(math.Floor(float64(ms) / 1000)) }
+
+// HasCode: a code this ledger gave out, live or already used, on a request or on a refund owed. Decision 65: in a shop of several template parts each part keeps its own
+// ledger, so the owner's "received K7M2QX" goes to the part whose ledger knows the code (internal/parts). Reads only.
+func HasCode(s *State, code string) bool {
+	if s == nil {
+		return false
+	}
+	lr, ur := findRequest(s.Requests, code)
+	lf, uf := findRefund(s.Refunds, code)
+	return lr != nil || ur != nil || lf != nil || uf != nil
+}

@@ -20,6 +20,7 @@
 //   provider-refuses-send     the provider refuses the order message: nothing went out; one more try, then one order message in all
 //   supplier-declines         the supplier says no: the budget is released and the delivery cannot be marked
 import { PROGRAM, VERSION, createGoWorld } from "./go-world.ts";
+import { settingsJson } from "../../../../modules/crash-test/go-world.ts";
 import type { GoWorld as World } from "./go-world.ts";
 import { holdsBudget, reservedPaise } from "../src/order.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -150,7 +151,7 @@ const BUILDERS: Build[] = [
       const edited = structuredClone(p.settings) as Settings;
       const target = edited.catalogue.find((l) => l.item === p.line.item && l.supplier === p.line.supplier && l.unit === p.line.unit)!;
       target.priceInr = Math.round((target.priceInr + 1) * 100) / 100;
-      await w.reload(parseSettings(edited));
+      await w.reload(parseSettings(settingsJson(edited))); // the edited settings back in their file's shape (the checked assistant block is not one: 25 Nov 2026)
       await w.ownerSays(`yes ${old}`);
       expect("Nothing was sent on the old card", w.orderMessagesTo(p.supplier.whatsapp).length === 0, `${w.orderMessagesTo(p.supplier.whatsapp).length} order messages`);
       expect("The owner was shown a new card", w.cardCode() !== old, "no new card");

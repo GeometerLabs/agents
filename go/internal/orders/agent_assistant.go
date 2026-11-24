@@ -37,23 +37,7 @@ import (
 
 func init() {
 	assistantFor = func(a *Agent) *runtime.Assistant {
-		as := a.c.Assistant(runtime.AssistantHooks{
-			Skill: &ordersSkill{a: a, acts: true}, Orders: true, Messaging: a.msg,
-			Log: func(caseID, phone, action, outcome string, inputs any, more messaging.LogMore) {
-				m := logMore{refs: more.Refs, language: more.Language}
-				if more.Notes != nil {
-					m.notes = *more.Notes
-				}
-				for _, d := range more.Decisions {
-					m.decisions = append(m.decisions, Decision(d))
-				}
-				a.log(a.store.Order(caseID), phone, action, outcome, inputs, m)
-			},
-			LanguageOf: func(phone string) string { return a.languageOf(phone, nil) },
-			OptedOut:   func(phone string) bool { c := a.store.FindCustomer(phone); return c != nil && c.OptedOut },
-			// a limit the owner tightened by a tap is in force for the rest of the same step (runtime-limits.ts applyInForce)
-			InForce: func() { a.settings = a.inForce(a.settings) },
-		})
+		as := a.c.Assistant(a.assistantHooks())
 		if as != nil && a.kit.Voice != nil {
 			// the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
 			as.SetListen(func(msg messaging.InboundMessage, audio *runtime.PageAudio) *voice.Heard {
@@ -61,6 +45,28 @@ func init() {
 			})
 		}
 		return as
+	}
+}
+
+// assistantHooks is what the agent hands the shop's assistant (wire.ts AgentAssistantDeps): its skill and its ways out. Decision 65: also what this agent gives the ONE
+// assistant of a shop of several parts (part.go AssistantHooks).
+func (a *Agent) assistantHooks() runtime.AssistantHooks {
+	return runtime.AssistantHooks{
+		Skill: &ordersSkill{a: a, acts: true}, Orders: true, Messaging: a.msg,
+		Log: func(caseID, phone, action, outcome string, inputs any, more messaging.LogMore) {
+			m := logMore{refs: more.Refs, language: more.Language}
+			if more.Notes != nil {
+				m.notes = *more.Notes
+			}
+			for _, d := range more.Decisions {
+				m.decisions = append(m.decisions, Decision(d))
+			}
+			a.log(a.store.Order(caseID), phone, action, outcome, inputs, m)
+		},
+		LanguageOf: func(phone string) string { return a.languageOf(phone, nil) },
+		OptedOut:   func(phone string) bool { c := a.store.FindCustomer(phone); return c != nil && c.OptedOut },
+		// a limit the owner tightened by a tap is in force for the rest of the same step (runtime-limits.ts applyInForce)
+		InForce: func() { a.settings = a.inForce(a.settings) },
 	}
 }
 

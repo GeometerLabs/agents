@@ -277,7 +277,7 @@ func (a *accountingImpl) Post(e MoneyEvent, write WriteMoneyLine) (Posted, error
 	doc := ""
 	if series, ok := seriesOf(e, a.status); ok {
 		fy := FYOf(a.clock.Now(), a.shop.Timezone)
-		text, err := FormatNumber(NextNumber(a.record.Entries(), series, fy, FYStartMs(fy, a.shop.Timezone)))
+		text, err := FormatNumber(NextNumber(shopEntries(a.record), series, fy, FYStartMs(fy, a.shop.Timezone)))
 		if err != nil {
 			return Posted{}, err
 		}

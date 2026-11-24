@@ -80,10 +80,16 @@ func newAgent(k *Kit, c *runtime.StepContext) *Agent {
 	a.s = &cp
 	a.say = messaging.NewSay(a.sayDeps())
 	if a.s.Assistant {
-		a.asst = c.Assistant(runtime.AssistantHooks{Skill: &skill{a: a}, Messaging: a.msg, Log: a.assistantLog, LanguageOf: a.languageOf,
-			OptedOut: func(p string) bool { return a.st.optedOut(digits(p)) }})
+		a.asst = c.Assistant(a.assistantHooks())
 	}
 	return a
+}
+
+// assistantHooks is what the agent hands the shop's assistant: its skill and its ways out. Decision 65: also what this agent gives the ONE assistant of a shop of several parts
+// (part.go AssistantHooks).
+func (a *Agent) assistantHooks() runtime.AssistantHooks {
+	return runtime.AssistantHooks{Skill: &skill{a: a}, Messaging: a.msg, Log: a.assistantLog, LanguageOf: a.languageOf,
+		OptedOut: func(p string) bool { return a.st.optedOut(digits(p)) }}
 }
 
 func (a *Agent) now() int64 {
