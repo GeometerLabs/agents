@@ -270,12 +270,12 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   if (asPart) { const write = s.writeFile.bind(s); s.writeFile = (name, value) => write(name, name === "settings.json" && value !== undefined ? asPart.wrap(value as Record<string, unknown>) : value); }
 
   // as one part of a parts shop, the outbox the situation reads is this part's, as its record is: a message another part sent (the shop's morning line, which the first part
-  // says over every part's cases; another part's reminders) is known by its record line's messageId and left out. Unset: the whole outbox, as before.
+  // says over every part's cases; another part's reminders) is known by its record line's messageId (the message id's fingerprint, GoShop messageRef) and left out. Unset: the whole outbox, as before.
   const othersSent = (): Set<string> => new Set(s.record().filter((e: any) => asPart && e.refs?.messageId && e.refs?.part !== undefined && e.refs.part !== asPart.part).map((e: any) => String(e.refs.messageId)));
   const seen: FakeMessaging = !asPart ? messaging : new Proxy(messaging, {
     get(t, k, r) {
-      if (k === "outbox") return () => { const o = othersSent(); return t.outbox().filter((m) => !o.has(m.id)); };
-      if (k === "sentTo") return (n: string) => { const o = othersSent(); return t.sentTo(n).filter((m) => !o.has(m.id)); };
+      if (k === "outbox") return () => { const o = othersSent(); return t.outbox().filter((m) => !o.has(s.messageRef(m.id))); };
+      if (k === "sentTo") return (n: string) => { const o = othersSent(); return t.sentTo(n).filter((m) => !o.has(s.messageRef(m.id))); };
       return Reflect.get(t, k, r);
     },
   });

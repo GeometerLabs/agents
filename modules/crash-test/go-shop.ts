@@ -20,6 +20,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../channels/owner-link.ts";
 import type { Clock } from "../core/clock.ts";
+import { messageFingerprint } from "../record/fingerprint.ts";
 import { readSnapshot } from "../runtime/store.ts";
 import { TEST_CLOCK_FILE, TEST_SWITCH } from "../runtime/test-clock.ts";
 import { freePort, hex } from "../test/contract/net.ts";
@@ -95,6 +96,8 @@ export interface GoShop {
   status(): Promise<any>;
   /** The record's lines as the store keeps them (each line's JSON), oldest first. */
   record(): any[];
+  /** A WhatsApp message id as the record keeps it (refs.messageId: its fingerprint under the shop's record key), so a sent message can be matched to its send line. */
+  messageRef(id: string): string;
   /** The shop's last saved state (the template's snapshot JSON), or null before its first step. */
   snapshot(): string | null;
   /** Write a file of the client folder as the deployer does (a rename), or remove it (`undefined`). */
@@ -125,7 +128,8 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   const owner = newOwnerToken();
   writeFileSync(join(secrets, "internal_token"), internal);
   writeFileSync(join(secrets, "channel_token"), channel);
-  writeFileSync(join(secrets, "record_key"), hex(32));
+  const recordKey = hex(32);
+  writeFileSync(join(secrets, "record_key"), recordKey);
   writeFileSync(join(client, "settings.json"), JSON.stringify(o.settings));
 
   // runtime.json: a fakes shop on the hand check's stand-ins (go/internal/runtime/config.go `standins`)
@@ -246,6 +250,7 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
       }
       throw new Error(`no beat of the shop's clock ended in ${SETTLE_MS / 1000} s`);
     },
+    messageRef: (id: string) => messageFingerprint(Buffer.from(recordKey, "hex"), id),
     record: () => db((d) => (d.prepare("SELECT action, outcome, booking, conversation, entry FROM record ORDER BY seq").all() as { action: string; outcome: string; booking: string | null; conversation: string; entry: string }[])
       .map((r) => ({ action: r.action, outcome: r.outcome, booking: r.booking, conversation: r.conversation, ...(JSON.parse(r.entry) as Record<string, unknown>) }))),
     snapshot: () => db((d) => readSnapshot(d)),
