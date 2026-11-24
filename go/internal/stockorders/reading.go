@@ -5,7 +5,8 @@ package stockorders
 //
 // The command words are generated (words.json `reading`: each list as the regular-expression source modules/language/dates.ts wordRe builds) and matched with
 // internal/language's JavaScript matcher, so `\b`, `\s` and the edges are JavaScript's. Where Go and JavaScript differ, and what is copied:
-//   - `quantityIn`'s pattern `(?<![\w.-])(\d{1,6})(?![\w.]*\d)(?![.,]\d)` has a look-behind and two look-aheads; it is written out by hand below (the first run of one to six digits
+//   - `quantityIn`'s pattern `(?<![\w./-])(\d{1,6})(?![\w.]*\d)(?![.,]\d)(?!\/\d)(?!(?!x(?!\p{L}))\p{L})` has a look-behind and four look-aheads (since 25 Nov 2026 a
+//     number written against a letter or in a fraction is part of a name, never a quantity); it is written out by hand below (the first run of one to six digits
 //     not after a word character, dot or dash, with no digit reachable after it through word characters or dots, and no decimal after it);
 //   - a name's length (`canon(n).length`) is in UTF-16 units (language.UTF16Len);
 //   - `!quantityIn(t)` is JavaScript truthiness: a quantity of 0 counts as none.
@@ -15,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/GeometerLabs/agents/go/internal/language"
@@ -122,7 +124,7 @@ func quantityIn(text string) *int64 {
 		if !isDigit(i) {
 			continue
 		}
-		if i > 0 && (isWordByte(rs[i-1]) || rs[i-1] == '.' || rs[i-1] == '-') {
+		if i > 0 && (isWordByte(rs[i-1]) || rs[i-1] == '.' || rs[i-1] == '-' || rs[i-1] == '/') {
 			continue
 		}
 		run := 0
@@ -141,6 +143,14 @@ func quantityIn(text string) *int64 {
 			}
 			// (?![.,]\d)
 			if !bad && end+1 < len(rs) && (rs[end] == '.' || rs[end] == ',') && isDigit(end+1) {
+				bad = true
+			}
+			// (?!\/\d): a fraction ("1/2 inch") is part of a name
+			if !bad && end+1 < len(rs) && rs[end] == '/' && isDigit(end+1) {
+				bad = true
+			}
+			// (?!(?!x(?!\p{L}))\p{L}): a number written against a letter ("9W", "5L", "2kg", "16A") is part of a name; an x alone after it ("2x") is "times"
+			if !bad && end < len(rs) && unicode.IsLetter(rs[end]) && !(rs[end] == 'x' && (end+1 >= len(rs) || !unicode.IsLetter(rs[end+1]))) {
 				bad = true
 			}
 			if !bad {

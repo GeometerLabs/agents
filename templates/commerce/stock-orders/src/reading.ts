@@ -50,10 +50,14 @@ function longest(words: string, names: Names, extra: readonly string[] = []): nu
   return best;
 }
 
-/** The first whole number in the text that is not part of an order number or a price. */
+/**
+ * The first whole number in the text that is not part of an order number, a price, or a NAME: a number written against letters ("LED bulb 9W", "5L", "2kg", "16A")
+ * or in a fraction ("1/2 inch") is part of what the item or its unit is called, never how many (25 Nov 2026, decision 65's starter shop: "LED bulb 9W is low" was read
+ * as an order of 9). "2x towels" keeps its 2: an x alone after a number is "times".
+ */
 export function quantityIn(text: string): number | undefined {
   const t = canon(text).replace(REF_RE, " ").replace(/(?:₹|rs\.?|inr)\s*\d[\d,.]*/giu, " ");
-  const digits = /(?<![\w.-])(\d{1,6})(?![\w.]*\d)(?![.,]\d)/u.exec(t);
+  const digits = /(?<![\w.\/-])(\d{1,6})(?![\w.]*\d)(?![.,]\d)(?!\/\d)(?!(?!x(?!\p{L}))\p{L})/u.exec(t);
   if (digits) return Number(digits[1]);
   for (const w of t.split(/[^a-z]+/u)) if (w in ENGLISH_NUMBERS) return ENGLISH_NUMBERS[w];
   return undefined;
