@@ -119,9 +119,9 @@ func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
 	case "discount", "owner":
 		return runtime.ClaimWords
 	}
-	// words the centre's rules do not read, from someone it knows ("hello", "keep one for me"): as much the centre's as any part's that takes new business, so a part that
-	// reads them as its own takes them, and with none the shop asks
-	return runtime.ClaimNew
+	// words the centre's rules do not read, from someone it knows: the centre's, above a part that only takes new customers; a part whose own rules read them whole (the
+	// hold's order, which it claims as open) still takes them
+	return runtime.ClaimWords
 }
 
 // creditPerson: the settings' credit book names this number (the book opens its people on the centre's first step, which may not have run yet).

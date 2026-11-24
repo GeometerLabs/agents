@@ -1669,5 +1669,12 @@ process per part behind a router, and why) is bundle/Explanation.md "Several tem
   settings as one part beside two quiet companions; cases that test what a parts shop is not by design are SKIPPED with the reason (via-parts.ts BY_DESIGN: the status's
   name, a settings file the test writes itself, the differential against the demo's single shop, refs compared whole, one report per part, the shop's one page and chat).
 
+Findings in the templates' own situations (not changed; the TypeScript and Go readers agree, so they are reported, not fixed):
+- **Stock orders reads the digit in an item's name as a quantity.** On the starter shop, "LED bulb 9W is low" is read as an order of 9 (reading.ts `quantityIn`
+  takes the first run of digits not after a word character; its Go twin does the same), so the low-stock situation (#15) orders 9 where the usual quantity is 10. Any shop
+  whose items carry a digit in their names meets it; it is not a parts-shop matter.
+- **Stock orders' "the catalogue's price moves" situation (#5) cannot run on a shop with the assistant:** it reads the settings back with `parseSettings` after its change,
+  and the checked assistant block (`morningAt`) is not a settings key, so it throws before it runs.
+
 TypeScript findings: none in the templates' code. One thing worth knowing: the Orders skill owns `g-` references (`^[og]-`) and so does the Fees skill (`^[fqg]-`); in a
 parts shop a press on a `g-` case is owned by two parts and is recorded and not done (the router never guesses).
