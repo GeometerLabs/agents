@@ -638,3 +638,36 @@ The service is `bundle/services/speech/` (README there). It was written and test
   `<server>/modules` from the same commit; without it the deployer says the version is not installed. Done when `geometer update` (or the install) offers to make that
   kept checkout, or every shop is on 0.2.0.
 - [ ] **Pointer compression for the server's Node processes (24 Nov 2026, stream N1).** V8's pointer compression roughly halves the heap of a small Node service, but the stock `node` image is built without it; the only ready build is `platformatic/node-caged`, a third-party image. It was NOT downloaded (a new image needs the owner's yes). What it would need: (1) the owner's yes to a third-party base image and a pinned digest, not a tag; (2) the same Node major as `server.appImage` (`node:26-alpine`), checked by `node --version` in the image; (3) a limit of 4 GB of heap per process, which these services are far below (`NODE_OLD_SPACE_MB` in `generate/compose.ts` is 64 to 160); (4) `appImage` in geometer.json set to it for a server that wants it (nothing else changes: the mounted `/app` copy and the commands are the same); (5) the measurement table of `Explanation.md` run again on it, and the native add-ons check (the bundle has none: it has no dependencies). Done when the owner approves an image and the table shows the saving is worth another base image to keep patched.
+
+## Several template parts in one shop (decision 65, stream `d65-parts-25nov`, 25 Nov 2026)
+
+What was built is in Explanation.md, "Several template parts in one shop". Left, each with the reason; the ones marked **owner** are product choices taken conservatively
+and listed for the owner to confirm.
+
+- [ ] **The number of parts each slab allows (owner, economics).** The limit is one setting, the rate `plan.<plan>.parts` (a `count`) in the price list in force
+  (lib/parts-limit.ts); no list has it yet, so no shop is limited. Done when economics sets it and a new dated list carries it (never an edit of a list in force).
+- [ ] **A payment gateway in a parts shop (owner).** Refused in the settings check (Go and TypeScript): a shop's one gateway Guard holds one spec of refund limits, and two
+  parts' limits in one spec are not designed. UPI (the owner's marks) works in every part. Done when the spec says how two parts' amounts and refund limits share one Guard.
+- [ ] **Stock orders' fixed list of numbers (owner).** A Stock orders shop's WhatsApp Guard lets messages go only to its owner and approved suppliers. In a parts shop with
+  a part that writes to customers (the hold, the credit book) the Guard lets them go to any number, as those parts need; the list then no longer narrows Stock orders. Done
+  when the owner chooses: keep it so, or split the check (Guard binds one number per tool, so a per-part list needs a Guard rule that reads which part sent).
+- [ ] **A STOP counted once per part that knows the number.** A STOP from someone two parts know reaches both (each stops its own messages to them), and each writes its
+  receive line, so the cost meter counts that one message once per such part. Done with a shop-wide opt-out the parts read, and one receive line.
+- [ ] **The monthly report: one per part (owner).** Each part sends its own signed monthly report and message, as a single-part shop of it does, so a three-part shop's
+  owner gets three. Chosen because each report is a signed document its own verifier reads; one combined report needs a new report format and verifier. Done when the owner
+  says which they want.
+- [ ] **One set of accountant's files for the shop.** The owner's page's Money section is summed over the parts and every document number is the shop's (one gap-free series
+  over the whole record), but the accountant's files are each part's books, named by part (`orders-journal.csv`). Done with one journal over the parts' lines with each
+  part's legacy action names.
+- [ ] **Two parts' limits of one kind.** Each part's limits are its own (`orders_refund_limit`, `fees_refund_limit`), but the owner's limits page and the assistant's limit
+  card name a limit by its kind's words, so two "refund limit" rows read the same, and the card takes the first one the words match. Done when the row and the card name the
+  part.
+- [ ] **Bookings as a part.** Not one of the templates a parts shop runs: its calendar Guard and booking page are not in the starter. Done when a shop asks for it.
+- [ ] **The to-do list (B31) of a parts shop.** The export writes each part's cases (parts/<name>/) but does not work out the obligations of a parts shop, so the heartbeat
+  carries no open counts for it. Done by running each part's obligations over its own lines.
+- [ ] **A listings-only shop moving straight into a parts shop.** `storeWith` is not built for parts: such a shop takes one template first, then a second part.
+- [ ] **A crash of the whole process stops every part.** A panic inside a step is caught (cmd/parts sets OnPanic; the task is tried again, then failed) and one part's beat
+  that panics does not stop the others', but a crash of the process (out of memory, a runtime fault) stops all of the shop's parts until the container restarts it, where one
+  process per part would stop one. The price of one program (Explanation.md says why it was chosen).
+- [ ] **Taking out the part the shop was before it had parts.** Refused: its history from before it had parts is read as that part's (`carried`). Done when the carried
+  part's state can be handed to the store's kept-parts list on its own.
