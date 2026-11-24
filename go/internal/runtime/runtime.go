@@ -61,7 +61,9 @@ type Runtime struct {
 	// the morning line's day already done (morning.go), and the last good licence.json read and its modified time
 	morningDone string
 	// ownerAudio are the owner's recordings from their page, in memory only until their step listens (voice.go)
-	ownerAudio  audioDrop
+	ownerAudio audioDrop
+	// tickPart is the part whose beat the step in hand is, in a shop of several parts (parts.go tickParts; the runner is one goroutine, so a field is enough)
+	tickPart    string
 	licence     *licenceFile
 	licenceSeen int64
 	o           Options
@@ -317,6 +319,11 @@ func (r *Runtime) fail(what string, err error) {
 // tick is the clock's beat: the panel's "sign out every device" said once in the record, and, once a day, the clean-up.
 func (r *Runtime) tick() {
 	defer func() { r.mu.Lock(); r.ticks++; r.mu.Unlock() }()
+	// decision 65: a shop of several parts beats once per part, each its own step (parts.go)
+	if pk, ok := r.o.Kit.(PartsKit); ok {
+		r.tickParts(pk)
+		return
+	}
 	if err := r.step(nil, ""); err != nil {
 		r.fail("A tick failed", err)
 		return

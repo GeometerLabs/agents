@@ -59,6 +59,10 @@ func NoticeDue(licence string, paidThrough *int64) (kind, key string) {
 
 // RunLicenceNotice is the notice's `run(ctx)`. It says whether a notice went (and why not when none did). An error saving is returned; a send that failed is in the record.
 func RunLicenceNotice(c NoticeContext) (sent bool, why string, err error) {
+	// decision 65: in a shop of several parts the notice is the shop's, said once, by its first part (record.go SharedBeatOff)
+	if c.Rec != nil && c.Rec.SharedBeatOff() {
+		return false, "another-part", nil
+	}
 	kind, key := NoticeDue(c.Licence, c.PaidThrough)
 	if kind == "" {
 		return false, "none-due", nil

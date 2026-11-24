@@ -174,10 +174,22 @@ func (c *StepContext) Assistant(h AssistantHooks) *Assistant {
 		return nil
 	}
 	cv := c.rt.assistantFor(c.Snap, c.Rec, c.Now())
-	cv.hooks = &h
 	cv.toPage = false
 	cv.reading = assistant.OwnerReading{Bookings: h.Bookings, Orders: h.Orders, Fees: h.Fees}
 	cv.skills = []OwnerSkill{h.Skill}
+	// decision 65: in a shop of several parts the ONE assistant hosts every part's skill, in the shop's order after this part's own (parts.go)
+	if len(c.coParts) > 0 {
+		var co []AssistantHooks
+		for _, f := range c.coParts {
+			if hh, ok := f(); ok && hh.Skill != nil {
+				co = append(co, hh)
+				cv.skills = append(cv.skills, hh.Skill)
+				cv.reading.Bookings, cv.reading.Orders, cv.reading.Fees = cv.reading.Bookings || hh.Bookings, cv.reading.Orders || hh.Orders, cv.reading.Fees || hh.Fees
+			}
+		}
+		h = joinHooks(h, co)
+	}
+	cv.hooks = &h
 	if lim := cv.limitsSkill(); lim != nil {
 		cv.skills = append(cv.skills, lim)
 		cv.reading.LimitRule = lim.looksLikeRule
