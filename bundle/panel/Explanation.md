@@ -17,6 +17,7 @@ One panel, zero dependencies, pages rendered on the server with no JavaScript. A
 | `setup.ts`, `secrets.ts` | The six steps (the business; deposit and cancellation; languages and the owner's number; the shop's accounts; the shop's assistant, `character.ts`; checks) as functions: each step's refusals in the person's language, then `buildSettings`, which is the demo's `settingsFromForm` with the chosen languages, owner and cancellation window on top and `validateSettings` last. The secrets intake writes a file per secret into `secrets-inbox/<shop>/` (0600, atomic) and notes that it arrived; it has no way to read anything back (a test checks the source), validates every box before writing any, and never puts a value in a message. |
 | `templates.ts` | Finds templates by `templates/<domain>/<name>/template.json` (accounts the template uses, steps, an example settings file). Setup asks only for those accounts, so a new or contributed template appears on its own; one whose `setup` form the panel does not have is listed as "set up by a builder". |
 | `checks.ts` | The read-only connection checks (below). |
+| `wa-templates.ts` | A shop's WhatsApp message templates: sent to the shop's own account through its Guard, and their state shown (below, "WhatsApp templates from the panel"). The decisions are `bundle/lib/wa-templates.ts`, which the command line runs too. |
 | `cost.ts`, `../../prices/<date>.json` | The monthly running-cost line (below). The repo's one price folder, `prices/` (its README says who reads it). |
 | `golive.ts`, `activity.ts` | The hand check on the shop's own settings, run on the shop's own Go program (since 24 Nov 2026: `bundle/lib/hand-check-go.ts`, a child process), the connection checks, "Ready to go live" (writes the go-live certificate, signed when the panel has a key, naming the program it ran on), and the month's counts from the exported record. |
 | `words.ts`, `words.hi.ts`, `words.ml.ts`, `words.kn.ts`, `languages.ts`, `review.ts`, `review-sheet.ts` | Every word in four languages; see Languages. |
@@ -409,3 +410,23 @@ has (the pickup hold had 0 situations, so the gate refused every hold shop; the 
   connection checks are read again. So a confirmation does not wait for a run that would only repeat itself.
 - **Tests.** `test/golive-go.test.ts`: a hold shop and a credit shop pass the gate on Go; the certificate built from a Go run checks (signature, digest) and names the program;
   a deliberately broken setting (a fee above the day's refund cap the deployer gives Guard) fails; a run with no program, and a stored check from before, are refused.
+
+## WhatsApp templates from the panel (25 Nov 2026)
+
+Meta approves a template per WhatsApp Business Account, so each shop needs its own templates approved before it can message a customer outside the 24-hour window. Until
+now only `geometer whatsapp-templates` sent them, for a Gupshup shop, when a person remembered. The panel now does it, with the same code (`bundle/lib/wa-templates.ts`):
+
+- **The WhatsApp step** asks, beside the phone number ID, for the **WhatsApp Business Account ID** (Meta direct; Meta documents no read from a number to its account, and its API
+  Setup page shows both ids together), and, beside the Gupshup app name, for the **app ID** (Gupshup's create call needs it). Both are optional and checked for shape; they go into
+  `runtime.json` (`services.messaging.wabaId` / `appId`). Without them the shop page says what to add.
+- **When it sends:** after the setup's save, after "Run the checks", and on the shop page's button "Send the N not sent yet". Always in the background, one run per shop at a time.
+  A new shop's Guard is not running until the deployer applies it, so the save's try is usually "waiting"; the checks run (the shop is applied by then) sends.
+- **How:** through the shop's WhatsApp Guard, presenting the panel's own Guard credential, like the connection checks. The Guard's template routes exist only when the account is
+  named, are pinned to exactly that account, and are allowed to the panel's agent only (`bundle/generate/guards.ts agentOperations`).
+- **What the shop page shows:** approved, waiting for approval, rejected, paused or turned off, and not sent yet, as counts; each rejected one with the provider's reason as it wrote
+  it and what to do; refusals of the last send. It reads again only when the kept state (panel data `wa-templates/<shop>.json`, counts and names) is more than ten minutes old, and
+  waits at most four seconds; opening a page never sends.
+- **Go-live warns, it does not block.** The checks page says "N of M approved. You can still go live" (a shop answers inside the 24 hours from day one, and Meta takes up to a day).
+  The go-live confirmation shows what the provider said; its tick now says the person read it, and the counts are kept beside the statement.
+- **Tests:** `test/wa-templates.test.ts` (the save submits once and a second save nothing; a shop set up before new templates gets just those; Meta direct and Gupshup; the page's
+  counts and the stale-only read; a rejected one with its reason; a refused key; waiting, then the button; a missing account id; a bad one refused in the step).

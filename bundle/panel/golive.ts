@@ -6,7 +6,6 @@
 //  3. "Ready to go live": allowed only when 1 and 2 passed, the deployer says the last update was applied and every limit is proven, and the settings
 //     are still the ones that were checked. It writes the go-live certificate (report/), signed when the panel has a key.
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { goProgramsDir, programDigest } from "../../modules/crash-test/programs.ts";
 import { runGoHandCheck } from "../lib/hand-check-go.ts";
@@ -17,7 +16,7 @@ import { guardsOf, kindFor, runtimeHasWhatsApp } from "../lib/kinds.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
-import { guardUrlFor } from "./config.ts";
+import { guardUrlFor, readGuardAgentToken } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
 import { createDocuments } from "./documents.ts";
 import type { Shops } from "./shops.ts";
@@ -48,10 +47,7 @@ const iso = (ms: number) => new Date(ms).toISOString();
 export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
   const now = () => (config.now ?? Date.now)();
   const key = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined; // fails at start, not at the first certificate
-  const agentToken = (() => {
-    if (!config.guardAgentTokenFile) return undefined;
-    try { return readFileSync(config.guardAgentTokenFile, "utf8").trim() || undefined; } catch { return undefined; }
-  })();
+  const agentToken = readGuardAgentToken(config);
 
   /** The template a shop is: its hand check, its certificate and its settings digest (Bookings, Fees and Orders each have their own: lib/kinds.ts). */
   const kindOf = (shop: string): Kind => kindFor(shops.kind(shop)) as Kind;

@@ -17,7 +17,7 @@ import { buildAppJs } from "./lib/strip-app.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
 import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, directoryConfig, doorConfig, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
-import { PANEL_READS, guardToml, ownerNumbers } from "./generate/guards.ts";
+import { agentOperations, guardToml, ownerNumbers } from "./generate/guards.ts";
 import type { GuardLicence } from "./generate/guards.ts";
 import { agentFacts } from "./agent/applied.ts";
 import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./generate/rules.ts";
@@ -214,12 +214,16 @@ function ensureSharedCredentials(dir: string, shop: string, panelOn: boolean): C
 }
 
 const sha = (value: string) => sha256Hex(value);
-const agentsOf = (shop: string, kind: GuardPlan["kind"], c: Credentials) => [
-  { id: names.agentId(shop), sha: sha(c.agent[kind as "razorpay"]) },
-  ...(kind === "whatsapp" ? [{ id: names.relayAgentId(shop), sha: sha(c.agent.relay), operations: ["send"] }] : []),
-  // the panel's own agent: allowed the read operations of its connection checks at this Guard and nothing else (item 11h: it checks nothing at a push Guard, so it is not one of its agents)
-  ...(c.panel && kind !== "model" && kind !== "push" ? [{ id: names.panelAgentId(shop), sha: sha(c.panel), operations: PANEL_READS[kind as Three] }] : []),
-];
+// 25 Nov 2026: `spec` decides the lists where a WhatsApp Guard has template operations (agentOperations): the runtime then gets every other operation, the panel its reads and those
+const agentsOf = (shop: string, kind: GuardPlan["kind"], c: Credentials, spec: GuardPlan["spec"]) => {
+  const ops = agentOperations(kind, spec as { routes?: { operation: string }[] });
+  return [
+    { id: names.agentId(shop), sha: sha(c.agent[kind as "razorpay"]), ...(ops.runtime ? { operations: ops.runtime } : {}) },
+    ...(kind === "whatsapp" ? [{ id: names.relayAgentId(shop), sha: sha(c.agent.relay), operations: ["send"] }] : []),
+    // the panel's own agent: allowed the read operations of its connection checks at this Guard (and, where it has them, the template operations) and nothing else (item 11h: it checks nothing at a push Guard, so it is not one of its agents)
+    ...(c.panel && kind !== "model" && kind !== "push" ? [{ id: names.panelAgentId(shop), sha: sha(c.panel), operations: ops.panel }] : []),
+  ];
+};
 
 // ---- preparing a shop -----------------------------------------------------------------------------------------------------------------------
 
@@ -387,7 +391,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
     const licence = await guardLicenceOn(ctx, server);
     if (!licence.on) problems.push(licence.problem);
     for (const g of prepared.guards) {
-      problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }, licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
+      problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds, g.plan.spec) }, licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
     }
   }
@@ -574,7 +578,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards), p.gupshupRenewed, hasWhatsAppGuard(p.guards.map((g) => g.plan)), isShared(p.folder.lock?.pathway))]));
   const licence = await guardLicenceOn(ctx, server);
   if (!licence.on) problems.push(licence.problem);
-  for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
+  for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!, g.plan.spec) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   // decision 60: the model Guard's wall (a count of calls a day for the whole server) against the shops' own budgets: said, never refused
   for (const n of priceListNotes()) ctx.log(`note: ${n}`);

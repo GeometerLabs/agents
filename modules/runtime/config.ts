@@ -45,7 +45,8 @@ export type ServiceShape = readonly {
  * WhatsApp: the number's id always; `provider` and `appId` only to choose a provider other than Meta direct (modules/messaging/providers.ts). Item 11h (decision 45):
  * a shop may have no WhatsApp at all. It then keeps working on its page, and the owner hears by web push (modules/push); WhatsApp is reach, not a need.
  */
-const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId", "appName", "sourceNumber"], check: messagingConfigProblem, mayLack: true } as const;
+// `wabaId` (25 Nov 2026): Meta's WhatsApp Business Account, which the panel's template submissions go to; the bundle pins the Guard to it and never hands it to the runtime.
+const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId", "appName", "sourceNumber", "wabaId"], check: messagingConfigProblem, mayLack: true } as const;
 /** Item 11h: the shop's push Guard (bundle/generate/guards.ts pushSpec), through which every web push goes. Left out: the shop sends no pushes. */
 const PUSH_SERVICE = { name: "push", mayLack: true, optional: ["relayKey", "relayShop"], check: pushRelayProblem } as const;
 /**

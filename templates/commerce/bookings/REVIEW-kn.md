@@ -1962,6 +1962,48 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `discounts.capHelp` | ಎರಡರಲ್ಲಿ ಕಡಿಮೆಯದನ್ನು ಬಳಸಲಾಗುತ್ತದೆ. ಅದಕ್ಕಿಂತ ಹೆಚ್ಚಾದರೆ ಏಜೆಂಟ್ ಮೊದಲು ನಿಮ್ಮನ್ನು ಕೇಳುತ್ತದೆ. | The lower of the two is used. Above it, the agent asks you first. |  |
 | `discounts.floorsHelp` | ಪ್ರತಿಯೊಂದರ ಕನಿಷ್ಠ ಬೆಲೆ. ರಿಯಾಯಿತಿ ಬೇಡದಿದ್ದರೆ ಆ ಡಬ್ಬಿ ಖಾಲಿ ಬಿಡಿ. | The lowest price for each. Leave a box empty for no discount on that one. |  |
 | `discounts.floor` | Haircut ಕನಿಷ್ಠ ಬೆಲೆ (₹) | Lowest price for Haircut (₹) |  |
+| `waTemplates.heading` | WhatsApp ಸಂದೇಶಗಳ ಪದಗಳು | WhatsApp message wordings |  |
+| `waTemplates.intro` | ಗ್ರಾಹಕರ 24 ಗಂಟೆಗಳು ಮುಗಿದ ನಂತರ ಅಂಗಡಿ ಕಳುಹಿಸುವ ಪ್ರತಿ ಸಂದೇಶದ ಪದಗಳನ್ನು Meta ಮೊದಲು ಒಪ್ಪಬೇಕು. ಪ್ಯಾನೆಲ್ ಅವನ್ನು ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp ಖಾತೆಗೆ ಕಳುಹಿಸಿ, ಬಂದ ಉತ್ತರವನ್ನು ತೋರಿಸುತ್ತದೆ. | Meta approves each wording the shop sends after a customer's 24 hours are over. The panel sends them to the shop's own WhatsApp account and shows what came back. |  |
+| `waTemplates.label.approved` | ಒಪ್ಪಲಾಗಿದೆ | Approved |  |
+| `waTemplates.label.pending` | ಒಪ್ಪಿಗೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for approval |  |
+| `waTemplates.label.rejected` | ತಿರಸ್ಕರಿಸಲಾಗಿದೆ | Rejected |  |
+| `waTemplates.label.stopped` | ನಿಲ್ಲಿಸಲಾಗಿದೆ ಅಥವಾ ಆಫ್ ಮಾಡಲಾಗಿದೆ | Paused or turned off |  |
+| `waTemplates.label.not-submitted` | ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ | Not sent yet |  |
+| `waTemplates.asOf` | 25 Nov 2026, 10:30 ಕ್ಕೆ Meta ಹೇಳಿದ್ದು ಇದು. | As Meta said at 25 Nov 2026, 10:30. |  |
+| `waTemplates.asking` | ಈಗ ಕೇಳುತ್ತಿದ್ದೇವೆ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಈ ಪುಟವನ್ನು ಮತ್ತೆ ತೆರೆಯಿರಿ. | Asking now. Open this page again in a minute. |  |
+| `waTemplates.busy` | ಪದಗಳನ್ನು ಈಗ ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಈ ಪುಟವನ್ನು ಮತ್ತೆ ತೆರೆಯಿರಿ. | Sending the wordings now. Open this page again in a minute. |  |
+| `waTemplates.never` | ಇನ್ನೂ ಕೇಳಿಲ್ಲ. | Not asked yet. |  |
+| `waTemplates.allApproved` | ಎಲ್ಲಾ ಪದಗಳನ್ನು ಒಪ್ಪಲಾಗಿದೆ: ಅಂಗಡಿ ಯಾವಾಗ ಬೇಕಾದರೂ ಗ್ರಾಹಕರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಬಹುದು. | Every wording is approved: the shop can message customers at any time. |  |
+| `waTemplates.pendingHelp` | ಒಪ್ಪಿಗೆ ಸಾಮಾನ್ಯವಾಗಿ ಒಂದು ದಿನದೊಳಗೆ ಬರುತ್ತದೆ. ಅಲ್ಲಿಯವರೆಗೂ ಅಂಗಡಿ ಪ್ರತಿ ಗ್ರಾಹಕರಿಗೆ ಅವರ ಸಂದೇಶದ 24 ಗಂಟೆಗಳೊಳಗೆ ಉತ್ತರಿಸುತ್ತದೆ. | Approval usually comes within a day. Until then the shop still answers every customer within 24 hours of their message. |  |
+| `waTemplates.rejectedHead` | ತಿರಸ್ಕರಿಸಿದವು, ಹೇಳಿದ ಕಾರಣದೊಂದಿಗೆ: | Rejected, with the reason given: |  |
+| `waTemplates.noReason` | ಕಾರಣ ಹೇಳಿಲ್ಲ | no reason given |  |
+| `waTemplates.rejectedHelp` | ಏನು ಮಾಡಬೇಕು: WhatsApp Manager (ಅಥವಾ Gupshup ಡ್ಯಾಶ್‌ಬೋರ್ಡ್) ತೆರೆದು ಕಾರಣ ಓದಿ; ಪದಗಳು ಸರಿಯಾಗಿದ್ದರೆ ಅಲ್ಲೇ ಮರುಪರಿಶೀಲನೆ ಕೇಳಿ. ಪದಗಳನ್ನು ಬದಲಿಸಬೇಕಾದರೆ ಹೆಸರಿನೊಂದಿಗೆ hello@geometer.dev ಗೆ ಬರೆಯಿರಿ. | What to do: open WhatsApp Manager (or the Gupshup dashboard), read the reason, and ask for a review there if the words are right. If the words need changing, write to hello@geometer.dev with the name. |  |
+| `waTemplates.stoppedHead` | ನಿಲ್ಲಿಸಿದವು ಅಥವಾ ಆಫ್ ಮಾಡಿದವು: | Paused or turned off: |  |
+| `waTemplates.stoppedHelp` | ಏನು ಮಾಡಬೇಕು: ಕಾರಣ ನೋಡಲು WhatsApp Manager (ಅಥವಾ Gupshup ಡ್ಯಾಶ್‌ಬೋರ್ಡ್) ತೆರೆಯಿರಿ, ಅಲ್ಲೇ ಮತ್ತೆ ಆನ್ ಮಾಡಿ. | What to do: open WhatsApp Manager (or the Gupshup dashboard) to see why, and turn it on again there. |  |
+| `waTemplates.refusedHead` | ಕಳುಹಿಸಿದಾಗ ನಿರಾಕರಿಸಿದವು: | Refused when sent: |  |
+| `waTemplates.cannotHead` | ಇಲ್ಲಿಂದ ಕಳುಹಿಸಲಾಗದವು (ಇವನ್ನು ಕೈಯಾರೆ ಸೇರಿಸಿ): | Cannot be sent from here (add these by hand): |  |
+| `waTemplates.more` | ಮತ್ತು ಇನ್ನೂ 4 | and 4 more |  |
+| `waTemplates.send` | ಇನ್ನೂ ಕಳುಹಿಸದ 6 ಕಳುಹಿಸಿ | Send the 6 not sent yet |  |
+| `waTemplates.ask` | ಈಗ ಮತ್ತೆ ಕೇಳಿ | Ask again now |  |
+| `waTemplates.blocked.account-id` | ಪ್ಯಾನೆಲ್ ಪದಗಳನ್ನು ಕಳುಹಿಸಲು, ಅಂಗಡಿಯ WhatsApp ಹಂತದಲ್ಲಿ (ಸೆಟ್ಟಿಂಗ್ ಬದಲಿಸಿ) ಅದರ WhatsApp Business Account ID ಸೇರಿಸಿ. Meta ಇದನ್ನು API Setup ಪುಟದಲ್ಲಿ, ಫೋನ್ ನಂಬರ್ ID ಪಕ್ಕದಲ್ಲಿ ತೋರಿಸುತ್ತದೆ. | Add the shop's WhatsApp Business Account ID in its WhatsApp step (Edit the settings), so the panel can send the wordings. Meta shows it on the API Setup page, next to the phone number ID. |  |
+| `waTemplates.blocked.app-id` | ಪ್ಯಾನೆಲ್ ಪದಗಳನ್ನು ಕಳುಹಿಸಲು, ಅಂಗಡಿಯ WhatsApp ಹಂತದಲ್ಲಿ (ಸೆಟ್ಟಿಂಗ್ ಬದಲಿಸಿ) Gupshup app ID ಸೇರಿಸಿ. Gupshup ಇದನ್ನು ಆ್ಯಪ್‌ನ ಪುಟದಲ್ಲಿ ತೋರಿಸುತ್ತದೆ. | Add the Gupshup app ID in the shop's WhatsApp step (Edit the settings), so the panel can send the wordings. Gupshup shows it on the app's page. |  |
+| `waTemplates.blocked.provider` | ಈ ಅಂಗಡಿಯ WhatsApp ಬೇರೊಂದು ಕಂಪನಿಯ Gupshup ಖಾತೆಯ ಮೂಲಕ ನಡೆಯುತ್ತದೆ; ಪದಗಳನ್ನು ಆ ಕಂಪನಿಯೇ ಸೇರಿಸುತ್ತದೆ. ಸ್ಥಿತಿ ಏನು ಎಂದು ಅವರನ್ನು ಕೇಳಿ. | This shop's WhatsApp runs through another company's Gupshup account, and that company adds the wordings. Ask them how they stand. |  |
+| `waTemplates.blocked.no-guard` | ಅಂಗಡಿಗಳ ಸಂಪರ್ಕಗಳು ಎಲ್ಲಿವೆ ಎಂದು ಈ ಸರ್ವರ್ ಹೇಳಿಲ್ಲ, ಆದ್ದರಿಂದ ಪ್ಯಾನೆಲ್ ಪದಗಳನ್ನು ಕಳುಹಿಸಲಾಗದು. ಬದಲಿಗೆ ಸರ್ವರ್‌ನಲ್ಲಿ geometer whatsapp-templates ನಡೆಸಿ. | This server has not said where the shops' connections are, so the panel cannot send the wordings. Run geometer whatsapp-templates on the server instead. |  |
+| `waTemplates.blocked.conflict` | ಈ ಅಂಗಡಿಯ ಎರಡು ಭಾಗಗಳು ಒಂದೇ ಹೆಸರಿಗೆ ಬೇರೆ ಬೇರೆ ಪದಗಳನ್ನು ಕೊಡುತ್ತವೆ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. hello@geometer.dev ಗೆ ಬರೆಯಿರಿ. | Two parts of this shop give one wording name different words, so nothing was sent. Write to hello@geometer.dev. |  |
+| `waTemplates.stop.key` | Meta ಅಂಗಡಿಯ key ಅನ್ನು ಒಪ್ಪಲಿಲ್ಲ. ಅಂಗಡಿಯ WhatsApp ಹಂತದಲ್ಲಿ ಅದನ್ನು ಮತ್ತೆ ಕೊಡಿ, ನಂತರ ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ. | Meta did not accept the shop's key. Hand it in again in the shop's WhatsApp step, then press the button below. |  |
+| `waTemplates.stop.rate` | Meta ಒಂದು ಗಂಟೆಗೆ ಹೆಚ್ಚೆಂದರೆ 100 ಹೊಸ ಪದಗಳನ್ನು ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ. ಉಳಿದವಕ್ಕೆ ಒಂದು ಗಂಟೆಯ ನಂತರ ಬಟನ್ ಮತ್ತೆ ಒತ್ತಿ. | Meta takes up to 100 new wordings an hour. Press the button again in an hour for the rest. |  |
+| `waTemplates.stop.unreachable` | ಅಂಗಡಿಯ WhatsApp ಸಂಪರ್ಕ ಇನ್ನೂ ನಡೆಯುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ಸರ್ವರ್ ಅಂಗಡಿಯನ್ನು ಅನ್ವಯಿಸಿದ ನಂತರ ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ. | The shop's WhatsApp connection is not running yet, so nothing was sent. Once the server has applied the shop, press the button below. |  |
+| `waTemplates.stop.guard` | ಅಂಗಡಿಯ ಸಂಪರ್ಕ ಇದನ್ನು ಅನುಮತಿಸಲಿಲ್ಲ. ಸರ್ವರ್ ಈಗಷ್ಟೇ ಅಪ್‌ಡೇಟ್ ಆಗಿದ್ದರೆ, ಅದು ಅಂಗಡಿಯನ್ನು ಅನ್ವಯಿಸುವವರೆಗೆ ಕಾದು, ನಂತರ ಬಟನ್ ಮತ್ತೆ ಒತ್ತಿ. | The shop's connection did not allow this. If the server was updated just now, wait for it to apply the shop, then press the button again. |  |
+| `waTemplates.stop.other` | ಕೇಳುವಾಗ ಏನೋ ತಪ್ಪಾಯಿತು. ಬಟನ್ ಮತ್ತೆ ಒತ್ತಿ; ಹಾಗೆಯೇ ಉಳಿದರೆ hello@geometer.dev ಗೆ ಬರೆಯಿರಿ. | Something went wrong while asking. Press the button again; if it stays, write to hello@geometer.dev. |  |
+| `waTemplates.checks.ok` | WhatsApp ಪದಗಳು: ಎಲ್ಲವನ್ನೂ ಒಪ್ಪಲಾಗಿದೆ. | WhatsApp wordings: all approved. |  |
+| `waTemplates.checks.warn` | WhatsApp ಪದಗಳು: 44 ರಲ್ಲಿ 38 ಒಪ್ಪಲಾಗಿದೆ. ಆದರೂ ನೀವು ಲೈವ್ ಆಗಬಹುದು: ಉಳಿದವು ಒಪ್ಪಿಗೆ ಪಡೆಯುವವರೆಗೆ ಅಂಗಡಿ ಗ್ರಾಹಕರಿಗೆ ಅವರ ಸಂದೇಶದ 24 ಗಂಟೆಗಳೊಳಗೆ ಉತ್ತರಿಸುತ್ತದೆ; ಅದರ ನಂತರದ ಸಂದೇಶ ತನ್ನ ಒಪ್ಪಿಗೆಗಾಗಿ ಕಾಯುತ್ತದೆ. | WhatsApp wordings: 38 of 44 approved. You can still go live: until the rest are approved, the shop answers customers within 24 hours of their message, and a message after that waits for its approval. |  |
+| `waTemplates.checks.none` | WhatsApp ಪದಗಳು: ಇನ್ನೂ ಕೇಳಿಲ್ಲ. ಅಂಗಡಿಯ ಸಂಪರ್ಕ ನಡೆಯಲು ಶುರುವಾದ ಕೂಡಲೇ ಪ್ಯಾನೆಲ್ ಅವನ್ನು ಕಳುಹಿಸುತ್ತದೆ. | WhatsApp wordings: not asked yet. The panel sends them once the shop's connection is running. |  |
+| `waTemplates.setup.wabaId` | WhatsApp Business Account ID | WhatsApp Business Account ID |  |
+| `waTemplates.setup.wabaIdHelp` | ಅಂಕೆಗಳು ಮಾತ್ರ. Meta ಇದನ್ನು API Setup ಪುಟದಲ್ಲಿ, ಫೋನ್ ನಂಬರ್ ID ಪಕ್ಕದಲ್ಲಿ ತೋರಿಸುತ್ತದೆ. ಪ್ಯಾನೆಲ್ ಅಂಗಡಿಯ ಸಂದೇಶ ಪದಗಳನ್ನು ಒಪ್ಪಿಗೆಗಾಗಿ ಈ ಖಾತೆಗೆ ಕಳುಹಿಸುತ್ತದೆ. | Digits. Meta shows it on the API Setup page, next to the phone number ID. The panel sends the shop's message wordings to this account for approval. |  |
+| `waTemplates.setup.wabaIdBad` | WhatsApp Business Account ID ಯಲ್ಲಿ ಅಂಕೆಗಳು ಮಾತ್ರ (6 ರಿಂದ 20). | The WhatsApp Business Account ID is digits only (6 to 20 of them). |  |
+| `waTemplates.setup.appId` | Gupshup app ID | Gupshup app ID |  |
+| `waTemplates.setup.appIdHelp` | Gupshup ನಲ್ಲಿ ಆ್ಯಪ್‌ನ ಪುಟದಲ್ಲಿ. ಪ್ಯಾನೆಲ್ ಅಂಗಡಿಯ ಸಂದೇಶ ಪದಗಳನ್ನು ಒಪ್ಪಿಗೆಗಾಗಿ ಈ ಆ್ಯಪ್‌ಗೆ ಕಳುಹಿಸುತ್ತದೆ. | On the app's page in Gupshup. The panel sends the shop's message wordings to this app for approval. |  |
+| `waTemplates.setup.appIdBad` | Gupshup app ID ಯಲ್ಲಿ Gupshup ತೋರಿಸುವಂತೆ ಅಕ್ಷರಗಳು, ಅಂಕೆಗಳು ಮತ್ತು ಹೈಫನ್‌ಗಳು. | The Gupshup app ID is letters, digits and hyphens, as Gupshup shows it. |  |
 | `leave.assistant.leave_file_asked` | ಆಯಿತು. ನಿಮ್ಮ ಅಂಗಡಿಯ ಫೈಲ್ ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ನಿಮ್ಮ ಆ್ಯಪ್ ಪುಟದಲ್ಲಿ ಇರುತ್ತದೆ, ತೆಗೆದುಕೊಳ್ಳಲು ಬಟನ್ ಕೂಡ. ಬಟನ್ ಒಂದೇ ಬಾರಿ, 3 ದಿನ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಇದಕ್ಕೆ ನಿಮ್ಮ Operator ಬೇಕಿಲ್ಲ, ಅವರನ್ನು ಕೇಳುವುದೂ ಇಲ್ಲ. | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
 | `leave.assistant.leave_file_again` | ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು ಅಂಗಡಿಯ ಫೈಲ್ ಕೇಳಿದ್ದೀರಿ. ಅದು ಬರುತ್ತಿದೆ; ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಆ್ಯಪ್ ಪುಟ ನೋಡಿ. | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
 | `leave.assistant.leave_operator_asked` | ಆಯಿತು. ನೀವು ಬೇರೆ Operator ಬಯಸುತ್ತೀರಿ ಎಂದು ನಿಮ್ಮ Operator ಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ನೀವು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ: Operator ಹೊಸ ವ್ಯಕ್ತಿಯ ಹೆಸರು ನೀಡುತ್ತಾರೆ, ನಿಮಗೆ ಒಂದು ಕೋಡ್ ಸಿಗುತ್ತದೆ, ಅದನ್ನು ಇಲ್ಲಿ "move" ಮತ್ತು ಕೋಡ್ ಎಂದು ಕಳುಹಿಸಿ. 14 ದಿನದಲ್ಲಿ ಏನೂ ಆಗದಿದ್ದರೆ Geometer ನಿಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತದೆ. | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |

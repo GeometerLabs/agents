@@ -42,6 +42,8 @@ import { listingsChecksPage, listingsWords } from "./listings.ts";
 import { HEALTH_WORDS } from "./words-health.ts";
 import { channelsBlock } from "./views-channels.ts";
 import { pagesBlock } from "./views-pages.ts";
+import { waChecksLine, waTemplatesBlock, waWords } from "./wa-templates.ts";
+import type { WaView } from "./wa-templates.ts";
 
 const css = readFileSync(new URL("../../templates/commerce/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
 
@@ -261,6 +263,8 @@ export interface ShopView {
   id: string;
   name: string;
   live: LiveView;
+  /** 25 Nov 2026: the shop's WhatsApp message templates as its account holds them (wa-templates.ts). Left out: the shop has none. */
+  waTemplates?: WaView;
   status: ShopStatus | undefined;
   stopRequestedAt?: string;
   summary: { services: string[]; hours: string[]; deposit: string; cancel: string; languages: string; owner: string } | undefined;
@@ -417,6 +421,7 @@ ${v.liveCounts ? html`<ul class="plain">
 <p class="note">${c.w.common.counts}</p>
 
 ${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
+${v.waTemplates ? waTemplatesBlock(c, v.id, v.waTemplates, (at) => when(at, c.lang)) : ""}
 ${v.channels ? channelsBlock(c, v.id, v.channels, v.channelsKind) : ""}
 ${v.character ? characterBlock(c, v.id, v.character) : ""}
 ${v.pages ? pagesBlock(c, v.id, v.pages, v.pagesNotice) : ""}
@@ -620,11 +625,12 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
     <div class="field"><label><input type="radio" name="waProvider" value="meta" ${d.whatsapp.provider === undefined ? raw("checked") : ""}> ${a.whatsapp.selfServe.choiceMeta}</label>
       <label><input type="radio" name="waProvider" value="gupshup-selfserve" ${d.whatsapp.provider === "gupshup-selfserve" ? raw("checked") : ""}> ${a.whatsapp.selfServe.choiceGupshup}</label></div>
     ${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.provider ? "" : d.whatsapp.numberId, { mode: "numeric", max: 20 })}
+    ${text(waWords(c.lang).setup.wabaId, "waWabaId", d.whatsapp.provider ? "" : d.whatsapp.wabaId ?? "", { mode: "numeric", max: 20, help: waWords(c.lang).setup.wabaIdHelp })}
     ${secret(c, a.whatsapp.token, "waToken", v.receipts.whatsapp_token)}${secret(c, a.whatsapp.appSecret, "waAppSecret", v.receipts.whatsapp_app_secret)}
     <h3>${a.whatsapp.selfServe.title}</h3><p>${a.whatsapp.selfServe.intro}</p>
     <p><a href="https://www.gupshup.io/" rel="noopener noreferrer" target="_blank">${a.whatsapp.selfServe.signup}</a> · <a href="https://docs.gupshup.io/docs/quickstart-create-and-configure-access-api" rel="noopener noreferrer" target="_blank">${a.whatsapp.selfServe.guide}</a></p>
     ${guide(a.whatsapp.selfServe.steps)}
-    ${text(a.whatsapp.selfServe.appName, "waAppName", d.whatsapp.appName ?? "", { max: 64 })}${secret(c, a.whatsapp.selfServe.apiKey, "waApiKey", v.receipts.gupshup_apikey)}
+    ${text(a.whatsapp.selfServe.appName, "waAppName", d.whatsapp.appName ?? "", { max: 64 })}${text(waWords(c.lang).setup.appId, "waAppId", d.whatsapp.appId ?? "", { max: 64, help: waWords(c.lang).setup.appIdHelp })}${secret(c, a.whatsapp.selfServe.apiKey, "waApiKey", v.receipts.gupshup_apikey)}
     ${secret(c, a.whatsapp.selfServe.pathToken, "waPathToken", v.receipts.whatsapp_path_token)}${v.whatsappWebhookUrl ? html`<p>${a.whatsapp.selfServe.callback}</p><code class="addr">${v.whatsappWebhookUrl}/SECRET-WORD</code>` : ""}` : ""}
   ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.useOwn}</p>
     <div class="field"><label><input type="checkbox" name="calUse" value="google" ${d.calendar.use === "google" ? raw("checked") : ""}> ${a.calendar.useGoogle}</label></div>
@@ -659,6 +665,8 @@ export interface ChecksView {
   draft: Draft;
   steps: string[];
   now: number;
+  /** 25 Nov 2026: the shop's WhatsApp templates: a warning line, never a block (wa-templates.ts says why). */
+  waTemplates?: WaView;
   saved: boolean;
   problems: string[];
   checks: StoredChecks | undefined;
@@ -727,6 +735,8 @@ export function setupChecksPage(c: Ctx, v: ChecksView): string {
     ...(v.checks?.connections ? v.checks.connections.map((r) => checkLine(c, r)) : [row("wait", html`${v.guardConfigured ? k.waiting : k.guardNotSet}`)]),
     // item 11h: a shop with no WhatsApp: the owner's way in is the setup QR code and a passkey
     ...(v.unmet.includes("owner-signin") ? [row("wait", html`${k.ownerSigninWait}`)] : d.whatsapp.none ? [row("ok", html`${k.ownerSigninOk}`)] : []),
+    // 25 Nov 2026: the WhatsApp templates warn here and never hold "Ready to go live" back (wa-templates.ts)
+    ...((l) => (l ? [row(l.state, html`${l.text}`)] : []))(v.waTemplates ? waChecksLine(c.lang, v.waTemplates) : undefined),
   ];
   return layout(c, w.steps.checks, html`${head}
 <div class="notice" role="status">${k.saved}</div>
