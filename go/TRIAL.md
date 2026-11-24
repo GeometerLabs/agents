@@ -1678,3 +1678,15 @@ Findings in the templates' own situations (not changed; the TypeScript and Go re
 
 TypeScript findings: none in the templates' code. One thing worth knowing: the Orders skill owns `g-` references (`^[og]-`) and so does the Fees skill (`^[fqg]-`); in a
 parts shop a press on a `g-` case is owned by two parts and is recorded and not done (the router never guesses).
+- **Run of record** (25 Nov 2026, through the heat lock, GEO_GUARD_BIN and GEOMETER_MONOREPO set; scratchpad d65-final.sh, the 24 Nov run's script with the parts lines
+  added): `go build/vet ./...` clean, `go test ./...` 41 packages ok; contracts: Bookings 178/178, Orders 136/136, Fees 111/111, Stock orders 74/74, listings 210/210
+  (words-fresh included), directory 36/36, parts 14/14; every generator's `--check` (42) fresh; template units: Bookings 838/838, Orders 216/216, Stock orders 124/124,
+  Fees 244 of 245 (the sell guide's hand-check count, 25 of 26 under load: the Fees flake stream fees-flake-25nov's); bundle 745: 733 pass, 9 skipped (REAL_CADDY), 3
+  failed, each since fixed and passed alone (the kinds list and the ask card now count parts; update.test's copy of the running programs lacked the parts program);
+  panel 288: 286 pass, the two new golive-parts cases since corrected; every hand check on Go as on 24 Nov holds all, and the parts shop's holds 26 of 28 (the shop's own
+  6 of 6, fees 4 of 4, orders 4 of 4, stock-orders 12 of 14: its two findings above, which Stock orders' own program also fails on the starter's stock settings).
+  Through the parts program (`CONTRACT_PARTS=first`): Stock orders 66 pass, 8 skipped by design, 0 fail; Orders 87 pass, 48 skipped (39 gateway cases a parts shop does not
+  take, the rest by design), 1 fail (a Razorpay restart case that starts with test() outside the harness's skip, by design). After the last fixes (targeted rerun, same
+  day): parts 14/14, Orders 136/136 on its own program, bundle update.test 14/14; Fees through the parts program 48 pass, 55 skipped (gateway or by design), 8 fail: 5 by
+  design but outside the skip (the four gateway differential cases and the restart case use test() directly), and 3 open: a picture from a parent the hold could also
+  take is asked about instead of read as "I paid", the owner page's Received press on a parent's claim, and the reminders' words with no page link (bundle Deferred.md).

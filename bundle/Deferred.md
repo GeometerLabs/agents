@@ -679,3 +679,7 @@ and listed for the owner to confirm.
 - [ ] **A parts shop's page and chat are ONE part's customer side.** The pickup hold's when the shop has an Orders part, else the credit book's (Fees). A Fees part beside
   an Orders part has no centre page, no parent's private links and no chat in that shop, so it sends no link (its page address is left out). The credit book sends no page
   link, so the shop starter loses nothing; a Fees centre with parents beside an Orders part would. Done when the front serves both customer sides under one shop's address.
+- [ ] **A Fees centre (with parents) beside an Orders part, through the router.** Its own contract suite run through the parts program leaves three cases open: a parent's
+  picture is asked about (the hold could take a picture too) instead of read as "I paid"; the owner page's Received press on a parent's claim; the reminders' words with no
+  page link. The shop starter (the credit book) passes its own suite through the router. Done with the parent's picture claimed by the centre when the hold has nothing open
+  with them, and the two owner-page cases traced.
