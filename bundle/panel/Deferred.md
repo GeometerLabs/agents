@@ -137,3 +137,14 @@ Not built, or built only as far as said. The first block needs another part of t
 - A wrong data key or an unreadable folder used to stop the panel at start (the container showed unhealthy); asleep it shows when the first request loads it (503 to the person, the reason in the log). A cheap check of the key file at start would restore it.
 - A request that reaches Caddy in the second between the exit of a sleep and the restart gets a 502. Only a request in that second; a `lb_try_duration` on the panel's route in the Caddyfile would hide it, left out because it changes the generated Caddyfile (and its golden file) for a one-second window.
 - The login limiter stays in memory; the sleep is never shorter than its 15-minute window so a sleep forgets nothing that still counted.
+
+
+## The hand check on Go (24 Nov 2026)
+
+| What | Why it is not done | Workaround |
+|------|--------------------|------------|
+| A polled job for the hand check (the page asks until the run is done) | A run takes seconds to about a minute and finishes within the request; the on-demand panel does not sleep with a request in flight | The request waits; the time limit is 10 minutes |
+| `geometer update`'s "before" hand check runs on the programs the shop runs now, copied out of the image the deployed compose file names; when that image is gone (pruned by hand) the current programs stand in, and the update says so | The image is kept while the compose file names it (lib/go-build.ts pruneGoImages) | The update's log names the fallback |
+| The contract harnesses (templates/*/contract/harness.ts) still write their shop folders themselves; the hand check's runner (modules/crash-test/go-shop.ts) uses the same shared pieces but is a second writer of the folder | Moving four suites of contract tests onto it is a change to every template's contract; not this stream's | Both use modules/test/contract (process tracker, starter, clock file, free port) |
+| Fees' "not tested" line for the model says the stand-in decision and language models were run; on Go the Fees program reads by its rules alone, so none is asked | The words are in four languages and the review sheets; a wording change of its own | "The model is down" runs and checks that no model is asked and the limits hold |
+| The morning line's mood sticker inside the owner's window (morning.ts sent it before the words when the pictures were drawn); the Go port sends the words alone | Not a refusal (inside the window the words go as text); a port item of its own | The template outside the window now carries the picture |

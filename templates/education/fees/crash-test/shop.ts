@@ -48,7 +48,7 @@ export interface Shop {
 export function planShop(settings: Settings): { shop: Shop } | { problem: string } {
   // the credit book (src/credit/) has no student and no monthly fee to script: its paths are held by the Go contract (contract/credit.contract.test.ts), so here every situation is
   // listed as not run, with this reason, never counted as held
-  if (settings.creditBook) return { problem: "This shop keeps a credit book: these situations are about a parent's monthly fee, so none is run here. The credit book's own paths (the owner's entries, the first question after the owner's tap, reminders only after a yes, a payment recorded or marked) are checked by the template's contract on the Go runtime." };
+  if (settings.creditBook) return { problem: "This shop keeps a credit book: these situations are about a parent's monthly fee; the credit book's own run instead (crash-test/credit.ts)." };
   const tz = settings.timezone;
   // The scripted parent has one child at the centre, when any parent does: a message about "the fee" is then about one fee.
   const only = settings.students.find((s) => settings.students.filter((o) => o.parent === s.parent).length === 1) ?? settings.students[0];

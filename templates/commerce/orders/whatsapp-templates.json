@@ -968,6 +968,98 @@
     ]
   },
   {
+    "name": "owner_order_payment_unused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} का {{2}} का भुगतान ऑर्डर {{3}} ({{4}}) के लिए आया, पर वह ऑर्डर अब चालू नहीं था (रोक खत्म हो चुकी थी और दोबारा नहीं लिया जा सका, या रद्द था)। {{5}} वापस कर दिया गया।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120",
+              "o-3",
+              "गुरुवार, 12 नवंबर",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_payment_unused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "A {{1}} payment from {{2}} arrived for order {{3}} ({{4}}), but it was no longer active (its hold had ended and it could not be taken again, or it was cancelled). {{5}} was refunded.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "+919811111111",
+              "o-3",
+              "Thu 12 Nov",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_payment_unused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: ഓർഡർ {{2}} ({{3}}) ന് {{4}} പേയ്മെന്റ് വന്നു, പക്ഷേ ആ ഓർഡർ അപ്പോൾ നിലവിലില്ലായിരുന്നു (മാറ്റിവച്ച സമയം കഴിഞ്ഞിരുന്നു, വീണ്ടും എടുക്കാനും കഴിഞ്ഞില്ല, അല്ലെങ്കിൽ റദ്ദാക്കിയിരുന്നു). {{5}} തിരികെ നൽകി.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "വ്യാഴം, 12 നവംബർ",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_payment_unused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: ಆರ್ಡರ್ {{2}} ({{3}}) ಗಾಗಿ {{4}} ಪಾವತಿ ಬಂದಿದೆ, ಆದರೆ ಆ ಆರ್ಡರ್ ಆಗ ಚಾಲ್ತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ (ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು ಮತ್ತು ಮತ್ತೆ ತೆಗೆದುಕೊಳ್ಳಲು ಆಗಲಿಲ್ಲ, ಅಥವಾ ರದ್ದಾಗಿತ್ತು). {{5}} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_order_link_failed",
     "language": "hi",
     "category": "UTILITY",
@@ -2469,6 +2561,186 @@
             [
               "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
               "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_active",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका {{1}} प्लान चालू है: {{2}} से {{3}} तक {{4}} भोजन। आप किसी दिन की अंतिम समय-सीमा तक उसे छोड़ सकते हैं या रोक सकते हैं ({{5}} के लिए: {{6}}), और बंद करने के लिए \"cancel plan\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर",
+              "शुक्रवार, 11 दिसंबर",
+              "22",
+              "गुरुवार, 12 नवंबर",
+              "बुधवार, 11 नवंबर, रात 8:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_active",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your {{1}} plan is on: {{2}} meals from {{3}} to {{4}}. You can skip a day or pause until its cut-off (for {{5}}: {{6}}), and write \"cancel plan\" to stop.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "22",
+              "Thu 12 Nov",
+              "Fri 11 Dec",
+              "Thu 12 Nov",
+              "Wed 11 Nov, 8:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_active",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പ്ലാൻ തുടങ്ങി: {{2}} മുതൽ {{3}} വരെ {{4}} ഭക്ഷണം. ഒരു ദിവസത്തിന്റെ അവസാന സമയം വരെ അത് ഒഴിവാക്കാം അല്ലെങ്കിൽ നിർത്തിവയ്ക്കാം ({{5}}-ന്: {{6}}), നിർത്താൻ \"cancel plan\" എന്ന് എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ",
+              "വെള്ളി, 11 ഡിസംബർ",
+              "22",
+              "വ്യാഴം, 12 നവംബർ",
+              "ബുധൻ, 11 നവംബർ, രാത്രി 8:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_active",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪ್ಲಾನ್ ಶುರುವಾಗಿದೆ: {{2}} ರಿಂದ {{3}} ವರೆಗೆ {{4}} ಊಟ. ಒಂದು ದಿನದ ಕೊನೆಯ ಸಮಯದವರೆಗೆ ಅದನ್ನು ಬಿಡಬಹುದು ಅಥವಾ ನಿಲ್ಲಿಸಬಹುದು ({{5}} ಗೆ: {{6}}), ನಿಲ್ಲಿಸಲು \"cancel plan\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
+              "ಶುಕ್ರವಾರ, 11 ಡಿಸೆಂಬರ್",
+              "22",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
+              "ಬುಧವಾರ, 11 ನವೆಂಬರ್, ರಾತ್ರಿ 8:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_plan_cancelled",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "प्लान {{1}} ({{2}}, {{3}}) रद्द हो गया है। रद्द करने के बाद के दिनों के लिए भोजन न बनाएं।",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × वेज थाली",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_plan_cancelled",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Plan {{1}} ({{2}}, {{3}}) is cancelled. Do not make meals for the days after the cancellation.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × veg thali",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_plan_cancelled",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്ലാൻ {{1}} ({{2}}, {{3}}) റദ്ദാക്കി. റദ്ദാക്കിയതിന് ശേഷമുള്ള ദിവസങ്ങളിൽ ഭക്ഷണം ഉണ്ടാക്കരുത്.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × veg thali",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_plan_cancelled",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪ್ಲಾನ್ {{1}} ({{2}}, {{3}}) ರದ್ದಾಗಿದೆ. ರದ್ದತಿಯ ನಂತರದ ದಿನಗಳಿಗೆ ಊಟ ಮಾಡಬೇಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "2 × veg thali",
+              "+919811111111"
             ]
           ]
         }

@@ -14,6 +14,15 @@ import type { LocalDate } from "../core/time.ts";
 import { verifyEnvelopeText } from "./sign.ts";
 
 export const GO_LIVE_FORMAT = "geometer-go-live-certificate/1";
+
+/**
+ * The program a go-live hand check ran on (since 24 Nov 2026 the shop's own Go program: modules/crash-test/go-shop.ts): its name, the template version it serves and the
+ * SHA-256 of its file. A certificate carries it as `program`; a certificate made before has none, and every reader treats it as optional.
+ */
+export interface ProgramRan { name: string; version: string; sha256: string }
+
+/** How a certificate names the program next to the agent's version: names and digits only, the same in every language ("Go bookings 0.2.0 · sha256:3f2a…"). */
+export const programLabel = (program: ProgramRan | undefined): string => (program ? ` · Go ${program.name} ${program.version} · sha256:${program.sha256.slice(0, 16)}` : "");
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const isCount = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0;
 const DIGEST = /^sha256:[0-9a-f]{64}$/u;

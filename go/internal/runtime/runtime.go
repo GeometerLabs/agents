@@ -80,6 +80,7 @@ type Runtime struct {
 	entries   []store.Entry
 	steps     int64
 	errors    int64
+	ticks     int64 // beats of the clock done (counted when each ends, failed or not): /status says it, so the hand check knows a beat after its clock move has run
 	lastStep  int64
 	lastFail  int64
 	broken    string
@@ -315,6 +316,7 @@ func (r *Runtime) fail(what string, err error) {
 
 // tick is the clock's beat: the panel's "sign out every device" said once in the record, and, once a day, the clean-up.
 func (r *Runtime) tick() {
+	defer func() { r.mu.Lock(); r.ticks++; r.mu.Unlock() }()
 	if err := r.step(nil, ""); err != nil {
 		r.fail("A tick failed", err)
 		return

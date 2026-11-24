@@ -236,6 +236,11 @@ export function serverPaths(dir: string) {
     stopRequest: (name: string) => join(root, "requests", `${name}.stop.json`),
     exports: join(root, "exports"),
     /**
+     * A copy of the shop programs of the image the shops run (lib/go-build.ts copyGoPrograms; 24 Nov 2026): the panel runs the go-live hand check on them (bundle/lib/hand-check-go.ts),
+     * mounted read-only. Program files only, no secret.
+     */
+    programs: join(root, "programs"),
+    /**
      * Geometer's reset of an owner's sign-in (`geometer owner reset`, bundle/owner-cli.ts): admin/owner-reset/<shop>.json. NOT under shops/ and NOT mounted into the panel
      * (generate/compose.ts mounts shops/ read-write into it), so a compromised panel process cannot write one: that file reopens the shop, so only the admin may.
      */

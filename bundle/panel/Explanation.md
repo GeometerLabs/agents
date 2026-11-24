@@ -18,7 +18,7 @@ One panel, zero dependencies, pages rendered on the server with no JavaScript. A
 | `templates.ts` | Finds templates by `templates/<domain>/<name>/template.json` (accounts the template uses, steps, an example settings file). Setup asks only for those accounts, so a new or contributed template appears on its own; one whose `setup` form the panel does not have is listed as "set up by a builder". |
 | `checks.ts` | The read-only connection checks (below). |
 | `cost.ts`, `../../prices/<date>.json` | The monthly running-cost line (below). The repo's one price folder, `prices/` (its README says who reads it). |
-| `golive.ts`, `activity.ts` | The hand check on the shop's own settings, the connection checks, "Ready to go live" (writes the go-live certificate, signed when the panel has a key), and the month's counts from the exported record. |
+| `golive.ts`, `activity.ts` | The hand check on the shop's own settings, run on the shop's own Go program (since 24 Nov 2026: `bundle/lib/hand-check-go.ts`, a child process), the connection checks, "Ready to go live" (writes the go-live certificate, signed when the panel has a key, naming the program it ran on), and the month's counts from the exported record. |
 | `words.ts`, `words.hi.ts`, `words.ml.ts`, `words.kn.ts`, `languages.ts`, `review.ts`, `review-sheet.ts` | Every word in four languages; see Languages. |
 
 ## The Operator's setup, as the Operator sees it (English)
@@ -385,3 +385,27 @@ The Bookings deposit step and the Orders rules step end with the discount author
 **One check.** What the boxes say goes through `modules/limits/discounts.ts` `readDiscounts`, the deployer's own check. The Operator reads its sentences, and a Bookings floor below the deposit on the same step is refused. The floors are kept by the item's name until the save, which puts them on the ids.
 
 **Owning the key.** The panel owns `discounts` (`keep.ts`): switched off, the block goes. Two things are kept as they were: a saved floor of a service past the form's rows, and the whole block when the draft is from before the boxes. Tests: `test/discounts-form.test.ts`.
+
+
+## The hand check runs on the shop's Go program (24 Nov 2026, owner: "Run the hand check on Go")
+
+Since the shops run on the Go programs (decision 61), a hand check on the TypeScript demo engine certified a program the shop does not run, and could not run what only Go
+has (the pickup hold had 0 situations, so the gate refused every hold shop; the credit book was "not run"). Now:
+
+- **Where it runs.** `golive.ts run()` hands the shop's `settings.json` (`shops.settingsFile`) to `bundle/lib/hand-check-go.ts`, which runs the template's situations in a
+  CHILD process and answers one line of JSON (the template's own summary, or why it could not run). A child, because a run starts the shop's program once per situation with
+  stand-ins beside it, and the process tracker it uses (modules/test/contract/children.ts) hooks the exit and signals of the process it is in; because the panel's memory is
+  small; and because a time limit (10 minutes) then stops the whole run, programs and all. A run takes seconds to about a minute (Bookings' 40 situations about 20 s, Fees'
+  example about a minute), so it finishes within the request: the on-demand panel finishes a request in flight before it sleeps, and the page shows the result on the redirect
+  as before. No polled job was needed.
+- **Which program.** Each situation starts the template's program (`go/bin/<program>` on a Mac; on a server the copy the deployer makes from the image the shops run:
+  `bundle/lib/go-build.ts copyGoPrograms` into `<server>/programs`, mounted read-only at `/programs`, `GEOMETER_GO_PROGRAMS`), on the shop's own settings, in fakes mode on
+  the test clock, in front of the template's stand-ins and the stub Guard (`modules/crash-test/go-shop.ts`, `go-world.ts`; Go: runtime.json `"standins": "http"`). A program
+  that is not there runs nothing: the summary is 0 of 0 with the reason in `notRun`, and the gate refuses. Never anything else.
+- **What is kept.** The summary keeps its shape (counts, the digest of the settings it ran on, what could not run) and adds `program` (name, version, SHA-256 of the file).
+  `unmet()` refuses a stored check that names no program (one from the TypeScript engine): it is run again. The certificate carries `program` and its page and text say
+  "Go <program> <version> · sha256:…" beside the agent's version.
+- **The confirm page** (`/confirm/...`) runs the checks with `reuseHand`: a stored hand check that ran on the same settings and the same program file stands; the
+  connection checks are read again. So a confirmation does not wait for a run that would only repeat itself.
+- **Tests.** `test/golive-go.test.ts`: a hold shop and a credit shop pass the gate on Go; the certificate built from a Go run checks (signature, digest) and names the program;
+  a deliberately broken setting (a fee above the day's refund cap the deployer gives Guard) fails; a run with no program, and a stored check from before, are refused.

@@ -422,3 +422,32 @@ func TestEveryMessageHasFourLanguages(t *testing.T) {
 		t.Error("an unknown language is English")
 	}
 }
+
+// TestPlanTemplatesInAClosedWindow is the hand check's finding of 24 Nov 2026: on a UPI shop the plan's renewal writes the UPI ID after its link, and "your plan is on" and the
+// owner's "plan cancelled" had no template, so all three went under the generic name, which WhatsApp refuses outside the window. Each now goes as its own template, in every language.
+func TestPlanTemplatesInAClosedWindow(t *testing.T) {
+	s := func(v string) *string { return &v }
+	n := func(v int64) *int64 { return &v }
+	for _, lang := range []string{"en", "hi", "ml", "kn"} {
+		for _, upi := range []bool{false, true} {
+			f := &MessageFacts{Language: lang, TimeZone: "Asia/Kolkata", BusinessName: "Annapurna Tiffins", ItemsText: s("2 × Veg thali"), TotalInr: n(4400), AdvanceInr: n(4000),
+				DateMs: n(1763251200000), CutoffMs: n(1763215200000), Link: s("https://rzp.io/i/plan"), OrderRef: s("o-7"), CustomerPhone: s("+919811111111"),
+				Plan: &PlanFacts{Meals: n(22), FromMs: n(1763251200000), ToMs: n(1765756800000)}}
+			if upi {
+				f.UpiID, f.Payee = s("annapurna@okaxis"), s("Annapurna Tiffins")
+			}
+			for _, id := range []string{"plan_renewal", "plan_active", "owner_plan_cancelled"} {
+				text, err := Render(id, f)
+				if err != nil {
+					t.Fatalf("%s %s: %v", lang, id, err)
+				}
+				if upi && id == "plan_renewal" && !strings.Contains(text, "annapurna@okaxis") {
+					t.Fatalf("%s: the UPI renewal does not name the UPI ID: %s", lang, text)
+				}
+				if got := MetaTemplateMessage([]string{id}, f, text, "generic"); got.Name != id {
+					t.Errorf("%s %s (UPI %v): went as %q, want its own template; text %q", lang, id, upi, got.Name, text)
+				}
+			}
+		}
+	}
+}

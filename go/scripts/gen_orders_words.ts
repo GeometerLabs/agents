@@ -214,7 +214,7 @@ function templates(language: Language, ids: TemplateId[]): { t: Bag; c: Bag; inf
 
 /** The WhatsApp templates: the name and the audience, the message it carries the words of, and the body with `{slot}`s; and how each slot is filled (a slot expression over the same facts). */
 function metaWords(language: Language): { meta: unknown[]; metaSlots: Bag } {
-  const f = probe(language, false);
+  const f = probe(language, true); // a UPI shop's facts, so a slot filled with payTo is told from one filled with the bare link
   const names = new Set<string>();
   if (new Set(META_TEMPLATES.map((m) => m.usedFor)).size !== META_TEMPLATES.length) throw new Error("two WhatsApp templates carry the same message: the Go side takes the first, the TypeScript map the last");
   const meta = META_TEMPLATES.map((m: MetaTemplate<TemplateId>) => {

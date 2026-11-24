@@ -10,7 +10,7 @@
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
 import { gatewayOf, isGatewayKind } from "../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../modules/payments/providers/index.ts";
-import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { chownSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { composeServer, hasDirectory } from "./generate/compose.ts";
 import { buildAppJs } from "./lib/strip-app.ts";
@@ -29,7 +29,7 @@ import { syncTerms } from "./lib/terms.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, isShared, kindFor, guardsOf, runtimeHasWhatsApp } from "./lib/kinds.ts";
 import { moveOutOfShared, needsMove, sharedHasFolder } from "./lib/listings-move.ts";
-import { ensureGoRuntimes, goImageFor, goRuntimeOf } from "./lib/go-build.ts";
+import { copyGoPrograms, ensureGoRuntimes, goImageFor, goRuntimeOf } from "./lib/go-build.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
@@ -73,7 +73,7 @@ export const composeFile = (dir: string) => join(serverPaths(dir).generated, "co
 // Turns the deployer's context into the folder map the generators take, so they stay pure functions of paths and never reach for the context.
 export function dirsOf(ctx: Context): Dirs {
   const p = serverPaths(ctx.dir);
-  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config, ...(ctx.stripApp ? { appJs: p.appJs } : {}), licence: licencePaths(ctx.dir).root, home: p.home };
+  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, programs: p.programs, panelData: p.panel, config: p.config, ...(ctx.stripApp ? { appJs: p.appJs } : {}), licence: licencePaths(ctx.dir).root, home: p.home };
 }
 
 /** `docker compose` on this server's generated file. */
@@ -682,6 +682,14 @@ export async function bringUp(ctx: Context, state: State, composed: Composed, fo
   if (/\bimage: "?geo-go:/u.test(composed.compose)) {
     const built = await ensureGoRuntimes(ctx);
     if (!built.ok) throw new Refused([{ rule: "go-runtime", message: built.reason }]);
+    // 24 Nov 2026: the panel's go-live hand check runs on a copy of these very programs (it has no Docker). A copy that fails is said; the panel's hand check then says the programs are
+    // not there and the gate refuses, so nothing is passed on anything else
+    if (composed.services.panel) {
+      const programs = serverPaths(ctx.dir).programs;
+      const copied = await copyGoPrograms(ctx, built.image, programs);
+      if (!copied.ok) ctx.log(copied.reason);
+      mkdirSync(programs, { recursive: true }); // the panel's mount needs the folder, even empty
+    }
   }
   const hashes = Object.fromEntries(Object.keys(composed.services).map((n) => [n, serviceHashes(composed, n)]));
   const before = state.serviceHashes ?? {};

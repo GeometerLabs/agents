@@ -18,11 +18,11 @@ import type { MetaTemplate } from "../../../../../modules/language/meta-template
 import { zonedToMs } from "../../../../../modules/core/time.ts";
 import { itemName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
-import { cutAt, day, how, inr, need, render, when } from "./templates.ts";
+import { cutAt, dateOf, day, how, inr, need, payTo, render, when } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "link" | "item" | "price" | "offered" | "dcode";
+export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "link" | "item" | "price" | "offered" | "dcode" | "meals" | "planFrom" | "planTo";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   items: (f) => need(f, "itemsText"),
@@ -45,13 +45,26 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   window: (f) => String(need(f, "windowHours")),
   partner: (f) => need(f, "partner"),
   upcoming: (f) => String(need(f, "upcomingCount")),
-  link: (f) => need(f, "link"),
+  // the link, and on a UPI shop the UPI ID and the payee after it, as every payment request writes it (templates.ts payTo); the only template with a link is the plan's renewal,
+  // whose UPI wording otherwise filled no template and went under the generic name, refused outside the window (24 Nov 2026, the hand check on Go)
+  link: (f) => payTo(f),
   // E1, the discount authority: the item, its menu price, the price asked and the owner's card's code
   item: (f) => need(f, "itemName"),
   price: (f) => inr(f, "priceInr"),
   offered: (f) => inr(f, "offeredInr"),
   dcode: (f) => need(f, "discountCode"),
+  // monthly plans: how many meals, and the period's first and last day as a plan message writes them
+  meals: (f) => String(planFact(f, "meals")),
+  planFrom: (f) => dateOf(f, planFact(f, "fromMs")),
+  planTo: (f) => dateOf(f, planFact(f, "toMs")),
 };
+
+/** A plan fact, or the refusal a message gives when the record does not have it. */
+function planFact<K extends "meals" | "fromMs" | "toMs">(f: MessageFacts, key: K): number {
+  const v = need(f, "plan")[key];
+  if (v === undefined) throw new Error(`The message needs "plan.${key}" from the record, and the record does not have it.`);
+  return v;
+}
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
 const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", items: "§items§", address: "§address§", ref: "§ref§", phone: "§phone§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", link: "§link§", item: "§item§", dcode: "§dcode§" };
@@ -60,7 +73,9 @@ const STAND_IN_DAY_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of our
 const STAND_IN_FROM_MS = Date.UTC(2030, 5, 14, 10, 17);
 const STAND_IN_TO_MS = Date.UTC(2030, 5, 14, 11, 43);
 const STAND_IN_CUTOFF_MS = Date.UTC(2030, 5, 13, 19, 29); // Thu 13 Jun 2030
-const STAND_IN_COUNT: Partial<Record<Slot, number>> = { hours: 7_000_009, window: 7_000_012, upcoming: 7_000_010 };
+const STAND_IN_COUNT: Partial<Record<Slot, number>> = { hours: 7_000_009, window: 7_000_012, upcoming: 7_000_010, meals: 7_000_011 };
+const STAND_IN_PLAN_FROM_MS = Date.UTC(2030, 7, 20, 0, 0); // Tue 20 Aug 2030 and Thu 19 Sep 2030: days no other stand-in is
+const STAND_IN_PLAN_TO_MS = Date.UTC(2030, 8, 19, 0, 0);
 
 function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageFacts {
   return {
@@ -70,6 +85,7 @@ function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageF
     dateMs: STAND_IN_DAY_MS, slotFromMs: STAND_IN_FROM_MS, slotToMs: STAND_IN_TO_MS, cutoffMs: STAND_IN_CUTOFF_MS,
     mode, area: "§area§",
     approvalHours: STAND_IN_COUNT.hours, windowHours: STAND_IN_COUNT.window, upcomingCount: STAND_IN_COUNT.upcoming,
+    plan: { meals: STAND_IN_COUNT.meals, fromMs: STAND_IN_PLAN_FROM_MS, toMs: STAND_IN_PLAN_TO_MS },
     itemName: STAND_IN_TEXT.item, priceInr: STAND_IN_AMOUNT.price, offeredInr: STAND_IN_AMOUNT.offered, discountCode: STAND_IN_TEXT.dcode,
   };
 }
@@ -84,6 +100,8 @@ function bodyOf(id: TemplateId, language: Language, mode: "pickup" | "delivery")
   text = text.split(when(facts)).join("{when}");
   text = text.split(cutAt(facts)).join("{cutoff}");
   text = text.split(day(facts)).join("{day}");
+  text = text.split(dateOf(facts, STAND_IN_PLAN_FROM_MS)).join("{planFrom}");
+  text = text.split(dateOf(facts, STAND_IN_PLAN_TO_MS)).join("{planTo}");
   if (mode === "delivery") text = text.split(how(facts)).join("{how}"); // a pickup template says "pickup" in fixed words
   for (const [slot, n] of Object.entries(STAND_IN_COUNT)) text = text.split(String(n)).join(`{${slot}}`);
   return text;
@@ -108,6 +126,9 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_order_cancelled", "owner_order_cancelled", "owner"),
   template("owner_late_cancel_asks", "owner_late_cancellation", "owner"),
   template("owner_order_duplicate_paid", "owner_duplicate_payment", "owner"),
+  // 24 Nov 2026 (the hand check on Go): a late payment for an order no longer active is refunded and the owner is told unasked, so usually outside their window; it had no
+  // template, so it went under the generic name, which WhatsApp refuses outside the window, and the owner was never told
+  template("owner_order_payment_unused", "owner_payment_unused", "owner"),
   template("owner_order_link_failed", "owner_link_failed", "owner"),
   template("owner_customer_wants_you", "owner_wants_to_talk", "owner"),
   template("owner_customer_stopped", "owner_opted_out", "owner"),
@@ -132,6 +153,10 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("plan_renewal", "plan_renewal", "customer"),
   template("plan_pause_done", "plan_pause_done", "customer"),
   template("plan_skip_done", "plan_skip_done", "customer"),
+  // 24 Nov 2026 (the hand check on Go): "your plan is on" after the owner marks the payment (often hours after the customer last wrote), and the owner's word that a plan was
+  // cancelled; both had no template, went under the generic name and were refused outside the window
+  template("plan_active", "plan_active", "customer"),
+  template("owner_plan_cancelled", "owner_plan_cancelled", "owner"),
   // "keep one for me", the pickup hold (24 Nov 2026): what the owner is asked and told unasked (a customer's photo, a hold to accept, a hold that ended or was let go), and the
   // customer's "held for you", which can come long after they wrote when the owner answers late, and the end of the hold
   template("owner_hold_enquiry", "owner_hold_enquiry", "owner"),

@@ -1,6 +1,7 @@
 // Classes (the Fees add-on, owner decision 50): the settings block, the timetable and access rules, and the agent's behaviour on the dev harness (consent, the class link at the
 // clock, the entitlement check at send time, attendance and the missed-class note, doubts, STOP), the saved state, the reading-material page's read and its folder, the owner's
 // page, the report's counts, and the crash-test situations. A centre without the block must behave exactly as Fees does.
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
@@ -363,7 +364,7 @@ test("the monthly report counts classes held, links sent, students marked, notes
   assert.doesNotMatch(ownerText(plain, "en"), /Classes held/u);
 });
 
-test("the crash-test situations of Classes hold", async () => {
+test("the crash-test situations of Classes hold", { skip: goSkip("fees") }, async () => {
   const list = buildClassSituations(classesSettings());
   assert.equal(list.length, 5);
   for (const situation of list) {

@@ -7,6 +7,8 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/guard"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -82,8 +84,14 @@ type Config struct {
 	// whole file as read.
 	Services map[string]any
 	Raw      map[string]any
-	file     string
+	// StandInsHTTP: runtime.json `"standins": "http"` (checked by standInsProblems): a "fakes" shop whose services are the hand check's stand-ins over HTTP, reached through the
+	// live clients. A template's BuildPorts takes its live path for such a shop, and only then; everything else about a fakes shop (the test clock, no record key) is unchanged.
+	StandInsHTTP bool
+	file         string
 }
+
+// UsesClients says whether this shop reaches its services through the live clients (live mode, or the hand check's stand-ins over HTTP) rather than the in-memory stand-ins.
+func (c Config) UsesClients() bool { return c.Mode == "live" || c.StandInsHTTP }
 
 // Client is a shop's folder, read.
 type Client struct {
@@ -410,10 +418,61 @@ func (c *Client) readRuntime(in map[string]any) error {
 			cfg.AllowMicro = &v
 		}
 	}
+	if v, present := in["standins"]; present {
+		cfg.StandInsHTTP = true
+		errs = append(errs, standInsProblems(v, cfg.Mode, cfg.Services, in)...)
+		// the hand check's shop may beat faster than once a second (down to 0.1 s): each situation moves the test clock and waits for a beat, so a whole check takes a
+		// minute, not several. A real shop keeps the one-second floor above.
+		if t, ok := in["tickSeconds"].(float64); ok && t >= 0.1 && t < 1 {
+			cfg.TickSeconds = t
+		}
+	}
 	if len(errs) > 0 {
 		return bad("runtime.json needs fixing:\n- %s", strings.Join(errs, "\n- "))
 	}
+	if cfg.StandInsHTTP {
+		guard.RestrictToLoopback() // from here on the process talks only to this machine (guard/loopback.go)
+	}
 	return nil
+}
+
+// standInsProblems checks runtime.json `"standins": "http"` (the go-live hand check's shop, modules/crash-test/go-shop.ts, 24 Nov 2026). Such a shop is a "fakes" shop (so it may
+// run on the test clock, internal/testclock) whose services are the hand check's stand-ins, reached over HTTP through the SAME clients a live shop uses, so a stand-in can fail on
+// purpose (a lost reply, a calendar that saves nothing) and keep the records the situations are judged from. Why it can never reach a real service, though this ships in the
+// production program: it is refused outside "fakes" mode; every address it names (the services, the push Guard, the models) must be http://127.0.0.1:<port> or
+// http://[::1]:<port>, written as an address, never a name (localhost may resolve anywhere), 0.0.0.0, a look-alike host or a user name; and while it runs the process is held to
+// this machine (guard.RestrictToLoopback: every connection's far end is checked, and a redirect off the loopback is not followed).
+func standInsProblems(v any, mode string, services map[string]any, raw map[string]any) []string {
+	var errs []string
+	if v != "http" {
+		errs = append(errs, `"standins" can only be "http" (the hand check's stand-ins, reached over HTTP on this machine). Leave it out for a shop's own stand-ins or real services.`)
+	}
+	if mode != "fakes" {
+		errs = append(errs, `"standins" is for a "fakes" shop only (the hand check's): a "live" shop reaches real services through its Guards.`)
+	}
+	check := func(where string, rawURL any) {
+		s, _ := rawURL.(string)
+		if !LoopbackURL(s) {
+			errs = append(errs, fmt.Sprintf(`With "standins", %s must be a stand-in on this machine (http://127.0.0.1:<port> or http://[::1]:<port>).`, where))
+		}
+	}
+	for _, name := range []string{"payments", "calendar", "messaging", "push"} {
+		if m, ok := services[name].(map[string]any); ok {
+			check("services."+name+".baseUrl", m["baseUrl"])
+		}
+	}
+	for _, name := range []string{"parser", "talk", "decision"} {
+		if m, ok := raw[name].(map[string]any); ok {
+			check(name+".baseUrl", m["baseUrl"])
+		}
+	}
+	return errs
+}
+
+// LoopbackURL says whether s is an http address of this machine written as an address with a port: http://127.0.0.1:<port> or http://[::1]:<port>, no user name.
+func LoopbackURL(s string) bool {
+	u, err := url.Parse(s)
+	return err == nil && u.Scheme == "http" && u.User == nil && u.Port() != "" && guard.IsLoopbackHost(u.Hostname()) && u.Opaque == ""
 }
 
 // Switch reads one of runtime.json's two outside switches ("ai": "buttons", "model": "off") fresh, so a change the deployer writes while the shop runs takes effect at once. A

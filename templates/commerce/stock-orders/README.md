@@ -22,6 +22,8 @@ node templates/commerce/stock-orders/scripts/review-sheet.ts hi        # the rev
 
 The hand check prints `Held N of M. K failed. J not tested.`, a line for each situation and the list of what was not tested. Every situation is judged from the stand-ins' own records (the WhatsApp outbox, the orders, the action record), never from what the agent said. No count is quoted here: the count is whatever the lead's last run printed.
 
+**The hand check runs on the shop's own Go program** (24 Nov 2026, owner: "Run the hand check on Go"). Each situation starts `go/bin/stock-orders` (build it with `cd go && go build -o bin/ ./cmd/stock-orders`; on a server, the copy of the programs the shops run, `GEOMETER_GO_PROGRAMS`) on the shop's own settings, in fakes mode on the test clock, in front of this template's stand-ins and the stub Guard (`crash-test/go-world.ts` over `modules/crash-test/go-world.ts` and `go-shop.ts`), and judges from the stand-ins' records and the program's `agent.db`. The script names the program it ran on (`ON THE SHOP'S OWN PROGRAM   Go stock-orders <version> · sha256:…`), and so does the go-live certificate. Without the program nothing runs and the hand check says so; it never falls back to the demo engine, which stays for the public demos only (`src/harness.ts`).
+
 ## The limits held outside the AI
 
 | Rule | Rule id | What it means |

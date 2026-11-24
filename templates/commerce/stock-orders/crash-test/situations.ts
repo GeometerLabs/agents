@@ -19,14 +19,14 @@
 //   low-stock-never-guesses   a low-stock mark with no reorder quantity asks; with one it orders that; a second mark makes no second order
 //   provider-refuses-send     the provider refuses the order message: nothing went out; one more try, then one order message in all
 //   supplier-declines         the supplier says no: the budget is released and the delivery cannot be marked
-import { createWorld } from "../src/harness.ts";
-import type { World } from "../src/harness.ts";
+import { PROGRAM, VERSION, createGoWorld } from "./go-world.ts";
+import type { GoWorld as World } from "./go-world.ts";
 import { holdsBudget, reservedPaise } from "../src/order.ts";
 import { parseSettings } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
 import { checker } from "../../../../modules/crash-test/situations.ts";
 import type { CheckResult, HandCheckRun, Situation, Skipped } from "../../../../modules/crash-test/situations.ts";
-import { runAllSituations } from "../../../../modules/crash-test/situations.ts";
+import { runOnProgram } from "../../../../modules/crash-test/situations.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { monthOf } from "../src/order.ts";
 import { planShop } from "./plan.ts";
@@ -51,7 +51,7 @@ const BUILDERS: Build[] = [
     how: "the stand-in WhatsApp takes the order message but loses the reply; the owner uses the card again, asks to send it again, and time passes",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       w.messaging.inject("sendTemplate", "lostReply");
       const ref = await orderAndApprove(w, p.say());
       const to = p.supplier.whatsapp;
@@ -79,7 +79,7 @@ const BUILDERS: Build[] = [
     how: "the order goes out; the supplier says nothing; four hours and then a day pass",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const ref = await orderAndApprove(w, p.say());
       const to = p.supplier.whatsapp;
       const [first, last] = [p.settings.followUpHours[0], p.settings.followUpHours.at(-1)!];
@@ -100,7 +100,7 @@ const BUILDERS: Build[] = [
     how: "two cards are open; the owner's two approvals are handled at the same moment",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       await w.ownerSays(p.say({ qty: p.raceQty }));
       const c1 = w.cardCode();
       await w.ownerSays(p.say({ qty: p.raceQty }));
@@ -120,7 +120,7 @@ const BUILDERS: Build[] = [
     how: "the owner asks for one quantity, then changes it; the first card's code is used",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       await w.ownerSays(p.say());
       const old = w.cardCode();
       const more = p.qty + 2;
@@ -144,13 +144,13 @@ const BUILDERS: Build[] = [
     how: "the settings are edited and the shop restarted between the card and the owner's yes",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       await w.ownerSays(p.say());
       const old = w.cardCode();
       const edited = structuredClone(p.settings) as Settings;
       const target = edited.catalogue.find((l) => l.item === p.line.item && l.supplier === p.line.supplier && l.unit === p.line.unit)!;
       target.priceInr = Math.round((target.priceInr + 1) * 100) / 100;
-      w.reload(parseSettings(edited));
+      await w.reload(parseSettings(edited));
       await w.ownerSays(`yes ${old}`);
       expect("Nothing was sent on the old card", w.orderMessagesTo(p.supplier.whatsapp).length === 0, `${w.orderMessagesTo(p.supplier.whatsapp).length} order messages`);
       expect("The owner was shown a new card", w.cardCode() !== old, "no new card");
@@ -165,7 +165,7 @@ const BUILDERS: Build[] = [
     how: "the owner asks for the usual item from a name the catalogue does not hold",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       await w.ownerSays(`order ${p.qty} ${p.unit} ${p.item} from Sharma Stores`);
       expect("No order was made", w.orders().length === 0, `${w.orders().length} orders`);
       expect("Nothing was sent to any supplier", p.settings.suppliers.every((s) => w.textsTo(s.whatsapp).length === 0), "a supplier was messaged");
@@ -179,7 +179,7 @@ const BUILDERS: Build[] = [
     how: "the owner asks for an item from the paused supplier by name",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const l = p.paused!.line;
       const names = { item: p.settings.items.find((i) => i.id === l.item)!.names.en[0], unit: p.settings.units.find((u) => u.id === l.unit)!.names.en[0] };
       await w.ownerSays(`order 3 ${names.unit} ${names.item} from ${p.paused!.supplier.name}`);
@@ -194,7 +194,7 @@ const BUILDERS: Build[] = [
     how: "the owner gives a number and no unit; then picks the second way from the list",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const t = p.twoUnits!;
       const item = p.settings.items.find((i) => i.id === t.item)!.names.en[0];
       await w.ownerSays(`order 10 ${item} from ${t.supplier.name}`);
@@ -215,7 +215,7 @@ const BUILDERS: Build[] = [
     how: "the provider delivers the same two inbound messages again",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const first = await w.ownerSays(p.say());
       await w.redeliver(first);
       await w.redeliver(first);
@@ -232,7 +232,7 @@ const BUILDERS: Build[] = [
     how: "the code is typed again as a new message; a declined card's code is then typed as a yes",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       await w.ownerSays(p.say());
       const code = w.cardCode();
       await w.ownerSays(`yes ${code}`);
@@ -252,7 +252,7 @@ const BUILDERS: Build[] = [
     how: "the owner asks for one more than the cap allows",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       await w.ownerSays(p.say({ qty: p.capQty }));
       expect("No order and no card", w.orders().length === 0 && !/yes [A-Z0-9]{4,6}/u.test(w.lastTextTo(w.owner)), w.lastTextTo(w.owner));
       expect("The record shows the cap blocked it", entries(w, "propose_order").some((e) => e.decisions.some((d) => d.ruleId === "per-order-cap" && d.verdict === "block")), "no cap decision");
@@ -265,7 +265,7 @@ const BUILDERS: Build[] = [
     how: "the supplier accepts; the owner marks part, then the rest; a second order gets a wrong item; the owner says they paid",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const to = p.supplier.whatsapp;
       const ref = await orderAndApprove(w, p.say({ qty: Math.max(p.qty, 2) }));
       const qty = w.order(ref)!.qty;
@@ -294,7 +294,7 @@ const BUILDERS: Build[] = [
     how: "a stranger and another supplier answer; then the supplier writes a bare \"ok\" with two orders open, and then taps one order's button",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const to = p.supplier.whatsapp;
       const r1 = await orderAndApprove(w, p.say());
       await w.supplierSays("+919000000000", "ok");
@@ -318,7 +318,7 @@ const BUILDERS: Build[] = [
     how: "the supplier writes STOP; the owner then orders from them and approves",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const to = p.supplier.whatsapp;
       await w.supplierSays(to, "STOP");
       expect("The owner was told", w.textsTo(w.owner).length === 1, w.textsTo(w.owner).join(" | "));
@@ -336,7 +336,7 @@ const BUILDERS: Build[] = [
     leftOut: [...(p.noReorder ? [] : ["a line with no usual quantity: every line here has one"]), ...(p.withReorder ? [] : ["a line with a usual quantity: none has one"])],
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const word = (l: typeof p.line) => `${p.settings.items.find((i) => i.id === l.item)!.names.en[0]} from ${p.settings.suppliers.find((s) => s.id === l.supplier)!.name}`;
       if (p.noReorder) {
         await w.ownerSays(`${word(p.noReorder)} is low`);
@@ -359,7 +359,7 @@ const BUILDERS: Build[] = [
     how: "the order template is not approved at first; the owner asks to send it again once it is",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings, unapproved: ["stock_order_to_supplier"] });
+      const w = await createGoWorld({ settings: p.settings, unapproved: ["stock_order_to_supplier"] });
       const to = p.supplier.whatsapp;
       const ref = await orderAndApprove(w, p.say());
       await w.advance(60); // send once: a refusal is tried again an hour later, three tries in all, and only then is the order marked not sent
@@ -368,6 +368,7 @@ const BUILDERS: Build[] = [
       expect("The budget stays reserved", reserved(w) === Math.round(p.totalInr * 100), `${reserved(w)}`);
       for (const l of LANGUAGES) w.messaging.approve("stock_order_to_supplier", l);
       await w.ownerSays(`send ${ref}`);
+      await w.tick(); // the program sends on its next step after the owner's word
       expect("Sent again once, and now marked sent", w.order(ref)?.state === "sent" && w.orderMessagesTo(to).length === 1, `${w.order(ref)?.state}, ${w.orderMessagesTo(to).length}`);
       await w.ownerSays(`send ${ref}`);
       expect("A further send is refused", w.orderMessagesTo(to).length === 1, `${w.orderMessagesTo(to).length}`);
@@ -379,7 +380,7 @@ const BUILDERS: Build[] = [
     how: "the supplier answers NO to the order",
     async run() {
       const { results, expect } = checker();
-      const w = createWorld({ settings: p.settings });
+      const w = await createGoWorld({ settings: p.settings });
       const ref = await orderAndApprove(w, p.say());
       expect("The budget was held", reserved(w) > 0, "nothing reserved");
       await w.supplierSays(p.supplier.whatsapp, "no");
@@ -406,8 +407,9 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
 }
 
 /** Run every situation on one shop's settings. */
+/** Run every situation these settings can express, on the shop's own Go program (go-world.ts). */
 export async function runOn(settings: Settings): Promise<HandCheckRun<Settings>> {
-  return runAllSituations(buildSituations(settings), settings);
+  return runOnProgram(PROGRAM, VERSION, () => buildSituations(settings), settings);
 }
 
 export type { CheckResult };

@@ -53,7 +53,7 @@ export async function updateAgent(ctx: Context, name: string, dryRun: boolean): 
   if (after.total === 0) return heldBack(`No situation could be run at ${target}: ${a.result.notRun.map((s) => `${s.title} (${s.reason})`).join("; ") || "none ran"}.${running ? ` Keep running ${running}.` : ""}`, base);
 
   // a situation that held before and fails now, or is not run now, holds the agent back; one that failed both times does not (it is no worse off), and a new one that fails does
-  const diff = compare(before ?? { held: 0, total: 0, situations: [] }, after);
+  const diff = compare(before ?? { held: 0, total: 0, situations: [], notRun: [] }, after);
   if (diff.failing.length > 0 || diff.notChecked.length > 0) {
     const said = [
       `Held ${after.held} of ${after.total} at ${target}${before ? `; ${before.held} of ${before.total} held at ${running}` : ""}.`,

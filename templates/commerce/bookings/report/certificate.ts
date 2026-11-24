@@ -9,6 +9,8 @@
 // They state facts and count; they never grade ("safe", "guaranteed", "certified"). Every certificate lists what was not
 // tested. Every number, amount and date is read from the hand check, the settings or the report, and written by the
 // per-language formatters; the words around them are in strings.ts.
+import { programLabel } from "../../../../modules/report/go-live.ts";
+import type { ProgramRan } from "../../../../modules/report/go-live.ts";
 import { HAND_RUN, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import type { HandCheckRun, SituationResult } from "../crash-test/situations.ts";
 import { formatDate, formatInr } from "../../../../modules/language/format.ts";
@@ -44,6 +46,8 @@ export interface HandCheckSummary {
   ranOn?: string;
   /** The titles (English) of situations that these settings could not run: they are not in `total`. */
   notRun?: string[];
+  /** The program the situations ran on (the shop\'s own Go program), when they ran. */
+  program?: ProgramRan;
 }
 
 /** A run on one shop's own settings: the counts, the digest of the settings it ran on, and the situations those settings could not run. */
@@ -52,6 +56,7 @@ export function summariseRun(run: HandCheckRun): HandCheckSummary {
     ...summariseHandCheck(run.results),
     ranOn: policyDigest(run.settings),
     ...(run.skipped.length > 0 ? { notRun: run.skipped.map((s) => s.title) } : {}),
+    ...(run.program ? { program: run.program } : {}),
   };
 }
 
@@ -86,6 +91,8 @@ export interface GoLiveCertificate {
   /** The shop's settings (without contact details) and the settings the checks actually ran on. They differ only when the checks were not run on this shop's own settings. */
   policyDigest: string;
   checkedPolicyDigest: string;
+  /** The program the hand check ran on: the shop\'s own Go program, its version and its file\'s digest. Left out by a certificate made before 24 Nov 2026. */
+  program?: ProgramRan;
   anchor: null;
 }
 
@@ -118,6 +125,7 @@ export function buildGoLiveCertificate(input: GoLiveInput): GoLiveCertificate {
     },
     policyDigest: policyDigest(settings),
     checkedPolicyDigest: handCheck.ranOn ?? checkedPolicyDigest(),
+    ...(handCheck.program ? { program: handCheck.program } : {}),
     anchor: null,
   };
 }
@@ -146,7 +154,7 @@ export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Lang
     ...limitLines(cert, language).map((line) => `• ${line}`),
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     s.cert.handRunLine,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code}${check ? "" : ` · ${verifyCodePath(envelope)}`}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version}${programLabel(cert.program)} · ${s.page.code}: ${envelope.code}${check ? "" : ` · ${verifyCodePath(envelope)}`}`,
     ...(check ? [`${s.checkGenuine}: ${check}`] : []),
   ];
   return lines.join("\n");
@@ -166,7 +174,7 @@ ${cert.checks.failed > 0 ? `<div class="warn"><h2>${esc(s.cert.didNotHold)}</h2>
 <p class="note">${esc(s.cert.handRunLine)}</p>
 <div class="warn"><h2>${esc(s.page.notTestedHeading)}</h2>${list(cert.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(s.cert.notAGrade)}</p>
-${sealBlock(s, envelope, [[s.page.agentVersion, `${cert.pathway.name} ${cert.pathway.version}`], [s.cert.date, dateText(cert.issuedOn, language)], ...(cert.preparedBy ? [[s.page.setUpBy, cert.preparedBy] as [string, string]] : []),
+${sealBlock(s, envelope, [[s.page.agentVersion, `${cert.pathway.name} ${cert.pathway.version}${programLabel(cert.program)}`], [s.cert.date, dateText(cert.issuedOn, language)], ...(cert.preparedBy ? [[s.page.setUpBy, cert.preparedBy] as [string, string]] : []),
   [s.page.limitsDigest, cert.policyDigest], [`${s.cert.checkedOn} (${s.page.limitsDigest})`, cert.checkedPolicyDigest]], check)}
 </section>`;
 }

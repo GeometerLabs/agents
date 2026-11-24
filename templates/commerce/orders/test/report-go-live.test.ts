@@ -2,6 +2,7 @@
 // itself is shared with the other templates (modules/report/go-live.ts); what is tried here is Orders' own: its limits in plain words, its digests, and the scripts. Library
 // tests use a canned hand-check summary for speed; the script tests at the end run the real hand check on a real settings file, because the digest has to survive being
 // written to JSON and read back.
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
@@ -173,7 +174,7 @@ test("the monthly report page and owner text say what the go-live checks ran on,
 const script = (name: string) => fileURLToPath(new URL(`../scripts/${name}`, import.meta.url));
 const run = (name: string, args: string[]) => spawnSync(process.execPath, [script(name), ...args], { encoding: "utf8" });
 
-test("go-live-certificate.ts runs the real hand check on a shop's own settings file and writes a signed certificate that client-report.ts reads back as 'own'", () => {
+test("go-live-certificate.ts runs the real hand check on a shop's own settings file and writes a signed certificate that client-report.ts reads back as 'own'", { skip: goSkip("orders") }, () => {
   const dir = mkdtempSync(join(tmpdir(), "orders-golive-"));
   const settingsFile = join(dir, "settings.json");
   writeFileSync(settingsFile, JSON.stringify({ ...raw(), name: "Sunrise Tiffins", refund: { limitInr: 250 } }));
@@ -215,7 +216,7 @@ test("go-live-certificate.ts runs the real hand check on a shop's own settings f
   assert.match(usage.stderr, /Say which month/);
 });
 
-test("go-live-certificate.ts exits 64 with a sentence when the settings cannot be read, and the hand check on the example shop holds", async () => {
+test("go-live-certificate.ts exits 64 with a sentence when the settings cannot be read, and the hand check on the example shop holds", { skip: goSkip("orders") }, async () => {
   const ran = await runOn(example);
   assert.equal(summariseRun(ran).held, summariseRun(ran).total);
   assert.equal(summariseRun(ran).total, 17);

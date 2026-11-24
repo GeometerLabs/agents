@@ -12,7 +12,7 @@ import { DIRECTORY_SECRET_FILE, directoryConfig } from "../generate/configs.ts";
 import { guardUrl, names } from "../generate/shop.ts";
 import { deploy } from "../deploy.ts";
 import { main } from "../geometer.ts";
-import { GO_BUILD_MEMORY_MB, GO_CACHE_VOLUME, GO_CA_FILE, GO_PROGRAMS, dockerfileOf, ensureGoRuntimes, goBuilderOf, goImageFor, goRuntimeOf, pruneGoImages } from "../lib/go-build.ts";
+import { GO_BUILD_MEMORY_MB, GO_CACHE_VOLUME, GO_CA_FILE, GO_PROGRAMS, HAND_CHECK_PROGRAMS, copyGoPrograms, dockerfileOf, ensureGoRuntimes, goBuilderOf, goImageFor, goRuntimeOf, pruneGoImages } from "../lib/go-build.ts";
 import { DIRECTORY_AGENT_ID, directoryAssistant, discoveryBudgetFor } from "../lib/budget.ts";
 import { parseServer } from "../lib/server.ts";
 import { PRICES_DIR, latestPriceList, loadPriceList } from "../panel/cost.ts";
@@ -470,4 +470,40 @@ test("the directory is one more agent of the model Guard under its own id, which
   assert.equal(DIRECTORY_AGENT_ID, "directory-assistant");
   assert.notEqual(DIRECTORY_AGENT_ID, names.agentId("directory-assistant"), "a shop named so is `runtime-directory-assistant`");
   assert.ok(!names.agentId("x").startsWith(DIRECTORY_AGENT_ID));
+});
+
+// ---- the programs the panel's go-live hand check runs (24 Nov 2026) ------------------------------------------------------------------------------------------------
+
+test("the panel's hand check runs on a copy of the programs of the image the shops run: mounted read-only at /programs, named in its environment; none without the image", () => {
+  const withPrograms = composeServer(serverConfig({ panel: { enabled: true } }), { ...D, programs: "/srv/programs" }, [goShop("glow-salon", 1)], { panel: { user: "501:20" }, goImage: IMAGE });
+  const panel = withPrograms.services.panel.block as { volumes: string[]; environment: Record<string, string> };
+  assert.ok(panel.volumes.includes("/srv/programs:/programs:ro"), JSON.stringify(panel.volumes));
+  assert.equal(panel.environment.GEOMETER_GO_PROGRAMS, "/programs");
+  const without = composeServer(serverConfig({ panel: { enabled: true } }), { ...D, programs: "/srv/programs" }, [node("glow-salon", 1)], { panel: { user: "501:20" } });
+  const bare = without.services.panel.block as { volumes: string[]; environment: Record<string, string> };
+  assert.ok(!bare.volumes.some((v) => v.includes("/programs")) && bare.environment.GEOMETER_GO_PROGRAMS === undefined, "no programs' image: nothing mounted, and the hand check says the programs are not there");
+});
+
+test("copyGoPrograms copies each hand-check program out of the image INTO the mounted folder, names the image last, and does nothing when the copy is already of that image", async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), "geo-programs-")), "programs");
+  mkdirSync(dir);
+  writeFileSync(join(dir, "bookings"), "old program"); // a copy of an older image, which a running panel has mounted
+  const runner = fakeRunner(async (_cmd, args) => {
+    if (args[0] === "create") return ok("container-id");
+    if (args[0] === "cp") { writeFileSync(args[2], `program ${String(args[1]).split(":/")[1]}`); return ok(); }
+    if (args[0] === "rm") return ok();
+    return failed(`unexpected ${args.join(" ")}`);
+  });
+  const ctx = { appDir: REPO, runner, docker: "docker", log: () => undefined };
+  const first = await copyGoPrograms(ctx, IMAGE, dir);
+  assert.deepEqual(first, { ok: true, copied: true });
+  for (const p of HAND_CHECK_PROGRAMS) assert.equal(readFileSync(join(dir, p), "utf8"), `program ${p}`);
+  assert.equal(readFileSync(join(dir, "image.txt"), "utf8").trim(), IMAGE);
+  assert.ok(runner.calls.some((c) => c.args[0] === "rm" && c.args.includes("-f")), "the container made for the copy is removed");
+  assert.deepEqual(readdirSync(dir).filter((f) => f.startsWith(".")), [], "no half-copied file is left");
+  const calls = runner.calls.length;
+  assert.deepEqual(await copyGoPrograms(ctx, IMAGE, dir), { ok: true, copied: false });
+  assert.equal(runner.calls.length, calls, "an up-to-date copy asks Docker nothing");
+  const refused = await copyGoPrograms({ ...ctx, runner: fakeRunner(async () => failed("No such image", 1)) }, "geo-go:other", dir);
+  assert.equal(refused.ok, false);
 });

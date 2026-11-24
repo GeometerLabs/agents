@@ -45,15 +45,18 @@ test("the buttons fit WhatsApp's limits and carry no number", () => {
   }
 });
 
-test("each Meta template starts and ends with fixed words, and fills back into the very text the check read", () => {
+// on a gateway shop and on a UPI one (24 Nov 2026: the plan's renewal on a UPI shop writes the UPI ID after its link, and once filled no template, so it went under the generic
+// name and WhatsApp refused it outside the window); and with a plan's facts, for the plan messages
+test("each Meta template starts and ends with fixed words, and fills back into the very text the check read, on a gateway shop and a UPI one", () => {
   assert.ok(META_TEMPLATES.length >= 20);
-  for (const t of META_TEMPLATES) for (const language of LANGUAGES) {
+  for (const upi of [false, true]) for (const t of META_TEMPLATES) for (const language of LANGUAGES) {
     const body = t.bodies[language];
     assert.ok(!/^\{|\}$/u.test(body), `${t.name} ${language} starts or ends with a value`);
-    const facts = { ...factsFor(language), mode: t.usedFor === "owner_delivery_confirmed" ? ("delivery" as const) : ("pickup" as const), partner: "Divya", upcomingCount: 2, upiCode: "P4XR9T", markedInr: 120, leftInr: 60 };
+    const facts = { ...factsFor(language), mode: t.usedFor === "owner_delivery_confirmed" ? ("delivery" as const) : ("pickup" as const), partner: "Divya", upcomingCount: 2, upiCode: "P4XR9T", markedInr: 120, leftInr: 60,
+      plan: { meals: 22, fromMs: Date.UTC(2026, 10, 16, 0, 0), toMs: Date.UTC(2026, 11, 15, 0, 0) }, ...(upi ? { upiId: "annapurna@okaxis", payee: "Annapurna Tiffins" } : {}) };
     const text = render(t.usedFor, facts);
     const message = templateMessage({ ids: [t.usedFor], language, facts, text, generic: TEMPLATE_NAMES.owner });
-    assert.equal(message.name, t.name, `${t.name} ${language} did not fill back into its own text`);
+    assert.equal(message.name, t.name, `${t.name} ${language}${upi ? " (UPI)" : ""} did not fill back into its own text`);
     assert.equal(fillBody(metaBody(body), parametersFor(t, language, facts)), text);
   }
 });

@@ -155,7 +155,7 @@ export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): Non
 type Money = "priceInr" | "totalInr" | "advanceInr" | "balanceInr" | "refundInr" | "markedInr" | "leftInr" | "offeredInr";
 export const inr = (f: MessageFacts, key: Money) => formatInr(need(f, key));
 const clock = (f: MessageFacts, ms: number) => formatTime(localParts(ms, f.timeZone), f.language);
-const dateOf = (f: MessageFacts, ms: number) => formatDate(localParts(ms, f.timeZone), f.language);
+export const dateOf = (f: MessageFacts, ms: number) => formatDate(localParts(ms, f.timeZone), f.language);
 /** The day of the order, "Thu 12 Nov". */
 export const day = (f: MessageFacts) => dateOf(f, f.dateMs ?? need(f, "slotFromMs"));
 const WINDOW: Record<Language, (a: string, b: string) => string> = {

@@ -15,6 +15,8 @@ export interface PanelConfig {
   trustProxy: boolean;
   dataKeyFile?: string;
   signingKeyFile?: string;
+  /** The hand check's runner (golive.ts). Left out: the template's situations on the shop's own Go program, in a child process (bundle/lib/hand-check-go.ts). */
+  handCheck?: (kind: string, settingsFile: string) => Promise<import("../lib/hand-check-go.ts").HandCheckOutcome>;
   /** Where each shop's fingerprint key (B69) is, as secrets/panel/person-keys/<shop>: what matches a typed number to the record's fingerprints. Left out: a person's statement is refused, and the panel says why. */
   personKeysDir?: string;
   /** The Google address a calendar is shared with (a service account's), when the server has one for every shop. */

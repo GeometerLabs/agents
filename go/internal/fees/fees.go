@@ -303,7 +303,8 @@ func BuildPorts(cfg runtime.Config, s *Settings, o PortsOptions) (Ports, error) 
 	if upi {
 		p.Capabilities = payments.Capabilities{}
 	}
-	if cfg.Mode != "live" {
+	// the in-memory stand-ins for a fakes shop; the live clients for a live shop AND for the hand check's shop (runtime.json "standins": "http", runtime/config.go)
+	if !cfg.UsesClients() {
 		if !upi {
 			p.Payments = payments.NewFake(o.Now)
 		}

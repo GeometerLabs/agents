@@ -1,10 +1,16 @@
 // The checks before a shop goes live, and the papers they produce.
-//  1. The hand check: the same situations scripts/hand-check.ts runs, on THIS shop's own prices and hours, against stand-in services. In this process.
+//  1. The hand check: the same situations scripts/hand-check.ts runs, each on the shop's OWN Go program started on THIS shop's settings.json, against stand-in services
+//     (24 Nov 2026, owner: "Run the hand check on Go"). In a child process with a time limit (bundle/lib/hand-check-go.ts), within the request. A run that could not happen
+//     is stored as a hand check of nothing, with the reason, so "go live" refuses it; a stored check from before (no program named) is run again.
 //  2. The connection checks: read-only, through the shop's Guards (checks.ts). Only possible once the deployer has applied the shop.
 //  3. "Ready to go live": allowed only when 1 and 2 passed, the deployer says the last update was applied and every limit is proven, and the settings
 //     are still the ones that were checked. It writes the go-live certificate (report/), signed when the panel has a key.
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { goProgramsDir, programDigest } from "../../modules/crash-test/programs.ts";
+import { runGoHandCheck } from "../lib/hand-check-go.ts";
+import type { HandCheckOutcome } from "../lib/hand-check-go.ts";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { gatewayOf } from "../../modules/payments/providers/index.ts";
 import { guardsOf, kindFor, runtimeHasWhatsApp } from "../lib/kinds.ts";
@@ -78,16 +84,34 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     };
   }
 
+  /** The hand check of one shop, on its own program: the panel's own runner (a test's, or the child process of lib/hand-check-go.ts). */
+  const handCheck = config.handCheck ?? ((kind: string, settingsFile: string) => runGoHandCheck(kind, settingsFile));
+  /** The hand check ran on the program that is on this server now (the same file digest): after an update swaps the program, a stored check of the old one no longer counts. */
+  const ranOnThisProgram = (checks: StoredChecks | undefined): boolean => !!checks?.hand.program && programDigest(join(goProgramsDir(), checks.hand.program.name)) === checks.hand.program.sha256;
+  /** A stored hand check still stands for these settings when it ran on them (the same digest) and on the program that is here now. */
+  const handStillStands = (checks: StoredChecks | undefined, digest: string): boolean => !!checks && checks.settingsDigest === digest && checks.hand.total > 0 && ranOnThisProgram(checks);
+  /** What a hand check that could not run is kept as: nothing held, nothing tried, and why, so the gate refuses it and the page says what happened. */
+  const notRun = (outcome: Extract<HandCheckOutcome, { ok: false }>): HandCheckSummaryLike => ({ held: 0, total: 0, checks: 0, failedTitles: [], notRun: [outcome.reason] });
+
   const api = {
     stored,
-    async run(shop: string): Promise<StoredChecks | undefined> {
+    /**
+     * Run the go-live checks. `reuseHand`: keep the stored hand check when it still stands (the same settings, the same program file), as the confirm page does, so a
+     * confirmation does not wait for a minute's run that would only repeat itself; the connection checks always run again.
+     */
+    async run(shop: string, o: { reuseHand?: boolean } = {}): Promise<StoredChecks | undefined> {
       const settings = shops.settings(shop);
       if (!settings) return undefined;
       const papers = kindOf(shop).papers;
       // a listings-only shop moves no money and sends no message, so it has no hand check and no go-live paper
       if (!papers) return undefined;
-      const ran = await papers.runOn(settings);
-      const summary = papers.summariseRun(ran);
+      const before = stored(shop);
+      let summary: HandCheckSummaryLike;
+      if (o.reuseHand && handStillStands(before, papers.policyDigest(settings))) summary = before!.hand;
+      else {
+        const outcome = await handCheck(kindOf(shop).id, shops.settingsFile(shop));
+        summary = outcome.ok ? outcome.summary : notRun(outcome);
+      }
       const certificate = papers.buildGoLiveCertificate({ settings, handCheck: summary, issuedAt: now() });
       const targets = targetsFor(shop);
       const report = targets ? await checkConnections(targets) : undefined;
@@ -117,7 +141,9 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       if (!kindOf(shop).papers) return []; // nothing to check or prove: see `run`
       const checks = stored(shop);
       const out: Unmet[] = [];
-      if (!checks || checks.hand.total === 0 || checks.hand.held < checks.hand.total) out.push("hand-check");
+      // the hand check stands only when it ran on the shop's own Go program (a check stored before 24 Nov 2026 names none: it is run again), every situation held,
+      // and it ran on the program that is on this server now (an update that swaps the program asks for the check again)
+      if (!checks || checks.hand.total === 0 || checks.hand.held < checks.hand.total || !ranOnThisProgram(checks)) out.push("hand-check");
       else if (checks.settingsDigest !== kindOf(shop).papers!.policyDigest(settings)) out.push("settings-changed");
       const read = shops.status(shop);
       if (!read.ok || read.status.deploy?.state !== "applied") out.push("deploy");

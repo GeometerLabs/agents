@@ -10,6 +10,9 @@
 //     sentence: it is never quietly ignored, and never quietly honoured;
 //  3. it is read only by the single-shop command line (cmd/listings), at start, and only when the file variable is set; otherwise the runtime's clock is the machine's.
 //
+// The go-live hand check (24 Nov 2026, modules/crash-test/go-shop.ts) runs each shop program on it too: a "fakes" shop whose services are the hand check's stand-ins on this
+// machine (runtime.json "standins": "http", refused for a live shop or a service elsewhere: internal/runtime/config.go standInsProblems), so the three guards above stand.
+//
 // The directory (cmd/directory) reads it too, for the directory contract's golden answers, which are replayed at the instant they were recorded: there the third guard is that the
 // directory listens on 127.0.0.1 only (the deployer gives it HOST=0.0.0.0), and the first two are the same.
 package testclock

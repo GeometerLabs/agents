@@ -2832,6 +2832,382 @@
     ]
   },
   {
+    "name": "fee_refund_done",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपके {{1}} आपको लौटाए जा रहे हैं।",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_done",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your {{1}} is being refunded to you.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_done",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങൾക്ക് {{1}} തിരികെ നൽകുന്നു.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_done",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮಗೆ {{1}} ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_pending",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक जल्दी ही आपके {{1}} के रिफंड की पुष्टि करेंगे।",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_pending",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner will confirm your {{1}} refund shortly.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_pending",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} റീഫണ്ട് ഉടമ ഉടൻ സ്ഥിരീകരിക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_pending",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ರೀಫಂಡ್ ಅನ್ನು ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ದೃಢೀಕರಿಸುತ್ತಾರೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_approved",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने आपका रिफंड मंज़ूर कर दिया है। {{1}} रास्ते में हैं।",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_approved",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner approved your refund. {{1}} is on its way.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_approved",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉടമ നിങ്ങളുടെ റീഫണ്ട് അംഗീകരിച്ചു. {{1}} വഴിയിലാണ്.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_approved",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಅನ್ನು ಒಪ್ಪಿದ್ದಾರೆ. {{1}} ದಾರಿಯಲ್ಲಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_denied",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने इस भुगतान को वापस न करने का फ़ैसला किया है।",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_denied",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner has decided not to refund this payment.",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_denied",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഈ പേയ്മെന്റ് തിരികെ നൽകേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു.",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_denied",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಈ ಪಾವತಿಯನ್ನು ಹಿಂತಿರುಗಿಸದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ.",
+        "example": {
+          "body_text": [
+            []
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_expired",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने आपके {{1}} के रिफंड पर समय पर जवाब नहीं दिया, इसलिए वह नहीं भेजा गया। कृपया {{2}} से सीधे संपर्क करें।",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_expired",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner did not answer in time about your {{1}} refund, so it has not been sent. Please contact {{2}} directly.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_expired",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} റീഫണ്ടിനെക്കുറിച്ച് ഉടമ സമയത്തിനുള്ളിൽ മറുപടി നൽകിയില്ല, അതിനാൽ അത് അയച്ചിട്ടില്ല. ദയവായി {{2}}-നെ നേരിട്ട് ബന്ധപ്പെടുക.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_expired",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ರೀಫಂಡ್ ಬಗ್ಗೆ ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು {{2}}-ನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Bright Tuition Centre"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_fee_service_paused",
     "language": "hi",
     "category": "UTILITY",

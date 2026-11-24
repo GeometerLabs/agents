@@ -89,7 +89,12 @@ type Pages struct {
 	Base      string
 	OwnerBase string
 	URL       string
+	// CharacterVersion is pages-file.ts `character.version`: the version of the shop's drawn character pictures (16 hex digits), "" before they are drawn. The morning line's
+	// template carries the mood picture <Base>/character/<face>.png?v=<version> as its image header (picturesOf, morning.ts).
+	CharacterVersion string
 }
+
+var characterVersion = regexp.MustCompile(`^[0-9a-f]{16}$`)
 
 var httpsURL = regexp.MustCompile(`^https://[a-z0-9.-]+(:\d{1,5})?(/[A-Za-z0-9._~%/-]*)?$`)
 
@@ -116,6 +121,11 @@ func ReadPages(file string) *Pages {
 		return nil
 	}
 	p := &Pages{Base: base, OwnerBase: owner}
+	if c, ok := f["character"].(map[string]any); ok {
+		if v, ok := c["version"].(string); ok && characterVersion.MatchString(v) {
+			p.CharacterVersion = v
+		}
+	}
 	if s, ok := f["slug"].(string); ok && slug.MatchString(s) {
 		if u, ok := isURL(f["url"]); ok {
 			p.URL = u

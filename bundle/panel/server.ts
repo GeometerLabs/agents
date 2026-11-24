@@ -1187,7 +1187,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const again = (problems: string[], unmet: Unmet[] = []) => page(r, 409, confirmGoLivePage(r.ctx(), { token: f.token, shopName: name, shopId: c.shop, unmet, ...goLivePieces(c.shop), problems, done: false }));
     if (!settings) return again(["The settings cannot be read."]);
     if (r.form.templates_seen !== "yes" || r.form.keys_in_guard !== "yes") return again(["Tick both boxes to say what you have seen and done. Nobody else can say it for you."]);
-    await goLive.run(c.shop);
+    await goLive.run(c.shop, { reuseHand: true }); // the hand check that was just run stands while the settings and the program are the same; the connections are read again
     const owner = shops.servedBy(c.shop);
     const result = goLive.ready(c.shop, owner ? preparedByOf(owner) : r.account!.name);
     if (!result.ok) return again([], result.unmet);

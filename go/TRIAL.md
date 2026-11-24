@@ -1540,3 +1540,92 @@ What was built is in `internal/orders/Explanation.md` § "Keep one for me", and 
   - Panel: 266/269 in the pass. The 3 failures were the Bookings review sheets' section 7 (the panel's new words), which was regenerated. On the rerun it was 268 pass and 0 fail; the one test that did not run is the one that needs the monorepo path, which that command did not set.
   - Bundle: 722 pass, 9 skipped (REAL_CADDY).
   - TypeScript: Orders 215/215; modules/channels 219/219.
+
+## handcheck-go-24nov: the go-live hand check runs on the shop's Go program (24 Nov 2026, owner: "Run the hand check on Go")
+
+The certificate a shop gets for go-live now rests on a run of that shop's own settings on the Go program it will run. Before, the situations drove the TypeScript demo
+engine (src/harness.ts), which the shops no longer run and which has no pickup hold, no credit book and no E1 (a hold shop had 0 situations, so the gate refused it).
+
+- **The runner, shared by every template** (`modules/crash-test/`): `programs.ts` (where the programs are: `GEOMETER_GO_PROGRAMS`, else `go/bin`; Node modules only, so the
+  panel and the deployer read it without loading the runner), `go-shop.ts` (one shop: its folder written as the deployer writes it from its own settings, the program started
+  through the contract's shared process pieces, events, settle, a beat, the record and the saved state read from agent.db), `go-world.ts` (the stand-ins and the stub Guard
+  on the shop's clock, the steps the situations use, `live()` for a value read afresh, `samePicture` for a QR). Each template's `crash-test/go-world.ts` adds only its own.
+  The situations keep their words and judge from the same stand-in records; `runOnProgram` runs them on the named program and lists every situation as not run, with the
+  reason, when the program is not there. A send the provider refused fails the situation unless the situation planned one.
+- **Go**: runtime.json `"standins": "http"` (config.go `standInsProblems`, with a test): a "fakes" shop (so it may run on the test clock) whose services are stand-ins on
+  127.0.0.1 or [::1] with a port (part B: not localhost), reached through the live clients (each template's BuildPorts: `UsesClients`); refused for a live shop or a service elsewhere. Such a shop may beat
+  every 0.1 s or more (the hand check uses 0.2 s). The kit's /status counts the beats that ended (`ticks`). Nothing changes for a real shop.
+- **New situations**: the pickup hold (`orders/crash-test/hold.ts`: "held for you" only after the owner's yes and no money, one hold for the last unit, collected once,
+  let go once), the credit book (`fees/crash-test/credit.ts`: nothing before the owner's tap, the first question only, a reminder only after the yes at the reminder hour,
+  none after a marked payment), E1 where a shop turns discounts on (`bookings|orders/crash-test/discounts.ts`: within the cap the agent agrees, beyond it only the
+  owner's card with its code, below the floor the rule refuses).
+- **The panel** (bundle/panel/Explanation.md, "The hand check runs on the shop's Go program"): a child process with a ten-minute limit, within the request (a run takes
+  seconds to about a minute); the summary keeps its shape and names `program` (name, version, SHA-256 of the file); the gate refuses a stored check with no program or
+  from another program file; the confirm page keeps a check that still stands. On a server the deployer copies the hand check's programs out of the image the shops run into
+  `<server>/programs`, mounted read-only at `/programs` (the panel has no Docker); the stripped app keeps `modules/test` for the runner. The certificate and the script
+  name the program ("Go bookings 0.2.0 · sha256:…"). `geometer update` builds and copies the programs before a Go version's hand check.
+- **Deleted**: the demo world's `worldHook` (the accounting-figures tests read each Go world's record as it closes, `goWorldHook`), the hand check's in-process model
+  stand-ins (`aiStandins` over `systemOneFetch`, now stand-ins over HTTP), the monthly report situation's in-process job, and the hand check's imports of the demo engine.
+  The demo engine itself stays for the public demos (decision 61).
+- **Findings** (none is a change of TypeScript behaviour):
+  - **Orders on Razorpay**: the owner's message about a late payment that was refunded (`owner_payment_unused`) has no approved WhatsApp template, so outside the owner's
+    24 hours it goes under the generic name, which the provider refuses: the owner is not told. The demo engine approved every name, so it never showed. On Go the Razorpay
+    examples hold 17 of 18 (Annapurna Razorpay, Sweet Crumbs 15 of 16); the gate refuses such a shop until the template is registered. Pinned in
+    `orders/test/situations.test.ts`; the sell guide's Razorpay count is a todo.
+  - **Fees on Razorpay**: when a fee is paid twice, the parent's messages about the extra payment go under the generic name outside the parent's 24 hours, which the
+    provider refuses. Bright Tuition holds 24 of 25 on Go; pinned in `fees/test/situations.test.ts` (`KNOWN_ON_GO`). Both findings came from a check added here: a send the
+    provider refused fails the situation unless it planned one (before, "nothing was sent" could pass because a send failed).
+  - **Bookings, every shop with the assistant** (an `assistant` block: every shop set up through the panel's Character step): in the button-mode situations a message to
+    the owner goes as a WhatsApp template whose image header does not match how the template was made (Meta's 132012, "Variable parameter values formatted incorrectly";
+    modules/standins/whatsapp.ts), so the provider refuses it and 1 to 3 AI situations fail on Go. Shown by toggling the block: Glow Salon with an `assistant` fails
+    "a button reply books without any model call"; the panel's test shop without it holds. So the gate refuses every Bookings shop made through the panel until that is fixed.
+    The panel's flow tests use a stand-in hand check (golive-go.test.ts and orders-resolves run the real one).
+  - **Fees on Go reads with its rules alone** (go/internal/fees/Deferred.md: the model steps of reading), so "the model is down" is listed as not run there.
+  - `geometer update` compares the hand checks of two versions: a situation that held before and is not run now holds the shop back, so a Fees centre's next update is
+    held back by "the model is down" until that is decided (bundle/panel/Deferred.md).
+- **Not done** (bundle/panel/Deferred.md): a polled job (not needed at these times); `update`'s "before" check of a Go version runs on the current programs; the contract
+  harnesses still write their own shop folders; a "broken setting" test for each template (there is one for Fees: a fee above the day's refund cap; situations follow the
+  settings by design, so a valid setting fails only where the program is wrong, as the Razorpay finding shows).
+- **Run of record** (24 Nov, on the branch from dd8a3f88; two passes, the second at the head for what changed after the first): `go build/vet/test ./...` ok (40
+  packages); contracts Bookings 178/178, Orders 136/136, Fees 107 + 4 skipped (the guards-mode visitor steps before 06:00 in India, as before), Stock orders 74/74, listings
+  210/210 (words-fresh included, after regenerating the Orders reading vectors with the new situations' phrases); every generator's `--check` (41) fresh; template units
+  Bookings 838/838, Orders 209 + 5 skipped + 1 todo, Fees 243 + 1 todo, Stock orders 124/124; bundle 723 + 9 skipped (REAL_CADDY) + 1 todo; panel 273/273. The panel's
+  child also ran from a stripped app (`hand-check-go.js`, the hold example, 4/4). Hand checks on Go: Bookings Glow Salon 40/40 (UPI 9/9, with discounts 43/43; with an
+  `assistant` block one fails, above), Orders Annapurna 17/17, Razorpay 17/18, Sweet Crumbs 15/16, plans 22/22, the hold 4/4 (three times), with discounts 20/20, Fees Bright
+  Tuition 24/25 (1 not run), credit book 4/4, UPI 7/7, Classes 30/30, Stock orders 17/17 (three times). Seen once and not diagnosed: under two test files at once, the Fees
+  trick situation failed in one run and held three times alone (a failure can only refuse a shop, never pass one).
+
+## handcheck-go-24nov, part B: the three refusals fixed at their cause, the gaps closed (24 Nov 2026)
+
+- **The three refusals were product bugs, not stand-in artefacts.** For each, what the program sent was compared with the template set the shop submits (whatsapp-templates.json,
+  made from meta-templates.ts) and with what the stand-in approves (the same catalogue):
+  - **Bookings with the assistant**: the Go morning line sent `owner_morning` (submitted with an IMAGE header, modules/assistant/templates.ts) with no header, which Meta refuses
+    (132012). The port had dropped morning.ts's `headerImage`. Fixed in Go: the picture `<base>/character/<face>.png?v=<version>` from pages.json `character.version`
+    (access.ReadPages now reads it). The hand-check shop with the assistant names its drawn pictures in pages.json, as the deployer's loop does.
+  - **Orders on Razorpay**: `owner_payment_unused` was in no submitted template, so it went under the generic `order_owner_notice`, which is not submitted either: refused
+    outside the owner's window on live WhatsApp. Fixed in the template set: `owner_order_payment_unused`.
+  - **Fees on Razorpay**: a refund's word to the parent (`fee_refund_done`, `_pending`, `_approved`, `_denied`, `_expired`) was in no submitted template: five templates;
+    `fee_refund_done` began with its value, which Meta refuses, so it now begins with words in all four languages (hi/ml/kn reworded by moving the existing words; on the
+    review sheets). whatsapp-templates.json, the review sheets and the Go words regenerated.
+  - Fees' "the model is down" runs on Go again (the program asks no model and still answers with buttons; the record shows the rules read the message). Every example holds
+    every situation; the pinned failures and the todo sell-guide tests are plain passes (Orders 18 of 18, Fees 26 of 26, as the guides say).
+- **Gaps**: broken-setting tests for Bookings, Orders and Stock orders (golive-go.test.ts); the Fees trick situation held 20 of 20 under load (ten beside the Orders units,
+  ten beside the Fees units), so the one failure seen before was not reproduced; the beat: a hand-check shop may beat down to 0.1 s and the runner uses 0.2 s (a Go test holds
+  both floors); `standins: "http"` takes only 127.0.0.1 or [::1] with a port for every address it names (services, push, models) and holds the process to this machine while it
+  runs (guard/loopback.go: the far end of every connection is checked, no redirect off the loopback), with Go tests for localhost, 0.0.0.0, other IPv6, a mapped address, a
+  look-alike host, user info, https, no port, a redirect and a non-loopback dial.
+- **The update**: a situation the new version lists as not run on these settings, with its reason, is no longer counted as a loss (bundle/handcheck.ts `notRunNow`, said in
+  the log); the "before" side runs on the programs the shop runs now (copied out of the image the deployed compose file names into <server>/programs-running). The update
+  test that put a fault into a version's TypeScript agent now puts it into the new version's program (a build that misreads windows over 24 hours): the 48-hour client is
+  held back, the other moves.
+- **Three more on the plans example shop**, found once the run of record passed each settings file as its own argument: on a UPI shop the plan's renewal writes the UPI ID
+  after its link and so filled no template (the link slot now holds the link as every payment request writes it, `payTo`, and the Go words read it so), and "your plan is on"
+  and the owner's "plan cancelled" had no template (both added, with the plan's meals and days as slots). All three went under the generic name, refused outside the window.
+  The Orders tests now run the plans shop's situations on Go (22 of 22); the other unasked plan messages are a row in templates/commerce/orders/Deferred.md. The agent update
+  (bundle/agent/update.ts) excuses none of an agent's not-run situations: its list mixes what the settings rule out with what the agent failed to do (NotDrivable), and
+  the result does not say which, so one the new version no longer runs still holds it back (readOfCrash; a test holds it).
+- **Run of record** at 04c689b8, clean tree: go build, vet, test (40 packages ok); contracts Bookings 178/178, Orders 136/136, Fees 111/111, Stock orders 74/74, listings
+  210/210; 41 generators `--check` none stale; units Bookings 838, Orders 216, Fees 245, Stock orders 124, all pass; bundle 724 pass, 9 skipped (Caddy, needs
+  REAL_CADDY=1 and Docker); panel 276/276; every hand check on Go holds: Bookings 40/40, UPI 9/9, rental 35/35, discounts 43/43, assistant 40/40; Orders 17/17,
+  Razorpay 18/18, Sweet Crumbs 16/16, plans 22/22, hold 4/4, discounts 20/20; Fees 26/26, Maths Circle 23/23, UPI 7/7, Classes 31/31, credit 4/4; Stock orders 17/17.
+  No shop program left running.

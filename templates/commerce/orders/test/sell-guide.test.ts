@@ -4,6 +4,7 @@
 //
 // Two deliberate differences from Fees. The phone demo is not built for Orders, and a test below fails the day it is (then the guide must change). And the walkthrough's UPI codes
 // are random on every run, so the quoted printout is compared with the code, the link and nothing else made the same. The report lines section 9 and the sheets name are the UPI shop's, in the report's own words (report/strings.ts).
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -313,7 +314,7 @@ test("sell guide (14 Nov): the walkthrough is for a phone: the hosted demo's add
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
 
-test("sell guide: what the guide says is built is (the hosted demo's adapter, which section 4 points to, included)", () => {
+test("sell guide: what the guide says is built is (the hosted demo's adapter, which section 4 points to, included)", { skip: goSkip("orders") }, () => {
   const orders = (path: string) => new URL(`../${path}`, import.meta.url);
   assert.ok(existsSync(orders("demo/quick.ts")), "the hosted demo at /demo/orders is built from this adapter (scripts/build-demo.ts)");
   for (const built of ["scripts/go-live-certificate.ts", "scripts/client-report.ts", "report/strings.ts", "approvals/relay.ts", "whatsapp-templates.json"]) assert.ok(existsSync(orders(built)), `${built}: the guide says it is built`);
@@ -369,7 +370,7 @@ test("sell guide: the example shop's numbers in section 8 are the ones in annapu
 
 // ---- the hand check -----------------------------------------------------------------------------------------------------
 
-test("sell guide: the hand-check numbers in section 11 and on the sheets are the ones a real run gives today", async () => {
+test("sell guide: the hand-check numbers in section 11 and on the sheets are the ones a real run gives today", { skip: goSkip("orders") }, async () => {
   const upi = await runOn(annapurna());
   const uHeld = upi.results.filter((r) => r.held).length;
   const uTotal = upi.results.length;

@@ -137,7 +137,9 @@ test("a new version is tried beside the one in service: it moves when it holds e
 test("a first version with a situation failing is held back (nothing is recorded to say it is no worse), and one that is no longer tried is named apart from one that fails", async () => {
   const w = agentServer(); try {
     let v1Fails = true;
-    crashTestStandIn(w, (v) => (v === "v1" ? answer(v, v1Fails ? ["Razorpay key expired"] : []) : answer(v, [], TITLES.slice(0, 3))));
+    crashTestStandIn(w, (v) => (v === "v1" ? answer(v, v1Fails ? ["Razorpay key expired"] : [])
+      : v === "v3" ? { ...answer(v, [], TITLES.slice(0, 3)), notRun: [{ id: "s3", title: "Razorpay key expired", reason: "the agent asked Razorpay for no refund when the customer wrote \"cancel\"" }] }
+      : answer(v, [], TITLES.slice(0, 3))));
     const first = await update(w);
     assert.equal(first.result, 1);
     assert.match(first.out, /HELD BACK\. Held 3 of 4 at v1\. Now failing: Razorpay key expired\. v1 gets no go-live certificate\./);
@@ -149,6 +151,10 @@ test("a first version with a situation failing is held back (nothing is recorded
     set(w, "v2");
     const dropped = await update(w);
     assert.match(dropped.out, /HELD BACK\. Held 3 of 3 at v2; 4 of 4 held at v1\. No longer checked at v2: Razorpay key expired\. Keep running v1/);
+    // v3 lists it as not run, with a reason: an agent's not-run list also holds what the agent itself failed to do (NotDrivable), so it is still a loss and v3 is held back
+    set(w, "v3");
+    const listed = await update(w);
+    assert.match(listed.out, /HELD BACK\. Held 3 of 3 at v3; 4 of 4 held at v1\. No longer checked at v3: Razorpay key expired\. Keep running v1/);
   } finally { w.done(); }
 });
 

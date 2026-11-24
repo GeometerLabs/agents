@@ -98,7 +98,8 @@ type PortsOptions struct {
 func BuildPorts(cfg runtime.Config, s *Settings, o PortsOptions) (Ports, error) {
 	p := Ports{Capabilities: s.Capabilities()}
 	gateway := p.Capabilities.ConfirmsAutomatically // a UPI shop's module cannot confirm a payment by itself: it has no gateway
-	if cfg.Mode != "live" {
+	// the in-memory stand-ins for a fakes shop; the live clients for a live shop AND for the hand check's shop (runtime.json "standins": "http", runtime/config.go)
+	if !cfg.UsesClients() {
 		if gateway {
 			p.FakePayments = payments.NewFake(o.Now)
 			p.Payments = p.FakePayments

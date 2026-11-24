@@ -16,10 +16,10 @@ import { readUpiLink } from "../../../../modules/payments/providers/upi/link.ts"
 import { REFUND_REMINDERS_MAX } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { MARK_ACTIONS, markObligations } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { textQrPng } from "../../../../modules/qr/png.ts";
-import { memoryQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
+import { samePicture } from "../../../../modules/crash-test/go-world.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
-import { createWorld } from "../src/harness.ts";
-import type { World } from "../src/harness.ts";
+import { createGoWorld } from "./go-world.ts";
+import type { GoWorld as World } from "./go-world.ts";
 import { SAYS } from "./says.ts";
 import type { Shop } from "./shop.ts";
 
@@ -35,10 +35,11 @@ export function buildUpiSituations(shop: Shop): Built[] {
   const out: Built[] = [];
   const add = (id: string, title: string, how: string, run: () => Promise<CheckResult[]>) => out.push({ id, title, how, run });
 
-  const world = (language?: Language) => {
-    const qr = memoryQrImages();
+  // the QR pictures the program wrote into its pages folder (runtime.json `report`), by the address it sent the parent
+  const world = async (language?: Language) => {
     const settings = language ? { ...shop.settings, students: shop.settings.students.map((s) => (s.name === name ? { ...s, language } : s)) } : shop.settings;
-    return { w: createWorld({ settings, nowMs: shop.startMs, qrImage: qr.make }), qr };
+    const w = await createGoWorld({ settings, nowMs: shop.startMs });
+    return { w, qr: w.qrImages };
   };
   const at = async (w: World, ms: number) => { w.clock.set(ms); await w.tick(); };
   const atReminder = (w: World, n: number) => at(w, shop.moments[n] + MINUTE);
@@ -50,16 +51,16 @@ export function buildUpiSituations(shop: Shop): Built[] {
   const open = (w: World) => markObligations(w.record.entries()).filter((o) => o.case === due(w).id).map((o) => `${o.kind} ${o.amountPaise}`);
   const remindersSent = (w: World) => due(w).remindersSent;
   const parentWroteToday = (w: World) => w.messaging.receive(shop.parent, "ok"); // the parent's window is open: the QR picture can go
-  const ownerWroteToday = (w: World) => w.messaging.receive(w.owner, "ok"); // the owner's window is open: the notice comes with buttons
+  const ownerWroteToday = (w: World) => w.ownerSays("ok"); // the owner's window is open: the notice comes with buttons (the program keeps its own record of who wrote when)
 
   // 1. A fee paid by UPI, in every language the centre speaks
   add("fee-upi-paid", `A fee paid by UPI, in ${shop.settings.languages.map((l) => LANGUAGE_NAMES[l]).join(", ")}: paid only when the owner marks it received`, "No faults; the parent pays the centre's own UPI ID and the owner taps Received", async () => {
     const all: CheckResult[] = [];
     for (const [i, lang] of shop.settings.languages.entries()) {
       const { results, expect } = checker();
-      const { w, qr } = world(lang);
+      const { w, qr } = await world(lang);
       const taps = i % 2 === 0;
-      if (taps) ownerWroteToday(w);
+      if (taps) await ownerWroteToday(w);
       await atReminder(w, 0);
       const request = w.upiRequest(name);
       const link = request ? readUpiLink(request.link) : null;
@@ -69,7 +70,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
       parentWroteToday(w);
       await w.say(SAYS[lang].pay, { from: shop.parent });
       const picture = w.messaging.sentTo(shop.parent).find((m) => m.kind === "image");
-      expect("Asked for the link, the parent gets the QR picture of that very request", !!picture && !!request && qr.files.get(picture.image!.link)?.equals(textQrPng(request.link)) === true);
+      expect("Asked for the link, the parent gets the QR picture of that very request", !!picture && !!request && samePicture(qr.get(picture.image!.link), textQrPng(request.link)));
       expect("Nothing is marked paid before the owner's mark", due(w).state === "open" && entries(w, MARK_ACTIONS.marked).length === 0);
       await w.ownerMarksReceived(name, { tap: taps });
       expect(`After the owner ${taps ? "taps Received" : "replies \"received <code>\""} the fee is paid, and the parent got one receipt`, due(w).state === "paid" && sent(w, "fee_received") === 1);
@@ -85,7 +86,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
   // 2. A screenshot sent as proof
   add("fee-upi-screenshot", "A screenshot sent as proof marks nothing paid: the owner is asked to look", "The parent sends a picture of a payment, then writes that they paid", async () => {
     const { results, expect } = checker();
-    const { w } = world();
+    const { w } = await world();
     await atReminder(w, 0);
     await w.say("", { from: shop.parent, image: true });
     expect("The parent was told the owner will confirm, and that a screenshot is not proof", sent(w, "fee_upi_claim") === 1);
@@ -107,7 +108,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
   const part = Math.max(1, Math.floor(fee / 3));
   add("fee-upi-different-amount", "The owner confirms a different amount: less is a part payment; more settles the fee and the extra is owed back", `The owner replies "received <code> ${part}" for a ${formatInr(fee)} fee, then the rest; another time ${formatInr(fee + 100)}`, async () => {
     const { results, expect } = checker();
-    const a = world().w;
+    const a = (await world()).w;
     await atReminder(a, 0);
     const first = a.upiRequest(name)!.code!;
     await a.ownerMarksReceived(name, { amountInr: part });
@@ -122,7 +123,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
     expect("The normal reminders go on, for the rest", remindersSent(a) === before + 1);
     await a.ownerMarksReceived(name);
     expect("With the rest marked the fee is paid, once", due(a).state === "paid" && sent(a, "fee_received") === 1);
-    const b = world().w;
+    const b = (await world()).w;
     await atReminder(b, 0);
     await b.ownerMarksReceived(name, { amountInr: fee + 100 });
     expect(`More (${formatInr(fee + 100)}): the fee is paid, and the extra ${formatInr(100)} is owed back by the owner, not sent by the agent`, due(b).state === "paid" && b.upiRefunds(name).length === 1 && b.upiRefunds(name)[0].amountPaise === 10_000 && b.upiRefunds(name)[0].state === "owed" && sent(b, "fee_upi_refund_owed") === 1 && sent(b, "fee_upi_refund_sent") === 0);
@@ -132,7 +133,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
   // 4. The owner never confirms
   add("fee-upi-never-confirmed", "The owner never confirms: the normal reminders go on, and nothing is marked paid", "Nobody marks the fee; every reminder moment of the month passes", async () => {
     const { results, expect } = checker();
-    const { w } = world();
+    const { w } = await world();
     for (const m of shop.moments) await at(w, m + MINUTE);
     expect("The fee stays open, and nothing is marked paid", due(w).state === "open" && entries(w, MARK_ACTIONS.marked).length === 0 && sent(w, "fee_received") === 0);
     expect(`The reminders went as on any centre, ${shop.settings.reminders.maxPerMonth} at most`, remindersSent(w) >= 1 && remindersSent(w) <= shop.settings.reminders.maxPerMonth);
@@ -143,8 +144,8 @@ export function buildUpiSituations(shop: Shop): Built[] {
   // 5. The owner confirms twice
   add("fee-upi-confirmed-twice", "The owner confirms twice: it counts once", "The owner taps Received, taps it again, and types the code", async () => {
     const { results, expect } = checker();
-    const { w } = world();
-    ownerWroteToday(w);
+    const { w } = await world();
+    await ownerWroteToday(w);
     await atReminder(w, 0);
     const code = w.upiRequest(name)!.code!;
     await w.ownerMarksReceived(name, { tap: true });
@@ -161,7 +162,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
   if (shop.lateFeeAtMs === undefined || shop.lateFeeInr <= 0) out.push({ id: "fee-upi-confirmed-after-replaced", title: "The owner confirms a request after it was replaced", skip: "the centre has no late fee, so a request is never replaced by one for a new amount" });
   else add("fee-upi-confirmed-after-replaced", "The owner confirms a request after it was replaced (the late fee changed the amount): it counts toward the fee, once", "The late fee is added and a new request made; then the owner marks the first request's code", async () => {
     const { results, expect } = checker();
-    const { w } = world();
+    const { w } = await world();
     await atReminder(w, 0);
     const first = w.upiRequest(name)!;
     const code = first.code!;
@@ -179,7 +180,7 @@ export function buildUpiSituations(shop: Shop): Built[] {
   // 7. A refund the owner owes
   add("fee-upi-refund-tracked", "A UPI refund: owed by the owner, reminded, and \"sent\" only after the owner marks it", "The fee is paid; the parent asks for some back and the owner approves; the owner does nothing for days, then marks it sent", async () => {
     const { results, expect } = checker();
-    const { w } = world();
+    const { w } = await world();
     await atReminder(w, 0);
     await w.ownerMarksReceived(name);
     const back = Math.min(shop.refundLimitInr, fee);

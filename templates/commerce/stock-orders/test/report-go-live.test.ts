@@ -2,6 +2,7 @@
 // The reading itself is shared with the other templates (modules/report/go-live.ts); what is tried here is Stock orders' own: its limits in plain words, its digests, and
 // that the certificate states facts and counts and never grades. One test runs the real hand check on the example shop; the rest use a canned hand-check summary for speed.
 // Written 17 Nov 2026; not yet run (the owner's instruction: all suites run together later).
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
@@ -56,7 +57,7 @@ test.afterEach(() => { for (const d of dirs) rmSync(d, { recursive: true, force:
 
 // ---- from the real hand check --------------------------------------------------------------------------------------------------
 
-test("a certificate made from a real run of the hand check on the example shop states its counts, what it did not test, and the settings the checks ran on", async () => {
+test("a certificate made from a real run of the hand check on the example shop states its counts, what it did not test, and the settings the checks ran on", { skip: goSkip("stock-orders") }, async () => {
   const run = await runOn(example);
   const summary = summariseRun(run);
   assert.equal(summary.total, run.results.length);

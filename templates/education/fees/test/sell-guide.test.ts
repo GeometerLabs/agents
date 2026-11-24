@@ -5,6 +5,7 @@
 // One deliberate difference from Bookings: the walkthrough shows a different child in each language (Rohan Mehta in English, Anaya Sharma in Hindi, and so on), so the
 // quoted printout in section 4 differs in names and amounts from language to language. The quotes sit in ```text blocks, and the "same amounts and numbers" checks
 // read the guide without those blocks. The blocks are checked on their own, against what walk() prints for that language.
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -299,7 +300,7 @@ test("sell guide (14 Nov): the walkthrough is for a phone: the hosted demo's add
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
 
-test("sell guide: the hosted demo section 4 points to is built from this template's adapter", () => {
+test("sell guide: the hosted demo section 4 points to is built from this template's adapter", { skip: goSkip("fees") }, () => {
   assert.ok(existsSync(new URL("../demo/quick.ts", import.meta.url)), "the hosted demo at /demo/fees is built from this adapter (scripts/build-demo.ts)");
   const script = readFileSync(new URL("../scripts/hand-check.ts", import.meta.url), "utf8");
   assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the Operator to run the hand check on the centre's own settings file");
@@ -345,7 +346,7 @@ test("sell guide: the example centre's numbers in section 8 are the ones in brig
 
 // ---- the hand check -----------------------------------------------------------------------------------------------------
 
-test("sell guide: the hand-check numbers in section 11 and on the sheets are the ones a real run gives today", async () => {
+test("sell guide: the hand-check numbers in section 11 and on the sheets are the ones a real run gives today", { skip: goSkip("fees") }, async () => {
   const bright = await runOn(brightTuition());
   const held = bright.results.filter((r) => r.held).length;
   const total = bright.results.length;

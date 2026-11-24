@@ -3,6 +3,7 @@
 // settings (and when), on Glow Salon's example, on some other settings, a certificate was given that could not be trusted, or none was given.
 // Library tests use a canned hand-check summary for speed; the script tests at the end run the real hand check on real settings files, because
 // the digest has to survive being written to JSON and read back.
+import { goSkip } from "../../../../modules/crash-test/go-shop.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
@@ -207,7 +208,7 @@ const run = (script: string, ...args: string[]) => spawnSync(process.execPath, [
 const tree = (dir: string): string[] => readdirSync(dir, { recursive: true, encoding: "utf8" }).sort();
 const SIX = ["certificate-2026-11-en.html", "certificate-2026-11-en.txt", "certificate-2026-11.json", "owner-2026-11-en.txt", "report-2026-11-en.html", "report-2026-11.json"];
 
-test("scripts: go-live-certificate.ts then client-report.ts --go-live on the same settings file is (a); the same certificate on another shop's file is (b) and names Glow Salon; another shop's own certificate is 'different'", async () => {
+test("scripts: go-live-certificate.ts then client-report.ts --go-live on the same settings file is (a); the same certificate on another shop's file is (b) and names Glow Salon; another shop's own certificate is 'different'", { skip: goSkip("bookings") }, async () => {
   const dir = mkdtempSync(join(tmpdir(), "geometer-golive-"));
   const { world } = await runBusyMonth();
   writeFileSync(join(dir, "record.json"), JSON.stringify(world.record.entries()));

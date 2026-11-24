@@ -100,7 +100,8 @@ func run(folder string) error {
 	}
 	kit.Settings, kit.Now = client.Settings.Own.(*stockorders.Settings), now
 	// services.ts buildServices: the stand-in WhatsApp in fakes mode (made once, so it keeps what it was told while the process runs), the live client in live mode
-	if client.Config.Mode != "live" {
+	// the hand check's shop (runtime.json "standins": "http") takes the live client too, to the stand-in over HTTP (runtime/config.go)
+	if !client.Config.UsesClients() {
 		if _, has := client.Config.Services["messaging"]; client.Config.Services == nil || has {
 			kit.WhatsApp = messaging.NewStandIn(messaging.Clock(now), stockorders.TemplateNames(), log)
 		}

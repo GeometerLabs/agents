@@ -2,8 +2,8 @@
 // typed by hand and never translated by a model, and every amount, day, count and name in it checked against the facts before it is sent. They are kept in this folder and
 // handed the few helpers of language/templates.ts (so this file imports nothing from it at run time, and the two cannot wait for each other when loaded).
 // The Hindi, Malayalam and Kannada are machine-written; a native speaker must read them before a real shop sees them (the REVIEW sheets list every line).
-// Three go out unasked, often in a closed 24-hour window, and are WhatsApp templates too (language/meta-templates.ts): the renewal, the pause and the skip. Those bodies start
-// and end with fixed words, because Meta rejects a body that starts or ends with a value.
+// Five can go out in a closed 24-hour window, and are WhatsApp templates too (language/meta-templates.ts): the renewal, the pause, the skip, "your plan is on" (after the owner
+// marks the payment) and the owner's word that a plan was cancelled. Those bodies start and end with fixed words, because Meta rejects a body that starts or ends with a value.
 import type { Language } from "../../../../../modules/language/languages.ts";
 import type { MessageFacts } from "../language/templates.ts";
 

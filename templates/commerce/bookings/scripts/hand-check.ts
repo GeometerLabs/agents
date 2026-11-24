@@ -23,7 +23,7 @@ await main(async () => {
   const showAll = args.values.details === true || args.values.all === true;
   const settings = args.values.settings ? readSettings(args.values.settings) : glowSalon();
   const started = performance.now();
-  const { results, skipped } = await runOn(settings);
+  const { results, skipped, program } = await runOn(settings); // each situation on the shop's own Go program (crash-test/go-world.ts)
   if (results.length === 0) throw new Error(`No situation could be run on these settings: ${skipped.map((s) => s.reason).join(" ")}`);
   const tookMs = Math.round(performance.now() - started);
   const speaks = LANGUAGES.filter((l) => settings.languages.includes(l));
@@ -35,6 +35,7 @@ await main(async () => {
         "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype.",
         "",
         `CRASH TEST   ${settings.name} · Bookings · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
+        `ON THE SHOP'S OWN PROGRAM   Go ${program?.name ?? "?"} ${program?.version ?? ""} · sha256:${program?.sha256.slice(0, 16) ?? "?"}`,
       ],
       workDone: ({ situations, checks, tookMs: ms }) => !capabilitiesOf(settings.payment).confirmsAutomatically ? [
         `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp and calendar,`,

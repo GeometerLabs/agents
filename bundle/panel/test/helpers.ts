@@ -10,6 +10,9 @@ import { fakeClock } from "../../../modules/core/clock.ts";
 import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import type { RunningStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import type { PanelConfig } from "../config.ts";
+import { KINDS } from "../../lib/kinds.ts";
+import { goRuntimeOf } from "../../lib/go-build.ts";
+import { goProgram } from "../../../modules/crash-test/programs.ts";
 import { makeInviteLink, openStores, startPanel } from "../server.ts";
 import { createDocuments } from "../documents.ts";
 import type { RunningPanel } from "../server.ts";
@@ -17,6 +20,20 @@ import { createAccounts } from "../accounts.ts";
 import type { Role } from "../accounts.ts";
 
 export const NOW = Date.parse("2026-11-04T10:00:00+05:30");
+/**
+ * The panel's flow tests' hand check (24 Nov 2026): the answer a run on the shop's own Go program gives when every situation holds, without the run. The flows are about the
+ * panel (the steps, the checks page, "Ready to go live", the papers); the real run on the program is golive-go.test.ts's, and each template's own tests run every situation.
+ * It names the program that is here (its file's digest), as a real run does, so the gate's "the check ran on this program" holds; without the program the gate refuses.
+ */
+export const passingHandCheck: NonNullable<PanelConfig["handCheck"]> = async (kind, settingsFile) => {
+  const k = KINDS[kind];
+  const checked = k.validateSettings(JSON.parse(readFileSync(settingsFile, "utf8")));
+  if (!k.papers || !checked.ok) return { ok: false, reason: "the stand-in hand check was given settings it cannot read" };
+  const name = goRuntimeOf(join(new URL("../../../templates/", import.meta.url).pathname, k.id === "stock-orders" || k.id === "bookings" || k.id === "orders" ? `commerce/${k.id}` : `education/${k.id}`))?.program ?? k.id;
+  const program = goProgram(name);
+  return { ok: true, summary: { held: 12, total: 12, checks: 48, failedTitles: [], ranOn: k.papers.policyDigest(checked.settings), ...(program.ok ? { program: { name, version: "stand-in", sha256: program.sha256 } } : {}) } };
+};
+
 export const EXAMPLE = new URL("../../../templates/commerce/bookings/clients/glow-salon.example/", import.meta.url).pathname;
 export const CALENDAR_ID = "glowsalon@group.calendar.google.com";
 export const SHARE_ADDRESS = "geometer-calendar@geometer-bookings.iam.gserviceaccount.com";
@@ -63,7 +80,7 @@ export async function boot(change: Partial<PanelConfig> = {}, o: { standins?: bo
   const config: PanelConfig = {
     serverDir: dir, mode: o.mode ?? "own", host: "127.0.0.1", port: 0, trustProxy: false, templatesDir: new URL("../../../templates/", import.meta.url).pathname, staleMinutes: 30, now: () => NOW,
     calendarShareAddress: SHARE_ADDRESS, ...(dataKeyFile ? { dataKeyFile } : {}), ...(signingKeyFile ? { signingKeyFile } : {}), personKeysDir: join(outside, "person-keys"),
-    ...(standins ? { guardUrl: standins.url } : {}), ...change,
+    ...(standins ? { guardUrl: standins.url } : {}), handCheck: passingHandCheck, ...change,
   };
   const logs: string[] = [];
   const panel = await startPanel(config, { log: (l) => logs.push(l) });
