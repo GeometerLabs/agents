@@ -162,9 +162,9 @@ func TestAnswerIn(t *testing.T) {
 
 func TestJoinOwnerViews(t *testing.T) {
 	var fees, stock, orders map[string]any
-	_ = json.Unmarshal([]byte(`{"shop":{"name":"G"},"kind":"fees","services":[],"items":[{"case":"f-1"}],"upcoming":[],"credit":[{"ref":"c-1"}],"money":{"today":{"received":{"paise":100,"count":1}},"month":{"stillToCome":{"paise":2400,"count":1},"keptPaise":0},"byWord":[],"period":"2026-11","readsSettlements":false},"app":{"cards":[{"skill":"stock-orders","kind":"order"},{"skill":"fees","kind":"cancel"}]}}`), &fees)
+	_ = json.Unmarshal([]byte(`{"shop":{"name":"G"},"kind":"fees","services":[],"items":[{"case":"f-1"}],"upcoming":[],"credit":[{"ref":"c-1"}],"money":{"today":{"received":{"paise":100,"count":1}},"month":{"stillToCome":{"paise":2400,"count":1},"keptPaise":0},"byWord":[],"period":"2026-11","readsSettlements":false},"app":{"cards":[{"skill":"stock-orders","kind":"order"},{"skill":"fees","kind":"cancel"}],"today":[],"waiting":[{"case":"f-2","skill":"fees"}]}}`), &fees)
 	_ = json.Unmarshal([]byte(`{"shop":{"name":"G"},"kind":"stock","items":[{"case":"po-1"}]}`), &stock)
-	_ = json.Unmarshal([]byte(`{"shop":{"name":"G"},"kind":"orders","services":[],"items":[{"case":"o-1"}],"upcoming":[{"case":"o-1"}],"money":{"today":{"received":{"paise":50,"count":2}},"month":{"stillToCome":null,"keptPaise":10},"byWord":[{"case":"o-1"}],"period":"2026-11","readsSettlements":true}}`), &orders)
+	_ = json.Unmarshal([]byte(`{"shop":{"name":"G"},"kind":"orders","services":[],"items":[{"case":"o-1"}],"upcoming":[{"case":"o-1"}],"money":{"today":{"received":{"paise":50,"count":2}},"month":{"stillToCome":null,"keptPaise":10},"byWord":[{"case":"o-1"}],"period":"2026-11","readsSettlements":true},"app":{"cards":[{"skill":"fees","kind":"cancel"}],"today":[{"case":"o-1"}],"waiting":[{"case":"o-1","skill":"orders"}]}}`), &orders)
 	v := joinOwnerViews([]map[string]any{fees, stock, orders}, []string{"fees", "stock-orders", "orders"})
 	items := v["items"].([]any)
 	if len(items) != 3 || v["kind"] != "fees" || len(v["credit"].([]any)) != 1 || len(v["upcoming"].([]any)) != 1 {
@@ -172,6 +172,10 @@ func TestJoinOwnerViews(t *testing.T) {
 	}
 	if cards := v["app"].(map[string]any)["cards"].([]any); len(cards) != 1 {
 		t.Fatalf("Stock orders' order card is an item already: %v", cards)
+	}
+	// what waits and today's rows are every part's (each part's app view has only its own skill's), the cards the one assistant's
+	if app := v["app"].(map[string]any); len(app["waiting"].([]any)) != 2 || len(app["today"].([]any)) != 1 {
+		t.Fatalf("the assistant's waiting and today over every part: %v", app)
 	}
 	m := v["money"].(map[string]any)
 	today := m["today"].(map[string]any)["received"].(map[string]any)

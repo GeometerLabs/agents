@@ -177,9 +177,28 @@ func joinOwnerViews(views []map[string]any, names []string) map[string]any {
 			break
 		}
 	}
-	// the one assistant's view: the first part's (it is drawn from the one shared state), with Stock orders' order cards left out (its own page shows them as items)
+	// the one assistant's view: the first part's (its cards, talk and notes are drawn from the one shared state), with Stock orders' order cards left out (its own page shows
+	// them as items), and today's rows and what waits joined over every part's (each part's app view lists only its own skill's: a waiver in the credit book waits on the
+	// page whichever part is first)
+	var today, waiting []any
 	for _, v := range views {
 		if app, ok := v["app"].(map[string]any); ok {
+			if l, ok := app["today"].([]any); ok {
+				today = append(today, l...)
+			}
+			if l, ok := app["waiting"].([]any); ok {
+				waiting = append(waiting, l...)
+			}
+		}
+	}
+	for _, v := range views {
+		if app, ok := v["app"].(map[string]any); ok {
+			if today != nil {
+				app["today"] = today
+			}
+			if waiting != nil {
+				app["waiting"] = waiting
+			}
 			if cards, ok := app["cards"].([]any); ok {
 				kept := []any{}
 				for _, x := range cards {
