@@ -187,6 +187,18 @@ export const owedOn = (state: MarkState, paymentId: string): number =>
 /** The request a mark was made on. */
 export const requestOfMark = (state: MarkState, paymentId: string): MarkedRequest | undefined => state.requests.find((r) => r.marks.some((m) => m.id === paymentId));
 
+/**
+ * Where a refund the owner owes goes back to (25 Nov 2026, refund-paths): the payment it gives back, the way the owner finds it in their UPI app. `note` is the request's
+ * reference, which its upi://pay link carried as the payment's note (payLink above: "b-3", "o-5.b", "f-3.2"); `paidPaise` and `paidAtMs` are the owner's mark of that payment
+ * (what they marked and when; the money came in on or before that day). The refund goes back to the account the money came from, which may not be the customer's own
+ * number (a family member may have paid). Null when the ledger holds no such mark, which a refund this ledger owes never is: oweRefund is always given a mark's id.
+ */
+export function refundSource(state: MarkState, refund: OwedRefund): { note: string; paidPaise: number; paidAtMs: number } | null {
+  const r = requestOfMark(state, refund.paymentId);
+  const m = r?.marks.find((x) => x.id === refund.paymentId);
+  return r && m ? { note: r.reference, paidPaise: m.amountPaise, paidAtMs: m.atMs } : null;
+}
+
 /** Thrown by the view for what an owner-marked module cannot do: send a refund. A template routes refunds to `oweRefund` when the module cannot refund by itself; reaching this is a bug, so it is loud. */
 export class OwnerPaysError extends Error {}
 
