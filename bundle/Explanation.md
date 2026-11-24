@@ -1492,11 +1492,11 @@ slabs pay for it. Which slab allows how many parts is economics' to set, so no n
 |---|---|---|
 | Memory per shop | about 3 x 18.5 MB idle for three parts (the measured floor of one Go shop, go/TRIAL.md), plus the router | one process: about one shop's figure plus the parts' state (measured in go/TRIAL.md § decision 65) |
 | One record, one stock count, one sign-in, one assistant | each process has its own `agent.db` (record, snapshot with the stock count under `assistant.stock`), its own `owner-access.sqlite` and its own assistant state: sharing them means several processes writing one SQLite file, or a router that owns most of the runtime | all four are already one per process: the step runner, the snapshot (and so the stock count), the record and the owner's assistant are shared by construction |
-| Failure isolation | a part that crashes leaves the others running | a step that panics is already caught by the step runner (`internal/runtime` recover), the task ends failed and the next one runs; a part that keeps failing does not stop the others' steps (each event is one part's) |
+| Failure isolation | a part that crashes leaves the others running | a panic inside a step is caught (go/cmd/parts sets the runtime's OnPanic: the task is tried again, then failed, and the next runs), each part's beat is its own step and a panic in one does not skip the others'; but a crash of the whole process stops every part |
 | What the existing parts must change | the router must reproduce sign-in, the owner's page and the stock count across processes | nothing in their rules, words, snapshot or record of a single-part shop; each gains one small file (`part.go`: "is this message mine?" by rules only, which cases are its own, its assistant hooks) and its program's wiring moves from `cmd/<x>/main.go` into the package so `cmd/parts` can reuse it |
 
 (b) wins on memory, on "one record, one stock count, one assistant" without new cross-process machinery, and on how little of the parts changes. Its cost is isolation: a bug
-that crashes the whole process (not a panic inside a step) stops every part of that shop, where (a) would stop one. The step runner already turns a panic into a failed task.
+that crashes the whole process (not a panic inside a step) stops every part of that shop, where (a) would stop one (Deferred.md).
 
 ### How it fits together
 
@@ -1508,9 +1508,14 @@ that crashes the whole process (not a panic inside a step) stops every part of t
 - **The snapshot.** One top-level member `parts` holds each part's members, by template; `assistant` (the owner's assistant, the stock count, the listings) and `ai` (the month's
   AI counts) stay shared. A shop that had one template and takes a second keeps its old state: members found outside `parts` belong to the part named in `settings.carried`
   (the template the shop was before), and are written back inside `parts` from the first step on.
-- **The record.** One record per shop. A line a part writes carries `refs.part` (the template); each part reads back only its own lines (and, for the carried part, the lines from
-  before the shop had parts), so its counts, reports and "was this sent" memory are exactly a single-part shop's. Document numbers (receipts, bills, refund notes) are worked out
-  over the WHOLE record, so a series stays gap-free and unique for the business. Shared beat work (the licence notice, the morning line) runs once per shop.
+- **The record.** One record per shop. A line a part writes carries `refs.part` (the template; the router's own lines carry `parts`); each part reads back only its own lines
+  (and, for the carried part, the lines from before the shop had parts), so its counts, reports and "was this sent" memory are exactly a single-part shop's. Document numbers
+  (receipts, bills, refund notes) are worked out over the WHOLE record (accounting `ShopReader`), so a series stays gap-free and unique for the business. Shared beat work (the
+  licence notice, the morning line over every part's skill) runs once per shop, on the first part's beat. The clock beats once per part, each its own step.
+- **Limits.** Each part's limits are its own, under `<part>_<id>` (`orders_refund_limit`) and at `parts.<part>.<path>`, and each part reads only its own (runtime `LimitID`).
+- **Built as described** (25 Nov 2026): go/internal/parts and go/cmd/parts; the seam in go/internal/runtime parts.go, record.go, serve.go; each part's part.go and wire.go;
+  templates/commerce/parts (settings, runtime check, words, the union of templates, limits, papers, situations, contracts); the bundle's KINDS.parts, the program in the image,
+  the parts limit (lib/parts-limit.ts), the page's customer side (configs.ts), each part's cases in the export; the panel's parts page. What is left: Deferred.md.
 - **The router.** Every inbound message goes to exactly one part: (1) the part that has an open conversation with that number (an order or hold waiting, a credit account
   the customer said yes to or was asked about, a supplier with a purchase order open); (2) for the owner, the part whose command word it is (`approve o-3`, `po-3`, a name
   with "owes"); (3) a customer with nothing open goes to the one part that takes new customers. When two parts could take it, the shop asks one short question (to the owner:
