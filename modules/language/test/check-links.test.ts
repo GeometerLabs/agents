@@ -22,3 +22,19 @@ test("a different link is still refused, with or without the danda", () => {
     assert.match(r.problems.join(" "), /not the payment link in the record/u);
   }
 });
+
+// 25 Nov 2026: a parent's page link ends in a random handle, and the handle can hold the fee's own reference ("f-5", in any case). The references were masked before the links
+// were read, which cut the record's own link in two; the reminder was held back and the owner was told outside their window under a name WhatsApp does not have (the Fees hand
+// check failed one run in a few hundred on it).
+test("the record's own link is read whole, even when a reference the message repeats is inside it", () => {
+  const page = "https://pages.example/hand-check/f/Qm9vbGVhbnNhcmVmdW5uF-5yZWFsbHk1";
+  const withPage: CheckFacts = { ...facts("en"), links: [LINK, page], literals: ["f-5", "Rohan Mehta"] };
+  for (const text of [`Rohan Mehta's fee: ${LINK} Your page: ${page}. Receipt f-5`, `Your page: ${page}`]) {
+    const r = checkText(text, withPage);
+    assert.equal(r.ok, true, r.problems.join(" "));
+  }
+  // a link that only starts like the record's is still not the record's
+  const r = checkText(`Your page: ${page}9`, withPage);
+  assert.equal(r.ok, false);
+  assert.match(r.problems.join(" "), /not the payment link in the record/u);
+});
