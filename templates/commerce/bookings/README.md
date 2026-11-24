@@ -332,6 +332,11 @@ These are pure checks in [`src/limits.ts`](src/limits.ts). Each reads only its a
 | `message-matches-record` | Every amount, date, time and link in a message is a value from this booking's record; anything the record cannot explain blocks the message. It compares values, not which label a value sits under (see [Deferred.md](Deferred.md)) |
 | `opt-out` | STOP ends all messages to the customer. No reply, no reminder |
 
+## Asked from another number, and where a UPI refund goes (25 Nov 2026)
+
+- **Someone writes from a number that holds no booking and names one** ("b-3", "booking 3", a receipt's number, a payment id the record holds, or the UPI reference a customer typed): they get one line saying the shop cannot show that booking to this number and the owner has been told, with nothing of it in it (no amount, name, time or number). The owner gets one notice, at most once an hour for that number and booking, as the WhatsApp template `owner_booking_asked_elsewhere`: "Someone at <that number> asks about b-3 (... <the booking's own number>). Check before you help." Nothing about the booking changes and no money moves. A reference the shop does not hold gets the usual answer and the owner hears nothing, so guessing references gives nothing away. The record line is `case_asked_elsewhere` with the booking in `refs.case` (its `booking` stays empty, so the booking's own lines stay its customer's). The word form ("booking 3") is read only when nothing else in the message was; the short form and a payment id are read always. Shared code: `modules/record/case-asked.ts` (Go: `go/internal/runtime/caseasked.go`).
+- **A UPI refund goes back to the account that paid**, which may be a family member's: the owner's message names the payment by the note its UPI link carried (the request's reference), its amount and the day the owner marked it ("Refund to send: ₹500 back to the account that paid you ₹500 on Tue 3 Nov with the note b-3 ..."); the customer's number stays as the person the agent tells. New template names, because a changed body needs Meta's approval again: `owner_upi_refund_to_account` and `owner_upi_refund_account_reminder` (were `owner_upi_refund_to_send` and `owner_upi_refund_reminder`). The old names stay registered and unused.
+
 ## How a booking moves
 
 ```text

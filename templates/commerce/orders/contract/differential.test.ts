@@ -28,6 +28,8 @@ import { DAY } from "../../../../modules/core/time.ts";
 import { assertBites, walk } from "../../../../modules/test/contract/demo-differential.ts";
 import type { Normalise, Side, Step } from "../../../../modules/test/contract/demo-differential.ts";
 
+/** A number that holds no order (25 Nov 2026): it names the customer's order. */
+const STRANGER = "+919877777777";
 const shops: Shop[] = [];
 after(async () => { for (const s of shops) { await s.stop(); await s.cleanup(); } });
 
@@ -54,6 +56,8 @@ const steps = (owner: string): Step<Both>[] => [
     ts: (b) => b.w.say(`received ${codeIn(b.w.messaging.sentTo(owner).map((m) => m.text))}`, { from: owner }),
     go: (b) => b.s.inbound(owner, `received ${codeIn(b.s.sent(owner).map((m) => m.text))}`),
   },
+  // 25 Nov 2026 (modules/record/case-asked.ts): another number names the order: the one line that shows nothing, and the owner's notice
+  { name: "another number names the order (O1)", ts: (b) => b.w.say("where is O1?", { from: STRANGER }).then(() => undefined), go: (b) => b.s.inbound(STRANGER, "where is O1?").then(() => undefined) },
   { name: "the customer taps Talk to the owner", ts: (b) => b.w.tap("owner", { from: CUSTOMER }), go: (b) => b.s.tap("owner") },
   { name: "the customer orders again with the chip", ts: (b) => b.w.say(b.chips[1], { from: CUSTOMER }), go: (b) => b.s.inbound(CUSTOMER, b.chips[1]) },
   { name: "the customer cancels that order with its button", ts: (b) => b.w.tap("cancel", { from: CUSTOMER }), go: (b) => b.s.tap("cancel") },
@@ -75,7 +79,7 @@ describe("the Orders demo and the Go shop say the same on the demo's paths", () 
       assert.notDeepEqual(chips, demo.chips, "the order chip was re-dated");
       const ts: Side = { name: "TypeScript demo", sentTo: (n) => w.messaging.sentTo(n), sync: () => w.clock.set(Date.now()) };
       const go: Side = { name: "Go shop", sentTo: (n) => s.sent(n), sync: () => undefined };
-      const t = await walk({ steps: steps(w.owner), people: { customer: CUSTOMER, owner: w.owner }, ts, go, world: { w, s, chips }, rules: RULES });
+      const t = await walk({ steps: steps(w.owner), people: { customer: CUSTOMER, owner: w.owner, stranger: STRANGER }, ts, go, world: { w, s, chips }, rules: RULES });
       assertBites(t);
     });
   }

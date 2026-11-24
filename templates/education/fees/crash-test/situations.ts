@@ -5,6 +5,7 @@
 // They run on any centre's own settings: buildSituations(settings) picks the student, the language, the moments of the month and the amounts from the settings
 // (crash-test/shop.ts, crash-test/says.ts). A situation that a centre's settings cannot express (a centre with no late fee has no late fee to add; one whose waiver
 // limit is as big as the fee has nothing above it to ask for) is not run and is named in `skipped` with the reason, so a count never includes it.
+import { caseAskedSituation } from "../../../../modules/crash-test/case-asked.ts";
 import { DAY, HOUR, MINUTE } from "../../../../modules/core/time.ts";
 import { checker, runOnProgram } from "../../../../modules/crash-test/situations.ts";
 import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
@@ -652,6 +653,14 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
 
   // A UPI centre (B33): the situations written around a Razorpay payment link are named as not run, and the UPI ones run instead (crash-test/upi.ts).
   const all: Built[] = !capabilitiesOf(shop.settings.payment).confirmsAutomatically ? [...list.map((s): Built => ("skip" in s ? s : { id: s.id, title: s.title, skip: RAZORPAY_ONLY })), ...buildUpiSituations(shop)] : list;
+  // 25 Nov 2026 (modules/crash-test/case-asked.ts): a fee named from a number that holds none; the month's opening makes the fee, on Razorpay and on UPI alike
+  all.push(caseAskedSituation({
+    noun: "fee", world: () => world(),
+    open: async (w) => { await atReminder(w, 0); return { ref: due(w).id, customer: shop.parent }; },
+    state: (w, ref) => { const d = w.store.dues.get(ref); return JSON.stringify([d?.state, d?.payments.length ?? 0, d?.waivedInr ?? 0]); },
+    customerTemplate: "fee_case_other_number", ownerTemplate: "owner_case_other_number",
+    ask: (ref) => `What about ${ref.toUpperCase().replace("-", "")}? I am the uncle`, falseRef: "f-99",
+  }));
   const situations = [...all.filter((s): s is Situation => "run" in s), ...buildClassSituations(shop.settings)]; // Classes' own, only for a centre that has it
   const skipped: Skipped[] = all.filter((s): s is { id: string; title: string; skip: string } => "skip" in s).map((s) => ({ id: s.id, title: s.title, reason: s.skip }));
   return { situations, skipped };

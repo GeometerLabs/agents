@@ -35,3 +35,9 @@ Each row says what, why, the trigger and "done when". Strike a row through with 
 | **Old intents are never pruned** | `sendOnce.intents` keeps every order message and reminder with its ending, like the orders themselves | A shop with thousands of orders | Intents of orders that are fully received or cancelled are dropped after the retention days |
 | **Low-stock sentence on WhatsApp** | The reorder question "Rice 5 kg is low (3 left). Order from Ravi?" goes to the owner's app; the WhatsApp message is the existing order card, because a new template needs Meta's approval | The owner asks for it on WhatsApp too, and Meta approves the template | The template is approved and the card is preceded by it. |
 | **Counting by pack and by piece** | A count has one unit and a delivery in another unit is refused (units are never converted) | A shop orders by the box and sells by the piece | The catalogue states a conversion the owner confirmed, or the count is kept in the ordered unit |
+
+## Asked from another number (25 Nov 2026, refund-paths)
+
+| What | Why not now | Trigger | Done when |
+| --- | --- | --- | --- |
+| **A case named from another number** (Bookings, Orders and Fees: modules/record/case-asked.ts) | Does not apply: a stock order is the owner's to a supplier, no customer holds one, and no customer's money or refund hangs on it. A supplier who writes from a new number is a supplier the owner has not approved, and is answered as any unknown number | A stock order a customer can see or pay | The same reader over `po-` references, with the supplier's words |

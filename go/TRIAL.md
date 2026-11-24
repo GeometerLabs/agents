@@ -1648,3 +1648,24 @@ about one time in 4,000, so the record's own link was cut in two and read as a l
 (`owner_message_held`, unasked, outside the owner's window) had no WhatsApp template and went under the generic name. Fixed in both runtimes at once (the check is shared, so
 the TypeScript change is the same fix, with a test): the record's own links are read whole first. `owner_message_held` is now the template `owner_fee_message_held`, its
 hi/ml/kn words starting with fixed words; whatsapp-templates.json, the review sheets and the Go words regenerated. TypeScript finding: the same bug, fixed (above).
+
+## refund-paths-25nov: a case asked from another number, and the UPI refund's account (25 Nov 2026)
+
+Owner, 25 Nov: "yes, plan and fix both". Built in TypeScript (each template's `src/`, the public demo) and Go (the shops), with the words generated as always.
+
+- **A case named from a number that holds none.** `modules/record/case-asked.ts` and its twin `internal/runtime/caseasked.go` (vectors: `testdata/caseasked-vectors.json`,
+  `scripts/gen_caseasked_vectors.ts --check`) read a reference ("b-3", "B3", "f-3.2", "o-5.b", a receipt's number, a payment id the record holds, a UPI reference a customer
+  typed; the word form "booking 3" only when nothing else was read). Each template's `onCaseAsked` (Bookings `agent_flow.go`, Orders `agent_owner.go` with holds and plans,
+  Fees `agent_talk.go` with the credit book) answers with one line that shows nothing, tells the owner by a WhatsApp template at most once an hour per asker and case (from the
+  record), and writes `case_asked_elsewhere` with `refs.case` and `booking` null. New templates: `owner_booking_asked_elsewhere`, `owner_order_asked_elsewhere`,
+  `owner_fee_asked_elsewhere`, `owner_credit_asked_elsewhere`.
+- **The UPI refund's account.** `ownermarked.RefundSource` (ledger.ts `refundSource`) names the mark a refund gives back; the owner's message says the note, the amount and the
+  day, and keeps the customer's number as the person to tell. Renamed templates (changed bodies need Meta again; the old names stay registered, unused):
+  `owner_upi_refund_to_account` / `owner_upi_refund_account_reminder` (Bookings and the owner-marked desk), `owner_order_upi_refund_to_account` /
+  `owner_order_upi_refund_account_reminder`, `owner_fee_upi_refund_to_account` / `owner_fee_upi_refund_account_reminder`, `owner_credit_refund_to_account` /
+  `owner_credit_refund_account_due`.
+- **Tests.** Contract cases `contract/other-number.contract.test.ts` in Bookings, Orders and Fees; a stranger step in each `differential.test.ts`; the hand check's shared
+  situation `modules/crash-test/case-asked.ts` in every Bookings, Orders (holds too) and Fees (the credit book too) run.
+- **Not done.** The parts router of decision 65 was not on main: modules/Deferred.md says what it needs. Stock orders has no customer cases (its Deferred.md). A customer
+  with a case of their own who names another's is answered as before (the brief's rule kept literally; each template's Deferred.md).
+

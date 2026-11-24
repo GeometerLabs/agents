@@ -129,6 +129,11 @@ Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada peop
 
 [`sell/guide.en.md`](sell/guide.en.md) (and `.hi`, `.ml`, `.kn`) teaches a local Operator or a builder to pitch it, and `sell/one-pager.*.html` is the sheet the owner keeps. The only claim about money is: "No order confirmed without the payment record (or your confirmation for UPI); every refund tracked."
 
+## Asked from another number, and where a UPI refund goes (25 Nov 2026)
+
+- **Someone writes from a number that holds no order and names one** ("o-5", "order 5", a receipt's number, a payment id the record holds, or the UPI reference a customer typed): they get one line saying the shop cannot show that order to this number and the owner has been told, with nothing of it in it (no amount, name, time or number). The owner gets one notice, at most once an hour for that number and order, as the WhatsApp template `owner_order_asked_elsewhere`: "Someone at <that number> asks about o-5 (... <the order's own number>). Check before you help." Nothing about the order changes and no money moves. A reference the shop does not hold gets the usual answer and the owner hears nothing, so guessing references gives nothing away. The record line is `case_asked_elsewhere` with the order in `refs.case` (its `booking` stays empty, so the order's own lines stay its customer's). The word form ("order 5") is read only when nothing else in the message was; the short form and a payment id are read always. Shared code: `modules/record/case-asked.ts` (Go: `go/internal/runtime/caseasked.go`). A pickup hold and a plan's period are orders; a plan is named by its own "p-5" too.
+- **A UPI refund goes back to the account that paid**, which may be a family member's: the owner's message names the payment by the note its UPI link carried (the request's reference), its amount and the day the owner marked it ("Refund to send: ₹500 back to the account that paid you ₹500 on Tue 3 Nov with the note o-5 ..."); the customer's number stays as the person the agent tells. New template names, because a changed body needs Meta's approval again: `owner_order_upi_refund_to_account` and `owner_order_upi_refund_account_reminder` (were `owner_order_upi_refund_to_send` and `owner_order_upi_refund_reminder`). The old names stay registered and unused.
+
 ## What is in the folder
 
 | Path | What |
