@@ -1716,10 +1716,10 @@ parts shop a press on a `g-` case is owned by two parts and is recorded and not 
 
 - **Owner's words no part claims are the first part's** (a card code no part made, words no part reads): by design, so three cases are skipped with that reason only when
   the part under test runs last (`CONTRACT_PARTS=last`); they run and pass when it is first.
-- **Run of record** (24 Nov 2026 evening, through the heat lock, scratchpad d65-final.sh): `go build/vet ./...` clean, `go test ./...` 41 ok; contracts Bookings 178/178,
+- **Run of record** (part B's, through the heat lock, scratchpad d65-final.sh): `go build/vet ./...` clean, `go test ./...` 41 ok; contracts Bookings 178/178,
   Orders 136/136, Fees 111/111, Stock orders 75/75, listings 210/210, parts 14/14, directory 36/36; generators 42 fresh; units Bookings 838/838, Orders 216/216, Fees
   245/245, Stock orders 126/126; bundle 745: 736 pass, 9 skipped (REAL_CADDY), 0 fail; panel 288/288. Through the parts program (`first`): Orders 87 pass, 49 skipped,
   Fees 64 pass, 47 skipped, Stock orders 67 pass, 8 skipped, 0 fail each, every skip named (a payment gateway, which a parts shop does not take, or by design);
-  `last` (six files) 59 pass, 11 skipped, 0 fail after the entry above. Hand checks on Go: every one holds all, the starter shop 28 of 28 (its own 6, fees 4, stock-orders
+  `last` (six files) 3 failed in that run, then 59 pass, 11 skipped, 0 fail rerun after the entry above. Hand checks on Go: every one holds all, the starter shop 28 of 28 (its own 6, fees 4, stock-orders
   14, orders 4) and Stock orders on the starter's stock settings 15 of 15, but Bookings with the assistant 39 of 40 ("the model is down mid-conversation": the owner is not
   told a second time), which main fails the same way (not this stream's). 0 shop programs left.

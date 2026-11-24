@@ -676,6 +676,9 @@ and listed for the owner to confirm.
   process per part would stop one. The price of one program (Explanation.md says why it was chosen).
 - [ ] **Taking out the part the shop was before it had parts.** Refused: its history from before it had parts is read as that part's (`carried`). Done when the carried
   part's state can be handed to the store's kept-parts list on its own.
+- [ ] **The owner's words no part claims are the first part's (owner).** A card code no part made, or words no part reads, go to the shop's first part (the router never
+  guesses), so on the starter shop a mistyped Stock orders code gets the credit book's "Reply approve or deny..." rather than Stock orders' "no card with that code".
+  Done when the owner chooses one shop-wide answer for words nobody reads (naming what each part can do), or leaves it to the first part.
 - [ ] **A parts shop's page and chat are ONE part's customer side**: the first Orders or Fees part in the shop's order (the Operator chooses by the order; the starter
   shop's is the credit book's). A customer-facing part that is not it sends no link to a page the shop does not serve (its page address is left out: no parent's private
   link, no order page link). Done when the front serves several customer sides under one shop's address.
