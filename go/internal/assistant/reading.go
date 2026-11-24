@@ -30,8 +30,22 @@ type OwnerReading struct {
 
 var _ understanding.Reading[Intent] = OwnerReading{}
 
-// Kinds are the kinds this reading's shop takes.
+// Kinds are the kinds this reading's shop takes. Decision 65: a shop of several parts takes every part's kinds (the union, in Bookings, Orders, Fees order, each once);
+// a shop of one template reads exactly its own, as before.
 func (r OwnerReading) Kinds() []string {
+	if n := btoi(r.Bookings) + btoi(r.Orders) + btoi(r.Fees); n > 1 {
+		var out []string
+		seen := map[string]bool{}
+		for _, l := range [][]string{pick(r.Bookings, Rules().KindsBookings), pick(r.Orders, Rules().KindsOrders), pick(r.Fees, Rules().KindsFees)} {
+			for _, k := range l {
+				if !seen[k] {
+					seen[k] = true
+					out = append(out, k)
+				}
+			}
+		}
+		return out
+	}
 	if r.Bookings {
 		return Rules().KindsBookings
 	}
@@ -55,6 +69,20 @@ func (r OwnerReading) router() routerWords {
 		return Rules().RouterFees
 	}
 	return Rules().Router
+}
+
+func btoi(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func pick(on bool, l []string) []string {
+	if on {
+		return l
+	}
+	return nil
 }
 
 // Context is the rules' context for this reading.

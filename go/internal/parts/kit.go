@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/GeometerLabs/agents/go/internal/fees"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
@@ -32,12 +33,18 @@ func (k *Kit) PreCheck(c *runtime.Client) error {
 }
 
 // Wire wires each part as its own program would (wire.go of its template), over the one store, clock and runtime, each with its own settings.
+//
+// The shop's page shows ONE part's customer side (customerPart). A Fees part that is not it has no page of its own here, so it is given none: it sends no parent's private
+// link that would lead to a page the shop does not serve ("no page, no parent link is sent", as for a centre with no page; bundle Deferred.md).
 func (k *Kit) Wire(w runtime.Wiring) error {
-	for _, p := range k.parts {
+	for i, p := range k.parts {
 		pw := w
 		pw.Own = p.Own
 		if err := p.Kit.Wire(pw); err != nil {
 			return err
+		}
+		if fk, ok := p.Kit.(*fees.Kit); ok && i != k.customerPart() {
+			fk.PageBase = nil
 		}
 	}
 	return nil

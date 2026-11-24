@@ -671,3 +671,6 @@ and listed for the owner to confirm.
   process per part would stop one. The price of one program (Explanation.md says why it was chosen).
 - [ ] **Taking out the part the shop was before it had parts.** Refused: its history from before it had parts is read as that part's (`carried`). Done when the carried
   part's state can be handed to the store's kept-parts list on its own.
+- [ ] **A parts shop's page and chat are ONE part's customer side.** The pickup hold's when the shop has an Orders part, else the credit book's (Fees). A Fees part beside
+  an Orders part has no centre page, no parent's private links and no chat in that shop, so it sends no link (its page address is left out). The credit book sends no page
+  link, so the shop starter loses nothing; a Fees centre with parents beside an Orders part would. Done when the front serves both customer sides under one shop's address.

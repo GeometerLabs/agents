@@ -105,6 +105,10 @@ func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
 	if m.Image {
 		return runtime.ClaimWords // a picture from someone the centre knows may be a payment's screenshot (it is read as "I paid", never as paid)
 	}
+	// someone in the credit book who has not said yes: the book's gate decides what they hear (nothing before their yes), so every word of theirs is the book's, never a question
+	if acc := a.creditAccountOf(m.From); (acc != nil && acc.Consent != "yes") || (acc == nil && a.creditPerson(m.From)) {
+		return runtime.ClaimOpen
+	}
 	switch parseIntent(m.Text).Kind {
 	case "yes", "no", "pay", "paid", "refund", "stop":
 		return runtime.ClaimOpen

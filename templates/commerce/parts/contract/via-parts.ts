@@ -100,6 +100,9 @@ export const BY_DESIGN: Record<string, { match: RegExp; why: string }[]> = {
     { match: /settings the template refuses stop the start/u, why: "it writes a single template's settings.json into the folder itself" },
     { match: /the saved state is the TypeScript runtime's, member for member/u, why: "a parts shop's saved state keeps the part's members under parts.<name>" },
     { match: /the morning line counts/u, why: "a parts shop's morning line is the shop's, over every part (the other parts' lines are in it)" },
+    { match: /'move CODE' from the owner's number is one record line/u, why: "it compares the line's refs whole; a parts shop's lines also carry refs.part" },
+    // the shop's page and chat are its customer part's (the hold's when there is one); a Fees part beside it has no centre page, no parent's private link and no chat here
+    { match: /the centre's page says what it is|the chat opened from a parent's link|a guest's question gets the chat's fixed line|the parent was sent|only that parent's students and fees|a link survives a restart|a press on another parent's fee|'I have paid' marks nothing: a confirmation page|'show how to pay' makes the UPI request|the page lists the centre, every parent once/u, why: "the shop's page and chat are its customer part's (the pickup hold's); a Fees part beside it has no centre page, private links or chat in this shop (bundle Deferred.md)" },
     { match: /names its cases/u, why: "a parts shop's /status names its cases \"cases\", by part" },
     { match: /one report folder appears/u, why: "each part sends its own monthly report, so a parts shop's report folder has one per part" },
     { match: /Stock page offers/u, why: "the shop's one Stock page offers every part's items, the other parts' too" },
