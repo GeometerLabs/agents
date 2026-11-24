@@ -63,7 +63,7 @@ func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
 		// nothing open with them: a new piece of business, which an Orders shop takes; an order its rules read ("1 MCB 16A today evening") is its own words. Words it cannot
 		// place (a model number may start a hold) are only as much its own as any part's that takes new business.
 		if reading.ParseIntent(m.Text, a.parse).Kind == "order" {
-			return runtime.ClaimWords
+			return runtime.ClaimOpen // an order its rules read whole is about what it will open with them: above a part that only knows the number
 		}
 		return runtime.ClaimNew
 	}

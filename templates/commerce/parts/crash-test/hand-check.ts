@@ -21,6 +21,11 @@ const RUN: Record<PartName, (settings: any) => Promise<HandCheckRun<any>>> = {
   "stock-orders": (s) => import("../../stock-orders/crash-test/situations.ts").then((m) => m.runOn(s)),
 };
 
+/** A part's situations that test what the part does alone on its number, by situation id, with why they are not one in a shop with a part that answers customers. */
+const BY_DESIGN: Partial<Record<PartName, Record<string, string>>> = {
+  "stock-orders": { "stranger-and-bare-ok": "in a shop with a part that answers customers, a number Stock orders does not know is that part's customer, who is answered (the hold or the credit book), not ignored" },
+};
+
 /** The shop's settings file with one part's block made from that part's own (the situation's) settings: the shop's order, the shop's top, the situation's top keys. */
 function wrapInto(shop: Settings, part: PartName, own: Record<string, unknown>): Record<string, unknown> {
   const others: Record<string, Record<string, unknown>> = {};
@@ -51,10 +56,18 @@ export async function runOn(settings: Settings): Promise<PartsRun> {
   for (const p of settings.parts) {
     goWorldPart.current = {
       part: p.name, program: PROGRAM, version: VERSION, wrap: (file) => wrapInto(settings, p.name, file), unwrap: (text) => unwrap(p.name, text),
-      standins: async (_clock, fakes) => { approveTemplates(fakes.messaging, catalogue); return serveHandlers([whatsappStandin(fakes.messaging, catalogue, { phoneNumberId: "100000000000001" })]); },
+      standins: async (_clock, fakes) => {
+        const others = { templates: partsMetaTemplates(names.filter((n) => n !== p.name), { assistant: settings.assistant !== undefined }) } as TemplateCatalogue;
+        approveTemplates(fakes.messaging, others);
+        return serveHandlers([whatsappStandin(fakes.messaging, catalogue, { phoneNumberId: "100000000000001" })]);
+      },
     };
     try {
-      const run = await RUN[p.name](p.settings);
+      const raw = await RUN[p.name](p.settings);
+      // a situation that tests what a part does ALONE on its number (a stranger's message gets no reply) is not one in a shop whose other part answers new customers:
+      // listed as not run on these settings, with the reason, never counted as held
+      const notHere = (r: SituationResult): string | undefined => BY_DESIGN[p.name]?.[r.situation.id] && names.some((n) => n !== p.name && (n === "orders" || n === "fees")) ? BY_DESIGN[p.name]![r.situation.id] : undefined;
+      const run = { ...raw, results: raw.results.filter((r) => !notHere(r)), skipped: [...raw.skipped, ...raw.results.filter((r) => notHere(r)).map((r) => ({ id: r.situation.id, title: r.situation.title, reason: notHere(r)! }))] };
       // the part ran on the shop's program, not on its template's own: the run names the program it really ran on
       parts.push({ name: p.name, run: { ...run, ...(program.ok && run.results.length > 0 ? { program: { name: PROGRAM, version: servedVersions.get(PROGRAM) ?? VERSION, sha256: program.sha256 } } : {}) } });
     } finally {

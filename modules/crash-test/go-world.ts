@@ -188,6 +188,7 @@ export interface GoWorldPart {
   version: string;
   wrap(file: Record<string, unknown>): Record<string, unknown>;
   unwrap(snapshot: string): string;
+  /** The shop's stand-in WhatsApp: every part's templates, the OTHER parts' approved (the part's own are approved by its template's own stand-ins, as planned). */
   standins(clock: Clock, fakes: { payments: FakePayments; messaging: FakeMessaging }): Promise<StandinsServer>;
 }
 export const goWorldPart: { current?: GoWorldPart } = {};
@@ -225,6 +226,9 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
     for (const c of closers.reverse()) await c();
     return sendFaultsPlanned ? [] : lines.filter((e) => e.action === "send_message" && e.outcome === "failed").map((e) => `a message ${e.refs?.to ? `to the ${e.refs.to} ` : ""}was refused by the provider: ${String(e.notes ?? "").slice(0, 160)}`);
   });
+  // as one part of a parts shop: the template's own stand-ins approve its own templates as the situation planned them (some "not approved" on purpose), then the shop's
+  // stand-in serves every part's templates and approves the other parts' (asPart.standins)
+  if (asPart) await (await o.standins(viaShop, { payments, messaging })).close();
   const standins = await (asPart ? asPart.standins : o.standins)(viaShop, { payments, messaging });
   closers.push(() => standins.close());
   // a shop with a gateway reaches it through Guard: the stub Guard holds and refuses by the shop's own limits. A UPI shop has no gateway and so no payments Guard.
@@ -262,6 +266,8 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   });
   clock = shop.clock;
   const s = shop;
+  // as one part of a parts shop, a settings.json the situation writes (a reload on new settings) is the part's, wrapped into the shop's
+  if (asPart) { const write = s.writeFile.bind(s); s.writeFile = (name, value) => write(name, name === "settings.json" && value !== undefined ? asPart.wrap(value as Record<string, unknown>) : value); }
 
   let deliveredEvents = 0;
   let inbound = 0;
