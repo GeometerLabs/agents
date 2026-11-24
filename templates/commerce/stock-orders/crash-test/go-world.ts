@@ -14,6 +14,7 @@ import { REPORT_TEMPLATES } from "../report/whatsapp.ts";
 import { parseStore } from "../server/snapshot.ts";
 import { createStore } from "../src/order.ts";
 import { META_TEMPLATES } from "../src/language/meta-templates.ts";
+import { assistantCatalogue } from "../../../../modules/assistant/templates.ts";
 import type { PurchaseOrder, Store } from "../src/order.ts";
 import { parseSettings } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
@@ -45,7 +46,8 @@ export interface GoWorld extends GoWorldBase<Settings, Store> {
 
 export async function createGoWorld(o: GoWorldOptions): Promise<GoWorld> {
   // the stand-in knows every template (it renders their words) and the provider has approved all but `unapproved`: a situation approves one later, as Meta would
-  const catalogue = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES] };
+  // with the shop's assistant, its own templates too (the morning line, a closed day), as Bookings' stand-ins have them: a shop with the assistant sends its morning line
+  const catalogue = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES, ...((o.settings as { assistant?: unknown }).assistant ? assistantCatalogue.templates : [])] };
   const approved = { templates: catalogue.templates.filter((t) => !o.unapproved?.includes(t.name)) };
   const base = await openGoWorld<Settings, Store>({
     program: PROGRAM, version: VERSION, settings: o.settings, at: o.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, o.settings.timezone),

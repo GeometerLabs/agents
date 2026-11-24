@@ -190,6 +190,13 @@ The runtime is the Go program (`go/internal/fees/credit*.go`); the contract is `
 | `whatsapp-templates.json` | The list to submit to Meta: the fee and owner templates (with item 11h's three reminders that carry the parent's private link, and the new-link message) and the report templates, each in four languages |
 | `test/` | The tests |
 
+## As one part of a shop of several parts (decision 65)
+
+A Fees centre, and in the shop starter its credit book, can be one part of a shop that also runs Stock orders and the pickup hold behind one number
+([templates/commerce/parts](../../commerce/parts/README.md)). Nothing in its rules changes: `go/internal/fees/part.go` says, by its rules alone, which messages and cases
+are its own (its `q-` requests, a mark code in its own ledger, the credit book's words and Ask button, someone in the book or with fees, a picture from them), and `wire.go`
+is its program's wiring, which the parts program reuses. Its contract suite runs through the parts program too: `CONTRACT_PARTS=first node --test --test-concurrency=1 contract/`.
+
 ## What is not done yet
 
 See [Deferred.md](Deferred.md). The ones to know first: nothing has been run against a real WhatsApp or Razorpay account, so no centre is live; a waiver is not held by Guard (it is the agent's question to the owner); no monthly record certificate; no phone demo; on a UPI centre the Razorpay situations are listed as not run and seven UPI situations run instead; cash and bank transfers are not handled; the Malayalam and Kannada wording is not yet read by a native speaker.

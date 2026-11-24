@@ -28,3 +28,15 @@ type Record interface {
 
 // Reader is the read-only side (record.ts RecordView's entries), which is all the journal and the accountant's files need.
 type Reader interface{ Entries() []Entry }
+
+// ShopReader is a record that is one part's view of a shop of several template parts (decision 65, internal/runtime record.go Part): Entries is that part's lines, ShopEntries
+// the shop's whole record. A document number is worked out over the whole record, so each series stays gap-free and unique for the business.
+type ShopReader interface{ ShopEntries() []Entry }
+
+// shopEntries is the record a document number is worked out over: the whole shop's when the record is a part's view, else the record itself (every single-part shop).
+func shopEntries(r Reader) []Entry {
+	if s, ok := r.(ShopReader); ok {
+		return s.ShopEntries()
+	}
+	return r.Entries()
+}

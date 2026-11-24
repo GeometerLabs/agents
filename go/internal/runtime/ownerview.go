@@ -87,13 +87,20 @@ func (r *Runtime) OwnerPage() map[string]any {
 // shopMood is conversation.ts shopMood: the mood (mood.ts moodOf) from the skill's reads, the assistant's open cards and closed days, and the clock, and the picture that shows it to
 // the owner (character.ts FACE_OF_MOOD). Something wrong beats waiting for the owner, beats closed (or outside the hours), beats busy (a booking within the hour, or a full day),
 // beats quiet.
-func shopMood(s *Snap, skill OwnerSkill, now int64, loc *time.Location) (mood, face string) {
+//
+// Decision 65: `more` are a shop's other parts' skills; their problems and what waits are counted with the first's (none in a single-part shop).
+func shopMood(s *Snap, skill OwnerSkill, now int64, loc *time.Location, more ...OwnerSkill) (mood, face string) {
 	d := dateIn(now, loc)
 	problems, waiting := 0, 0
 	var starts []int64
 	closed, outside := IsClosedDay(s, d), false
+	for _, m := range more {
+		if m != nil {
+			problems, waiting = problems+m.Problems(), waiting+len(m.Waiting())
+		}
+	}
 	if skill != nil {
-		problems, waiting = skill.Problems(), len(skill.Waiting())
+		problems, waiting = problems+skill.Problems(), waiting+len(skill.Waiting())
 		if ds, ok := skill.(DaySkill); ok {
 			for _, r := range ds.Day(d) {
 				starts = append(starts, r.StartMs)

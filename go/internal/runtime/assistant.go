@@ -858,11 +858,12 @@ func (c *conv) money(d *language.DatePhrase) {
 	c.say("money_in.some", "date", date, "inr", assistant.INR(paise), "n", strconv.FormatInt(payments, 10))
 }
 
-// entries is the record as this step sees it: the saved lines, then the step's own.
+// entries is the record as this step sees it: the saved lines, then the step's own (the shop's whole record: in a shop of several parts the one assistant reads every
+// part's lines, so the step's own are its one recorder's, under whichever part's view the assistant was made).
 func (c *conv) entries() []store.Entry {
 	c.r.mu.RLock()
 	defer c.r.mu.RUnlock()
-	return append(append(c.r.entries[:0:0], c.r.entries...), c.rec.fresh...)
+	return append(append(c.r.entries[:0:0], c.r.entries...), c.rec.top().fresh...)
 }
 
 // ---- leaving with the shop (approvals/leave.ts) ---------------------------------------------------------------------------------------------------------

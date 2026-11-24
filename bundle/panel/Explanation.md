@@ -430,3 +430,17 @@ now only `geometer whatsapp-templates` sent them, for a Gupshup shop, when a per
   The go-live confirmation shows what the provider said; its tick now says the person read it, and the counts are kept beside the statement.
 - **Tests:** `test/wa-templates.test.ts` (the save submits once and a second save nothing; a shop set up before new templates gets just those; Meta direct and Gupshup; the page's
   counts and the stale-only read; a rejected one with its reason; a refused key; waiting, then the button; a missing account id; a bad one refused in the step).
+## The shop's parts (decision 65, 25 Nov 2026)
+
+`/shops/<id>/parts` (views-parts.ts, the rules in parts.ts) shows which template parts the shop runs behind its one number, adds one, and takes one out.
+
+- **Add.** A live single-template shop (Fees, Orders or Stock orders) that takes a second part becomes a parts shop. Its settings are split into the shop's keys and its old
+  template's block (`asParts` in templates/commerce/parts/src/settings.ts), that template stays first and `carried`, and its pin becomes `parts@<version>`. The deployer then runs
+  the shop on go/cmd/parts on the same data volume. The new settings must pass every part's own check, and the plan's parts limit (lib/parts-limit.ts, the rate
+  `plan.<plan>.parts` in the price list in force; none there is no limit).
+- **Remove.** Only from a parts shop, never its last part and never the carried one, and only when the runtime's own count says none of the part's cases is open (a state not
+  known as finished counts as open; a runtime that cannot be asked takes nothing out). The removed part's saved state stays in the shop's store, and its lines stay in the record.
+- **The shop page** of a parts shop leaves out the one-template summary, cost table, report and limit lines, and links to the parts page. The go-live gate reads the parts
+  shop's hand check: the shop's own situations and every part's own, all on go/cmd/parts (templates/commerce/parts/report/papers.ts).
+- **Tests.** `test/parts.test.ts`: the credit book takes the hold, then Stock orders; the refusals; the parts limit on a price list's rate; removal's rules; the page in
+  four languages.

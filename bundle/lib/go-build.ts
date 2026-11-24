@@ -23,7 +23,7 @@ import { join, relative } from "node:path";
 import type { Runner } from "./runner.ts";
 
 /** The programs in the image: cmd/<name> of the agents repository's go/ folder. One line per program; each is built and copied to /<name>. */
-export const GO_PROGRAMS = ["listings", "listings-shared", "directory", "bookings", "orders", "fees", "stock-orders"] as const;
+export const GO_PROGRAMS = ["listings", "listings-shared", "directory", "bookings", "orders", "fees", "stock-orders", "parts"] as const; // parts: decision 65, a shop of several template parts
 /** The image's name; the tag is the checkout's commit (`goSourceTag`). */
 export const GO_IMAGE_REPO = "geo-go";
 /** The named volume that keeps Go's module and build cache between builds. Mounted at /go in the builder: the image's own /go is open to every user, so the empty volume starts open too. */
@@ -157,8 +157,8 @@ export async function ensureGoRuntimes(ctx: GoBuildContext): Promise<GoBuild> {
 
 // ---- the programs for the panel's hand check -----------------------------------------------------------------------------------------------------------------
 
-/** The programs the panel's go-live hand check runs (each template's own; bundle/lib/hand-check-go.ts). The directory and the listings programs have no hand check. */
-export const HAND_CHECK_PROGRAMS = ["bookings", "orders", "fees", "stock-orders"] as const satisfies readonly (typeof GO_PROGRAMS)[number][];
+/** The programs the panel's go-live hand check runs (each template's own, and a parts shop's: bundle/lib/hand-check-go.ts). The directory and the listings programs have no hand check. */
+export const HAND_CHECK_PROGRAMS = ["bookings", "orders", "fees", "stock-orders", "parts"] as const satisfies readonly (typeof GO_PROGRAMS)[number][];
 /** The file in the programs' folder that names the image they were copied from. */
 const PROGRAMS_FROM = "image.txt";
 

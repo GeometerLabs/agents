@@ -19,6 +19,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { GUARDS_MONTH, SKIP, START, TZ, contract, makeCentre, withBackDues } from "./harness.ts";
+import { gatewayCaseThroughParts } from "../../../commerce/parts/contract/via-parts.ts";
 import type { Centre } from "./harness.ts";
 import { createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
@@ -97,7 +98,7 @@ describe("the Fees demo and the Go centre say the same on the demo's paths", () 
     });
 
     const early = localParts(Date.now(), TZ).hour < 6 ? "before 06:00 in India a guards centre sends no reminder yet (06:00 is the earliest hour a centre may name), so there is no link to pay: run it after six" : undefined;
-    test(`in ${language}, the visitor's steps: a reminder's link paid with test money, I already paid the fee, STOP: every WhatsApp message to every parent and the owner, whole`, SKIP ?? early ? { skip: SKIP ?? early } : {}, async () => {
+    test(`in ${language}, the visitor's steps: a reminder's link paid with test money, I already paid the fee, STOP: every WhatsApp message to every parent and the owner, whole`, SKIP ?? early ?? gatewayCaseThroughParts() ? { skip: SKIP ?? early ?? gatewayCaseThroughParts() } : {}, async () => {
       const demo = await feesShop(language);
       const child = (demo.world as unknown as World).settings.students.find((x) => x.parent === demo.customer)!;
       const batch = RAW.students.find((x: { name: string }) => x.name === child.name).batch as string;

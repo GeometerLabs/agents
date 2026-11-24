@@ -1,0 +1,10 @@
+{
+  "name": "geometer-pathway-parts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "One shop of several template parts behind one WhatsApp number and one assistant (decision 65): for example the credit book, Stock orders and the pickup hold. The shop's settings name each part's own settings; the shop program routes each message to the part it belongs to and asks one short question when two parts could take it. No dependencies.",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 contract/"
+  }
+}

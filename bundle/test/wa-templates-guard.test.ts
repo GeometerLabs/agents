@@ -56,15 +56,20 @@ test("Meta direct through the real Guard: the panel lists and submits in the sho
     // the runtime's own credential: its send and read are as before, a template is refused by the Guard and never reaches Meta
     const asRuntime = await run({ entries: select(readEntries(ORDERS), { languages: ["hi"], only: ["order_confirmed"] }), provider: metaProvider(guardCall(guard.agentUrl, runtime.token), WABA), mode: "submit" });
     assert.equal(asRuntime.stopped?.kind, "guard", asRuntime.lines.join("\n"));
-    // and a create straight from the runtime's credential, without the list first: denied by the Guard and not sent (the count below), never reaching Meta. The Guard of
-    // 15 Nov answers an operation outside the agent's list with HTTP 500 "internal error in the Guard" and decision "deny", not a 403 (reported to the monorepo).
+    // and a create straight from the runtime's credential, without the list first: a 403 in the Guard's words (the operation is not one this agent may use), never reaching
+    // Meta. The body is the Kannada template: a call carrying text in any script is decided like any other.
     const post = await fetch(`${guard.agentUrl}/v26.0/${WABA}/message_templates`, { method: "POST", headers: { authorization: `Bearer ${runtime.token}`, "content-type": "application/json" }, body: JSON.stringify(metaOne()) });
-    const denied = await post.json() as { guard?: { decision?: string; sent?: string } };
-    assert.ok(post.status >= 400 && denied.guard?.decision === "deny" && denied.guard.sent === "no", JSON.stringify(denied));
+    const denied = await post.json() as { error?: string; guard?: { decision?: string; sent?: string; code?: string } };
+    assert.equal(post.status, 403, JSON.stringify(denied));
+    assert.deepEqual([denied.guard?.decision, denied.guard?.sent, denied.guard?.code], ["deny", "no", "refused_by_policy"], JSON.stringify(denied));
+    assert.match(denied.error ?? "", /^refused by the Guard: agent runtime-glow-salon is not authorized for submit_template/u);
+    // the same Kannada template from the panel is sent
+    const kn = await run({ entries: select(readEntries(ORDERS), { languages: ["kn"], only: ["order_confirmed"] }), provider: metaProvider(guardCall(guard.agentUrl, panel.token), WABA), mode: "submit" });
+    assert.equal(kn.sent, 1, kn.lines.join("\n"));
     // another account than the shop's: refused by the exact rule, for the panel too
     const other = await run({ entries: two(), provider: metaProvider(guardCall(guard.agentUrl, panel.token), "999999999999"), mode: "status" });
     assert.equal(other.stopped?.kind, "guard", other.lines.join("\n"));
-    assert.equal(meta.created.length, 2, "nothing else reached Meta");
+    assert.equal(meta.created.length, 3, "nothing else reached Meta");
   } finally { await guard.stop(); await meta.close(); }
 });
 

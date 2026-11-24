@@ -175,16 +175,37 @@ export function samePicture(a: Uint8Array | undefined, b: Uint8Array | undefined
  */
 export const goWorldHook: { closing?: (world: { settings: unknown; entries: any[]; store: unknown }) => void } = {};
 
+/**
+ * Decision 65: while `current` is set, every world a template's situations open runs as ONE PART of a shop of several parts, on that shop's program (go/cmd/parts) and the
+ * shop's other parts' settings (the parts template's hand check sets it around each part's run: templates/commerce/parts/report/papers.ts). What changes for the situation:
+ * the settings file is the shop's with this part's block made from the situation's own settings (`wrap`); the saved state it reads is this part's members (`unwrap`); the
+ * record it reads is this part's lines (refs.part, and lines with no part); the stand-in WhatsApp knows the shop's number's templates (`standins`, the union of the parts').
+ * Nothing else: the situation's steps and checks are its own. Unset (every single-part shop): exactly as before.
+ */
+export interface GoWorldPart {
+  part: string;
+  program: string;
+  version: string;
+  wrap(file: Record<string, unknown>): Record<string, unknown>;
+  unwrap(snapshot: string): string;
+  /** The shop's stand-in WhatsApp: every part's templates, the OTHER parts' approved (the part's own are approved by its template's own stand-ins, as planned). */
+  standins(clock: Clock, fakes: { payments: FakePayments; messaging: FakeMessaging }): Promise<StandinsServer>;
+}
+export const goWorldPart: { current?: GoWorldPart } = {};
+
 const PHONE_NUMBER_ID = "100000000000001";
 const PAGES = "https://reports.example.com/r";
 
 /** Start a world. It is closed when the situation that made it ends (situations.ts closeLater). Throws when the program is not there: runOnProgram checks first. */
 export async function openGoWorld<Settings extends { owner: { whatsapp: string } }, Store>(o: GoWorldBaseOptions<Settings>): Promise<GoWorldBase<Settings, Store>> {
-  const program = goProgram(o.program);
+  const asPart = goWorldPart.current;
+  const program = goProgram(asPart ? asPart.program : o.program);
   if (!program.ok) throw new Error(program.reason);
   // the program runs on a settings.json made from the settings the situation planned with: it must read back as exactly those, or the run would not be on this shop's settings
-  const file = (o.settingsFile ?? settingsJson)(o.settings);
-  if (canonical(o.parseSettings(file)) !== canonical(o.settings)) throw new Error("The settings file made for the program does not read back as the shop's own settings, so the situation was not run on them.");
+  const own = (o.settingsFile ?? settingsJson)(o.settings);
+  if (canonical(o.parseSettings(own)) !== canonical(o.settings)) throw new Error("The settings file made for the program does not read back as the shop's own settings, so the situation was not run on them.");
+  const file = asPart ? asPart.wrap(own) : own;
+  const mine = (e: any): boolean => !asPart || e.refs?.part === undefined || e.refs.part === asPart.part;
   // the stand-ins read the shop's clock (go-shop.ts makes it with the shop); until the shop exists, the start instant
   let clock: MovableClock = { now: () => o.at, set: () => undefined, advanceMinutes: () => undefined };
   const viaShop: Clock = { now: () => clock.now() };
@@ -199,13 +220,16 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   const inject = messaging.inject.bind(messaging);
   messaging.inject = ((...a: Parameters<typeof inject>) => { sendFaultsPlanned = true; return inject(...a); }) as typeof inject;
   closeLater(async () => {
-    const lines = shop ? shop.record() : [];
-    if (shop && goWorldHook.closing) { const text = shop.snapshot(); goWorldHook.closing({ settings: o.settings, entries: lines, store: text === null ? o.emptyStore() : o.parseStore(text) }); }
+    const lines = shop ? shop.record().filter(mine) : [];
+    if (shop && goWorldHook.closing) { const text = shop.snapshot(); goWorldHook.closing({ settings: o.settings, entries: lines, store: text === null ? o.emptyStore() : o.parseStore(asPart ? asPart.unwrap(text) : text) }); }
     await shop?.close();
     for (const c of closers.reverse()) await c();
     return sendFaultsPlanned ? [] : lines.filter((e) => e.action === "send_message" && e.outcome === "failed").map((e) => `a message ${e.refs?.to ? `to the ${e.refs.to} ` : ""}was refused by the provider: ${String(e.notes ?? "").slice(0, 160)}`);
   });
-  const standins = await o.standins(viaShop, { payments, messaging });
+  // as one part of a parts shop: the template's own stand-ins approve its own templates as the situation planned them (some "not approved" on purpose), then the shop's
+  // stand-in serves every part's templates and approves the other parts' (asPart.standins)
+  if (asPart) await (await o.standins(viaShop, { payments, messaging })).close();
+  const standins = await (asPart ? asPart.standins : o.standins)(viaShop, { payments, messaging });
   closers.push(() => standins.close());
   // a shop with a gateway reaches it through Guard: the stub Guard holds and refuses by the shop's own limits. A UPI shop has no gateway and so no payments Guard.
   const guard = o.gateway && o.spec ? await startStubGuard({
@@ -224,7 +248,7 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   if (decision) closers.push(() => decision.close());
 
   shop = await startGoShop({
-    program: program.path, pathway: o.program, version: o.version, settings: file, at: o.at, slug: "hand-check",
+    program: program.path, pathway: asPart ? asPart.program : o.program, version: asPart ? asPart.version : o.version, settings: file, at: o.at, slug: "hand-check",
     services: {
       ...(guard ? { payments: { baseUrl: guard.agentUrl, agentToken } } : {}),
       ...(o.services?.(standins.url) ?? {}),
@@ -242,14 +266,26 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   });
   clock = shop.clock;
   const s = shop;
+  // as one part of a parts shop, a settings.json the situation writes (a reload on new settings) is the part's, wrapped into the shop's
+  if (asPart) { const write = s.writeFile.bind(s); s.writeFile = (name, value) => write(name, name === "settings.json" && value !== undefined ? asPart.wrap(value as Record<string, unknown>) : value); }
 
+  // as one part of a parts shop, the outbox the situation reads is this part's, as its record is: a message another part sent (the shop's morning line, which the first part
+  // says over every part's cases; another part's reminders) is known by its record line's messageId (the message id's fingerprint, GoShop messageRef) and left out. Unset: the whole outbox, as before.
+  const othersSent = (): Set<string> => new Set(s.record().filter((e: any) => asPart && e.refs?.messageId && e.refs?.part !== undefined && e.refs.part !== asPart.part).map((e: any) => String(e.refs.messageId)));
+  const seen: FakeMessaging = !asPart ? messaging : new Proxy(messaging, {
+    get(t, k, r) {
+      if (k === "outbox") return () => { const o = othersSent(); return t.outbox().filter((m) => !o.has(s.messageRef(m.id))); };
+      if (k === "sentTo") return (n: string) => { const o = othersSent(); return t.sentTo(n).filter((m) => !o.has(s.messageRef(m.id))); };
+      return Reflect.get(t, k, r);
+    },
+  });
   let deliveredEvents = 0;
   let inbound = 0;
   const handle = async (message: InboundMessage): Promise<void> => { await s.events([{ kind: "message", message }]); };
   const world: GoWorldBase<Settings, Store> = {
-    settings: o.settings, clock, payments, messaging, guard, owner: o.settings.owner.whatsapp, shop: s, asked,
-    record: { entries: () => s.record() },
-    get store(): Store { const text = s.snapshot(); return (text === null ? o.emptyStore() : o.parseStore(text)) as Store; },
+    settings: o.settings, clock, payments, messaging: seen, guard, owner: o.settings.owner.whatsapp, shop: s, asked,
+    record: { entries: () => s.record().filter(mine) },
+    get store(): Store { const text = s.snapshot(); return (text === null ? o.emptyStore() : o.parseStore(asPart ? asPart.unwrap(text) : text)) as Store; },
     async say(text, m = {}) {
       // a provider's message id is unique per message, as the inbox hands it on (unless the situation gives one)
       const message = messaging.receive(m.from ?? o.customer, text, { id: m.id ?? `wamid.hc_${++inbound}`, ...(m.image ? { image: true } : {}), ...(m.reply ? { reply: m.reply } : {}) });
@@ -259,7 +295,7 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
     async tap(id, m = {}) {
       const from = m.from ?? o.customer;
       // the newest message that has this option on it: a customer can scroll up and tap an older button
-      const shown = messaging.sentTo(from).filter((x) => x.interactive).reverse().map((x) => x.interactive!).find((i) => [...(i.buttons ?? []), ...(i.list?.rows ?? [])].some((c) => c.id === id));
+      const shown = seen.sentTo(from).filter((x) => x.interactive).reverse().map((x) => x.interactive!).find((i) => [...(i.buttons ?? []), ...(i.list?.rows ?? [])].some((c) => c.id === id));
       const option = [...(shown?.buttons ?? []), ...(shown?.list?.rows ?? [])].find((c) => c.id === id);
       if (!shown || !option) throw new Error(`No buttons or list ${from} was sent have an option with the id "${id}".`);
       const message = messaging.receive(from, option.title, { id: `wamid.hc_${++inbound}`, reply: { id, kind: shown.buttons ? "button" : "list" } });
@@ -293,8 +329,8 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
     async answerArrivesAgain(decision, approval) { await s.events([{ kind: "approval_decision", approval, decision }]); },
     heldForOwner: () => (guard?.model.reviews("owner", true) ?? []).map((r: any) => ({ id: r.id, amountPaise: Number(r.amount), paymentId: r.arguments[1].payment_id[1], receipt: r.arguments[1].receipt?.[1] ?? "" })),
     refundsAsked: () => (guard?.calls ?? []).filter((c) => c.method === "POST" && /\/refunds?$/u.test(c.path)).map((c) => { try { return Number(JSON.parse(c.body).amount); } catch { return NaN; } }),
-    textsTo: (number) => messaging.sentTo(number).map((m) => m.text),
-    lastTextTo: (number) => messaging.sentTo(number).at(-1)?.text ?? "",
+    textsTo: (number) => seen.sentTo(number).map((m) => m.text),
+    lastTextTo: (number) => seen.sentTo(number).at(-1)?.text ?? "",
     writeLicence: (licence) => s.writeFile("licence.json", licence),
     async waitFor(what, done, ms = 10_000) {
       const until = Date.now() + ms;

@@ -5,6 +5,7 @@
 // test/channel.test.ts and the hand check's situations 8, 9, 10, 12, 13, 17 (crash-test/situations.ts).
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { MEENA, OWNER, RAVI, STRANGER, contract, orderAndApprove, shops } from "./harness.ts";
 
 const made = shops();
@@ -104,6 +105,15 @@ describe("what the agent will not guess", () => {
     await s.ownerSays("shampoo from ravi is low");
     assert.deepEqual(Object.keys(s.saved().orders), ["po-1"]);
     assert.match(s.lastToOwner()!.text, /already open/u);
+  });
+
+  // 25 Nov 2026 (decision 65's starter shop: "LED bulb 9W is low" became an order of 9): a number written against a letter is part of the item's name, never a quantity
+  contract("an item named with a number (shampoo 5L): its low mark orders the line's reorder quantity, not the 5", async () => {
+    const file = JSON.parse(readFileSync(new URL("../settings/glow-salon.example.json", import.meta.url), "utf8")) as { items: { id: string; names: Record<string, string[]> }[] };
+    const items = file.items.map((i) => (i.id === "shampoo" ? { ...i, names: { en: ["shampoo 5L"], hi: ["शैम्पू 5L"], ml: ["ഷാംപൂ 5L"], kn: ["ಶಾಂಪೂ 5L"] } } : i));
+    const s = await made.boot({ settings: { items } });
+    await s.ownerSays("shampoo 5L from ravi is low");
+    assert.equal(s.order("po-1").qty, 12, "the reorder quantity");
   });
 
   contract("something not in the catalogue is refused with what can be ordered; words it cannot read get examples, never a guess", async () => {

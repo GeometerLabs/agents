@@ -13,6 +13,7 @@
 //   state/                   the deployer's own memory: Guard bundle versions, stopped shops, lock history, backup times.
 //   generated/               compose.yaml, Caddyfile, per-container config. Rewritten on every deploy; never edited by hand.
 //   secrets/                 one folder per container, mounted into that container only. Parent mode 0700.
+import { partsLimitFor, partsProblem } from "./parts-limit.ts";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseLock } from "../../modules/runtime/config.ts";
@@ -436,6 +437,8 @@ export interface ShopFolder {
    * the panel's runtime.json, which the panel rewrites.
    */
   fleetAi?: "buttons";
+  /** Decision 65: how many parts the shop's plan allows (lib/parts-limit.ts), for a shop of several parts whose plan's price list says; undefined: no limit. */
+  partsLimit?: number;
   /**
    * Fleet's last word on the month's AI cap (fleet/<shop>.json): "off" only when fleet said so for a shop that has a plan; then the generated runtime config gets
    * `"model": "off"` and the shop's language model is left out. Anything else is undefined and adds nothing, as for `fleetAi`.
@@ -542,5 +545,9 @@ export function readShop(dir: string, name: string, now: Date = new Date()): Sho
   // merged inside budgetFor, which is the one place every shop's budget (agent shops and the listings-only shop) is worked out
   const budget = budgetPlan ? budgetFor(budgetPlan, list, { bought, ...(override ? { override } : {}) }) : override ? budgetFor(null, list, { override }) : undefined;
   const plansOwn = override && budgetPlan ? planBudget(budgetPlan, list, bought) : undefined;
-  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), ...(budget ? { budget } : {}), ...(plansOwn ? { planBudget: plansOwn } : {}), ...(override ? { budgetOverride: override } : {}), ...(bought > 0 ? { boughtThisMonth: bought } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
+  // decision 65: a shop of several parts may run as many as its plan allows (lib/parts-limit.ts: one setting in the price list in force; none there is no limit)
+  const partsLimit = kind?.id === "parts" ? partsLimitFor(answer?.plan, list) : undefined;
+  const tooMany = kind?.id === "parts" && settings ? partsProblem((settings as { parts: unknown[] }).parts.length, answer?.plan, partsLimit) : undefined;
+  if (tooMany) problems.push(tooMany);
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(partsLimit !== undefined ? { partsLimit } : {}), ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), ...(budget ? { budget } : {}), ...(plansOwn ? { planBudget: plansOwn } : {}), ...(override ? { budgetOverride: override } : {}), ...(bought > 0 ? { boughtThisMonth: bought } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
 }

@@ -138,41 +138,14 @@ var (
 
 // onCaseAsked is agent.ts onCaseAsked (25 Nov 2026, runtime/caseasked.go): only for a conversation that holds no order and no plan, words that name one of the shop's orders (a
 // pickup hold and a plan's period are orders too) or plans get one line that shows nothing of it, and the owner is told (at most once an hour for this asker and case, by the
-// record) with both numbers. The record line keeps the case in refs.case and leaves `booking` null. False: nothing was named, and the message goes on as before.
+// record) with both numbers. The record line keeps the case in refs.case and leaves `booking` null. False: nothing was named, and the message goes on as before. In a shop
+// of several parts (decision 65) a conversation that holds another part's case is answered as before too (caseNamed).
 func (a *Agent) onCaseAsked(phone, text string, wordForm bool) bool {
-	plans := a.store.PlansState(false).All()
-	for _, x := range a.store.Orders {
-		if x.Customer == phone {
-			return false
-		}
-	}
-	for _, p := range plans {
-		if p.Customer == phone {
-			return false
-		}
-	}
-	entries := a.c.Rec.Entries()
-	keys := runtime.RecordCaseKeys(entries)
-	for _, x := range a.store.Orders {
-		if x.ClaimRef != "" {
-			keys[runtime.CaseKey(x.ClaimRef)] = x.ID
-		}
-	}
-	planOf := func(id string) *Plan {
-		for _, p := range plans {
-			if p.ID == id {
-				return p
-			}
-		}
-		return nil
-	}
-	named := runtime.NamedCase(text, orderForms, func(id string) bool { return a.store.Order(id) != nil }, keys, wordForm)
-	if named == nil {
-		named = runtime.NamedCase(text, planForms, func(id string) bool { return planOf(id) != nil }, map[string]string{}, wordForm)
-	}
+	named, planOf := a.caseNamed(phone, text, wordForm)
 	if named == nil {
 		return false
 	}
+	entries := a.c.Rec.Entries()
 	caseCustomer := ""
 	if o := a.store.Order(named.Case); o != nil {
 		caseCustomer = a.shownPhone(o.Customer, o)
@@ -199,6 +172,49 @@ func (a *Agent) onCaseAsked(phone, text string, wordForm bool) bool {
 	}
 	a.tellCustomer(nil, phone, []string{t}, sayOpts{})
 	return true
+}
+
+// holdsCase: this conversation holds an order or a plan of this shop (onCaseAsked answers only a conversation that holds none).
+func (a *Agent) holdsCase(phone string, plans []*Plan) bool {
+	for _, x := range a.store.Orders {
+		if x.Customer == phone {
+			return true
+		}
+	}
+	for _, p := range plans {
+		if p.Customer == phone {
+			return true
+		}
+	}
+	return false
+}
+
+// caseNamed is onCaseAsked's reading with no effect: the order or plan these words name, when the conversation holds none here and (in a shop of several parts) no other
+// part's case either (runtime CaseHeldElsewhere); with the plan lookup the notice uses. part.go NamesCase asks it for the shop's router.
+func (a *Agent) caseNamed(phone, text string, wordForm bool) (*runtime.Named, func(string) *Plan) {
+	plans := a.store.PlansState(false).All()
+	if a.holdsCase(phone, plans) || a.c.CaseHeldElsewhere(phone) {
+		return nil, nil
+	}
+	keys := runtime.RecordCaseKeys(a.c.Rec.Entries())
+	for _, x := range a.store.Orders {
+		if x.ClaimRef != "" {
+			keys[runtime.CaseKey(x.ClaimRef)] = x.ID
+		}
+	}
+	planOf := func(id string) *Plan {
+		for _, p := range plans {
+			if p.ID == id {
+				return p
+			}
+		}
+		return nil
+	}
+	named := runtime.NamedCase(text, orderForms, func(id string) bool { return a.store.Order(id) != nil }, keys, wordForm)
+	if named == nil {
+		named = runtime.NamedCase(text, planForms, func(id string) bool { return planOf(id) != nil }, map[string]string{}, wordForm)
+	}
+	return named, planOf
 }
 
 func (a *Agent) onTalkToOwner(phone string) error {

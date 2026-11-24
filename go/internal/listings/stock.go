@@ -54,6 +54,9 @@ type StockOp struct {
 	To    float64      // correct
 	Shown Opt[float64] // correct
 	Qty   float64      // sold
+	// Aliases (start) are the other ids the new line also counts. Never sent by the page and never queued: the runtime of a shop of several parts sets it when an item two of
+	// its parts know by the same id is started (decision 65, runtime/parts.go StockAliaser), so the hold's "menu:x" and Stock orders' "supply:x" are one count.
+	Aliases []string
 }
 
 // Event is the op as the queue keeps it: the TypeScript event's shape ({kind, id, op}), only the members that were sent.
@@ -174,7 +177,7 @@ func ApplyStockOp(st *Stock, op StockOp, reqID string, nowMs int64) (change stri
 	}
 	switch op.Op {
 	case "start":
-		return "started", st.Start(owner, op.ID, stock.StartInput{Count: op.Count, Name: op.Name, Unit: op.Unit, Low: opt(op.Low)}, nowMs)
+		return "started", st.Start(owner, op.ID, stock.StartInput{Count: op.Count, Name: op.Name, Unit: op.Unit, Low: opt(op.Low), Aliases: op.Aliases}, nowMs)
 	case "correct":
 		return "corrected", st.Correct(owner, op.ID, op.To, reqID, opt(op.Shown), nowMs)
 	case "sold":

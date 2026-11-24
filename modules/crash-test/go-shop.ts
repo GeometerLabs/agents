@@ -20,6 +20,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../channels/owner-link.ts";
 import type { Clock } from "../core/clock.ts";
+import { messageFingerprint } from "../record/fingerprint.ts";
 import { readSnapshot } from "../runtime/store.ts";
 import { TEST_CLOCK_FILE, TEST_SWITCH } from "../runtime/test-clock.ts";
 import { freePort, hex } from "../test/contract/net.ts";
@@ -77,6 +78,11 @@ export interface GoShop {
   pagesDir: string;
   /** Stop the program and start it again on the same folder (a restart: it remembers only what it saved). */
   restart(): Promise<void>;
+  /**
+   * Decision 65: stop the program and start ANOTHER on the same folder and data (a shop that took a second part moves from its template's program to go/cmd/parts): the
+   * settings and pathway.lock are written as the deployer writes them (the lock last), then the new program starts.
+   */
+  restartAs(next: { program: string; pathway: string; version: string; settings: Record<string, unknown> }): Promise<void>;
   /** Call the shop: the internal token, or the channel token for a /internal/channel/ route. */
   call(path: string, o?: Omit<CallOptions, "token">): Promise<Answer>;
   /** POST /internal/events (as the inbox does), then wait until the queue is empty. Throws when the shop refuses them: a situation that sends a bad event is a broken situation. */
@@ -90,6 +96,8 @@ export interface GoShop {
   status(): Promise<any>;
   /** The record's lines as the store keeps them (each line's JSON), oldest first. */
   record(): any[];
+  /** A WhatsApp message id as the record keeps it (refs.messageId: its fingerprint under the shop's record key), so a sent message can be matched to its send line. */
+  messageRef(id: string): string;
   /** The shop's last saved state (the template's snapshot JSON), or null before its first step. */
   snapshot(): string | null;
   /** Write a file of the client folder as the deployer does (a rename), or remove it (`undefined`). */
@@ -120,7 +128,8 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   const owner = newOwnerToken();
   writeFileSync(join(secrets, "internal_token"), internal);
   writeFileSync(join(secrets, "channel_token"), channel);
-  writeFileSync(join(secrets, "record_key"), hex(32));
+  const recordKey = hex(32);
+  writeFileSync(join(secrets, "record_key"), recordKey);
   writeFileSync(join(client, "settings.json"), JSON.stringify(o.settings));
 
   // runtime.json: a fakes shop on the hand check's stand-ins (go/internal/runtime/config.go `standins`)
@@ -154,6 +163,8 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
     [TEST_SWITCH]: "1", [TEST_CLOCK_FILE]: file.file, HOME: root, TMPDIR: tmpdir(),
   };
   let running: RuntimeProcess | undefined;
+  let program = o.program;
+  let pathway = o.pathway;
   // A start returns only once the program's FIRST beat has ended (/status `ticks`, the beats that have ended, counted again from 0 by every process). Why (25 Nov 2026): the beat
   // runs on its own timer (go/internal/runtime Start, every BEAT_SECONDS of real time from the process's start), and what the first beat decides once for the day (the owner's
   // morning line: silent on a day with nothing to say, and then not looked at again by that process) depended on whether it came before or after the situation's first steps.
@@ -169,7 +180,7 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
     }
     throw new Error(`the shop's first beat did not end in ${SETTLE_MS / 1000} s`);
   };
-  const start = async (): Promise<void> => { running = await startRuntimeProcess(o.program, ["--client", client], env, url, `the hand check's ${o.pathway} shop in ${root}`, printed);
+  const start = async (): Promise<void> => { running = await startRuntimeProcess(program, ["--client", client], env, url, `the hand check's ${pathway} shop in ${root}`, printed);
     try { await firstBeat(); } catch (e) { await running.stop(); running = undefined; throw e; }
   };
   try {
@@ -197,6 +208,13 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   const shop: GoShop = {
     clock, owner, client, pagesDir, call,
     async restart() { await running?.stop(); running = undefined; await start(); },
+    async restartAs(next) {
+      await running?.stop(); running = undefined;
+      writeFileSync(join(client, "settings.json"), JSON.stringify(next.settings));
+      writeFileSync(join(client, "pathway.lock"), `${next.pathway}@${next.version}\n`);
+      program = next.program; pathway = next.pathway;
+      await start();
+    },
     async status() {
       const s = await call("/status");
       if (s.status !== 200) throw new Error(`the shop's /status answered ${s.status}`);
@@ -232,6 +250,7 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
       }
       throw new Error(`no beat of the shop's clock ended in ${SETTLE_MS / 1000} s`);
     },
+    messageRef: (id: string) => messageFingerprint(Buffer.from(recordKey, "hex"), id),
     record: () => db((d) => (d.prepare("SELECT action, outcome, booking, conversation, entry FROM record ORDER BY seq").all() as { action: string; outcome: string; booking: string | null; conversation: string; entry: string }[])
       .map((r) => ({ action: r.action, outcome: r.outcome, booking: r.booking, conversation: r.conversation, ...(JSON.parse(r.entry) as Record<string, unknown>) }))),
     snapshot: () => db((d) => readSnapshot(d)),

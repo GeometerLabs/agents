@@ -3181,6 +3181,88 @@
     "item": "towel"
    },
    "qty": 2
+  },
+  {
+   "text": "hair colour 9W is low",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "hair-colour"
+   },
+   "qty": null
+  },
+  {
+   "text": "5L shampoo is low",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "shampoo"
+   },
+   "qty": null
+  },
+  {
+   "text": "1/2 inch towel is low",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "towel"
+   },
+   "qty": null
+  },
+  {
+   "text": "order 3 2kg hair colour",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 3,
+    "item": "hair-colour"
+   },
+   "qty": 3
+  },
+  {
+   "text": "order 16A towels 4",
+   "reading": {
+    "kind": "order",
+    "lowStock": false,
+    "mentionsOrder": true,
+    "qty": 4,
+    "item": "towel"
+   },
+   "qty": 4
+  },
+  {
+   "text": "9W हेयर कलर खत्म",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "hair-colour"
+   },
+   "qty": null
+  },
+  {
+   "text": "9W ഷാംപൂ തീർന്നു",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "shampoo"
+   },
+   "qty": null
+  },
+  {
+   "text": "9W ಶಾಂಪೂ ಮುಗಿದಿದೆ",
+   "reading": {
+    "kind": "order",
+    "lowStock": true,
+    "mentionsOrder": true,
+    "item": "shampoo"
+   },
+   "qty": null
   }
  ]
 }

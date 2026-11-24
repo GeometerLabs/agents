@@ -188,9 +188,19 @@ func (c *StepContext) Morning(m MorningContext) error {
 	if r == nil || !c.Settings.HasAssistant || c.Licence() == "stopped" {
 		return nil
 	}
+	// decision 65: in a shop of several parts the morning line is the shop's, said once by its first part, over every part's skill and the whole record (parts.go)
+	if c.Rec.SharedBeatOff() {
+		return nil
+	}
+	var more []OwnerSkill
+	for _, f := range c.coParts {
+		if hh, ok := f(); ok && hh.Skill != nil {
+			more = append(more, hh.Skill)
+		}
+	}
 	number, lang := c.Owner()
 	return r.runMorning(morningRun{
-		snap: c.Snap, entries: c.Rec.Entries(), skill: m.Skill,
+		snap: c.Snap, entries: c.Rec.ShopEntries(), skill: m.Skill, more: more,
 		commit: func(outcome string, inputs any, refs map[string]string, notes string) error {
 			c.Rec.append(NewLine{Conversation: number, Action: "send_message", Outcome: outcome, Inputs: inputs, Language: lang, Refs: refs, Notes: notes})
 			return m.Save()
@@ -257,7 +267,8 @@ type morningPlan struct {
 type morningRun struct {
 	snap    *Snap
 	entries []store.Entry
-	skill   OwnerSkill // the template's own, read-only (nil: the listings-only shop)
+	skill   OwnerSkill   // the template's own, read-only (nil: the listings-only shop)
+	more    []OwnerSkill // decision 65: the shop's other parts' skills, read-only (none in a single-part shop)
 	commit  func(outcome string, inputs any, refs map[string]string, notes string) error
 	// send gives the message's id and how it went (via "text" or "template"), its outcome (confirmed, unconfirmed or failed) and why when it did not go
 	send func(plan morningPlan) (id, via, outcome, note string)
@@ -317,7 +328,7 @@ func (r *Runtime) runMorning(m morningRun) error {
 		r.morningDone = key
 		return nil
 	}
-	plan, silent := r.morningWords(m.snap, m.skill, m.entries, now)
+	plan, silent := r.morningWords(m.snap, m.skill, m.entries, now, m.more...)
 	if silent {
 		r.morningDone = key
 		return nil
@@ -356,7 +367,11 @@ func (r *Runtime) runMorning(m morningRun) error {
 // morningWords is morning.ts's middle: silent on a closed day (the owner closed it, or the weekday has no hours) and on a day with nothing to say; otherwise the personality's
 // template filled in with today's parts (a Bookings shop's day, a Fees centre's fees not paid, an Orders shop's open orders; the running-low count), the money recorded yesterday
 // and what waits.
-func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Entry, now int64) (morningPlan, bool) {
+//
+// Decision 65: `more` are a shop's other parts' skills. Each kind of part (a day's list, fees owed, open orders) is said from the first skill that has it, and what waits is
+// counted over all of them; with none (every single-part shop) this is exactly the one skill's line.
+func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Entry, now int64, more ...OwnerSkill) (morningPlan, bool) {
+	all := append([]OwnerSkill{skill}, more...)
 	set := r.o.Client.Settings
 	number, lang := r.owner()
 	_ = number
@@ -364,14 +379,14 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 	if IsClosedDay(snap, d) {
 		return morningPlan{}, true
 	}
-	if hs, ok := skill.(HoursSkill); ok && !hoursOpen(hs, d) {
+	if hs, ok := firstSkillOf[HoursSkill](all); ok && !hoursOpen(hs, d) {
 		return morningPlan{}, true
 	}
 	pack := assistant.Words(lang)
 	w := pack.Writer() // templates.ts morningFacts: every value through the Writer
 	var parts []string
 	something := false
-	if ds, ok := skill.(DaySkill); ok {
+	if ds, ok := firstSkillOf[DaySkill](all); ok {
 		rows := ds.Day(d)
 		if len(rows) > 0 {
 			first := rows[0].StartMs
@@ -385,7 +400,7 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 			parts = append(parts, w.Say("morning.no_bookings"))
 		}
 	}
-	if ow, ok := skill.(OweSkill); ok { // a Fees centre's fees not paid (morning.ts `s.owes`): "fees not paid: N (₹X)", or the "nothing" word
+	if ow, ok := firstSkillOf[OweSkill](all); ok { // a Fees centre's fees not paid (morning.ts `s.owes`): "fees not paid: N (₹X)", or the "nothing" word
 		if rows := ow.Owes(); len(rows) > 0 {
 			var owed int64
 			for _, r := range rows {
@@ -397,7 +412,7 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 			parts = append(parts, pack.Say("morning.nothing"))
 		}
 	}
-	if os, ok := skill.(OpenSkill); ok { // an Orders shop's open orders (morning.ts `s.open`): "open orders: N", or the "nothing" word
+	if os, ok := firstSkillOf[OpenSkill](all); ok { // an Orders shop's open orders (morning.ts `s.open`): "open orders: N", or the "nothing" word
 		if n := len(os.Open()); n > 0 {
 			parts = append(parts, w.Say("morning.open", "n", strconv.Itoa(n)))
 			something = true
@@ -418,8 +433,10 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 		something = true
 	}
 	waiting := 0
-	if skill != nil {
-		waiting = len(skill.Waiting())
+	for _, sk := range all {
+		if sk != nil {
+			waiting += len(sk.Waiting())
+		}
 	}
 	if snap.A != nil {
 		waiting += len(snap.A.OpenCards(now))
@@ -459,9 +476,23 @@ func (r *Runtime) morningWords(snap *Snap, skill OwnerSkill, entries []store.Ent
 	for _, k := range strings.Split(pack.Say("morning."+p+".order"), ",") {
 		params = append(params, vals[k])
 	}
-	mood, face := shopMood(snap, skill, now, r.loc)
+	mood, face := shopMood(snap, skill, now, r.loc, more...)
 	name := pack.Say("morning." + p + ".name")
 	return morningPlan{text: text, facts: w.Facts(), template: name, params: params, refs: map[string]string{"to": "owner", "templates": name, "mood": mood, "face": face}}, false
+}
+
+// firstSkillOf is the first skill of a shop's that has the kind K (decision 65: a shop of several parts; with one skill, that skill when it has it). A nil skill has none.
+func firstSkillOf[K any](skills []OwnerSkill) (K, bool) {
+	for _, s := range skills {
+		if s == nil {
+			continue
+		}
+		if k, ok := s.(K); ok {
+			return k, true
+		}
+	}
+	var zero K
+	return zero, false
 }
 
 type morningEntry struct{ outcome, time string }

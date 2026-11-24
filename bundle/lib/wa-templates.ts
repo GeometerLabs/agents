@@ -104,12 +104,12 @@ export function shopLanguages(settings: unknown): string[] {
 export interface ShopTemplates { templateId: string; settings: unknown; folderOf: (id: string) => string | undefined }
 
 /**
- * The template parts a shop has. Today one: the template it is set up from (its pathway.lock, or the panel's record of its kind); `settings` is not read yet. Decision 65
- * (a shop of several parts) changes this one body, and every caller (the panel, the command line) then submits the union.
+ * The template parts a shop has: the template it is set up from (its pathway.lock, or the panel's record of its kind), or, for a shop of several parts (decision 65,
+ * pathway `parts`), each part its settings name in `parts`, in the shop's order. Every caller (the panel, the command line) then submits the union (templateSet).
  */
 export function shopParts(o: ShopTemplates): TemplatePart[] {
-  const folder = o.folderOf(o.templateId);
-  return folder ? [{ id: o.templateId, folder }] : [];
+  const ids = o.templateId === "parts" ? Object.keys(((o.settings as { parts?: object } | undefined)?.parts) ?? {}) : [o.templateId];
+  return ids.flatMap((id) => { const folder = o.folderOf(id); return folder ? [{ id, folder }] : []; });
 }
 
 /** A shop's template set: its parts' templates, in its languages. The one function the panel and the command line ask. */

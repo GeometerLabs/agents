@@ -199,7 +199,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   // ---- the record and the cases, as JSON lines
   const record = jsonLines(src.exportFile("record.json"), "The record", warnings);
   const casesName = template === "stock-orders" ? "purchase-orders.json" : template === "orders" ? "orders.json" : template === "fees" ? "dues.json" : "bookings.json";
-  const cases = jsonLines(src.exportFile(casesName), template === "stock-orders" ? "The purchase orders" : template === "orders" ? "The orders" : template === "fees" ? "The fees" : "The bookings", warnings);
+  const cases = template === "parts" ? { lines: [] as string[], count: 0 } : jsonLines(src.exportFile(casesName), template === "stock-orders" ? "The purchase orders" : template === "orders" ? "The orders" : template === "fees" ? "The fees" : "The bookings", warnings);
   const recordAsOf = src.exportedAt() ?? null;
   if (req.profile === "owner") notes.push("This is the owner's file: made at the owner's own request, from this shop's files only. settings.json and the settings history are the owner's own list of people, as written; keep them private.");
   if (src.exportFile("record.json") === undefined) { notes.push("The deployer had not yet exported this shop's record when this package was made, so record/ is empty."); }
@@ -214,7 +214,13 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   if (src.exportFile("record.json") !== undefined && !personForm.keyed) warnings.push("The record in this package was exported before keyed fingerprints: its customer numbers and students' names can be worked back by anyone holding it. The server's next export (within a quarter of an hour) uses the keyed form.");
   if (req.profile === "owner" && src.exportFile("record.json") !== undefined && !personForm.keyed) throw new ExportError("The shop's record has not been exported in the keyed form yet (the server does it every quarter of an hour), so the owner's file waits for the next export: customers' numbers must not be handed over in a form that can be guessed back.");
   put("record/record.jsonl", record.lines.length > 0 ? `${record.lines.join("\n")}\n` : "");
-  put("record/cases.jsonl", cases.lines.length > 0 ? `${cases.lines.join("\n")}\n` : "");
+  if (template !== "parts") put("record/cases.jsonl", cases.lines.length > 0 ? `${cases.lines.join("\n")}\n` : "");
+  // decision 65: a shop of several parts has each part's cases, as its template's are, under the part's name (backup/export.ts writes them under parts/<name>/)
+  else for (const part of Object.keys(((settings as { parts?: object } | undefined)?.parts) ?? {})) {
+    const file = part === "stock-orders" ? "purchase-orders.json" : part === "orders" ? "orders.json" : part === "fees" ? "dues.json" : "bookings.json";
+    const own = jsonLines(src.exportFile(`parts/${part}/${file}`), `The ${part} part's cases`, warnings);
+    put(`record/parts/${part}/cases.jsonl`, own.lines.length > 0 ? `${own.lines.join("\n")}\n` : "");
+  }
 
   // ---- block S: the shop's listings and their photos. They are the shop's own words and pictures, so they go with the shop; a package without them says nothing about them.
   const listingsText = src.exportFile("listings.json");
