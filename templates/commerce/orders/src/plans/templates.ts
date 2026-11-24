@@ -2,8 +2,10 @@
 // typed by hand and never translated by a model, and every amount, day, count and name in it checked against the facts before it is sent. They are kept in this folder and
 // handed the few helpers of language/templates.ts (so this file imports nothing from it at run time, and the two cannot wait for each other when loaded).
 // The Hindi, Malayalam and Kannada are machine-written; a native speaker must read them before a real shop sees them (the REVIEW sheets list every line).
-// Five can go out in a closed 24-hour window, and are WhatsApp templates too (language/meta-templates.ts): the renewal, the pause, the skip, "your plan is on" (after the owner
-// marks the payment) and the owner's word that a plan was cancelled. Those bodies start and end with fixed words, because Meta rejects a body that starts or ends with a value.
+// Nine can go out in a closed 24-hour window, and are WhatsApp templates too (language/meta-templates.ts): the renewal, the pause, the skip, "your plan is on" (after the owner
+// marks the payment), the owner's word that a plan was cancelled, and (25 Nov 2026) the four unasked ones: the lapse, the hold that ran out and the credit going back (done, or
+// waiting for the owner). Those bodies start and end with fixed words, because Meta rejects a body that starts or ends with a value; the English credit-back line therefore
+// begins "The" before its amount.
 import type { Language } from "../../../../../modules/language/languages.ts";
 import type { MessageFacts } from "../language/templates.ts";
 
@@ -66,7 +68,7 @@ export function planTemplates(h: PlanHelpers): Record<Language, PlanSet> {
     plan_renewal: (f) => `Your ${items(f)} plan renews from ${day(f)}. Amount ${inr(f, "advanceInr")} (plan price ${inr(f, "totalInr")}). Please pay by ${cutAt(f)}: ${payTo(f)}. Thank you.`,
     plan_lapsed: (f) => `Your ${items(f)} plan was not renewed in time, so it has stopped. Write "monthly plan" to start again.`,
     plan_hold_expired: (f) => `The hold on your ${items(f)} plan has ended because the payment was not received in time. Write "monthly plan" to start again.`,
-    plan_credit_refund: (f) => `${inr(f, "refundInr")} of your ${items(f)} plan that was not used is being refunded.`,
+    plan_credit_refund: (f) => `The ${inr(f, "refundInr")} of your ${items(f)} plan that was not used is being refunded.`,
     plan_credit_refund_pending: (f) => `The owner will confirm your ${inr(f, "refundInr")} refund for your ${items(f)} plan shortly.`,
     owner_plan_started: (f) => `New monthly plan ${ref(f)}: ${phone(f)}, ${items(f)}, ${meals(f)} meals from ${from(f)} to ${to(f)}, ${how(f)}.`,
     owner_plan_cancelled: (f) => `Plan ${ref(f)} (${items(f)}, ${phone(f)}) is cancelled. Do not make meals for the days after the cancellation.`,

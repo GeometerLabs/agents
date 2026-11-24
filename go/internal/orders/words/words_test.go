@@ -424,19 +424,20 @@ func TestEveryMessageHasFourLanguages(t *testing.T) {
 }
 
 // TestPlanTemplatesInAClosedWindow is the hand check's finding of 24 Nov 2026: on a UPI shop the plan's renewal writes the UPI ID after its link, and "your plan is on" and the
-// owner's "plan cancelled" had no template, so all three went under the generic name, which WhatsApp refuses outside the window. Each now goes as its own template, in every language.
+// owner's "plan cancelled" had no template, so all three went under the generic name, which WhatsApp refuses outside the window. Each now goes as its own template, in every
+// language; and since 25 Nov so do the four that go out unasked: the lapse, the hold that ran out and the credit going back (done, or waiting for the owner).
 func TestPlanTemplatesInAClosedWindow(t *testing.T) {
 	s := func(v string) *string { return &v }
 	n := func(v int64) *int64 { return &v }
 	for _, lang := range []string{"en", "hi", "ml", "kn"} {
 		for _, upi := range []bool{false, true} {
 			f := &MessageFacts{Language: lang, TimeZone: "Asia/Kolkata", BusinessName: "Annapurna Tiffins", ItemsText: s("2 × Veg thali"), TotalInr: n(4400), AdvanceInr: n(4000),
-				DateMs: n(1763251200000), CutoffMs: n(1763215200000), Link: s("https://rzp.io/i/plan"), OrderRef: s("o-7"), CustomerPhone: s("+919811111111"),
+				DateMs: n(1763251200000), CutoffMs: n(1763215200000), RefundInr: n(109), Link: s("https://rzp.io/i/plan"), OrderRef: s("o-7"), CustomerPhone: s("+919811111111"),
 				Plan: &PlanFacts{Meals: n(22), FromMs: n(1763251200000), ToMs: n(1765756800000)}}
 			if upi {
 				f.UpiID, f.Payee = s("annapurna@okaxis"), s("Annapurna Tiffins")
 			}
-			for _, id := range []string{"plan_renewal", "plan_active", "owner_plan_cancelled"} {
+			for _, id := range []string{"plan_renewal", "plan_active", "owner_plan_cancelled", "plan_lapsed", "plan_hold_expired", "plan_credit_refund", "plan_credit_refund_pending"} {
 				text, err := Render(id, f)
 				if err != nil {
 					t.Fatalf("%s %s: %v", lang, id, err)
