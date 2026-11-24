@@ -65,12 +65,7 @@ export async function updateAgent(ctx: Context, name: string, dryRun: boolean): 
   }
   // the two runs started the same code when the command never says which version it wants: the comparison then shows nothing
   const sameCode = running !== undefined && !run.includes("{version}") && !/GEOMETER_AGENT_VERSION/u.test(run);
-  // a situation the new version lists as not run, with its reason, is not a loss; it is said, not hidden
-  const notes = [
-    sameCode ? `Note: the run command does not use {version} or $GEOMETER_AGENT_VERSION, so both crash tests started the same code.` : "",
-    diff.notRunNow.length > 0 ? `Not run at ${target} (not counted as a loss): ${diff.notRunNow.map((n) => `${n.title}: ${n.reason}`).join("; ")}.` : "",
-  ].filter(Boolean);
-  const note = notes.length > 0 ? notes.join(" ") : undefined;
+  const note = sameCode ? `Note: the run command does not use {version} or $GEOMETER_AGENT_VERSION, so both crash tests started the same code.` : undefined;
   if (!dryRun) recordService(ctx, name, a.result, issueGoLive(ctx, name, a.result).code);
   return { status: "moved", at, ...base, ...(note ? { reason: note } : {}) };
 }

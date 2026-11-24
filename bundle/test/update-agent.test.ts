@@ -138,7 +138,7 @@ test("a first version with a situation failing is held back (nothing is recorded
   const w = agentServer(); try {
     let v1Fails = true;
     crashTestStandIn(w, (v) => (v === "v1" ? answer(v, v1Fails ? ["Razorpay key expired"] : [])
-      : v === "v3" ? { ...answer(v, [], TITLES.slice(0, 3)), notRun: [{ id: "s3", title: "Razorpay key expired", reason: "these settings take no card payments" }] }
+      : v === "v3" ? { ...answer(v, [], TITLES.slice(0, 3)), notRun: [{ id: "s3", title: "Razorpay key expired", reason: "the agent asked Razorpay for no refund when the customer wrote \"cancel\"" }] }
       : answer(v, [], TITLES.slice(0, 3))));
     const first = await update(w);
     assert.equal(first.result, 1);
@@ -151,11 +151,10 @@ test("a first version with a situation failing is held back (nothing is recorded
     set(w, "v2");
     const dropped = await update(w);
     assert.match(dropped.out, /HELD BACK\. Held 3 of 3 at v2; 4 of 4 held at v1\. No longer checked at v2: Razorpay key expired\. Keep running v1/);
-    // v3 lists it as not run on these settings, with its reason: that is not a loss, so v3 moves, and the reason is said
+    // v3 lists it as not run, with a reason: an agent's not-run list also holds what the agent itself failed to do (NotDrivable), so it is still a loss and v3 is held back
     set(w, "v3");
     const listed = await update(w);
-    assert.match(listed.out, /✓ my-agent +moved from v1 to v3\. Held 3 of 3 on its own settings \(4 of 4 before\)\./);
-    assert.match(listed.out, /Not run at v3 \(not counted as a loss\): Razorpay key expired: these settings take no card payments\./);
+    assert.match(listed.out, /HELD BACK\. Held 3 of 3 at v3; 4 of 4 held at v1\. No longer checked at v3: Razorpay key expired\. Keep running v1/);
   } finally { w.done(); }
 });
 

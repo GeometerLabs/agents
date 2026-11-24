@@ -210,9 +210,9 @@ test("the result prints the way the hand check does, and the update reads it fro
   assert.doesNotMatch(printed.text, BANNED);
   const lines = readHandCheck(printed.text)!;
   assert.deepEqual([lines.held, lines.total, lines.situations.map((s) => s.title)], [2, 3, r.situations.map((s) => s.title)], "the hand check's reader reads this output too");
-  const notRun = r.notRun.map((n) => ({ title: n.title, reason: n.reason }));
-  assert.deepEqual(lines.notRun, notRun, "the not-run situations and their reasons read from the printed lines");
-  assert.deepEqual(readOfCrash(r), { held: 2, total: 3, notRun, situations: r.situations.map((s) => ({ title: s.title, held: s.held, why: s.held ? "" : "After the answer was lost the agent did not ask for the refund again: Guard saw 3 more refund requests" })) });
+  assert.deepEqual(lines.notRun, r.notRun.map((n) => ({ title: n.title, reason: n.reason })), "the not-run situations and their reasons read from the printed lines");
+  // the update's read of an agent's result excuses none of them (readOfCrash says why)
+  assert.deepEqual(readOfCrash(r), { held: 2, total: 3, notRun: [], situations: r.situations.map((s) => ({ title: s.title, held: s.held, why: s.held ? "" : "After the answer was lost the agent did not ask for the refund again: Guard saw 3 more refund requests" })) });
   assert.deepEqual(parseCrashResult(`progress line\n${JSON.stringify(r)}\n`), r);
   assert.equal(parseCrashResult("nothing useful"), undefined);
   assert.equal(parseCrashResult(JSON.stringify({ format: "other" })), undefined);

@@ -148,10 +148,14 @@ export function crashTestText(result: CrashResult, settingsName: string, options
   });
 }
 
-/** The same result as the update reads a hand check's: how many held, each situation's first failed check, and the situations listed as not run with their reasons (an update does not count those as a loss). */
+/**
+ * The same result as the update reads a hand check's: how many held, and each situation's first failed check. `notRun` is left empty on purpose: an agent's not-run list mixes
+ * what its settings rule out with what the agent itself failed to do (NotDrivable: no link, no refund asked, the agent stopped), and the result does not say which, so a
+ * situation the new version no longer runs stays a loss ("No longer checked") rather than letting a version that broke it move.
+ */
 export function readOfCrash(result: CrashResult): HandCheckRead {
   return {
-    notRun: result.notRun.map((s) => ({ title: s.title, reason: s.reason })),
+    notRun: [],
     held: result.held, total: result.total,
     situations: result.situations.map((s) => {
       const first = s.checks.find((c) => !c.passed);
