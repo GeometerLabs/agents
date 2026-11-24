@@ -2,7 +2,7 @@
 
 * **No TypeScript was deleted.** The Orders, Fees and Stock-orders runtimes still run the TypeScript messaging until their waves.
 * **`gupshup-selfserve.ts` is ported** (it is reachable from the Bookings runtime's import graph through `providers.ts`). Its callers in the
-  deployer and panel (`bundle/panel/setup.ts`, `bundle/panel/checks.ts`, `bundle/generate/guards.ts`, `bundle/lib/gupshup-templates.ts`) read its
+  deployer and panel (`bundle/panel/setup.ts`, `bundle/panel/checks.ts`, `bundle/generate/guards.ts`, `bundle/lib/wa-templates.ts`) read its
   exported constants and routes; those stay TypeScript (the deployer is not a shop's runtime), and the Go constants (`GupshupSelfServeUpstream`,
   the routes) are copies pinned only by the request vectors.
 * **The inbox is not part of the shop runtime.** `webhooks.go` is here because the brief asked for it; the HTTP side (the inbox itself, the path

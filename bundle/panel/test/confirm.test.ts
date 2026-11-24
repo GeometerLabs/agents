@@ -122,8 +122,9 @@ test("go-live is not done by a link: it needs a person's two ticks and every che
     const { link } = ask(b, { kind: "go-live", shop: "glow-salon" });
     const path = pathOf(link);
     const page = await arjun.get(path);
-    assert.ok(page.plain.includes("not checked by Geometer"), "the WhatsApp templates are said to be unchecked");
-    assert.ok(page.plain.includes("booking_reminder"), "the templates are listed");
+    // 25 Nov 2026: the panel reads the templates' state from the shop's account (wa-templates.ts); this shop's runtime.json names no WhatsApp Business Account, so it says what to add
+    assert.ok(page.plain.includes("Add the shop's WhatsApp Business Account ID"), "the WhatsApp templates' state, or what stops the panel from asking, is said");
+    assert.ok(page.plain.includes("I have read what the shop's WhatsApp account says of its templates"));
 
     const noTicks = await arjun.post(path, {}, path);
     assert.equal(noTicks.status, 409);

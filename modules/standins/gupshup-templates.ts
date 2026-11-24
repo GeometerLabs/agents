@@ -1,7 +1,9 @@
-// A stand-in for Gupshup's self-serve TEMPLATE calls (bundle/lib/gupshup-templates.ts speaks them): create a template for an app and list an app's templates.
+// A stand-in for Gupshup's self-serve TEMPLATE calls (bundle/lib/wa-templates.ts speaks them): create a template for an app and list an app's templates.
 // Paths, the `apikey` header, the form fields and the reply shapes are the ones docs.gupshup.io documents (see that file's header). It keeps its own small list of templates,
 // because this call is a form post, which the shared JSON server (http.ts) refuses. A created template starts "SUBMITTED", as Gupshup's statuses page says. It never reaches the
-// real service. `rejectNames` makes it refuse those names; `wrongKey` makes it answer 401, as Gupshup does for a key that does not match.
+// real service. `rejectNames` makes it refuse those names; a key other than `apikey` gets 401, as Gupshup answers for a key that does not match. `apikey` left out: any
+// caller is accepted (a panel test points the panel straight at it, in the Guard's place, and the Guard is what adds the key). A seeded template may carry a `reason`,
+// which Gupshup's template events carry; its list page documents none (bundle/Deferred.md).
 import { createServer } from "node:http";
 
 export interface GupshupTemplateStandin {
@@ -11,12 +13,12 @@ export interface GupshupTemplateStandin {
   /** Every request path, in order. */
   paths: string[];
   /** Put a template in the app as if it was submitted earlier. */
-  seed(name: string, language: string, status: string): void;
+  seed(name: string, language: string, status: string, reason?: string): void;
   close(): Promise<void>;
 }
 
-export async function startGupshupTemplateStandin(o: { appId: string; apikey: string; rejectNames?: string[]; pageSize?: number }): Promise<GupshupTemplateStandin> {
-  const templates: { id: string; elementName: string; languageCode: string; status: string; category: string }[] = [];
+export async function startGupshupTemplateStandin(o: { appId: string; apikey?: string; rejectNames?: string[]; pageSize?: number }): Promise<GupshupTemplateStandin> {
+  const templates: { id: string; elementName: string; languageCode: string; status: string; category: string; reason?: string }[] = [];
   const created: GupshupTemplateStandin["created"] = []; const paths: string[] = [];
   const server = createServer((req, res) => {
     let raw = "";
@@ -26,7 +28,7 @@ export async function startGupshupTemplateStandin(o: { appId: string; apikey: st
       paths.push(`${req.method} ${url.pathname}`);
       const reply = (status: number, body: unknown) => { res.writeHead(status, { "content-type": "application/json" }); res.end(JSON.stringify(body)); };
       const key = req.headers.apikey as string | undefined;
-      if (key !== o.apikey) return reply(401, { status: "error", message: "Authentication Failed" });
+      if (o.apikey !== undefined && key !== o.apikey) return reply(401, { status: "error", message: "Authentication Failed" });
       const m = /^\/wa\/app\/([^/]+)\/template$/u.exec(url.pathname);
       if (!m || m[1] !== o.appId) return reply(400, { status: "error", message: "Invalid App Details" });
       if (req.method === "GET") {
@@ -45,7 +47,7 @@ export async function startGupshupTemplateStandin(o: { appId: string; apikey: st
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   return {
     url: `http://127.0.0.1:${(server.address() as { port: number }).port}`, created, paths,
-    seed: (elementName, languageCode, status) => { templates.push({ id: `t-${templates.length + 1}`, elementName, languageCode, status, category: "UTILITY" }); },
+    seed: (elementName, languageCode, status, reason) => { templates.push({ id: `t-${templates.length + 1}`, elementName, languageCode, status, category: "UTILITY", ...(reason ? { reason } : {}) }); },
     close: () => new Promise((resolve) => { server.closeAllConnections(); server.close(() => resolve()); }),
   };
 }

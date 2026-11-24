@@ -1630,6 +1630,14 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   Razorpay 18/18, Sweet Crumbs 16/16, plans 22/22, hold 4/4, discounts 20/20; Fees 26/26, Maths Circle 23/23, UPI 7/7, Classes 31/31, credit 4/4; Stock orders 17/17.
   No shop program left running.
 
+## wa-templates-25nov: the panel submits each shop's WhatsApp templates (25 Nov 2026)
+
+No Go changed. The panel (TypeScript, not a shop's runtime) sends a shop's template set through the shop's WhatsApp Guard (`bundle/lib/wa-templates.ts`,
+`bundle/panel/wa-templates.ts`). One runtime-facing fact for the Go port: `runtime.json` (the panel's file) may now carry `services.messaging.wabaId` (Meta direct only),
+checked by the TypeScript `messagingConfigProblem` and `modules/runtime/config.ts`. The deploy bundle uses it only for the WhatsApp Guard's template routes and builds the
+runtime's generated config without it, so neither the Go nor the kept TypeScript runtimes ever see it; `go/internal/messaging/providers.go` (the port of
+`messagingConfigProblem`) has no `wabaId` rule, and needs none while that holds. The messaging vectors (`go/scripts/vectors/messaging.ts`) carry no config with the field,
+so they are unchanged. TypeScript findings: none.
 ## d65-parts-25nov: several template parts in one shop (25 Nov 2026, decision 65)
 
 Owner, 24 Nov: "one shop can run several template parts, thats what the higher tier price slab is for". The design note (one Go program hosting the parts, not one

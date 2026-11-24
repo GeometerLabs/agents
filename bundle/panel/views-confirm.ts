@@ -38,7 +38,7 @@ const unmetText: Record<Unmet, string> = {
 // The one-click go-live confirmation: lists what is still unmet so a shop is not switched on while a check is open.
 export function confirmGoLivePage(c: Ctx, o: {
   token: string; shopName: string; shopId: string; unmet: Unmet[]; hand?: { held: number; total: number; failedTitles: string[]; notTested: number };
-  connections: CheckResult[] | null; templates: string[]; problems: string[]; done: boolean; certificate?: string;
+  connections: CheckResult[] | null; /** What the shop's WhatsApp account said of its templates (wa-templates.ts waConfirmLines). */ templates: { said: string; notApproved: string[] }; problems: string[]; done: boolean; certificate?: string;
 }): string {
   return layout(c, "Confirm go-live", html`<h1>${o.done ? "Ready to go live" : "Confirm go-live"}</h1>
 <p class="note">For ${o.shopName} (${o.shopId}). Claude Code asked for this. Only you can say yes, here.</p>
@@ -47,10 +47,10 @@ ${o.hand ? html`<p>Hand check: held ${o.hand.held} of ${o.hand.total}.${o.hand.f
 ${o.connections ? html`<ul>${o.connections.map((r) => html`<li>${r.service}: ${r.ok ? "passed" : `did not pass (${r.code})`}</li>`)}</ul>` : ""}
 ${o.unmet.length > 0 ? html`<p>Still in the way:</p><ul>${o.unmet.map((u) => html`<li>${unmetText[u]}</li>`)}</ul>` : ""}
 ${o.done ? html`<div class="notice"><p class="big">The go-live certificate is made.</p>${o.certificate ? html`<a class="btn primary" href="${o.certificate}">Open the certificate</a>` : ""}</div>`
-  : html`<div class="notice"><p class="big">WhatsApp templates: not checked by Geometer.</p><p class="note">Geometer cannot ask Meta whether these are approved. Open your WhatsApp Business account and look. Your answer below is written down as what you said, not as something we checked.</p>
-<ul>${o.templates.map((t) => html`<li>${t}</li>`)}</ul></div>
+  : html`<div class="notice"><p class="big">WhatsApp templates</p><p>${o.templates.said}</p>
+${o.templates.notApproved.length > 0 ? html`<p>Needs a look in WhatsApp Manager (or the Gupshup dashboard):</p><ul>${o.templates.notApproved.map((t) => html`<li>${t}</li>`)}</ul>` : ""}</div>
 <form method="post" action="/confirm/${o.token}">${csrf(c)}
-  <label class="field"><span><input type="checkbox" name="templates_seen" value="yes"> I have seen Meta approve every WhatsApp template listed above.</span></label>
+  <label class="field"><span><input type="checkbox" name="templates_seen" value="yes"> I have read what the shop's WhatsApp account says of its templates, above.</span></label>
   <label class="field"><span><input type="checkbox" name="keys_in_guard" value="yes"> I handed in every key through the panel or the secrets inbox, and none is in a file Claude Code can read.</span></label>
   <button class="btn primary" type="submit">Run the checks and make the go-live certificate</button>
 </form>`}
