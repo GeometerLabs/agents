@@ -76,6 +76,11 @@ export interface GoShop {
   pagesDir: string;
   /** Stop the program and start it again on the same folder (a restart: it remembers only what it saved). */
   restart(): Promise<void>;
+  /**
+   * Decision 65: stop the program and start ANOTHER on the same folder and data (a shop that took a second part moves from its template's program to go/cmd/parts): the
+   * settings and pathway.lock are written as the deployer writes them (the lock last), then the new program starts.
+   */
+  restartAs(next: { program: string; pathway: string; version: string; settings: Record<string, unknown> }): Promise<void>;
   /** Call the shop: the internal token, or the channel token for a /internal/channel/ route. */
   call(path: string, o?: Omit<CallOptions, "token">): Promise<Answer>;
   /** POST /internal/events (as the inbox does), then wait until the queue is empty. Throws when the shop refuses them: a situation that sends a bad event is a broken situation. */
@@ -151,7 +156,9 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
     [TEST_SWITCH]: "1", [TEST_CLOCK_FILE]: file.file, HOME: root, TMPDIR: tmpdir(),
   };
   let running: RuntimeProcess | undefined;
-  const start = async (): Promise<void> => { running = await startRuntimeProcess(o.program, ["--client", client], env, url, `the hand check's ${o.pathway} shop in ${root}`, printed); };
+  let program = o.program;
+  let pathway = o.pathway;
+  const start = async (): Promise<void> => { running = await startRuntimeProcess(program, ["--client", client], env, url, `the hand check's ${pathway} shop in ${root}`, printed); };
   try {
     try { await start(); } catch (e) {
       // the program serves one version of its template and refuses a folder pinned to another (runtime.LoadClientKit). The hand check runs the program that is here, so the
@@ -177,6 +184,13 @@ export async function startGoShop(o: GoShopOptions): Promise<GoShop> {
   const shop: GoShop = {
     clock, owner, client, pagesDir, call,
     async restart() { await running?.stop(); running = undefined; await start(); },
+    async restartAs(next) {
+      await running?.stop(); running = undefined;
+      writeFileSync(join(client, "settings.json"), JSON.stringify(next.settings));
+      writeFileSync(join(client, "pathway.lock"), `${next.pathway}@${next.version}\n`);
+      program = next.program; pathway = next.pathway;
+      await start();
+    },
     async status() {
       const s = await call("/status");
       if (s.status !== 200) throw new Error(`the shop's /status answered ${s.status}`);
