@@ -96,7 +96,10 @@ export function partStatus(body: any, part: string, casesName: string): any {
 export const BY_DESIGN: Record<string, { match: RegExp; why: string }[]> = {
   common: [
     { match: /a folder pinned to another version or another pathway/u, why: "it writes a single template's pathway.lock and settings.json into the folder itself; a parts shop's folder is pinned to parts@ and its settings are the parts'" },
-    { match: /^in (en|hi|ml|kn): /u, why: "the differential test compares the settings file with the demo's single-template shop; a parts shop's file wraps it as one part" },
+    { match: /^in (en|hi|ml|kn)[:,] /u, why: "the differential test compares the settings file and the demo's single-template shop step for step; a parts shop's file wraps it as one part" },
+    { match: /settings the template refuses stop the start/u, why: "it writes a single template's settings.json into the folder itself" },
+    { match: /the saved state is the TypeScript runtime's, member for member/u, why: "a parts shop's saved state keeps the part's members under parts.<name>" },
+    { match: /the morning line counts/u, why: "a parts shop's morning line is the shop's, over every part (the other parts' lines are in it)" },
     { match: /names its cases/u, why: "a parts shop's /status names its cases \"cases\", by part" },
     { match: /one report folder appears/u, why: "each part sends its own monthly report, so a parts shop's report folder has one per part" },
     { match: /Stock page offers/u, why: "the shop's one Stock page offers every part's items, the other parts' too" },

@@ -151,6 +151,8 @@ export function readSaved(dataDir: string): any {
       for (const p of path.slice(0, -1)) at = at[p];
       at[path[path.length - 1]] = rows;
     }
+    // through the parts program the shop's own members are under parts.stock-orders, beside the shared assistant and AI counts (CONTRACT_PARTS, via-parts.ts)
+    if (VIA_PARTS) { const { parts, router: _router, ...shared } = doc as { parts?: Record<string, unknown>; router?: unknown }; return { ...shared, ...((parts?.["stock-orders"] ?? {}) as object) }; }
     return doc;
   } finally { db.close(); }
 }

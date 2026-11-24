@@ -20,6 +20,7 @@
 // Every process is started and stopped through modules/test/contract/children.ts, which stops it at the end of each test and fails the run if one is still alive.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
+import { readSnapshot } from "../../../../modules/runtime/store.ts";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -323,6 +324,8 @@ export async function makeCentre(o: CentreOptions = {}): Promise<Centre> {
     },
     async started() {
       await centre.waitFor(() => existsSync(join(dataDir, "agent.db")) && readDb((db) => {
+        // through the parts program the centre's members are under parts.fees (CONTRACT_PARTS, via-parts.ts)
+        if (VIA_PARTS) { const text = readSnapshot(db); return text !== null && "startedAtMs" in ((JSON.parse(text) as { parts?: { fees?: Record<string, unknown> } }).parts?.fees ?? {}); }
         const row = db.prepare("SELECT shape FROM state_shape WHERE id = 1").get() as { shape: string } | undefined;
         return row !== undefined && "startedAtMs" in (JSON.parse(row.shape) as Record<string, unknown>);
       }), "the first beat to save the day the agent first ran");
