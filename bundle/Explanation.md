@@ -1157,26 +1157,52 @@ the rest the renderer, the step, the server side and their tests. The whole repo
 (there is none). The pictures' folder does not count toward a shop's desired state (`deploy.ts desiredOf` hashes the settings, runtime, lock and pins only), so drawing
 a set never redeploys the shop; saving a new character does, through its settings.
 
-## Submitting a template's WhatsApp messages by script (pre-release batch 7, 14 Nov 2026)
+## A shop's WhatsApp templates, sent by the panel and by one command (pre-release batch 7, 14 Nov 2026; the panel and Meta direct, 25 Nov 2026)
 
-**What.** `geometer whatsapp-templates <shop>` reads a template's `whatsapp-templates.json` (bookings 152 entries, orders 116, fees 140; no other template, module or bundle file has one),
-maps each entry to Gupshup's create-template fields and sends it to the shop's own Gupshup app. `lib/gupshup-templates.ts` decides everything and `whatsapp-templates-cli.ts` only prints.
+**What.** Every shop's template set goes to the shop's own WhatsApp account, by one piece of code, `lib/wa-templates.ts`, which the panel (`panel/wa-templates.ts`) and
+`geometer whatsapp-templates <shop>` (`whatsapp-templates-cli.ts`, a thin caller) both run. It replaced `lib/gupshup-templates.ts`, which did this for Gupshup alone and only from the
+command line. In it: the template set of a shop; the two providers' calls over one small `Call`; `run` (read what the account holds, send what it does not, stop on a refused key or a
+rate limit, go on past one refused template); and `statusRows` (the plain buckets the panel shows).
 
-**The API it is built on.** Gupshup documents the create call as a guide page, not as a reference page: `POST https://api.gupshup.io/wa/app/{appId}/template`, header `apikey`, form
-fields `languageCode`, `content`, `footer`, `category`, `example`, `vertical`, `elementName`, `templateType`, `buttons`; the reply has `status`, `template` and `message`
-(docs.gupshup.io/docs/template-button-list; name, length and sample rules on docs.gupshup.io/docs/create-template). The reads are documented references (`GET /wa/app/{app_id}/template`,
-docs.gupshup.io/reference/get-all-templates-for-an-app). The statuses are on docs.gupshup.io/docs/message-template-approvals-statuses. Three things the guide does not say are chosen and marked
-for the first real run: how `example` writes its sample values (the body with each `{{n}}` replaced by `[value]`, `EXAMPLE_FORM`), what `vertical` holds (the template's name), and the
-language codes (ours: hi, en, ml, kn).
+**The template set is a function of the shop.** `shopTemplateSet` is the union of the `whatsapp-templates.json` of each template part the shop has (`shopParts`: today one, its
+template), filtered to its languages (`shopLanguages`: its customers', its owner's, its approvers' and suppliers'), one per name and language. The same name and language from two
+parts is merged when the entries are the same field for field, and refused (`TemplateSetConflict`) when they differ: the account holds one template per name and language, so the
+other part's messages would go out in words its outgoing check never read. Decision 65 (several parts in one shop) changes `shopParts` only.
 
-**Dry run by default, idempotent.** With no flag it reads the app's list (so it needs the key and the app) and prints what it would send. `--submit` sends. A name and language already in the
-app in any state is skipped; a rejected or failed one is also skipped but flagged, because resending a refused wording unchanged is a waste and Meta limits how often a name can be redone.
+**The APIs.** Meta (read 25 Nov 2026 on developers.facebook.com): `POST /{version}/{waba-id}/message_templates` with Meta's own JSON (`name`, `language`, `category`,
+`parameter_format`, `components`: the file is already in that shape, and only those five fields are sent), and the same path with GET for the list (`fields=name,language,status,
+rejected_reason`, paged by `paging.cursors.after` while `paging.next` is there). Errors 190 and 200 (the token, or its permission) stop the run as a refused key; 80008 or HTTP 429 as a
+rate limit (an account "can create a maximum of 100 templates per hour"). Gupshup as before: the create call is a guide page (`POST /wa/app/{appId}/template`, a form with
+`elementName`, `languageCode`, `content`, `example`, ...), the list a reference page; three choices are marked for the first real run (`EXAMPLE_FORM`, `vertical`, the language codes).
+Rejection reasons are shown as the provider wrote them: Meta's `rejected_reason` is an enum whose values its pages do not list, and Gupshup's list documents no reason field (a
+`reason` is read when present).
 
-**The key.** From `GUPSHUP_APIKEY` or the shop's secret file only, sent in the `apikey` header, in no message and no argument. Template creation is not a route a shop's Guard lists (it is
-a one-off set-up, not something the running shop does), so this talks to `api.gupshup.io` from the machine that runs it. A plain-http base address is accepted only for this machine (the tests).
+**The WhatsApp Business Account ID is asked, not read.** Meta's phone number reference lists no field or edge that gives the account a number belongs to, and the API Setup page
+shows the account's id beside the phone number id the panel already asks for, so the WhatsApp step asks for both (`runtime.json services.messaging.wabaId`, Meta direct only,
+`modules/messaging/providers.ts META_WABA_ID`). It is for the Guard alone: the generator pins the Guard's template routes to it and builds the runtime's messaging block without it.
+Gupshup's create call needs the app's id, so the Gupshup step now asks for it too (optional; without it the state is still read, and the page says what to add).
 
-**Tests** run against `modules/standins/gupshup-templates.ts`, a local stand-in with Gupshup's paths, header and reply shapes: they check the dry run sends nothing, a submit sends each once,
-a second run skips, the key travels only in the header, a wrong key stops the run, and every one of the 408 entries maps. The real service is never called.
+**Through the shop's Guard.** The panel has no key and no way out (compose.ts gives it the Guards' agent ports only), so the template calls go through the shop's WhatsApp Guard like
+its connection checks. `generate/guards.ts whatsappSpec` adds, only when the account is named, `list_templates` and `submit_template` (Meta: `/{version}/{waba_id}/message_templates`,
+both pinned exactly to the shop's account; Gupshup: `POST /wa/app/{app_id}/template`, pinned to its app, the list being the `read_number` read the check already makes) and a
+`templates-per-hour` limit of 100. `agentOperations` gives the panel's agent its reads plus those operations, and the runtime's agent an explicit list of every other operation, so the
+running shop can never create a template. A shop with no account id keeps exactly today's spec and guard.toml. `test/wa-templates-guard.test.ts` proves it on the real geo-guard: the
+panel lists and submits (the Guard adds the key), the runtime is refused, another account is refused.
+
+**When the panel sends, and what it shows.** After the setup's save (in the background: a new shop's Guard is not up until the deployer applies it, so that first try is usually
+"waiting"), after "Run the checks", and on the shop page's button "Send the N not sent yet" (a shop set up before an update gets just the new ones). Opening the shop page or the
+go-live confirmation only READS, and only when the kept state (`panel data wa-templates/<shop>.json`: counts and names, nothing secret) is more than ten minutes old, waiting at most
+four seconds. One run per shop at a time, queued; a failure is a state with a plain line, never a crash; the panel's close waits for the runs.
+
+**The go-live gate warns.** A shop runs inside the customer's 24-hour window from day one, and Meta takes up to a day, so holding go-live for every approval would hold a working shop
+back. The checks page says "N of M approved. You can still go live ..."; the go-live confirmation shows what the provider said, and the person ticks that they READ it (the statement
+keeps the counts beside it: `goLiveStatement.whatsappTemplates`). Before 25 Nov the tick said they had SEEN every template approved, which nothing could check.
+
+**What goes to the provider.** The template file's words and its own made-up samples. Nothing of a customer, and nothing from a shop's record, is in a template set.
+
+**Tests.** `test/whatsapp-templates.test.ts` (both providers' mapping of every entry in the checkout, the union of parts, the buckets, the command line on both stand-ins),
+`test/wa-templates-guard.test.ts` (the real Guard), `panel/test/wa-templates.test.ts` (the panel's save, button, page, refused key, waiting, missing id). Stand-ins:
+`modules/standins/meta-templates.ts` (Meta's paths, Bearer token, paging and error shapes) and `gupshup-templates.ts`. The real services are never called.
 
 ## The owner's passkeys and alert subscriptions in the backup (pre-release batch 7, 14 Nov 2026)
 
