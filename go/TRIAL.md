@@ -1738,6 +1738,21 @@ parts shop a press on a `g-` case is owned by two parts and is recorded and not 
 - Contract cases (templates/commerce/parts/contract/case-asked.contract.test.ts): a stranger naming the credit book's entry gets the credit book's line and notice though
   the hold takes new customers (before this, the hold took it as new business); the hold's order; someone with a case in one part naming another's: no ask, no notice.
 
+- **Found by the run of record, fixed:** the owner's page listed what waits and today's rows of the first part's skill only (each part's app view has its own), so a credit
+  book waiver was missing when the hold came first: they are joined over every part (channel.go). A part's own hand check on the starter shop read the shop's whole outbox,
+  and after main's first-beat wait the credit book's morning line (said by the first part, over every part) reached three Stock orders supplier situations: a part's
+  situation now reads its own outbox, as it reads its own record (go-world.ts, by the send line's fingerprinted messageId, GoShop `messageRef`). The case-asked contract
+  file kept its worlds open and never ended: each test's world is closed. Fees' other-number case compares refs without refs.part (via-parts.ts `ownRefs`).
+- **`CONTRACT_PARTS=last` over whole suites** (before: six files): the page, offer and chat cases of a part that is not the shop's page, and the owner's words no part
+  claims (terms, a code no part gave), are skipped by design with the reason; they run when the part is first.
+- **Run of record** (scratchpad d65-final.sh, every step time-limited): go build/vet/test 41 ok; contracts Bookings 183/183, Orders 139/139, Fees 111 + 4 skipped (the
+  differential's own "before 06:00 in India" skip; the run was at night), Stock orders 75/75, listings 210/210, parts 17/17, directory 36/36; generators 43 fresh; units
+  Bookings 840, Orders 216, Fees 246, Stock orders 126, all pass; bundle 736 + 9 skipped (REAL_CADDY); panel 287 of 288; hand checks all hold (Bookings with the
+  assistant 41/41) but the parts shop 27 of 30. Through the parts program first: Orders 88 + 51 skipped, Stock orders 67 + 8, 0 fail; Fees 1 fail; last: Stock orders
+  65 + 10, Orders 11 fail, Fees 6 fail. After the fixes above, rerun: go test (parts, fees, orders, stockorders, runtime) ok, parts contract 17/17, first Fees 68 + 47
+  skipped, last Orders 77 + 62, last Fees 50 + 65, 0 fail each; the parts shop's hand check 30 of 30 (shop 6, fees 5, stock-orders 14, orders 5), Stock orders 17/17,
+  the panel's golive-parts 2/2. 0 shop programs left.
+
 ## morning-clock-25nov: the assistant hand check's evening failure, found at its cause (25 Nov 2026)
 
 Bookings with the assistant held 40 of 40 in the morning runs of 24 Nov and 39 of 40 in the evening ones ("The model is down mid-conversation": the owner got the morning line
