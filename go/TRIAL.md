@@ -1725,6 +1725,19 @@ parts shop a press on a `g-` case is owned by two parts and is recorded and not 
   told a second time), which main fails the same way (not this stream's). 0 shop programs left.
 
 
+### Part C (25 Nov 2026): main merged again; a case asked about from another number, through the router
+
+- **Merge** of main at ef302cca (morning-clock-25nov, refund-paths-25nov) with `-X no-renames`: two conflicts, both kept whole. `modules/crash-test/go-shop.ts`: main's
+  first-beat wait (a start returns after the program's first beat) around this branch's start, which keeps its own `program` and `pathway` (the parts program, and a part's
+  hand check run on it); go/TRIAL.md: both sections. Every generator's `--check` fresh after the merge (43), so nothing generated was edited by hand.
+- **The router asks every part** (`internal/parts` agent.go `caseAskedPart`, runtime `CaseHolder`): before the claims, a customer's message from a number that holds no
+  case in any part (an order or plan, a fee or credit account or a person in the credit book, a supplier) and names a case a part's own reading finds (`NamesCase`: its
+  `onCaseAsked` rule with no effect) goes to that part, which writes `case_asked_elsewhere`, sends its one line and its owner notice (once an hour by the record). Each
+  part's own `onCaseAsked` also asks `CaseHeldElsewhere`, so a number with another part's case is answered as before whichever part takes it. Stock orders names no case
+  (its cases are the owner's and the suppliers') and counts its suppliers as holding one. A single-part shop is unchanged (`CaseHeldElsewhere` is false there).
+- Contract cases (templates/commerce/parts/contract/case-asked.contract.test.ts): a stranger naming the credit book's entry gets the credit book's line and notice though
+  the hold takes new customers (before this, the hold took it as new business); the hold's order; someone with a case in one part naming another's: no ask, no notice.
+
 ## morning-clock-25nov: the assistant hand check's evening failure, found at its cause (25 Nov 2026)
 
 Bookings with the assistant held 40 of 40 in the morning runs of 24 Nov and 39 of 40 in the evening ones ("The model is down mid-conversation": the owner got the morning line

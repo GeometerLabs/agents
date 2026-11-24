@@ -1546,6 +1546,9 @@ that crashes the whole process (not a panic inside a step) stops every part of t
   the customer said yes to or was asked about, a supplier with a purchase order open); (2) for the owner, the part whose command word it is (`approve o-3`, `po-3`, a name
   with "owes"); (3) a customer with nothing open goes to the one part that takes new customers. When two parts could take it, the shop asks one short question (to the owner:
   which part; to a customer: the shop will reply), and nothing about money happens on a guess. A redelivered message goes to the part it went to the first time.
+  A case asked about from another number (refund-paths) is the shop's question over every part: a number that holds no case in ANY part and names a case one part's
+  record holds (a reference, a receipt, a payment id) goes to that part, which sends its one line and tells the owner once an hour; a number that holds a case in any part
+  is answered as before (Go runtime `CaseHolder`, `CaseHeldElsewhere`; templates/commerce/parts/contract/case-asked.contract.test.ts).
 - **One assistant.** The owner's assistant hosts every part's skill (what waits, who owes, the open orders, the morning line), so the owner talks to one assistant.
 - **Guard's limits are per shop.** One WhatsApp Guard for the number (any recipient when any part writes to customers; Stock orders' fixed list then no longer narrows it); no
   payment gateway in a parts shop yet (UPI only, conservative); the shop's model budget and message allowance are the shop's, not split.
