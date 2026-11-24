@@ -287,7 +287,8 @@ const hi: BaseSet = {
   // owner_link_failed rewritten 11 Nov (B71): machine-written, waits for a native speaker's review like the rest of this pack
   owner_link_failed: (f) => `भुगतान लिंक नहीं बन पाया: ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस (${need(f, "customerPhone")}), इसलिए अभिभावक को लिंक नहीं भेजा गया। अगले याद दिलाने वाले संदेश पर, या अभिभावक के फिर पूछने पर, लिंक दोबारा बनाने की कोशिश होगी। अगर ऐसा बार-बार हो, तो अपना पेमेंट अकाउंट देखें या आपका एजेंट सेट करने वाले व्यक्ति को बताएँ।`,
   owner_request_stale: (f) => `नहीं हुआ: ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस (${need(f, "customerPhone")}) आपसे पूछने के बाद बदल गई, इसलिए कुछ लागू नहीं किया गया। ज़रूरत हो तो अभिभावक फिर पूछ सकते हैं।`,
-  owner_message_held: (f) => `${need(f, "customerPhone")} को जाने वाला एक संदेश रोक दिया गया क्योंकि वह फीस के रिकॉर्ड से मेल नहीं खाता था। कुछ भेजा नहीं गया।`,
+  // owner_message_held starts with fixed words since 25 Nov (it is a WhatsApp template now, and Meta refuses a body that starts with a value): machine-written, waits for review
+  owner_message_held: (f) => `ध्यान दें: ${need(f, "customerPhone")} को जाने वाला एक संदेश रोक दिया गया क्योंकि वह फीस के रिकॉर्ड से मेल नहीं खाता था। कुछ भेजा नहीं गया।`,
   owner_opted_out: (f) => `अभिभावक ${need(f, "customerPhone")} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।`,
   owner_unknown_command: () => `मैं समझ नहीं पाया। "approve" या "deny" लिखें, और उसके बाद अनुरोध का नंबर।`,
   owner_wants_to_talk: (f) => `अभिभावक ${need(f, "customerPhone")} आपसे बात करना चाहते हैं। कृपया उन्हें संदेश भेजें।`,
@@ -350,7 +351,8 @@ const ml: BaseSet = {
   // owner_link_failed rewritten 11 Nov (B71): machine-written, waits for a native speaker's review (REVIEW-ml.md)
   owner_link_failed: (f) => `പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല: ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസ് (${need(f, "customerPhone")}), അതിനാൽ രക്ഷിതാവിന് ലിങ്ക് അയച്ചിട്ടില്ല. അടുത്ത ഓർമ്മപ്പെടുത്തലിലോ രക്ഷിതാവ് വീണ്ടും ചോദിക്കുമ്പോഴോ വീണ്ടും ശ്രമിക്കും. ഇത് ആവർത്തിച്ചാൽ, നിങ്ങളുടെ പേയ്മെന്റ് അക്കൗണ്ട് പരിശോധിക്കൂ, അല്ലെങ്കിൽ നിങ്ങളുടെ ഏജന്റ് സജ്ജമാക്കിയ ആളെ അറിയിക്കൂ.`,
   owner_request_stale: (f) => `ചെയ്തിട്ടില്ല: ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസ് (${need(f, "customerPhone")}) നിങ്ങളോട് ചോദിച്ചതിനുശേഷം മാറി, അതിനാൽ ഒന്നും നടപ്പാക്കിയിട്ടില്ല. ആവശ്യമെങ്കിൽ രക്ഷിതാവിന് വീണ്ടും ചോദിക്കാം.`,
-  owner_message_held: (f) => `${need(f, "customerPhone")}-ന് അയയ്ക്കേണ്ടിയിരുന്ന ഒരു സന്ദേശം ഫീസ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞുവച്ചു. ഒന്നും അയച്ചിട്ടില്ല.`,
+  // owner_message_held starts with fixed words since 25 Nov (a WhatsApp template now; Meta refuses a body that starts with a value): machine-written, waits for review (REVIEW-ml.md)
+  owner_message_held: (f) => `ശ്രദ്ധിക്കുക: ${need(f, "customerPhone")}-ന് അയയ്ക്കേണ്ടിയിരുന്ന ഒരു സന്ദേശം ഫീസ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞുവച്ചു. ഒന്നും അയച്ചിട്ടില്ല.`,
   owner_opted_out: (f) => `രക്ഷിതാവ് ${need(f, "customerPhone")} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.`,
   owner_unknown_command: () => `എനിക്ക് മനസ്സിലായില്ല. "approve" അല്ലെങ്കിൽ "deny" എന്ന് എഴുതി, അതിനു ശേഷം അഭ്യർത്ഥനയുടെ നമ്പർ എഴുതൂ.`,
   owner_wants_to_talk: (f) => `രക്ഷിതാവ് ${need(f, "customerPhone")} നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ.`,
@@ -413,7 +415,8 @@ const kn: BaseSet = {
   // owner_link_failed rewritten 11 Nov (B71): machine-written, waits for a native speaker's review (REVIEW-kn.md)
   owner_link_failed: (f) => `ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ: ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕ (${need(f, "customerPhone")}), ಆದ್ದರಿಂದ ಪೋಷಕರಿಗೆ ಲಿಂಕ್ ಕಳುಹಿಸಿಲ್ಲ. ಮುಂದಿನ ನೆನಪಿನ ಸಂದೇಶದಲ್ಲಿ ಅಥವಾ ಪೋಷಕರು ಮತ್ತೆ ಕೇಳಿದಾಗ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ. ಇದು ಮತ್ತೆ ಮತ್ತೆ ಆದರೆ, ನಿಮ್ಮ ಪಾವತಿ ಖಾತೆಯನ್ನು ಪರಿಶೀಲಿಸಿ ಅಥವಾ ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಿ.`,
   owner_request_stale: (f) => `ಮಾಡಿಲ್ಲ: ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕ (${need(f, "customerPhone")}) ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಬದಲಾಗಿದೆ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಜಾರಿಗೊಳಿಸಿಲ್ಲ. ಅಗತ್ಯವಿದ್ದರೆ ಪೋಷಕರು ಮತ್ತೆ ಕೇಳಬಹುದು.`,
-  owner_message_held: (f) => `${need(f, "customerPhone")} ಅವರಿಗೆ ಹೋಗಬೇಕಿದ್ದ ಒಂದು ಸಂದೇಶ ಶುಲ್ಕದ ದಾಖಲೆಗೆ ಹೊಂದಿಕೆಯಾಗದ ಕಾರಣ ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ.`,
+  // owner_message_held starts with fixed words since 25 Nov (a WhatsApp template now; Meta refuses a body that starts with a value): machine-written, waits for review (REVIEW-kn.md)
+  owner_message_held: (f) => `ಗಮನಿಸಿ: ${need(f, "customerPhone")} ಅವರಿಗೆ ಹೋಗಬೇಕಿದ್ದ ಒಂದು ಸಂದೇಶ ಶುಲ್ಕದ ದಾಖಲೆಗೆ ಹೊಂದಿಕೆಯಾಗದ ಕಾರಣ ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ.`,
   owner_opted_out: (f) => `ಪೋಷಕರು ${need(f, "customerPhone")} ಅವರು STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
   owner_unknown_command: () => `ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. "approve" ಅಥವಾ "deny" ಎಂದು ಬರೆದು, ನಂತರ ಕೋರಿಕೆಯ ಸಂಖ್ಯೆ ಬರೆಯಿರಿ.`,
   owner_wants_to_talk: (f) => `ಪೋಷಕರು ${need(f, "customerPhone")} ಅವರು ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.`,

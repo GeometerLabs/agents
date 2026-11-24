@@ -123,6 +123,11 @@ export function checkText(finalText: string, facts: CheckFacts): CheckResult {
   }
   text = mask(text, upiLinks);
 
+  // The record's own links, whole, before the names and references (25 Nov 2026): a page link's random part can hold a reference such as "f-5" in any case, and masking the
+  // reference first cut the link in two, so the record's own link read as one that is not in the record and the message was held back (a Fees hand check failed one run in a
+  // few hundred: a held reminder told the owner, outside the owner's window, under a template name WhatsApp does not have). Any other link is read below, as before.
+  text = mask(text, tokens(URL_RE, text).filter((u) => allowed.urls.has(u.text.replace(TRAILING_PUNCTUATION, "").toLowerCase())));
+
   // Names and references the message may repeat (the business, the service, "b-3", the customer's number).
   for (const lit of allowed.literals) text = text.replace(new RegExp(escapeRe(lit), "giu"), (m) => " ".repeat(m.length));
 

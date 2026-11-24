@@ -261,3 +261,16 @@ answered with the book's help line and never handed to the assistant.
 sent when the record already showed the account paid, which must be 0. A part payment still leaves a reminder for the rest: that is not "after a recorded payment".
 
 **What this does not claim.** It ran on stand-ins only; no real shop uses it; the Hindi, Malayalam and Kannada words are machine-written. What is left: Deferred.md.
+
+## A reminder held back by its own page link (25 Nov 2026)
+
+- **A real bug, in every template's outgoing check** (`modules/language/check.ts`, and its Go twin `go/internal/language/check.go`). The check masked the record's names and
+  references before it read the links. A parent's page link ends in a random handle, and about one handle in 4,000 holds the fee's reference (`f-5`) in some case, so the
+  record's own link was cut in two, read as a link not in the record, and the reminder was held back (`message-matches-record`). The handle is remembered, so that parent's
+  reminders for that fee would be held every time. The check now reads the record's own links whole first; any other link is read as before. Tests:
+  `modules/language/test/check-links.test.ts`, `go/internal/language/check_test.go`, and the real words in four languages in `go/internal/fees/check_link_test.go`.
+- **How it was found.** The full bundle suite failed once in the Fees hand check (`claim-paid`, 25 of 26): a message to the owner was refused by the stand-in WhatsApp
+  (132001). The held reminder told the owner (`owner_message_held`), unasked and outside the owner's window, and that message had no WhatsApp template, so it went under the
+  generic name, which WhatsApp refuses. It was random, not load: `claim-paid` held 15 of 15 runs under CPU load before the fix.
+- **`owner_message_held` is now a template** (`owner_fee_message_held`), so a hold that is real reaches the owner outside their window. Its Hindi, Malayalam and Kannada words
+  now start with fixed words ("ध्यान दें:", "ശ്രദ്ധിക്കുക:", "ಗಮನಿಸಿ:"), because Meta refuses a body that starts with a value: machine-written, waiting for review.
