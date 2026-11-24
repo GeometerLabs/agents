@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/assistant"
@@ -247,17 +248,33 @@ func (a *agent) cardByCode(code string) *assistant.Card {
 	return nil
 }
 
-// cardPart is the part whose skill made the card, or -1 (a card of the shop's own: a limit, a listing).
+// cardPart is the part whose skill made the card, or -1 (a card of the shop's own: a limit, a listing). Each template's skill is named as the part is ("fees", "orders",
+// "stock-orders"), so a part's cards are found whether or not the shop has the assistant (Stock orders makes its order cards without it).
 func (a *agent) cardPart(c *assistant.Card) int {
 	if c == nil {
 		return -1
 	}
-	for i := range a.k.parts {
-		if h, ok := a.part(i).AssistantHooks(); ok && h.Skill != nil && h.Skill.Name() == c.Action.Skill {
-			return i
+	return a.k.partIndex(c.Action.Skill)
+}
+
+// refInWords is a case reference written in the owner's words ("approve o-3", "cancel po-4", "f-2"); the router hands words that name one part's case to that part first.
+var refInWords = regexp.MustCompile(`(?i)\b([a-z]{1,2}-[0-9]{1,9})\b`)
+
+// ownerOfWords is the one part that owns a case the words name, or -1 (none, or two parts' cases).
+func (a *agent) ownerOfWords(text string) int {
+	found := -1
+	for _, m := range refInWords.FindAllStringSubmatch(text, -1) {
+		ref := strings.ToLower(m[1])
+		for i := range a.k.parts {
+			if a.part(i).OwnsCase(ref) {
+				if found >= 0 && found != i {
+					return -1
+				}
+				found = i
+			}
 		}
 	}
-	return -1
+	return found
 }
 
 // onMessage routes a WhatsApp message (or the owner's words on their page).
@@ -292,6 +309,11 @@ func (a *agent) onMessage(ev map[string]any, m messaging.InboundMessage) error {
 			if i < 0 {
 				i = 0
 			}
+			r.remember(m.ID, a.k.parts[i].Name)
+			return a.give(i, ev)
+		}
+		// words that name one part's case are that part's ("cancel o-3" is the hold's even while Stock orders has an order open)
+		if i := a.ownerOfWords(m.Text); i >= 0 {
 			r.remember(m.ID, a.k.parts[i].Name)
 			return a.give(i, ev)
 		}
