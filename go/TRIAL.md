@@ -1682,3 +1682,12 @@ Owner, 25 Nov: "yes, plan and fix both". Built in TypeScript (each template's `s
 - **Not done.** The parts router of decision 65 was not on main: modules/Deferred.md says what it needs. Stock orders has no customer cases (its Deferred.md). A customer
   with a case of their own who names another's is answered as before (the brief's rule kept literally; each template's Deferred.md).
 
+
+## plan-templates-25nov: the last four plan messages as WhatsApp templates (25 Nov 2026)
+
+Owner, 25 Nov: "fix the small items too". The lapse, the hold that ran out and the credit going back (done, or waiting for the owner) go to the customer unasked and had no
+template, so outside the 24-hour window they went under the generic name, which WhatsApp refuses and the customer was never told. `plan_lapsed`, `plan_hold_expired`,
+`plan_credit_refund` and `plan_credit_refund_pending` are now templates in the four languages (templates/commerce/orders `meta-templates.ts`, `whatsapp-templates.json`, the
+review sheets, the generated words and vectors; Go sends them through the generated words, no Go code changed). The English credit-back line now begins "The" (Meta rejects a
+body that starts with a value). Tests: `TestPlanTemplatesInAClosedWindow` in internal/orders/words, the Orders template unit, and four Orders contract cases that send each
+message in a closed window and check its name and values. The cases needed the contract harness to run a guards shop on the test clock (`onClock`, as the hand check does).
