@@ -269,11 +269,21 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   // as one part of a parts shop, a settings.json the situation writes (a reload on new settings) is the part's, wrapped into the shop's
   if (asPart) { const write = s.writeFile.bind(s); s.writeFile = (name, value) => write(name, name === "settings.json" && value !== undefined ? asPart.wrap(value as Record<string, unknown>) : value); }
 
+  // as one part of a parts shop, the outbox the situation reads is this part's, as its record is: a message another part sent (the shop's morning line, which the first part
+  // says over every part's cases; another part's reminders) is known by its record line's messageId and left out. Unset: the whole outbox, as before.
+  const othersSent = (): Set<string> => new Set(s.record().filter((e: any) => asPart && e.refs?.messageId && e.refs?.part !== undefined && e.refs.part !== asPart.part).map((e: any) => String(e.refs.messageId)));
+  const seen: FakeMessaging = !asPart ? messaging : new Proxy(messaging, {
+    get(t, k, r) {
+      if (k === "outbox") return () => { const o = othersSent(); return t.outbox().filter((m) => !o.has(m.id)); };
+      if (k === "sentTo") return (n: string) => { const o = othersSent(); return t.sentTo(n).filter((m) => !o.has(m.id)); };
+      return Reflect.get(t, k, r);
+    },
+  });
   let deliveredEvents = 0;
   let inbound = 0;
   const handle = async (message: InboundMessage): Promise<void> => { await s.events([{ kind: "message", message }]); };
   const world: GoWorldBase<Settings, Store> = {
-    settings: o.settings, clock, payments, messaging, guard, owner: o.settings.owner.whatsapp, shop: s, asked,
+    settings: o.settings, clock, payments, messaging: seen, guard, owner: o.settings.owner.whatsapp, shop: s, asked,
     record: { entries: () => s.record().filter(mine) },
     get store(): Store { const text = s.snapshot(); return (text === null ? o.emptyStore() : o.parseStore(asPart ? asPart.unwrap(text) : text)) as Store; },
     async say(text, m = {}) {
@@ -285,7 +295,7 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
     async tap(id, m = {}) {
       const from = m.from ?? o.customer;
       // the newest message that has this option on it: a customer can scroll up and tap an older button
-      const shown = messaging.sentTo(from).filter((x) => x.interactive).reverse().map((x) => x.interactive!).find((i) => [...(i.buttons ?? []), ...(i.list?.rows ?? [])].some((c) => c.id === id));
+      const shown = seen.sentTo(from).filter((x) => x.interactive).reverse().map((x) => x.interactive!).find((i) => [...(i.buttons ?? []), ...(i.list?.rows ?? [])].some((c) => c.id === id));
       const option = [...(shown?.buttons ?? []), ...(shown?.list?.rows ?? [])].find((c) => c.id === id);
       if (!shown || !option) throw new Error(`No buttons or list ${from} was sent have an option with the id "${id}".`);
       const message = messaging.receive(from, option.title, { id: `wamid.hc_${++inbound}`, reply: { id, kind: shown.buttons ? "button" : "list" } });
@@ -319,8 +329,8 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
     async answerArrivesAgain(decision, approval) { await s.events([{ kind: "approval_decision", approval, decision }]); },
     heldForOwner: () => (guard?.model.reviews("owner", true) ?? []).map((r: any) => ({ id: r.id, amountPaise: Number(r.amount), paymentId: r.arguments[1].payment_id[1], receipt: r.arguments[1].receipt?.[1] ?? "" })),
     refundsAsked: () => (guard?.calls ?? []).filter((c) => c.method === "POST" && /\/refunds?$/u.test(c.path)).map((c) => { try { return Number(JSON.parse(c.body).amount); } catch { return NaN; } }),
-    textsTo: (number) => messaging.sentTo(number).map((m) => m.text),
-    lastTextTo: (number) => messaging.sentTo(number).at(-1)?.text ?? "",
+    textsTo: (number) => seen.sentTo(number).map((m) => m.text),
+    lastTextTo: (number) => seen.sentTo(number).at(-1)?.text ?? "",
     writeLicence: (licence) => s.writeFile("licence.json", licence),
     async waitFor(what, done, ms = 10_000) {
       const until = Date.now() + ms;
