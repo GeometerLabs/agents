@@ -136,6 +136,11 @@ func (k *Kit) ReadSettings(in map[string]any, raw []byte, shared *runtime.Settin
 			errs = append(errs, fmt.Sprintf(`parts.%s: %q is the shop's, set once at the top of the settings.`, b.Name, strings.TrimSpace(clash)))
 			continue
 		}
+		// conservative (decision 65, the owner's to confirm): no payment gateway in a parts shop yet, so no Guard holds two parts' refund limits in one spec
+		if pay, _ := merged["payment"].(map[string]any); pay != nil && pay["module"] == "razorpay" {
+			errs = append(errs, fmt.Sprintf(`parts.%s: a shop of several parts takes UPI payments (no payment gateway yet: one Guard holds one shop's refund limits).`, b.Name))
+			continue
+		}
 		kit := make_()
 		sh := &runtime.Settings{Raw: merged}
 		o, perrs := kit.ReadSettings(merged, mergedRaw, sh)
