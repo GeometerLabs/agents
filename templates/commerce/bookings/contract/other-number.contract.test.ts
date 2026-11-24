@@ -59,13 +59,13 @@ describe("a booking named from a number that holds none", () => {
     assert.equal(s.guards!.of("payments", "POST", /\/refund$/u).length, 0, "no money moved");
   });
 
-  contract("the payment id the record holds names the booking too", async () => {
+  contract("the receipt's number the record holds names the booking too (a payment id the same way: the vectors hold it, the stand-in's ids are too short to be read as one)", async () => {
     const s = await booked();
-    const paymentId = s.record().find((r) => r.booking === "b-1" && r.refs.paymentId?.startsWith("pay_"))?.refs.paymentId;
-    assert.ok(paymentId, JSON.stringify(s.record().map((r) => r.refs)));
-    await s.inbound(STRANGER, `I paid with ${paymentId}, is it booked?`);
+    const receipt = s.record().find((r) => r.booking === "b-1" && r.refs.doc?.startsWith("RCT/"))?.refs.doc;
+    assert.ok(receipt, JSON.stringify(s.record().map((r) => r.refs)));
+    await s.inbound(STRANGER, `I have the receipt ${receipt}, is it booked?`);
     assert.equal(s.sent(STRANGER).at(-1)!.text, NOT_SHOWN);
-    assert.equal(s.record().filter((r) => r.action === "case_asked_elsewhere")[0].refs.via, "payment");
+    assert.equal(s.record().filter((r) => r.action === "case_asked_elsewhere")[0].refs.via, "receipt");
   });
 
   contract("a reference the shop does not hold: the usual answer, and the owner hears nothing", async () => {
