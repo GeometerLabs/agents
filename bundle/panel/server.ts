@@ -1168,7 +1168,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const checks = goLive.stored(shop);
     return { ...(checks ? { hand: { held: checks.hand.held, total: checks.hand.total, failedTitles: checks.hand.failedTitles, notTested: checks.hand.notTested } } : {}), connections: checks?.connections ?? null, templates: waConfirmLines(waTemplates.view(shop)) };
   };
-  on("GET", /^\/confirm\/([A-Za-z0-9_-]{16,80})$/u, "user", (r) => {
+  on("GET", /^\/confirm\/([A-Za-z0-9_-]{16,80})$/u, "user", async (r) => {
     const f = confirmFor(r);
     if ("gone" in f) return page(r, f.gone === "unknown" ? 404 : 410, confirmGonePage(r.ctx(), f.gone));
     const name = shops.settings(f.c.shop)?.name ?? f.c.shop;
@@ -1177,6 +1177,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
       return page(r, 200, confirmLimitsPage(r.ctx(), { token: f.token, shopName: name, shopId: f.c.shop, rows: plan.ok ? plan.rows : [], note: f.c.note, problems: plan.ok ? [] : plan.problems, done: false }));
     }
     const settings = shops.settings(f.c.shop);
+    await waTemplates.fresh(f.c.shop); // the templates' state as the shop's account says it now, when what is kept is old (never a send)
     page(r, 200, confirmGoLivePage(r.ctx(), { token: f.token, shopName: name, shopId: f.c.shop, unmet: settings ? goLive.unmet(f.c.shop, settings) : ["settings-changed"], ...goLivePieces(f.c.shop), problems: [], done: false }));
   });
   on("POST", /^\/confirm\/([A-Za-z0-9_-]{16,80})$/u, "user", async (r) => {
