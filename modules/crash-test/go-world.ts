@@ -8,7 +8,7 @@
 //   * `say`, `tap`, `ownerSays`, `redeliver` post the message to /internal/events, as the inbox does, and wait until the shop's queue is empty; the stand-in WhatsApp is told
 //     first (`receive`), so its 24-hour window opens as the provider's would;
 //   * `deliverPaymentEvents` reads the payment service's new events as the inbox reads a Razorpay webhook (parseRazorpayEvent) and posts them as `payment_event`s;
-//   * `advance`, `goto` and `tick` move the shop's test clock and wait for a beat of its clock to end (the program beats every second; nothing ticks it from outside);
+//   * `advance`, `goto` and `tick` move the shop's test clock and wait for a beat of its clock to end (a hand-check shop beats every 0.2 s, go-shop.ts BEAT_SECONDS; nothing ticks it from outside);
 //   * `store` and `record` are read from agent.db, read-only, after each step (the same file the TypeScript runtime wrote, read with its readers);
 //   * the router's models (`models`) are stand-ins over HTTP the program reaches through runtime.json `decision` and `parser`, as a shop reaches its model Guard; the program's
 //     rules always read first, as on a real shop;

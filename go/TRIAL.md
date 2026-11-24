@@ -1553,7 +1553,7 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   The situations keep their words and judge from the same stand-in records; `runOnProgram` runs them on the named program and lists every situation as not run, with the
   reason, when the program is not there. A send the provider refused fails the situation unless the situation planned one.
 - **Go**: runtime.json `"standins": "http"` (config.go `standInsProblems`, with a test): a "fakes" shop (so it may run on the test clock) whose services are stand-ins on
-  127.0.0.1 or localhost, reached through the live clients (each template's BuildPorts: `UsesClients`); refused for a live shop or a service elsewhere. Such a shop may beat
+  127.0.0.1 or [::1] with a port (part B: not localhost), reached through the live clients (each template's BuildPorts: `UsesClients`); refused for a live shop or a service elsewhere. Such a shop may beat
   every 0.1 s or more (the hand check uses 0.2 s). The kit's /status counts the beats that ended (`ticks`). Nothing changes for a real shop.
 - **New situations**: the pickup hold (`orders/crash-test/hold.ts`: "held for you" only after the owner's yes and no money, one hold for the last unit, collected once,
   let go once), the credit book (`fees/crash-test/credit.ts`: nothing before the owner's tap, the first question only, a reminder only after the yes at the reminder hour,
@@ -1622,7 +1622,8 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   after its link and so filled no template (the link slot now holds the link as every payment request writes it, `payTo`, and the Go words read it so), and "your plan is on"
   and the owner's "plan cancelled" had no template (both added, with the plan's meals and days as slots). All three went under the generic name, refused outside the window.
   The Orders tests now run the plans shop's situations on Go (22 of 22); the other unasked plan messages are a row in templates/commerce/orders/Deferred.md. The agent update
-  (bundle/agent/update.ts) reads the not-run situations too, so it treats them as the shop update does.
+  (bundle/agent/update.ts) excuses none of an agent's not-run situations: its list mixes what the settings rule out with what the agent failed to do (NotDrivable), and
+  the result does not say which, so one the new version no longer runs still holds it back (readOfCrash; a test holds it).
 - **Run of record** at 04c689b8, clean tree: go build, vet, test (40 packages ok); contracts Bookings 178/178, Orders 136/136, Fees 111/111, Stock orders 74/74, listings
   210/210; 41 generators `--check` none stale; units Bookings 838, Orders 216, Fees 245, Stock orders 124, all pass; bundle 724 pass, 9 skipped (Caddy, needs
   REAL_CADDY=1 and Docker); panel 276/276; every hand check on Go holds: Bookings 40/40, UPI 9/9, rental 35/35, discounts 43/43, assistant 40/40; Orders 17/17,
