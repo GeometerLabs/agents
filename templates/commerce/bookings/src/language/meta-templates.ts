@@ -19,12 +19,12 @@ import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../..
 import type { MetaTemplate } from "../../../../../modules/language/meta-templates.ts";
 import { serviceName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
-import { Service, inr, need, phone, slot } from "./templates.ts";
+import { Service, asker, inr, need, paidDate, phone, slot, upiNote } from "./templates.ts";
 import { formatInr } from "../../../../../modules/language/format.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "service" | "Service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left" | "partner" | "upcoming" | "offered" | "price" | "dcode";
+export type Slot = "business" | "service" | "Service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left" | "partner" | "upcoming" | "offered" | "price" | "dcode" | "asker" | "paidDate" | "upiNote";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   service: (f) => need(f, "serviceName"),
@@ -47,6 +47,10 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   offered: (f) => inr(f, "offeredInr"),
   price: (f) => inr(f, "priceInr"),
   dcode: (f) => need(f, "discountCode"),
+  // 25 Nov 2026: who asked about a case from another number; the day a UPI refund's payment was marked, and the note it carried
+  asker: (f) => asker(f),
+  paidDate: (f) => paidDate(f),
+  upiNote: (f) => upiNote(f),
 };
 
 
@@ -364,21 +368,34 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
     },
   },
   {
-    name: "owner_upi_refund_to_send", usedFor: "owner_upi_refund_owed", audience: "owner",
+    // 25 Nov 2026: a new name for new words (the money goes back to the account it came from, found by its note, amount and date). The body Meta approved under
+    // owner_upi_refund_to_send ("by UPI to <phone>") stays registered and is no longer used (Deferred.md, "Submitting the templates").
+    name: "owner_upi_refund_to_account", usedFor: "owner_upi_refund_owed", audience: "owner",
     bodies: {
-      en: "Refund to send: {refund} by UPI to {phone}. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded {upiCode}).",
-      hi: "वापस भेजना है: ग्राहक {phone} को UPI से {refund}। मैं खुद कभी पैसे नहीं भेजता। आप भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {upiCode})।",
-      ml: "തിരികെ അയക്കാനുണ്ട്: കസ്റ്റമർ {phone}, UPI വഴി {refund}. പണം ഞാൻ ഒരിക്കലും സ്വയം അയക്കില്ല. നിങ്ങൾ അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {upiCode}).",
-      kn: 'ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: {phone} ಅವರಿಗೆ UPI ಮೂಲಕ {refund}. ನಾನು ಯಾವತ್ತೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ನೀವು ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {upiCode}).',
+      en: "Refund to send: {refund} back to the account that paid you {marked} on {paidDate} with the note {upiNote}. Find that payment in your UPI app and send it back to that account. I never send money myself, and I'll tell the customer ({phone}) once it's marked sent. When you've sent it, tap Refund sent (or reply: refunded {upiCode}).",
+      hi: "वापस भेजना है: {refund}, उस खाते में जिससे आपको {paidDate} को {marked} मिले थे, नोट {upiNote} के साथ। अपने UPI ऐप में वह भुगतान ढूँढिए और उसी खाते में वापस भेजिए। मैं खुद कभी पैसे नहीं भेजता, और भेजा हुआ दर्ज होते ही ग्राहक ({phone}) को बता दूँगा। भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {upiCode})।",
+      ml: "തിരികെ അയക്കാനുണ്ട്: {refund}, {paidDate} തീയതിയിൽ {upiNote} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് {marked} അയച്ച അക്കൗണ്ടിലേക്ക്. നിങ്ങളുടെ UPI ആപ്പിൽ ആ പേയ്മെന്റ് കണ്ടെത്തി അതേ അക്കൗണ്ടിലേക്ക് തിരികെ അയക്കൂ. പണം ഞാൻ ഒരിക്കലും സ്വയം അയക്കില്ല; അയച്ചതായി രേഖപ്പെടുത്തിയാൽ കസ്റ്റമറെ ({phone}) ഞാൻ അറിയിക്കും. അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {upiCode}).",
+      kn: 'ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: {refund}, {paidDate} ರಂದು {upiNote} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ {marked} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಆ ಪಾವತಿಯನ್ನು ಹುಡುಕಿ ಅದೇ ಖಾತೆಗೆ ಮರಳಿ ಕಳುಹಿಸಿ. ನಾನು ಯಾವತ್ತೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ; ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ ಮೇಲೆ ಗ್ರಾಹಕರಿಗೆ ({phone}) ತಿಳಿಸುತ್ತೇನೆ. ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {upiCode}).',
     },
   },
   {
-    name: "owner_upi_refund_reminder", usedFor: "owner_upi_refund_reminder", audience: "owner",
+    // 25 Nov 2026: the reminder's new words under a new name; owner_upi_refund_reminder stays registered and unused
+    name: "owner_upi_refund_account_reminder", usedFor: "owner_upi_refund_reminder", audience: "owner",
     bodies: {
-      en: "Reminder: {refund} is still owed back to {phone}. Once you've sent it by UPI, tap Refund sent (or reply: refunded {upiCode}).",
-      hi: "याद दिलाना: ग्राहक {phone} को {refund} अभी भी वापस देना बाकी है। UPI से भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {upiCode})।",
-      ml: "ഓർമ്മപ്പെടുത്തൽ: {refund} ഇനിയും തിരികെ നൽകാനുണ്ട് (കസ്റ്റമർ {phone}). UPI വഴി അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {upiCode}).",
-      kn: 'ನೆನಪಿಸುತ್ತಿದ್ದೇನೆ: {phone} ಅವರಿಗೆ {refund} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {upiCode}).',
+      en: "Reminder: {refund} is still owed back to the account that paid you {marked} on {paidDate} with the note {upiNote} (customer {phone}). Once you've sent it by UPI, tap Refund sent (or reply: refunded {upiCode}).",
+      hi: "याद दिलाना: {refund} अभी भी उस खाते में वापस भेजना बाकी है जिससे आपको {paidDate} को {marked} मिले थे, नोट {upiNote} के साथ (ग्राहक {phone})। UPI से भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {upiCode})।",
+      ml: "ഓർമ്മപ്പെടുത്തൽ: {paidDate} തീയതിയിൽ {upiNote} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് {marked} അയച്ച അക്കൗണ്ടിലേക്ക് {refund} ഇനിയും തിരികെ നൽകാനുണ്ട് (കസ്റ്റമർ {phone}). UPI വഴി അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {upiCode}).",
+      kn: 'ನೆನಪಿಸುತ್ತಿದ್ದೇನೆ: {paidDate} ರಂದು {upiNote} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ {marked} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ {refund} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ (ಗ್ರಾಹಕರು {phone}). UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {upiCode}).',
+    },
+  },
+  {
+    // 25 Nov 2026 (modules/record/case-asked.ts): someone at another number named a booking; the owner checks before helping. It reaches them outside their window.
+    name: "owner_booking_asked_elsewhere", usedFor: "owner_case_other_number", audience: "owner",
+    bodies: {
+      en: "Someone at {asker} asks about {ref} (booked from {phone}). Check before you help.",
+      hi: "कोई {asker} से {ref} के बारे में पूछ रहा है (बुकिंग {phone} से हुई थी)। मदद करने से पहले जाँच लीजिए।",
+      ml: "ഒരാൾ {asker} എന്ന നമ്പറിൽ നിന്ന് {ref} നെക്കുറിച്ച് ചോദിക്കുന്നു (ബുക്ക് ചെയ്തത് {phone} നമ്പറിൽ നിന്നാണ്). സഹായിക്കുന്നതിന് മുമ്പ് ഒന്ന് പരിശോധിക്കൂ.",
+      kn: "ಯಾರೋ {asker} ನಂಬರ್‌ನಿಂದ {ref} ಬಗ್ಗೆ ಕೇಳುತ್ತಿದ್ದಾರೆ ({phone} ನಂಬರ್‌ನಿಂದ ಬುಕ್ ಆಗಿತ್ತು). ಸಹಾಯ ಮಾಡುವ ಮೊದಲು ಪರಿಶೀಲಿಸಿ.",
     },
   },
 ];
@@ -408,6 +425,8 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
     upiId: "glowsalon@okicici", payee: settings.name, upiCode: "P4XR9T", markedInr: settings.deposit.amountInr, leftInr: settings.deposit.amountInr,
     partner: "Divya, Sri Sai Digital", upcomingCount: 3, offeredInr: settings.services[0].priceInr - 50, discountCode: "Q7RM2X",
+    // 25 Nov 2026: the number that asked about a booking, and the day and note of a UPI refund's payment
+    askerPhone: "+919822222222", paidAtMs: Date.UTC(2026, 10, 3, 6, 0), upiNote: "b-3",
   };
 }
 

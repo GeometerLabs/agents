@@ -149,6 +149,11 @@ type MessageFacts struct {
 	// OfferedInr and DiscountCode are E1's (the discount authority, 24 Nov 2026): the price of one the customer asked for (PriceInr stays the list price) and the owner's card's code.
 	OfferedInr   *int64
 	DiscountCode *string
+	// AskerPhone is the number (or chat guest) that asked about a booking from another conversation (25 Nov 2026, runtime/caseasked.go); only in a message to the owner.
+	AskerPhone *string
+	// PaidAtMs and UpiNote are a UPI refund's payment (25 Nov 2026, ownermarked.RefundSource): the day the owner marked it and the note it carried.
+	PaidAtMs *int64
+	UpiNote  *string
 	// SlotChoices are the free times a list message offers (each date and time in the message must be one of these, or the booking's own).
 	SlotChoices []int64
 	// Day is "today" or "tomorrow" ("" is today), with DayBookings the owner's day list.
@@ -256,6 +261,17 @@ func (f *MessageFacts) value(name string) (string, error) {
 		return rupees(f.OfferedInr, name)
 	case "discountCode":
 		return needS(f.DiscountCode, name)
+	case "askerPhone":
+		v, err := needS(f.AskerPhone, name)
+		return language.GroupPhone(v), err
+	case "paidDate":
+		ms, err := needN(f.PaidAtMs, "paidAtMs")
+		if err != nil {
+			return "", err
+		}
+		return fm.SlotDate(ms, f.zone()), nil
+	case "upiNote":
+		return needS(f.UpiNote, name)
 	case "menuList":
 		// templates.ts menuList: each service and its price, joined with ", "
 		names := make([]string, len(f.Services))
@@ -343,13 +359,16 @@ func checkFactsOf(f *MessageFacts) language.Facts {
 	for _, d := range f.DayBookings {
 		out.MomentsMs = append(out.MomentsMs, d.SlotMs)
 	}
+	if f.PaidAtMs != nil {
+		out.MomentsMs = append(out.MomentsMs, *f.PaidAtMs) // 25 Nov 2026: the day a UPI refund's payment was marked
+	}
 	out.Loc = f.zone()
 	for _, l := range []*string{f.Link, f.PageLink} {
 		if l != nil && *l != "" {
 			out.Links = append(out.Links, *l)
 		}
 	}
-	lits := []*string{&f.BusinessName, f.ServiceName, f.BookingRef, f.CustomerPhone, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.DiscountCode}
+	lits := []*string{&f.BusinessName, f.ServiceName, f.BookingRef, f.CustomerPhone, f.AskerPhone, f.UpiNote, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.DiscountCode}
 	for _, l := range lits {
 		if l != nil {
 			out.Literals = append(out.Literals, *l)
@@ -357,6 +376,9 @@ func checkFactsOf(f *MessageFacts) language.Facts {
 	}
 	if f.CustomerPhone != nil {
 		out.Literals = append(out.Literals, language.GroupPhone(*f.CustomerPhone))
+	}
+	if f.AskerPhone != nil {
+		out.Literals = append(out.Literals, language.GroupPhone(*f.AskerPhone))
 	}
 	for _, s := range f.Services {
 		out.Literals = append(out.Literals, s.Name)
@@ -381,5 +403,7 @@ func ExampleFacts(s *Settings, lang string) *MessageFacts {
 	f.UpiID, f.Payee, f.UpiCode, f.MarkedInr, f.LeftInr = S("glowsalon@okicici"), S(s.Name), S("P4XR9T"), N(s.Deposit.AmountInr), N(s.Deposit.AmountInr)
 	f.Partner, f.UpcomingCount = S("Divya, Sri Sai Digital"), N(3)
 	f.OfferedInr, f.DiscountCode = N(s.Services[0].PriceInr-50), S("Q7RM2X") // E1: meta-templates.ts exampleFacts' price asked and card code
+	// 25 Nov 2026: exampleFacts' asker and refund payment
+	f.AskerPhone, f.PaidAtMs, f.UpiNote = S("+919822222222"), N(time.Date(2026, 11, 3, 6, 0, 0, 0, time.UTC).UnixMilli()), S("b-3")
 	return f
 }

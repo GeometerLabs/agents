@@ -52,6 +52,14 @@ type sayExtra struct {
 	upiCode   string
 	markedInr *int64
 	leftInr   *int64
+	cf        caseFacts
+}
+
+// caseFacts is agent.ts CaseFacts (25 Nov 2026): an owner's message's facts that are not the booking's own, a booking named from another number (its reference and number, and
+// who asked) and a UPI refund's payment (the day it was marked and the note it carried). Empty members are left to the booking.
+type caseFacts struct {
+	bookingRef, customerPhone, askerPhone, upiNote string
+	paidAtMs                                       *int64
 }
 
 // sayOpts is tellCustomer's `more`.
@@ -67,6 +75,7 @@ type sayOpts struct {
 	upiCode   string
 	markedInr *int64
 	leftInr   *int64
+	cf        caseFacts
 }
 
 func toMsgDecisions(ds []Decision) []messaging.Decision {
@@ -81,7 +90,7 @@ func toMsgDecisions(ds []Decision) []messaging.Decision {
 }
 
 func (a *Agent) sayArgs(b *Booking, phone, to string, templates []string, o sayOpts) *messaging.SayArgs {
-	x := &sayExtra{booking: b, offer: o.offer, refundInr: o.refundInr, slotMs: o.slotMs, pageLink: o.pageLink, upiCode: o.upiCode, markedInr: o.markedInr, leftInr: o.leftInr}
+	x := &sayExtra{booking: b, offer: o.offer, refundInr: o.refundInr, slotMs: o.slotMs, pageLink: o.pageLink, upiCode: o.upiCode, markedInr: o.markedInr, leftInr: o.leftInr, cf: o.cf}
 	args := &messaging.SayArgs{Phone: phone, To: to, Templates: templates, Shown: toMsgDecisions(o.shown), Reminder: o.reminder, Action: o.action, Image: o.image, Extra: x}
 	if b != nil {
 		args.Booking = b
@@ -183,6 +192,19 @@ func (a *Agent) factsFor(sa *messaging.SayArgs, lang string) *MessageFacts {
 	if p := a.shownPhone(sa.Phone, b); p != "" {
 		f.CustomerPhone = S(p)
 	}
+	if x.cf.bookingRef != "" {
+		f.BookingRef = S(x.cf.bookingRef)
+	}
+	if x.cf.customerPhone != "" {
+		f.CustomerPhone = S(x.cf.customerPhone)
+	}
+	if x.cf.askerPhone != "" {
+		f.AskerPhone = S(x.cf.askerPhone)
+	}
+	if x.cf.upiNote != "" {
+		f.UpiNote = S(x.cf.upiNote)
+	}
+	f.PaidAtMs = x.cf.paidAtMs
 	if s.OwnerMarked() {
 		f.UpiID, f.Payee = S(s.Payment.UpiID), S(s.Payment.Payee)
 	}

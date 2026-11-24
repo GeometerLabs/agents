@@ -275,8 +275,21 @@ func (a *Agent) oweBack(b *Booking, paymentID string, amountPaise int64, why str
 	if t == "" {
 		t = "owner_upi_refund_owed"
 	}
-	a.tellOwner(b, b.Customer, t, sayOpts{refundInr: refund, upiCode: codeOf(r.Code), markedInr: o.markedInr, offer: a.refundButtons(r)})
+	opts := a.refundFacts(r, sayOpts{refundInr: refund, upiCode: codeOf(r.Code), offer: a.refundButtons(r)})
+	if o.markedInr != nil {
+		opts.markedInr = o.markedInr
+	}
+	a.tellOwner(b, b.Customer, t, opts)
 	return r
+}
+
+// refundFacts is agent.ts refundFacts (25 Nov 2026): the owner's UPI refund message names the payment it gives back (ownermarked.RefundSource): the amount and the day the
+// owner marked it and the note it carried, so the money goes back to the account it came from (a family member may have paid), not to the customer's number.
+func (a *Agent) refundFacts(r *ownermarked.OwedRefund, o sayOpts) sayOpts {
+	if note, paid, at, ok := ownermarked.RefundSource(a.marks, r); ok {
+		o.markedInr, o.cf.paidAtMs, o.cf.upiNote = rupeesOf(paid), ptr(at), note
+	}
+	return o
 }
 
 // onPaidClaim is agent.ts onPaidClaim: "I have paid", the words, or a screenshot: thanks, the owner will confirm; a screenshot is not proof. The owner is asked to look, at most
@@ -474,7 +487,7 @@ func (a *Agent) markAskAgain(b *Booking, note func(outcome, notes string)) bool 
 	note("attempted", "telling the owner again about a UPI payment or refund")
 	told := true
 	for _, r := range owed {
-		told = a.tellOwner(b, b.Customer, "owner_upi_refund_reminder", sayOpts{refundInr: rupeesOf(r.AmountPaise), upiCode: *r.Code, offer: a.refundButtons(r)}) && told
+		told = a.tellOwner(b, b.Customer, "owner_upi_refund_reminder", a.refundFacts(r, sayOpts{refundInr: rupeesOf(r.AmountPaise), upiCode: *r.Code, offer: a.refundButtons(r)})) && told
 	}
 	if open != nil {
 		marked := markedPaise(open)
@@ -498,7 +511,7 @@ func (a *Agent) remindOwedRefunds(now int64) {
 	for _, r := range ownermarked.RemindersDue(a.marks, now) {
 		b := a.store.Booking(r.CaseID)
 		ownermarked.Reminded(r, now)
-		told := a.tellOwner(b, r.Customer, "owner_upi_refund_reminder", sayOpts{refundInr: rupeesOf(r.AmountPaise), upiCode: codeOf(r.Code), offer: a.refundButtons(r)})
+		told := a.tellOwner(b, r.Customer, "owner_upi_refund_reminder", a.refundFacts(r, sayOpts{refundInr: rupeesOf(r.AmountPaise), upiCode: codeOf(r.Code), offer: a.refundButtons(r)}))
 		outcome := "failed"
 		if told {
 			outcome = "confirmed"
