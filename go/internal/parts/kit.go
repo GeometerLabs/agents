@@ -11,6 +11,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/fees"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
+	"github.com/GeometerLabs/agents/go/internal/orders"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 )
 
@@ -34,8 +35,8 @@ func (k *Kit) PreCheck(c *runtime.Client) error {
 
 // Wire wires each part as its own program would (wire.go of its template), over the one store, clock and runtime, each with its own settings.
 //
-// The shop's page shows ONE part's customer side (customerPart). A Fees part that is not it has no page of its own here, so it is given none: it sends no parent's private
-// link that would lead to a page the shop does not serve ("no page, no parent link is sent", as for a centre with no page; bundle Deferred.md).
+// The shop's page shows ONE part's customer side (customerPart). A Fees or Orders part that is not it has no page of its own here, so it is given none: it sends no link
+// that would lead to a page the shop does not serve ("no page, no link is sent", as for a shop with no page; bundle Deferred.md).
 func (k *Kit) Wire(w runtime.Wiring) error {
 	for i, p := range k.parts {
 		pw := w
@@ -43,8 +44,13 @@ func (k *Kit) Wire(w runtime.Wiring) error {
 		if err := p.Kit.Wire(pw); err != nil {
 			return err
 		}
-		if fk, ok := p.Kit.(*fees.Kit); ok && i != k.customerPart() {
-			fk.PageBase = nil
+		if i != k.customerPart() {
+			switch x := p.Kit.(type) {
+			case *fees.Kit:
+				x.PageBase = nil // no parent's private link, no fee page link
+			case *orders.Kit:
+				x.PageBase = nil // no order page link
+			}
 		}
 	}
 	return nil
@@ -159,13 +165,13 @@ func (k *Kit) StockItems(lang string) []listings.ItemRef {
 	return out
 }
 
-// customerPart is the part whose customer side the shop's page and chat are: the first Orders part (it takes new customers), else the first Fees part, else none (-1).
+// customerPart is the part whose customer side the shop's page and chat are: the FIRST part in the shop's order that has one (Orders or Fees), else none (-1). The
+// Operator chooses it by the order of the parts: the starter shop's credit book is first, so its page is the credit book's (the hold's page only ever says "ask on
+// WhatsApp"). The other customer-facing parts send no link to a page the shop does not serve (Wire).
 func (k *Kit) customerPart() int {
-	for _, want := range []string{"orders", "fees"} {
-		for i, p := range k.parts {
-			if p.Name == want {
-				return i
-			}
+	for i, p := range k.parts {
+		if p.Name == "orders" || p.Name == "fees" {
+			return i
 		}
 	}
 	return -1

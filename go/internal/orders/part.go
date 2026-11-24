@@ -54,6 +54,9 @@ func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
 		if c := a.store.FindCustomer(m.From); a.settings.NoAdvance() && c != nil && c.OptedOut { // photoStartsHold's rule, read without making the customer
 			return runtime.ClaimNone
 		}
+		if a.store.LatestOrder(m.From, LiveStates) == nil {
+			return runtime.ClaimNew // nothing open with them: a picture is new business, below a part that already knows the number (a parent's screenshot)
+		}
 		return runtime.ClaimWords
 	}
 	if m.Reply != nil && reading.IntentFromReply(m.Reply.ID, a.parse) != nil {

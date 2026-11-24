@@ -68,9 +68,9 @@ export function validateSettings(input: unknown): SettingsResult {
   return { ok: true, settings: { name: first.name, timezone: first.timezone, owner: first.owner, languages: first.languages, ...(first.assistant !== undefined ? { assistant: first.assistant } : {}), parts, ...(typeof carried === "string" ? { carried: carried as PartName } : {}), file: input } };
 }
 
-/** The part whose customer side the shop's page and chat are (go/internal/parts kit.go customerPart): the first Orders part, else the first Fees part, else none. */
+/** The part whose customer side the shop's page and chat are (go/internal/parts kit.go customerPart): the first Orders or Fees part in the shop's order, else none. */
 export function customerPartOf(parts: readonly string[]): "orders" | "fees" | undefined {
-  return parts.includes("orders") ? "orders" : parts.includes("fees") ? "fees" : undefined;
+  return parts.find((p): p is "orders" | "fees" => p === "orders" || p === "fees");
 }
 
 /** As validateSettings, throwing every problem at once. */

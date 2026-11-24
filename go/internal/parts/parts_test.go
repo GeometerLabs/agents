@@ -167,7 +167,7 @@ func TestJoinOwnerViews(t *testing.T) {
 	_ = json.Unmarshal([]byte(`{"shop":{"name":"G"},"kind":"orders","services":[],"items":[{"case":"o-1"}],"upcoming":[{"case":"o-1"}],"money":{"today":{"received":{"paise":50,"count":2}},"month":{"stillToCome":null,"keptPaise":10},"byWord":[{"case":"o-1"}],"period":"2026-11","readsSettlements":true}}`), &orders)
 	v := joinOwnerViews([]map[string]any{fees, stock, orders}, []string{"fees", "stock-orders", "orders"})
 	items := v["items"].([]any)
-	if len(items) != 3 || v["kind"] != "orders" || len(v["credit"].([]any)) != 1 || len(v["upcoming"].([]any)) != 1 {
+	if len(items) != 3 || v["kind"] != "fees" || len(v["credit"].([]any)) != 1 || len(v["upcoming"].([]any)) != 1 {
 		t.Fatalf("joined view: %v", v)
 	}
 	if cards := v["app"].(map[string]any)["cards"].([]any); len(cards) != 1 {

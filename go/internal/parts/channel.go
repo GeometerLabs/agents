@@ -152,7 +152,7 @@ func joinOwnerViews(views []map[string]any, names []string) map[string]any {
 		return map[string]any{}
 	}
 	out := map[string]any{"shop": views[0]["shop"], "parts": names}
-	// the page's headings follow the customer part's kind when there is one (an Orders shop's or a Fees centre's words), else the first part's
+	// the page's headings follow the customer part's kind (the first Orders or Fees part in the shop's order), else the first part's
 	if k := kindOfViews(views); k != nil {
 		out["kind"] = k
 	}
@@ -206,13 +206,12 @@ func joinOwnerViews(views []map[string]any, names []string) map[string]any {
 	return out
 }
 
-// kindOfViews is the kind the joined page is headed by: "orders", else "fees", else the first view's.
+// kindOfViews is the kind the joined page is headed by: the first view's that is an Orders shop's or a Fees centre's (the customer part's, in the shop's order), else the
+// first view's.
 func kindOfViews(views []map[string]any) any {
-	for _, want := range []string{"orders", "fees"} {
-		for _, v := range views {
-			if v["kind"] == want {
-				return want
-			}
+	for _, v := range views {
+		if v["kind"] == "orders" || v["kind"] == "fees" {
+			return v["kind"]
 		}
 	}
 	return views[0]["kind"]
