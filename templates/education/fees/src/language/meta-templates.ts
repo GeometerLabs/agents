@@ -119,6 +119,9 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_payment_claimed", "owner_payment_claim", "owner"),
   template("owner_fee_overpaid", "owner_overpayment", "owner"),
   template("owner_fee_link_failed", "owner_link_failed", "owner"),
+  // 25 Nov 2026 (the hand check on Go): a message to a parent held back because it did not match the record is told to the owner unasked, often a beat's reminder, so outside the
+  // owner's window; it had no template, so it went under the generic name, which WhatsApp refuses, and the owner never heard of the hold
+  template("owner_fee_message_held", "owner_message_held", "owner"),
   template("owner_parent_wants_you", "owner_wants_to_talk", "owner"),
   template("owner_parent_stopped", "owner_opted_out", "owner"),
   template("owner_fee_approval_request", "owner_refund_needs_approval", "owner"),

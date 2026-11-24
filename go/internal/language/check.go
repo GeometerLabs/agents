@@ -66,6 +66,15 @@ func CheckText(final string, f Facts) []string {
 		}
 	}
 	text = mask(text, upi)
+	// The record's own links, whole, before the names and references (check.ts, the same step, 25 Nov 2026): a page link's random part can hold a reference such as "f-5" in any
+	// case, and masking the reference first cut the link in two, so the record's own link read as one that is not in the record and the message was held back.
+	var own []*Match
+	for _, u := range P("check.url").All(text) {
+		if urls[strings.ToLower(trailing.Replace(u.Group(0), ""))] {
+			own = append(own, u)
+		}
+	}
+	text = mask(text, own)
 	for _, lit := range lits {
 		re, err := Compile(jsEscape(lit), "giu")
 		if err != nil { // never for an escaped literal; if it were, the check fails closed rather than stop the step
