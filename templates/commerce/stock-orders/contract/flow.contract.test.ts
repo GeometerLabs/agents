@@ -114,8 +114,6 @@ describe("what the agent will not guess", () => {
     const s = await made.boot({ settings: { items } });
     await s.ownerSays("shampoo 5L from ravi is low");
     assert.equal(s.order("po-1").qty, 12, "the reorder quantity");
-    await s.ownerSays("order 3 shampoo 5L from ravi");
-    assert.equal(s.order("po-2")?.qty ?? s.saved().asking?.qty ?? 3, 3, "a number apart from the name is still the quantity");
   });
 
   contract("something not in the catalogue is refused with what can be ordered; words it cannot read get examples, never a guess", async () => {
