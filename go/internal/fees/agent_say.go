@@ -55,6 +55,9 @@ type sayOpts struct {
 	// the credit book (credit.go): the account's name when no fee gives it, the owner's list of who owes what (the `roster` literal), the most one account may show (`feeInr`)
 	creditName, roster string
 	feeInr             *int64
+	// 25 Nov 2026: a fee named from another number (its reference, and who asked) and a UPI refund's payment (the day it was marked and the note it carried)
+	dueRef, askerPhone, upiNote string
+	paidAtMs                    *int64
 }
 
 type sayExtra struct {
@@ -164,6 +167,16 @@ func (a *Agent) factsFor(sa *messaging.SayArgs, lang string) *MessageFacts {
 	if x.o.upiCode != "" {
 		f.UpiCode = S(x.o.upiCode)
 	}
+	if x.o.dueRef != "" {
+		f.DueRef = S(x.o.dueRef)
+	}
+	if x.o.askerPhone != "" {
+		f.AskerPhone = S(x.o.askerPhone)
+	}
+	if x.o.upiNote != "" {
+		f.UpiNote = S(x.o.upiNote)
+	}
+	f.PaidAtMs = x.o.paidAtMs
 	if x.o.family != nil {
 		f.Family, f.HasFamily = x.o.family, true
 	}

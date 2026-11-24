@@ -2756,19 +2756,22 @@
     ]
   },
   {
-    "name": "owner_upi_refund_to_send",
+    "name": "owner_upi_refund_to_account",
     "language": "hi",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "वापस भेजना है: ग्राहक {{1}} को UPI से {{2}}। मैं खुद कभी पैसे नहीं भेजता। आप भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {{3}})।",
+        "text": "वापस भेजना है: {{1}}, उस खाते में जिससे आपको {{2}} को {{3}} मिले थे, नोट {{4}} के साथ। अपने UPI ऐप में वह भुगतान ढूँढिए और उसी खाते में वापस भेजिए। मैं खुद कभी पैसे नहीं भेजता, और भेजा हुआ दर्ज होते ही ग्राहक ({{5}}) को बता दूँगा। भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {{6}})।",
         "example": {
           "body_text": [
             [
-              "+91 98111 11111",
               "₹200",
+              "मंगलवार, 3 नवंबर",
+              "₹200",
+              "b-3",
+              "+91 98111 11111",
               "P4XR9T"
             ]
           ]
@@ -2777,18 +2780,21 @@
     ]
   },
   {
-    "name": "owner_upi_refund_to_send",
+    "name": "owner_upi_refund_to_account",
     "language": "en",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "Refund to send: {{1}} by UPI to {{2}}. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded {{3}}).",
+        "text": "Refund to send: {{1}} back to the account that paid you {{2}} on {{3}} with the note {{4}}. Find that payment in your UPI app and send it back to that account. I never send money myself, and I'll tell the customer ({{5}}) once it's marked sent. When you've sent it, tap Refund sent (or reply: refunded {{6}}).",
         "example": {
           "body_text": [
             [
               "₹200",
+              "₹200",
+              "Tue 3 Nov",
+              "b-3",
               "+91 98111 11111",
               "P4XR9T"
             ]
@@ -2798,19 +2804,22 @@
     ]
   },
   {
-    "name": "owner_upi_refund_to_send",
+    "name": "owner_upi_refund_to_account",
     "language": "ml",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "തിരികെ അയക്കാനുണ്ട്: കസ്റ്റമർ {{1}}, UPI വഴി {{2}}. പണം ഞാൻ ഒരിക്കലും സ്വയം അയക്കില്ല. നിങ്ങൾ അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {{3}}).",
+        "text": "തിരികെ അയക്കാനുണ്ട്: {{1}}, {{2}} തീയതിയിൽ {{3}} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് {{4}} അയച്ച അക്കൗണ്ടിലേക്ക്. നിങ്ങളുടെ UPI ആപ്പിൽ ആ പേയ്മെന്റ് കണ്ടെത്തി അതേ അക്കൗണ്ടിലേക്ക് തിരികെ അയക്കൂ. പണം ഞാൻ ഒരിക്കലും സ്വയം അയക്കില്ല; അയച്ചതായി രേഖപ്പെടുത്തിയാൽ കസ്റ്റമറെ ({{5}}) ഞാൻ അറിയിക്കും. അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {{6}}).",
         "example": {
           "body_text": [
             [
-              "+91 98111 11111",
               "₹200",
+              "ചൊവ്വ, 3 നവംബർ",
+              "b-3",
+              "₹200",
+              "+91 98111 11111",
               "P4XR9T"
             ]
           ]
@@ -2819,19 +2828,22 @@
     ]
   },
   {
-    "name": "owner_upi_refund_to_send",
+    "name": "owner_upi_refund_to_account",
     "language": "kn",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: {{1}} ಅವರಿಗೆ UPI ಮೂಲಕ {{2}}. ನಾನು ಯಾವತ್ತೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ನೀವು ಕಳುಹಿಸಿದ ಮೇಲೆ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {{3}}).",
+        "text": "ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: {{1}}, {{2}} ರಂದು {{3}} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ {{4}} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಆ ಪಾವತಿಯನ್ನು ಹುಡುಕಿ ಅದೇ ಖಾತೆಗೆ ಮರಳಿ ಕಳುಹಿಸಿ. ನಾನು ಯಾವತ್ತೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ; ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ ಮೇಲೆ ಗ್ರಾಹಕರಿಗೆ ({{5}}) ತಿಳಿಸುತ್ತೇನೆ. ಕಳುಹಿಸಿದ ಮೇಲೆ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {{6}}).",
         "example": {
           "body_text": [
             [
-              "+91 98111 11111",
               "₹200",
+              "ಮಂಗಳವಾರ, 3 ನವೆಂಬರ್",
+              "b-3",
+              "₹200",
+              "+91 98111 11111",
               "P4XR9T"
             ]
           ]
@@ -2840,19 +2852,22 @@
     ]
   },
   {
-    "name": "owner_upi_refund_reminder",
+    "name": "owner_upi_refund_account_reminder",
     "language": "hi",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "याद दिलाना: ग्राहक {{1}} को {{2}} अभी भी वापस देना बाकी है। UPI से भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {{3}})।",
+        "text": "याद दिलाना: {{1}} अभी भी उस खाते में वापस भेजना बाकी है जिससे आपको {{2}} को {{3}} मिले थे, नोट {{4}} के साथ (ग्राहक {{5}})। UPI से भेज दें तो \"रिफंड भेज दिया\" दबाइए (या लिखिए: refunded {{6}})।",
         "example": {
           "body_text": [
             [
-              "+91 98111 11111",
               "₹200",
+              "मंगलवार, 3 नवंबर",
+              "₹200",
+              "b-3",
+              "+91 98111 11111",
               "P4XR9T"
             ]
           ]
@@ -2861,18 +2876,21 @@
     ]
   },
   {
-    "name": "owner_upi_refund_reminder",
+    "name": "owner_upi_refund_account_reminder",
     "language": "en",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "Reminder: {{1}} is still owed back to {{2}}. Once you've sent it by UPI, tap Refund sent (or reply: refunded {{3}}).",
+        "text": "Reminder: {{1}} is still owed back to the account that paid you {{2}} on {{3}} with the note {{4}} (customer {{5}}). Once you've sent it by UPI, tap Refund sent (or reply: refunded {{6}}).",
         "example": {
           "body_text": [
             [
               "₹200",
+              "₹200",
+              "Tue 3 Nov",
+              "b-3",
               "+91 98111 11111",
               "P4XR9T"
             ]
@@ -2882,17 +2900,20 @@
     ]
   },
   {
-    "name": "owner_upi_refund_reminder",
+    "name": "owner_upi_refund_account_reminder",
     "language": "ml",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "ഓർമ്മപ്പെടുത്തൽ: {{1}} ഇനിയും തിരികെ നൽകാനുണ്ട് (കസ്റ്റമർ {{2}}). UPI വഴി അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {{3}}).",
+        "text": "ഓർമ്മപ്പെടുത്തൽ: {{1}} തീയതിയിൽ {{2}} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് {{3}} അയച്ച അക്കൗണ്ടിലേക്ക് {{4}} ഇനിയും തിരികെ നൽകാനുണ്ട് (കസ്റ്റമർ {{5}}). UPI വഴി അയച്ചുകഴിഞ്ഞാൽ \"റീഫണ്ട് അയച്ചു\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded {{6}}).",
         "example": {
           "body_text": [
             [
+              "ചൊവ്വ, 3 നവംബർ",
+              "b-3",
+              "₹200",
               "₹200",
               "+91 98111 11111",
               "P4XR9T"
@@ -2903,20 +2924,107 @@
     ]
   },
   {
-    "name": "owner_upi_refund_reminder",
+    "name": "owner_upi_refund_account_reminder",
     "language": "kn",
     "category": "UTILITY",
     "parameter_format": "positional",
     "components": [
       {
         "type": "BODY",
-        "text": "ನೆನಪಿಸುತ್ತಿದ್ದೇನೆ: {{1}} ಅವರಿಗೆ {{2}} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ಮೇಲೆ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {{3}}).",
+        "text": "ನೆನಪಿಸುತ್ತಿದ್ದೇನೆ: {{1}} ರಂದು {{2}} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ {{3}} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ {{4}} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ (ಗ್ರಾಹಕರು {{5}}). UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ಮೇಲೆ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded {{6}}).",
         "example": {
           "body_text": [
             [
-              "+91 98111 11111",
+              "ಮಂಗಳವಾರ, 3 ನವೆಂಬರ್",
+              "b-3",
               "₹200",
+              "₹200",
+              "+91 98111 11111",
               "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_booking_asked_elsewhere",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "कोई {{1}} से {{2}} के बारे में पूछ रहा है (बुकिंग {{3}} से हुई थी)। मदद करने से पहले जाँच लीजिए।",
+        "example": {
+          "body_text": [
+            [
+              "+91 98222 22222",
+              "b-3",
+              "+91 98111 11111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_booking_asked_elsewhere",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Someone at {{1}} asks about {{2}} (booked from {{3}}). Check before you help.",
+        "example": {
+          "body_text": [
+            [
+              "+91 98222 22222",
+              "b-3",
+              "+91 98111 11111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_booking_asked_elsewhere",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഒരാൾ {{1}} എന്ന നമ്പറിൽ നിന്ന് {{2}} നെക്കുറിച്ച് ചോദിക്കുന്നു (ബുക്ക് ചെയ്തത് {{3}} നമ്പറിൽ നിന്നാണ്). സഹായിക്കുന്നതിന് മുമ്പ് ഒന്ന് പരിശോധിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+91 98222 22222",
+              "b-3",
+              "+91 98111 11111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_booking_asked_elsewhere",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಯಾರೋ {{1}} ನಂಬರ್‌ನಿಂದ {{2}} ಬಗ್ಗೆ ಕೇಳುತ್ತಿದ್ದಾರೆ ({{3}} ನಂಬರ್‌ನಿಂದ ಬುಕ್ ಆಗಿತ್ತು). ಸಹಾಯ ಮಾಡುವ ಮೊದಲು ಪರಿಶೀಲಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+91 98222 22222",
+              "b-3",
+              "+91 98111 11111"
             ]
           ]
         }

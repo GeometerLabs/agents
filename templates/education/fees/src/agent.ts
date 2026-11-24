@@ -75,7 +75,9 @@ import { CASH_LINK, backDueReminderAt, balanceInr, balancePaise, dueMsOf as dueM
 import type { CountedPayment, Customer, Due, Pending, Store } from "./due.ts";
 import { LABELS, buttonsFor, intentFromReply } from "./language/interactive.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
-import { emptyMarkState, markReceived, markRefund, oweRefund, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { emptyMarkState, markReceived, markRefund, oweRefund, refundSource, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { CASE_ASKED, caseKey, namedCase, recordKeys, toldLately } from "../../../../modules/record/case-asked.ts";
+import type { CaseForms } from "../../../../modules/record/case-asked.ts";
 import type { OwedRefund, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
 import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
@@ -158,7 +160,7 @@ const HOURLY = HOUR; // the owner is told about the same parent at most this oft
 
 /** Buttons with words above them; `choices` are the owner's UPI buttons (each carries its one-use code) instead of the named ones. */
 type Offer = { kind: "buttons"; buttons: ButtonId[]; dueId?: string; body?: TemplateId[]; choices?: Choice[] };
-interface SayArgs { family?: FamilyLine[]; booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string; /** Classes: the values of a class message (src/classes/run.ts), added to the facts it is written and checked from. */ cls?: ClassFacts; /** Classes: decisions that gate this message (the class-access and missed-note rules), recorded beside it. */ gate?: Decision[] }
+interface SayArgs { family?: FamilyLine[]; booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string; /** Classes: the values of a class message (src/classes/run.ts), added to the facts it is written and checked from. */ cls?: ClassFacts; /** Classes: decisions that gate this message (the class-access and missed-note rules), recorded beside it. */ gate?: Decision[]; /** 25 Nov 2026: facts laid over the fee's own (a fee named from another number, a UPI refund's payment) */ over?: Partial<MessageFacts> }
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
@@ -218,7 +220,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, due) => languageOf(phone, due),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => ({ ...factsFor(settings, a.booking, language, { customerPhone: isChatConversation(a.phone) ? guestLabel(store.channel, a.phone, settings.owner.language) : a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }), ...(a.cls ?? {}) }),
+    factsFor: (a, language) => ({ ...factsFor(settings, a.booking, language, { customerPhone: isChatConversation(a.phone) ? guestLabel(store.channel, a.phone, settings.owner.language) : a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }), ...(a.cls ?? {}), ...(a.over ?? {}) }),
     interactiveFor: (a, facts, language): InteractiveMessage => {
       const offer = a.offer!;
       return { body: (offer.body ?? a.templates).map((id) => render(id, facts)).join(" "), buttons: offer.choices ?? buttonsFor(language, offer.buttons, offer.dueId) };
@@ -245,6 +247,14 @@ export function createAgent(deps: AgentDeps): Agent {
   type More = Omit<SayArgs, "booking" | "phone" | "to" | "templates">;
   const tellCustomer = (due: Due | null, phone: string, templates: TemplateId[], more: More = {}) => say({ booking: due, phone, to: "customer", templates, ...more });
   const tellOwner = (due: Due | null, phone: string, template: TemplateId, more: More = {}) => say({ booking: due, phone, to: "owner", templates: [template], ...more });
+  /**
+   * 25 Nov 2026: what the owner's UPI refund message says about the payment it gives back (ledger.ts refundSource): its amount (receivedInr) and the day the owner marked it,
+   * and the note it carried ("f-3.2"), so the owner sends the money back to the account it came from (a family member may have paid) and not to the parent's number.
+   */
+  const refundFacts = (r: OwedRefund): More => {
+    const src = refundSource(markState!, r);
+    return src ? { receivedInr: src.paidPaise / 100, over: { paidAtMs: src.paidAtMs, upiNote: src.note } } : {};
+  };
 
   /** What goes with a message to a parent as tappable buttons: pay now, I have paid, talk to the owner. */
   const feeButtons = (due: Due, buttons: ButtonId[] = ["pay", "paid", "owner"]): Offer => ({ kind: "buttons", buttons, dueId: due.id });
@@ -330,7 +340,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const r = oweRefund(markState!, { caseId: due.id, customer: due.customer, paymentId, amountPaise, why }, clock.now());
     books.post({ kind: "refund_owed", case: due.id, owed: r.id, paymentId, amountPaise }, (m) => log(due, due.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise), ...m }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` }));
     await tellCustomer(due, due.customer, ["fee_upi_refund_owed"], { refundInr: amountPaise / 100 });
-    await tellOwner(due, due.customer, "owner_fee_upi_refund_owed", { refundInr: amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
+    await tellOwner(due, due.customer, "owner_fee_upi_refund_owed", { refundInr: amountPaise / 100, upiCode: r.code ?? undefined, ...refundFacts(r), offer: refundButtons(r) });
     return r;
   }
 
@@ -380,7 +390,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (const r of remindersDue(markState!, now)) {
       const due = store.dues.get(r.caseId) ?? null;
       reminded(r, now);
-      const told = await tellOwner(due, r.customer, "owner_fee_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
+      const told = await tellOwner(due, r.customer, "owner_fee_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, ...refundFacts(r), offer: refundButtons(r) });
       log(due, r.customer, MARK_ACTIONS.refundReminder, told ? "confirmed" : "failed", { refundId: r.id }, { refs: { refundId: r.id, amountPaise: String(r.amountPaise) }, notes: `reminder ${r.reminders} of a refund the owner still owes` });
     }
   }
@@ -393,7 +403,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (owed.length === 0 && !open) return false;
     note("attempted", "telling the owner again about a UPI payment or refund");
     let told = true;
-    for (const r of owed) told = (await tellOwner(due, r.customer, "owner_fee_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code!, offer: refundButtons(r) })) && told;
+    for (const r of owed) told = (await tellOwner(due, r.customer, "owner_fee_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code!, ...refundFacts(r), offer: refundButtons(r) })) && told;
     if (open) told = (await tellOwner(due, due.customer, "owner_fee_upi_claim", { upiCode: open.code!, offer: receivedButtons(open, balancePaise(due)) })) && told;
     note(told ? "confirmed" : "failed", told ? "the owner was told again" : "the owner could not be told (the limits or the provider said no)");
     return true;
@@ -1016,6 +1026,31 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /**
+   * A fee asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts). Only for a conversation that holds no fee of its own: the words name a fee the
+   * centre holds by its reference ("f-3", "F3", a link's "f-3.2"; "fee 3" only when `words`), a receipt's number, a payment id the record holds, or the UPI reference a parent
+   * typed. The asker gets one line that shows nothing of the fee (no student, month, amount or number) and nothing changes; the owner is told, at most once an hour for this
+   * asker and fee (read from the record), with both numbers. The record line keeps the fee in `refs.case` and leaves `booking` null. False: nothing was named. (The credit
+   * book, whose runtime is the Go program, does the same for its accounts: go/internal/fees.)
+   */
+  async function onCaseAsked(phone: string, text: string, words: boolean): Promise<boolean> {
+    if ([...store.dues.values()].some((x) => x.customer === phone)) return false;
+    const keys = new Map(recordKeys(record.entries()));
+    for (const x of store.dues.values()) if (x.claimRef) keys.set(caseKey(x.claimRef), x.id);
+    const named = namedCase(text, { forms: FEE_FORMS, isCase: (id) => store.dues.has(id), keys, words });
+    if (!named) return false;
+    const due = store.dues.get(named.case)!;
+    const shown = (p: string) => (isChatConversation(p) ? guestLabel(store.channel, p, settings.owner.language) : p);
+    const lately = toldLately(record.entries(), phone, due.id, clock.now());
+    const told = lately || await tellOwner(null, phone, "owner_case_other_number", { over: { dueRef: due.id, customerPhone: shown(due.customer), askerPhone: shown(phone) } });
+    log(null, phone, CASE_ASKED, lately ? "blocked" : told ? "confirmed" : "failed", { case: due.id, via: named.via }, {
+      refs: { case: due.id, via: named.via, to: "owner" },
+      notes: `another conversation named ${due.id} (${named.via}); nothing of the fee was shown and nothing changed; ${lately ? "the owner was already told in the last hour" : told ? "the owner was told" : "the owner could not be told"}`,
+    });
+    await tellCustomer(null, phone, [told ? "fee_case_other_number" : "fee_case_other_number_untold"]);
+    return true;
+  }
+
+  /**
    * "Talk to the owner": the owner is told, once an hour for the same parent, and the parent is told the owner will message them. The agent does not reply on the
    * owner's behalf and decides nothing. If the owner could not be told, the parent is told that, and not that the owner will write.
    */
@@ -1219,6 +1254,8 @@ export function createAgent(deps: AgentDeps): Agent {
     try {
       if (intent.kind === "stop") return await onStop(phone);
       if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
+      // 25 Nov 2026: a conversation that holds no fee names one (a reference, a receipt, a payment id); the word form ("fee 3") only when nothing else was read
+      if (!msg.reply && await onCaseAsked(phone, msg.text, intent.kind === "unknown" || intent.kind === "greeting")) return;
       switch (intent.kind) {
         case "pay": return await onPay(phone, intent);
         case "paid": return await onPaidClaim(phone, intent);
@@ -1478,4 +1515,7 @@ export function createAgent(deps: AgentDeps): Agent {
 }
 
 /** The owner's fixed command about something the agent asked them ("approve q-3", "deny q-3"). Item 11e names it so the assistant lets it pass. */
+/** How a parent names a fee (modules/record/case-asked.ts): "f-3", and the word before the number in each language. */
+const FEE_FORMS: CaseForms = { prefix: "f", words: ["fee", "fees", "फीस", "ഫീസ്", "ಶುಲ್ಕ"] };
+
 const OWNER_COMMAND = /^\s*(approve|deny)\s+(q-\d+)\s*$/i;

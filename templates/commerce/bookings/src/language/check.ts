@@ -1,5 +1,5 @@
 // The outgoing check for Bookings: the shared check (modules/language/check.ts) given the values a booking's record holds.
-// A customer's number may be written grouped ("+91 98111 11111", modules/language/format.ts groupPhone), so both forms of every number are literals.
+// A customer's number may be written grouped ("+91 98111 11111", modules/language/format.ts groupPhone), so both forms of every number are literals (the asker's too, 25 Nov 2026).
 import { checkText } from "../../../../../modules/language/check.ts";
 import { groupPhone } from "../../../../../modules/language/format.ts";
 import type { CheckFacts, CheckResult } from "../../../../../modules/language/check.ts";
@@ -13,10 +13,11 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     amountsInr: [facts.priceInr, facts.depositInr, facts.refundInr, facts.markedInr, facts.leftInr, facts.offeredInr, ...facts.services.map((s) => s.priceInr)].filter((v): v is number => v !== undefined),
     counts: [facts.holdMinutes, facts.windowHours, facts.approvalHours, facts.upcomingCount, facts.approvalsLeft].filter((v): v is number => v !== undefined),
     shownMs: facts.slotMs,
-    momentsMs: [...(facts.slotChoices ?? []), ...(facts.dayBookings ?? []).map((d) => d.slotMs)],
+    // 25 Nov 2026: the day a UPI refund's payment was marked (the owner's refund message names it)
+    momentsMs: [...(facts.slotChoices ?? []), ...(facts.dayBookings ?? []).map((d) => d.slotMs), ...(facts.paidAtMs !== undefined ? [facts.paidAtMs] : [])],
     // item 11h: a WhatsApp booking's own page is a link the message may carry too (made for that message)
     links: [...(facts.link ? [facts.link] : []), ...(facts.pageLink ? [facts.pageLink] : [])],
-    literals: [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, facts.customerPhone && groupPhone(facts.customerPhone), facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, facts.discountCode, ...facts.services.map((s) => s.name), ...(facts.dayBookings ?? []).flatMap((d) => [d.serviceName, d.customerPhone, groupPhone(d.customerPhone), d.ref])],
+    literals: [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, facts.customerPhone && groupPhone(facts.customerPhone), facts.askerPhone, facts.askerPhone && groupPhone(facts.askerPhone), facts.upiNote, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, facts.discountCode, ...facts.services.map((s) => s.name), ...(facts.dayBookings ?? []).flatMap((d) => [d.serviceName, d.customerPhone, groupPhone(d.customerPhone), d.ref])],
   };
 }
 

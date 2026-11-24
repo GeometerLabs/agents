@@ -9,6 +9,7 @@
 import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { checker } from "../../../../modules/crash-test/situations.ts";
+import { caseAskedSituation } from "../../../../modules/crash-test/case-asked.ts";
 import type { Situation, Skipped } from "../../../../modules/crash-test/situations.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { itemName } from "../src/settings.ts";
@@ -128,6 +129,14 @@ export function holdSituations(settings: Settings): { situations: Situation[]; s
         return results;
       },
     },
+    // 25 Nov 2026 (modules/crash-test/case-asked.ts): a held item named from a number that holds no order; the customer's ask opens the order
+    caseAskedSituation({
+      noun: "order", world,
+      open: async (w) => { await w.say(ask(1), { from: ASHA }); return { ref: "o-1", customer: ASHA }; },
+      state: (w, ref) => { const x = w.store.orders.get(ref); return JSON.stringify([x?.state, x?.holdExpiresAt ?? null]); },
+      customerTemplate: "case_other_number", ownerTemplate: "owner_case_other_number",
+      ask: (ref) => `Where is ${ref.toUpperCase().replace("-", "")}? My mother asked for it`, falseRef: "o-9",
+    }),
   ];
   return { situations, skipped: [] };
 }

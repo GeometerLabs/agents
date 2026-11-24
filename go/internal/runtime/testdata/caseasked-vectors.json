@@ -1,0 +1,2539 @@
+{
+ "holds": [
+  "b-3",
+  "b-12",
+  "f-4",
+  "o-5",
+  "b-9"
+ ],
+ "extra": [
+  [
+   "412345678901",
+   "b-12"
+  ]
+ ],
+ "entries": [
+  {
+   "seq": 1,
+   "time": "2026-11-03T06:00:00.000Z",
+   "conversation": "+919811111111",
+   "booking": "b-3",
+   "action": "receive_payment_event",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "pay_Qz9AbC12345678",
+    "eventId": "evt_1"
+   }
+  },
+  {
+   "seq": 2,
+   "time": "2026-11-03T06:00:01.000Z",
+   "conversation": "+919811111111",
+   "booking": "b-3",
+   "action": "record_deposit",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "doc": "RCT/26-27/0007",
+    "amountPaise": "20000"
+   }
+  },
+  {
+   "seq": 3,
+   "time": "2026-11-04T06:00:00.000Z",
+   "conversation": "+919822222222",
+   "booking": "f-4",
+   "action": "create_fee_link",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "reference": "f-4.2",
+    "linkId": "plink_1"
+   }
+  },
+  {
+   "seq": 4,
+   "time": "2026-11-04T06:00:00.000Z",
+   "conversation": "+919833333333",
+   "booking": "o-5",
+   "action": "create_balance_link",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "reference": "o-5.b",
+    "linkId": "plink_2"
+   }
+  },
+  {
+   "seq": 5,
+   "time": "2026-11-05T06:00:00.000Z",
+   "conversation": "+919844444444",
+   "booking": null,
+   "action": "receive_message",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "messageId": "m-1",
+    "paymentId": "pay_NoCase000000"
+   }
+  },
+  {
+   "seq": 6,
+   "time": "2026-11-05T06:00:00.000Z",
+   "conversation": "+919811111111",
+   "booking": "b-9",
+   "action": "refund",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "paymentId": "upi-pay-2",
+    "doc": "CN/26-27/0001"
+   }
+  }
+ ],
+ "keys": {
+  "pay_qz9abc12345678": "b-3",
+  "rct/26-27/0007": "b-3",
+  "f-4.2": "f-4",
+  "o-5.b": "o-5",
+  "cn/26-27/0001": "b-9",
+  "upi-pay-2": "b-9"
+ },
+ "forms": {
+  "bookings": {
+   "prefix": "b",
+   "words": [
+    "booking",
+    "बुकिंग",
+    "ബുക്കിംഗ്",
+    "ಬುಕಿಂಗ್"
+   ]
+  },
+  "orders": {
+   "prefix": "o",
+   "words": [
+    "order",
+    "ऑर्डर",
+    "ഓർഡർ",
+    "ಆರ್ಡರ್"
+   ]
+  },
+  "fees": {
+   "prefix": "f",
+   "words": [
+    "fee",
+    "fees",
+    "फीस",
+    "ഫീസ്",
+    "ಶುಲ್ಕ"
+   ]
+  }
+ },
+ "tokens": [
+  {
+   "text": "what about b-3?",
+   "tokens": [
+    "what",
+    "about",
+    "b-3"
+   ]
+  },
+  {
+   "text": "B3 please",
+   "tokens": [
+    "b3",
+    "please"
+   ]
+  },
+  {
+   "text": "my booking B-3",
+   "tokens": [
+    "my",
+    "booking",
+    "b-3"
+   ]
+  },
+  {
+   "text": "b#3",
+   "tokens": [
+    "b#3"
+   ]
+  },
+  {
+   "text": "b 3",
+   "tokens": [
+    "b",
+    "3"
+   ]
+  },
+  {
+   "text": "booking 3",
+   "tokens": [
+    "booking",
+    "3"
+   ]
+  },
+  {
+   "text": "booking no 3",
+   "tokens": [
+    "booking",
+    "no",
+    "3"
+   ]
+  },
+  {
+   "text": "Booking number 12 status",
+   "tokens": [
+    "booking",
+    "number",
+    "12",
+    "status"
+   ]
+  },
+  {
+   "text": "booking 3 pm",
+   "tokens": [
+    "booking",
+    "3",
+    "pm"
+   ]
+  },
+  {
+   "text": "booking at 3",
+   "tokens": [
+    "booking",
+    "at",
+    "3"
+   ]
+  },
+  {
+   "text": "बुकिंग 3 का क्या हुआ",
+   "tokens": [
+    "बुकिंग",
+    "3",
+    "का",
+    "क्या",
+    "हुआ"
+   ]
+  },
+  {
+   "text": "बुकिंग नंबर १२",
+   "tokens": [
+    "बुकिंग",
+    "नंबर",
+    "12"
+   ]
+  },
+  {
+   "text": "ബുക്കിംഗ് 3 എന്തായി",
+   "tokens": [
+    "ബുക്കിംഗ്",
+    "3",
+    "എന്തായി"
+   ]
+  },
+  {
+   "text": "ಬುಕಿಂಗ್ ೩",
+   "tokens": [
+    "ಬುಕಿಂಗ್",
+    "3"
+   ]
+  },
+  {
+   "text": "b-03",
+   "tokens": [
+    "b-03"
+   ]
+  },
+  {
+   "text": "b-4",
+   "tokens": [
+    "b-4"
+   ]
+  },
+  {
+   "text": "b-30",
+   "tokens": [
+    "b-30"
+   ]
+  },
+  {
+   "text": "ab3",
+   "tokens": [
+    "ab3"
+   ]
+  },
+  {
+   "text": "b3x",
+   "tokens": [
+    "b3x"
+   ]
+  },
+  {
+   "text": "b-3.",
+   "tokens": [
+    "b-3"
+   ]
+  },
+  {
+   "text": "(b-3)",
+   "tokens": [
+    "b-3"
+   ]
+  },
+  {
+   "text": "RCT/26-27/0007",
+   "tokens": [
+    "rct/26-27/0007"
+   ]
+  },
+  {
+   "text": "rct/26-27/7",
+   "tokens": [
+    "rct/26-27/7"
+   ]
+  },
+  {
+   "text": "RCT/25-26/0007",
+   "tokens": [
+    "rct/25-26/0007"
+   ]
+  },
+  {
+   "text": "rct 26-27 0007",
+   "tokens": [
+    "rct",
+    "26-27",
+    "0007"
+   ]
+  },
+  {
+   "text": "CN/26-27/0001",
+   "tokens": [
+    "cn/26-27/0001"
+   ]
+  },
+  {
+   "text": "paid with pay_Qz9AbC12345678",
+   "tokens": [
+    "paid",
+    "with",
+    "pay_qz9abc12345678"
+   ]
+  },
+  {
+   "text": "PAY_QZ9ABC12345678",
+   "tokens": [
+    "pay_qz9abc12345678"
+   ]
+  },
+  {
+   "text": "pay_NoCase000000",
+   "tokens": [
+    "pay_nocase000000"
+   ]
+  },
+  {
+   "text": "my upi ref 412345678901",
+   "tokens": [
+    "my",
+    "upi",
+    "ref",
+    "412345678901"
+   ]
+  },
+  {
+   "text": "upi ref 412345678902",
+   "tokens": [
+    "upi",
+    "ref",
+    "412345678902"
+   ]
+  },
+  {
+   "text": "upi-pay-2",
+   "tokens": [
+    "upi-pay-2"
+   ]
+  },
+  {
+   "text": "f-4.2",
+   "tokens": [
+    "f-4.2"
+   ]
+  },
+  {
+   "text": "F4.2",
+   "tokens": [
+    "f4.2"
+   ]
+  },
+  {
+   "text": "f-4.9",
+   "tokens": [
+    "f-4.9"
+   ]
+  },
+  {
+   "text": "f-4",
+   "tokens": [
+    "f-4"
+   ]
+  },
+  {
+   "text": "fee 4",
+   "tokens": [
+    "fee",
+    "4"
+   ]
+  },
+  {
+   "text": "fees 4",
+   "tokens": [
+    "fees",
+    "4"
+   ]
+  },
+  {
+   "text": "फीस 4",
+   "tokens": [
+    "फीस",
+    "4"
+   ]
+  },
+  {
+   "text": "o-5.b",
+   "tokens": [
+    "o-5.b"
+   ]
+  },
+  {
+   "text": "O5",
+   "tokens": [
+    "o5"
+   ]
+  },
+  {
+   "text": "order 5",
+   "tokens": [
+    "order",
+    "5"
+   ]
+  },
+  {
+   "text": "order 2 dosa",
+   "tokens": [
+    "order",
+    "2",
+    "dosa"
+   ]
+  },
+  {
+   "text": "hello",
+   "tokens": [
+    "hello"
+   ]
+  },
+  {
+   "text": "",
+   "tokens": []
+  },
+  {
+   "text": "b-3 and b-12",
+   "tokens": [
+    "b-3",
+    "and",
+    "b-12"
+   ]
+  },
+  {
+   "text": "b-12 or b-3",
+   "tokens": [
+    "b-12",
+    "or",
+    "b-3"
+   ]
+  }
+ ],
+ "named": [
+  {
+   "template": "bookings",
+   "text": "what about b-3?",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "what about b-3?",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "B3 please",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "B3 please",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "my booking B-3",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "my booking B-3",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b#3",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b#3",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "booking 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "booking 3",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "booking no 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "booking no 3",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "Booking number 12 status",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "Booking number 12 status",
+   "words": true,
+   "named": {
+    "case": "b-12",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "booking 3 pm",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "booking 3 pm",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "booking at 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "booking at 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "बुकिंग 3 का क्या हुआ",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "बुकिंग 3 का क्या हुआ",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "बुकिंग नंबर १२",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "बुकिंग नंबर १२",
+   "words": true,
+   "named": {
+    "case": "b-12",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "ബുക്കിംഗ് 3 എന്തായി",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "ബുക്കിംഗ് 3 എന്തായി",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "ಬುಕಿಂಗ್ ೩",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "ಬುಕಿಂಗ್ ೩",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b-03",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b-03",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b-4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b-4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b-30",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b-30",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "ab3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "ab3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b3x",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b3x",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b-3.",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b-3.",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "(b-3)",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "(b-3)",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "RCT/26-27/0007",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "RCT/26-27/0007",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "rct/26-27/7",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "rct/26-27/7",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "RCT/25-26/0007",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "RCT/25-26/0007",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "rct 26-27 0007",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "rct 26-27 0007",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "CN/26-27/0001",
+   "words": false,
+   "named": {
+    "case": "b-9",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "CN/26-27/0001",
+   "words": true,
+   "named": {
+    "case": "b-9",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "paid with pay_Qz9AbC12345678",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "paid with pay_Qz9AbC12345678",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "PAY_QZ9ABC12345678",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "PAY_QZ9ABC12345678",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "pay_NoCase000000",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "pay_NoCase000000",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "my upi ref 412345678901",
+   "words": false,
+   "named": {
+    "case": "b-12",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "my upi ref 412345678901",
+   "words": true,
+   "named": {
+    "case": "b-12",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "upi ref 412345678902",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "upi ref 412345678902",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "upi-pay-2",
+   "words": false,
+   "named": {
+    "case": "b-9",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "upi-pay-2",
+   "words": true,
+   "named": {
+    "case": "b-9",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "f-4.2",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "f-4.2",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "F4.2",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "F4.2",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "f-4.9",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "f-4.9",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "f-4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "f-4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "fee 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "fee 4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "fees 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "fees 4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "फीस 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "फीस 4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "o-5.b",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "o-5.b",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "O5",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "O5",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "order 5",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "order 5",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "order 2 dosa",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "order 2 dosa",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "hello",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "hello",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "bookings",
+   "text": "b-3 and b-12",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b-3 and b-12",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b-12 or b-3",
+   "words": false,
+   "named": {
+    "case": "b-12",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "bookings",
+   "text": "b-12 or b-3",
+   "words": true,
+   "named": {
+    "case": "b-12",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "what about b-3?",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "what about b-3?",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "B3 please",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "B3 please",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "my booking B-3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "my booking B-3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b#3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b#3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking no 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking no 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "Booking number 12 status",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "Booking number 12 status",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking 3 pm",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking 3 pm",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking at 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "booking at 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "बुकिंग 3 का क्या हुआ",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "बुकिंग 3 का क्या हुआ",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "बुकिंग नंबर १२",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "बुकिंग नंबर १२",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "ബുക്കിംഗ് 3 എന്തായി",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "ബുക്കിംഗ് 3 എന്തായി",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "ಬುಕಿಂಗ್ ೩",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "ಬುಕಿಂಗ್ ೩",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-03",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-03",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-30",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-30",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "ab3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "ab3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b3x",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b3x",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-3.",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-3.",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "(b-3)",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "(b-3)",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "RCT/26-27/0007",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "RCT/26-27/0007",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "rct/26-27/7",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "rct/26-27/7",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "RCT/25-26/0007",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "RCT/25-26/0007",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "rct 26-27 0007",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "rct 26-27 0007",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "CN/26-27/0001",
+   "words": false,
+   "named": {
+    "case": "b-9",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "CN/26-27/0001",
+   "words": true,
+   "named": {
+    "case": "b-9",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "paid with pay_Qz9AbC12345678",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "paid with pay_Qz9AbC12345678",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "PAY_QZ9ABC12345678",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "PAY_QZ9ABC12345678",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "pay_NoCase000000",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "pay_NoCase000000",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "my upi ref 412345678901",
+   "words": false,
+   "named": {
+    "case": "b-12",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "my upi ref 412345678901",
+   "words": true,
+   "named": {
+    "case": "b-12",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "upi ref 412345678902",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "upi ref 412345678902",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "upi-pay-2",
+   "words": false,
+   "named": {
+    "case": "b-9",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "upi-pay-2",
+   "words": true,
+   "named": {
+    "case": "b-9",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "f-4.2",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "f-4.2",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "F4.2",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "F4.2",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "f-4.9",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "f-4.9",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "f-4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "f-4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "fee 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "fee 4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "fees 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "fees 4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "फीस 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "फीस 4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "o-5.b",
+   "words": false,
+   "named": {
+    "case": "o-5",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "o-5.b",
+   "words": true,
+   "named": {
+    "case": "o-5",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "O5",
+   "words": false,
+   "named": {
+    "case": "o-5",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "O5",
+   "words": true,
+   "named": {
+    "case": "o-5",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "order 5",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "order 5",
+   "words": true,
+   "named": {
+    "case": "o-5",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "orders",
+   "text": "order 2 dosa",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "order 2 dosa",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "hello",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "hello",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-3 and b-12",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-3 and b-12",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-12 or b-3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "orders",
+   "text": "b-12 or b-3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "what about b-3?",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "what about b-3?",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "B3 please",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "B3 please",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "my booking B-3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "my booking B-3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b#3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b#3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking no 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking no 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "Booking number 12 status",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "Booking number 12 status",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking 3 pm",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking 3 pm",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking at 3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "booking at 3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "बुकिंग 3 का क्या हुआ",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "बुकिंग 3 का क्या हुआ",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "बुकिंग नंबर १२",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "बुकिंग नंबर १२",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "ബുക്കിംഗ് 3 എന്തായി",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "ബുക്കിംഗ് 3 എന്തായി",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "ಬುಕಿಂಗ್ ೩",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "ಬುಕಿಂಗ್ ೩",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-03",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-03",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-4",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-30",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-30",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "ab3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "ab3",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b3x",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b3x",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-3.",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-3.",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "(b-3)",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "(b-3)",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "RCT/26-27/0007",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "RCT/26-27/0007",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "rct/26-27/7",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "rct/26-27/7",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "RCT/25-26/0007",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "RCT/25-26/0007",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "rct 26-27 0007",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "rct 26-27 0007",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "CN/26-27/0001",
+   "words": false,
+   "named": {
+    "case": "b-9",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "CN/26-27/0001",
+   "words": true,
+   "named": {
+    "case": "b-9",
+    "via": "receipt"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "paid with pay_Qz9AbC12345678",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "paid with pay_Qz9AbC12345678",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "PAY_QZ9ABC12345678",
+   "words": false,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "PAY_QZ9ABC12345678",
+   "words": true,
+   "named": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "pay_NoCase000000",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "pay_NoCase000000",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "my upi ref 412345678901",
+   "words": false,
+   "named": {
+    "case": "b-12",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "my upi ref 412345678901",
+   "words": true,
+   "named": {
+    "case": "b-12",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "upi ref 412345678902",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "upi ref 412345678902",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "upi-pay-2",
+   "words": false,
+   "named": {
+    "case": "b-9",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "upi-pay-2",
+   "words": true,
+   "named": {
+    "case": "b-9",
+    "via": "payment"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "f-4.2",
+   "words": false,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "f-4.2",
+   "words": true,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "F4.2",
+   "words": false,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "F4.2",
+   "words": true,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "f-4.9",
+   "words": false,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "f-4.9",
+   "words": true,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "f-4",
+   "words": false,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "f-4",
+   "words": true,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "fee 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "fee 4",
+   "words": true,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "fees 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "fees 4",
+   "words": true,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "फीस 4",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "फीस 4",
+   "words": true,
+   "named": {
+    "case": "f-4",
+    "via": "reference"
+   }
+  },
+  {
+   "template": "fees",
+   "text": "o-5.b",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "o-5.b",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "O5",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "O5",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "order 5",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "order 5",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "order 2 dosa",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "order 2 dosa",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "hello",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "hello",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-3 and b-12",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-3 and b-12",
+   "words": true,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-12 or b-3",
+   "words": false,
+   "named": null
+  },
+  {
+   "template": "fees",
+   "text": "b-12 or b-3",
+   "words": true,
+   "named": null
+  }
+ ],
+ "asked": [
+  {
+   "seq": 10,
+   "time": "2026-11-10T09:30:00.000Z",
+   "conversation": "+919855555555",
+   "booking": null,
+   "action": "case_asked_elsewhere",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "seq": 11,
+   "time": "2026-11-10T08:30:00.000Z",
+   "conversation": "+919855555555",
+   "booking": null,
+   "action": "case_asked_elsewhere",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "case": "b-12",
+    "via": "reference"
+   }
+  },
+  {
+   "seq": 12,
+   "time": "2026-11-10T09:50:00.000Z",
+   "conversation": "+919866666666",
+   "booking": null,
+   "action": "case_asked_elsewhere",
+   "inputsDigest": "",
+   "outcome": "failed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "case": "b-3",
+    "via": "reference"
+   }
+  },
+  {
+   "seq": 13,
+   "time": "2026-11-10T09:00:00.001Z",
+   "conversation": "+919877777777",
+   "booking": null,
+   "action": "case_asked_elsewhere",
+   "inputsDigest": "",
+   "outcome": "confirmed",
+   "decisions": [],
+   "language": "en",
+   "notes": "",
+   "refs": {
+    "case": "b-3",
+    "via": "payment"
+   }
+  }
+ ],
+ "told": [
+  {
+   "conversation": "+919855555555",
+   "case": "b-3",
+   "nowMs": 1794304800000,
+   "told": true
+  },
+  {
+   "conversation": "+919855555555",
+   "case": "b-12",
+   "nowMs": 1794304800000,
+   "told": false
+  },
+  {
+   "conversation": "+919866666666",
+   "case": "b-3",
+   "nowMs": 1794304800000,
+   "told": false
+  },
+  {
+   "conversation": "+919866666666",
+   "case": "b-12",
+   "nowMs": 1794304800000,
+   "told": false
+  },
+  {
+   "conversation": "+919877777777",
+   "case": "b-3",
+   "nowMs": 1794304800000,
+   "told": true
+  },
+  {
+   "conversation": "+919877777777",
+   "case": "b-12",
+   "nowMs": 1794304800000,
+   "told": false
+  },
+  {
+   "conversation": "+919888888888",
+   "case": "b-3",
+   "nowMs": 1794304800000,
+   "told": false
+  },
+  {
+   "conversation": "+919888888888",
+   "case": "b-12",
+   "nowMs": 1794304800000,
+   "told": false
+  }
+ ]
+}

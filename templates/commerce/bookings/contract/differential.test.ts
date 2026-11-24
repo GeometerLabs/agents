@@ -57,6 +57,9 @@ const payGo = async (b: Both, times: number): Promise<void> => {
 /** The id of the first list row on the newest message to the customer that has a list (the TypeScript demo's; the Go shop must have sent the same row, or the walk failed before). */
 const firstRow = (b: Both): string => b.w.messaging.sentTo(CUSTOMER).reverse().find((m) => m.interactive?.list)!.interactive!.list!.rows[0].id;
 
+/** A number that holds no booking (25 Nov 2026): it names the customer's booking. */
+const STRANGER = "+919833333333";
+
 const say = (n: number | "last"): Step<Both> => ({
   name: `the customer says chip ${n}`,
   ts: (b) => b.w.say(n === "last" ? b.chips.at(-1)! : b.chips[n]),
@@ -66,6 +69,8 @@ const say = (n: number | "last"): Step<Both> => ({
 const stepsFor = (chips: string[]): Step<Both>[] => [
   say(0),
   { name: "the customer pays the deposit", ts: (b) => payTS(b, 1), go: (b) => payGo(b, 1) },
+  // 25 Nov 2026 (modules/record/case-asked.ts): another number names that booking: the one line that shows nothing, and the owner's notice
+  { name: "another number names the booking (B1)", ts: (b) => b.w.say("what about B1?", { from: STRANGER }).then(() => undefined), go: (b) => b.s.inbound(STRANGER, "what about B1?").then(() => undefined) },
   say(1),
   { name: "the customer picks the first free time of the list", ts: (b) => b.w.tap(firstRow(b)), go: (b) => b.s.tap(firstRow(b)) },
   { name: "the customer pays that deposit twice (two phones): the second payment goes back, and the owner is told", ts: (b) => payTS(b, 2), go: (b) => payGo(b, 2) },
@@ -90,7 +95,7 @@ describe("the Bookings demo and the Go shop say the same on the demo's paths", (
       const chips = chipsFor(settings, language, w.clock.now()).map((c) => c.text);
       const ts: Side = { name: "TypeScript demo", sentTo: (n) => w.messaging.sentTo(n), sync: () => w.clock.set(Date.now()) };
       const go: Side = { name: "Go shop", sentTo: (n) => s.sent(n), sync: () => undefined };
-      const t = await walk({ steps: stepsFor(chips), people: { customer: CUSTOMER, owner: w.owner }, ts, go, world: { w, s, chips }, rules: RULES });
+      const t = await walk({ steps: stepsFor(chips), people: { customer: CUSTOMER, owner: w.owner, stranger: STRANGER }, ts, go, world: { w, s, chips }, rules: RULES });
       assertBites(t);
     });
   }

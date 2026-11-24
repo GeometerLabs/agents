@@ -282,6 +282,21 @@ func RequestOfMark(s *State, paymentID string) *MarkedRequest {
 	return nil
 }
 
+// RefundSource is ledger.ts refundSource (25 Nov 2026): the payment a refund the owner owes gives back, the way the owner finds it in their UPI app: the note its link carried
+// (the request's reference), and the owner's mark of it (the amount and when). ok is false when the ledger holds no such mark, which a refund it owes never is.
+func RefundSource(s *State, r *OwedRefund) (note string, paidPaise, paidAtMs int64, ok bool) {
+	req := RequestOfMark(s, r.PaymentID)
+	if req == nil {
+		return "", 0, 0, false
+	}
+	for _, m := range req.Marks {
+		if m.ID == r.PaymentID {
+			return req.Reference, m.AmountPaise, m.AtMs, true
+		}
+	}
+	return "", 0, 0, false
+}
+
 // floorSeconds is Math.floor(ms / 1000).
 func floorSeconds(ms int64) int64 { return int64(math.Floor(float64(ms) / 1000)) }
 

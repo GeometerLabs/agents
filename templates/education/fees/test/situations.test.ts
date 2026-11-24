@@ -12,8 +12,8 @@ import { buildSituations, runOn, runSituation } from "../crash-test/situations.t
 const maths = parseSettings(JSON.parse(readFileSync(new URL("../settings/maths-circle.example.json", import.meta.url), "utf8")));
 
 /** The counts the docs and the sell guide quote. If a situation is added or one starts to be skipped, these change in the same commit. */
-export const BRIGHT = { held: 26, total: 26, checks: 209, skipped: 0 };
-export const MATHS = { held: 23, total: 23, skipped: 3 };
+export const BRIGHT = { held: 27, total: 27, checks: 216, skipped: 0 }; // 25 Nov 2026: one more, a stranger naming a fee (modules/crash-test/case-asked.ts)
+export const MATHS = { held: 24, total: 24, skipped: 3 };
 
 for (const s of buildSituations(brightTuition()).situations) {
   test(`situation: ${s.title}`, { skip: goSkip("fees") }, async () => {

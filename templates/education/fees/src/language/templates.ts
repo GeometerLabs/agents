@@ -91,6 +91,14 @@ export interface MessageFacts {
   waitingCount?: number;
   sentCount?: number;
   heldCount?: number;
+  /** A case asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts): the number (or chat guest) that asked. Only ever in a message to the owner. */
+  askerPhone?: string;
+  /**
+   * A UPI refund the owner owes (25 Nov 2026, ledger.ts refundSource): when the owner marked the payment it gives back (receivedInr is its amount), and the note it carried
+   * ("f-3.2", the request's reference), so the owner finds it in their UPI app and sends the money back to the account it came from.
+   */
+  paidAtMs?: number;
+  upiNote?: string;
 }
 
 export type TemplateId =
@@ -114,7 +122,13 @@ export type TemplateId =
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
   | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId | CreditTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId | CreditTemplateId | CaseAskedTemplateId;
+
+/**
+ * A case asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts): the one line the asker gets (nothing of the fee: no student, month, amount or
+ * number), the same when the owner could not be told, and the owner's notice (a WhatsApp template, owner_fee_asked_elsewhere). The credit book has its twins (credit/words.ts).
+ */
+export type CaseAskedTemplateId = "fee_case_other_number" | "fee_case_other_number_untold" | "owner_case_other_number";
 
 /**
  * Item 11h: the reminders with the parent's private page in them, used whenever the centre has a page (its pages file): the same words as the three reminders, and a
@@ -155,7 +169,8 @@ export const TEMPLATE_NAMES = { customer: "fee_update", reminder: "fee_reminder_
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId | CreditTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId | CreditTemplateId | CaseAskedTemplateId>, Template>;
+type CaseAskedSet = Record<CaseAskedTemplateId, Template>;
 type FamilySet = Record<FamilyTemplateId, Template>;
 type PageSet = Record<PageTemplateId, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
@@ -176,6 +191,9 @@ export const inr = (f: MessageFacts, key: Money) => formatInr(need(f, key));
  */
 export const payTo = (f: MessageFacts): string => (f.upiId ? `${need(f, "link")} (UPI ID ${f.upiId}, ${need(f, "payee")})` : need(f, "link"));
 export const dueDate = (f: MessageFacts) => formatDate(localParts(need(f, "dueMs"), f.timeZone), f.language);
+/** 25 Nov 2026: the day the owner marked the payment a UPI refund gives back ("Tue 3 Nov"), and the note it carried ("f-3.2"). */
+export const paidDate = (f: MessageFacts) => formatDate(localParts(need(f, "paidAtMs"), f.timeZone), f.language);
+export const upiNote = (f: MessageFacts) => need(f, "upiNote");
 
 const en: BaseSet = {
   fee_reminder: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} is ${inr(f, "balanceInr")}, due on ${dueDate(f)}. Pay here: ${payTo(f)} Reply STOP if you do not want these reminders.`,
@@ -453,8 +471,8 @@ const upiEn: UpiSet = {
   owner_fee_upi_part: (f) => `Thank you. ${inr(f, "receivedInr")} for fee ${need(f, "dueRef")} is marked paid by you. ${inr(f, "balanceInr")} is still to pay; when it arrives, tap Received or reply "received ${code(f)}".`,
   owner_fee_upi_already: () => "That payment is already marked. It is counted once.",
   owner_fee_upi_unknown: () => "I don't know that code. Please use the code in my latest message about the payment.",
-  owner_fee_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to parent ${need(f, "customerPhone")} (fee ${need(f, "dueRef")}). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded ${code(f)}".`,
-  owner_fee_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to parent ${need(f, "customerPhone")} (fee ${need(f, "dueRef")}). When you have sent it by UPI, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_fee_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} back to the account that paid you ${inr(f, "receivedInr")} on ${paidDate(f)} with the note ${upiNote(f)} (parent ${need(f, "customerPhone")}, fee ${need(f, "dueRef")}). Find that payment in your UPI app and send it back to that account. The agent never sends money. When you have sent it, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_fee_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to the account that paid you ${inr(f, "receivedInr")} on ${paidDate(f)} with the note ${upiNote(f)} (parent ${need(f, "customerPhone")}, fee ${need(f, "dueRef")}). When you have sent it by UPI, tap Refund sent or reply "refunded ${code(f)}".`,
   owner_fee_upi_refund_marked: (f) => `Thank you. The ${inr(f, "refundInr")} refund for fee ${need(f, "dueRef")} is marked sent, and the parent has been told.`,
 };
 
@@ -469,8 +487,8 @@ const upiHi: UpiSet = {
   owner_fee_upi_part: (f) => `धन्यवाद। फीस ${need(f, "dueRef")} के ${inr(f, "receivedInr")} आपने मिला हुआ दर्ज किया है। ${inr(f, "balanceInr")} अभी बाकी है; आने पर "मिल गया" दबाएँ या "received ${code(f)}" लिखकर भेजें।`,
   owner_fee_upi_already: () => "यह भुगतान पहले ही दर्ज है। इसे एक ही बार गिना गया है।",
   owner_fee_upi_unknown: () => "मैं यह कोड नहीं पहचानता। कृपया उस भुगतान के बारे में मेरे सबसे नए संदेश वाला कोड इस्तेमाल करें।",
-  owner_fee_upi_refund_owed: (f) => `वापस भेजना है: अभिभावक ${need(f, "customerPhone")} (फीस ${need(f, "dueRef")}) को UPI से ${inr(f, "refundInr")}। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
-  owner_fee_upi_refund_reminder: (f) => `याद दिलाना: अभिभावक ${need(f, "customerPhone")} (फीस ${need(f, "dueRef")}) को ${inr(f, "refundInr")} अभी भी वापस देना है। UPI से भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
+  owner_fee_upi_refund_owed: (f) => `वापस भेजना है: ${inr(f, "refundInr")}, उस खाते में जिससे आपको ${paidDate(f)} को ${inr(f, "receivedInr")} मिले थे, नोट ${upiNote(f)} के साथ (अभिभावक ${need(f, "customerPhone")}, फीस ${need(f, "dueRef")})। अपने UPI ऐप में वह भुगतान ढूँढें और उसी खाते में वापस भेजें। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
+  owner_fee_upi_refund_reminder: (f) => `याद दिलाना: ${inr(f, "refundInr")} अभी भी उस खाते में वापस भेजना है जिससे आपको ${paidDate(f)} को ${inr(f, "receivedInr")} मिले थे, नोट ${upiNote(f)} के साथ (अभिभावक ${need(f, "customerPhone")}, फीस ${need(f, "dueRef")})। UPI से भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
   owner_fee_upi_refund_marked: (f) => `धन्यवाद। फीस ${need(f, "dueRef")} का ${inr(f, "refundInr")} रिफंड भेजा हुआ दर्ज हो गया है, और अभिभावक को बता दिया गया है।`,
 };
 
@@ -485,8 +503,8 @@ const upiMl: UpiSet = {
   owner_fee_upi_part: (f) => `നന്ദി. ഫീസ് ${need(f, "dueRef")}-ന്റെ ${inr(f, "receivedInr")} നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തി. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്; അത് എത്തുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
   owner_fee_upi_already: () => "ആ പണമടവ് ഇതിനകം രേഖപ്പെടുത്തിയിട്ടുണ്ട്. അത് ഒരു തവണ മാത്രം കണക്കാക്കും.",
   owner_fee_upi_unknown: () => "ആ കോഡ് എനിക്ക് അറിയില്ല. ആ പണമടവിനെക്കുറിച്ചുള്ള എന്റെ ഏറ്റവും പുതിയ സന്ദേശത്തിലെ കോഡ് ഉപയോഗിക്കുക.",
-  owner_fee_upi_refund_owed: (f) => `തിരികെ അയക്കേണ്ടത്: രക്ഷിതാവ് ${need(f, "customerPhone")}-ന് (ഫീസ് ${need(f, "dueRef")}) UPI വഴി ${inr(f, "refundInr")}. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
-  owner_fee_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: രക്ഷിതാവ് ${need(f, "customerPhone")}-ന് (ഫീസ് ${need(f, "dueRef")}) ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_fee_upi_refund_owed: (f) => `തിരികെ അയക്കേണ്ടത്: ${inr(f, "refundInr")}, ${paidDate(f)} തീയതിയിൽ ${upiNote(f)} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് ${inr(f, "receivedInr")} അയച്ച അക്കൗണ്ടിലേക്ക് (രക്ഷിതാവ് ${need(f, "customerPhone")}, ഫീസ് ${need(f, "dueRef")}). നിങ്ങളുടെ UPI ആപ്പിൽ ആ പേയ്മെന്റ് കണ്ടെത്തി അതേ അക്കൗണ്ടിലേക്ക് തിരികെ അയക്കുക. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_fee_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${paidDate(f)} തീയതിയിൽ ${upiNote(f)} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് ${inr(f, "receivedInr")} അയച്ച അക്കൗണ്ടിലേക്ക് ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട് (രക്ഷിതാവ് ${need(f, "customerPhone")}, ഫീസ് ${need(f, "dueRef")}). UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
   owner_fee_upi_refund_marked: (f) => `നന്ദി. ഫീസ് ${need(f, "dueRef")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, രക്ഷിതാവിനെ അറിയിച്ചു.`,
 };
 
@@ -501,8 +519,8 @@ const upiKn: UpiSet = {
   owner_fee_upi_part: (f) => `ಧನ್ಯವಾದ. ಶುಲ್ಕ ${need(f, "dueRef")} ರ ${inr(f, "receivedInr")} ಬಂದಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ್ದೀರಿ. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ; ಅದು ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_fee_upi_already: () => "ಆ ಪಾವತಿ ಈಗಾಗಲೇ ದಾಖಲಾಗಿದೆ. ಅದನ್ನು ಒಂದೇ ಬಾರಿ ಎಣಿಸಲಾಗುತ್ತದೆ.",
   owner_fee_upi_unknown: () => "ಆ ಕೋಡ್ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. ಆ ಪಾವತಿಯ ಬಗ್ಗೆ ನನ್ನ ಇತ್ತೀಚಿನ ಸಂದೇಶದಲ್ಲಿರುವ ಕೋಡ್ ಬಳಸಿ.",
-  owner_fee_upi_refund_owed: (f) => `ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಪೋಷಕರು ${need(f, "customerPhone")} (ಶುಲ್ಕ ${need(f, "dueRef")}) ಅವರಿಗೆ UPI ಮೂಲಕ ${inr(f, "refundInr")}. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
-  owner_fee_upi_refund_reminder: (f) => `ನೆನಪಿಸುವುದು: ಪೋಷಕರು ${need(f, "customerPhone")} (ಶುಲ್ಕ ${need(f, "dueRef")}) ಅವರಿಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_fee_upi_refund_owed: (f) => `ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ${inr(f, "refundInr")}, ${paidDate(f)} ರಂದು ${upiNote(f)} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ ${inr(f, "receivedInr")} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ (ಪೋಷಕರು ${need(f, "customerPhone")}, ಶುಲ್ಕ ${need(f, "dueRef")}). ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಆ ಪಾವತಿಯನ್ನು ಹುಡುಕಿ ಅದೇ ಖಾತೆಗೆ ಮರಳಿ ಕಳುಹಿಸಿ. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_fee_upi_refund_reminder: (f) => `ನೆನಪಿಸುವುದು: ${paidDate(f)} ರಂದು ${upiNote(f)} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ ${inr(f, "receivedInr")} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ (ಪೋಷಕರು ${need(f, "customerPhone")}, ಶುಲ್ಕ ${need(f, "dueRef")}). UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_fee_upi_refund_marked: (f) => `ಧನ್ಯವಾದ. ಶುಲ್ಕ ${need(f, "dueRef")} ರ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಪೋಷಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ.`,
 };
 
@@ -611,7 +629,30 @@ const familyKn: FamilySet = {
   fee_reminder_family_page: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ಬಾಕಿ ಶುಲ್ಕಗಳು: ${familyLines(f)}. ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ ಎಲ್ಲವನ್ನೂ ತೋರಿಸುತ್ತದೆ: ${page(f)} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn, ...familyEn, ...CLASS_TEMPLATES.en, ...CREDIT_TEMPLATES.en }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi, ...familyHi, ...CLASS_TEMPLATES.hi, ...CREDIT_TEMPLATES.hi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl, ...familyMl, ...CLASS_TEMPLATES.ml, ...CREDIT_TEMPLATES.ml }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn, ...familyKn, ...CLASS_TEMPLATES.kn, ...CREDIT_TEMPLATES.kn } };
+// A case asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts). The asker's line names nothing of the fee; the owner's names the fee, the number
+// that asked and the parent's number. Hindi, Malayalam and Kannada are machine-written and wait for a native reader (REVIEW-*.md).
+const caseAskedEn: CaseAskedSet = {
+  fee_case_other_number: () => "I can't show that fee to this number. I have told the owner, and they will contact you.",
+  fee_case_other_number_untold: () => "I can't show that fee to this number, and I couldn't reach the owner just now. Please try again in a few minutes.",
+  owner_case_other_number: (f) => `Someone at ${need(f, "askerPhone")} asks about fee ${need(f, "dueRef")} (parent ${need(f, "customerPhone")}). Check before you help.`,
+};
+const caseAskedHi: CaseAskedSet = {
+  fee_case_other_number: () => "मैं वह फीस इस नंबर पर नहीं दिखा सकता। मैंने मालिक को बता दिया है, वे आपसे संपर्क करेंगे।",
+  fee_case_other_number_untold: () => "मैं वह फीस इस नंबर पर नहीं दिखा सकता, और अभी मालिक तक बात नहीं पहुँची। थोड़ी देर बाद फिर कोशिश करें।",
+  owner_case_other_number: (f) => `कोई ${need(f, "askerPhone")} से फीस ${need(f, "dueRef")} के बारे में पूछ रहा है (अभिभावक ${need(f, "customerPhone")})। मदद करने से पहले जाँच लें।`,
+};
+const caseAskedMl: CaseAskedSet = {
+  fee_case_other_number: () => "ആ ഫീസ് വിവരം ഈ നമ്പറിൽ കാണിക്കാൻ എനിക്ക് കഴിയില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും.",
+  fee_case_other_number_untold: () => "ആ ഫീസ് വിവരം ഈ നമ്പറിൽ കാണിക്കാൻ എനിക്ക് കഴിയില്ല, ഇപ്പോൾ ഉടമയെ അറിയിക്കാനും കഴിഞ്ഞില്ല. കുറച്ച് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ.",
+  owner_case_other_number: (f) => `ഒരാൾ ${need(f, "askerPhone")} എന്ന നമ്പറിൽ നിന്ന് ഫീസ് ${need(f, "dueRef")} നെക്കുറിച്ച് ചോദിക്കുന്നു (രക്ഷിതാവ് ${need(f, "customerPhone")}). സഹായിക്കുന്നതിന് മുമ്പ് പരിശോധിക്കുക.`,
+};
+const caseAskedKn: CaseAskedSet = {
+  fee_case_other_number: () => "ಆ ಶುಲ್ಕದ ವಿವರವನ್ನು ಈ ನಂಬರ್‌ಗೆ ತೋರಿಸಲು ಆಗುವುದಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.",
+  fee_case_other_number_untold: () => "ಆ ಶುಲ್ಕದ ವಿವರವನ್ನು ಈ ನಂಬರ್‌ಗೆ ತೋರಿಸಲು ಆಗುವುದಿಲ್ಲ, ಮತ್ತು ಈಗ ಮಾಲೀಕರನ್ನು ತಲುಪಲು ಆಗಲಿಲ್ಲ. ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  owner_case_other_number: (f) => `ಯಾರೋ ${need(f, "askerPhone")} ನಂಬರ್‌ನಿಂದ ಶುಲ್ಕ ${need(f, "dueRef")} ಬಗ್ಗೆ ಕೇಳುತ್ತಿದ್ದಾರೆ (ಪೋಷಕರು ${need(f, "customerPhone")}). ಸಹಾಯ ಮಾಡುವ ಮೊದಲು ಪರಿಶೀಲಿಸಿ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn, ...familyEn, ...CLASS_TEMPLATES.en, ...CREDIT_TEMPLATES.en, ...caseAskedEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi, ...familyHi, ...CLASS_TEMPLATES.hi, ...CREDIT_TEMPLATES.hi, ...caseAskedHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl, ...familyMl, ...CLASS_TEMPLATES.ml, ...CREDIT_TEMPLATES.ml, ...caseAskedMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn, ...familyKn, ...CLASS_TEMPLATES.kn, ...CREDIT_TEMPLATES.kn, ...caseAskedKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

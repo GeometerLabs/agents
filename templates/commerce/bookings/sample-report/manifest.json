@@ -10,16 +10,16 @@
   "report": {
     "json": "report-2026-11.json",
     "html": "report-2026-11-en.html",
-    "code": "ZGYA-C9P3",
-    "digest": "sha256:fc3ca626c3b924953c698d841d41ea1df175aae9d9787ef70367ba0adf85245e",
-    "check": "https://geometer.dev/verify/#s1.AQIBBzIwMjYtMTEIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQgH4MUIwLgCAQIBAAC1AAPgzI7hQ_w8pibDuSSVPGmNhB1B6h3xdarp2Xh-9wNnugrfhSRe.-f8GjZOTTlC1z57IZ90GjyT_uMLG-OvL5ItwV1Isq26EW5pZRw8FvQzX5yWeAxKFySNu1j-7nLJktNaA_3HFCg"
+    "code": "0SBV-GC6M",
+    "digest": "sha256:0657b830d4f2ce33747eb35b10a406931156b4d7e1019058923b0250258cb7ad",
+    "check": "https://geometer.dev/verify/#s1.AQIBBzIwMjYtMTEIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQgH4MUIwLgCAQIBAAC1AAPgzI7hQwZXuDDU8s4zdH6zWxCkBpMRVrTX4QGQWJI7AlAljLet.daeNmhp2kj23O1QU2vJ1qbVGCjlNZVDlFpoIUCOdqYEvX6AKx3qhA19zWKrJu1oWbsPbxIfOWBUTB2zigDwYBg"
   },
   "crashTest": {
     "json": "go-live-certificate.json",
     "html": "go-live-certificate-en.html",
-    "code": "X7AV-JZE0",
-    "held": 9,
-    "total": 9
+    "code": "1QA9-S0QP",
+    "held": 10,
+    "total": 10
   },
   "priceList": "2026-11-21",
   "ownerLines": [

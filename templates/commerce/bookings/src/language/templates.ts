@@ -10,7 +10,7 @@
 // hold those meanings. A raw `upi://pay?...` link never appears in a message: WhatsApp does not make it tappable and it reads as broken,
 // so a UPI shop's customer gets the UPI ID in words and the QR picture (upi_qr_caption), and a gateway's https link stays on a line of its own.
 import type { Language } from "../../../../../modules/language/languages.ts";
-import { formatInr, formatSlot, formatTime, groupPhone, sentenceStart } from "../../../../../modules/language/format.ts";
+import { formatDate, formatInr, formatSlot, formatTime, groupPhone, sentenceStart } from "../../../../../modules/language/format.ts";
 import { localParts } from "../../../../../modules/core/time.ts";
 
 /** The values of this conversation's record that a message may use. The outgoing check reads the same object. */
@@ -57,6 +57,17 @@ export interface MessageFacts {
   /** E1, the discount authority (24 Nov 2026): the price of one the customer asked for (priceInr stays the list price), and the owner's card's code (go/internal/discounts CodeOf). */
   offeredInr?: number;
   discountCode?: string;
+  /**
+   * A case asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts): the number (or the chat guest) that asked, shown to the owner beside the
+   * case's own number (customerPhone). Only ever in a message to the owner.
+   */
+  askerPhone?: string;
+  /**
+   * A UPI refund the owner owes (25 Nov 2026, ledger.ts refundSource): when the owner marked the payment it gives back (the date is what the message says), and the
+   * note that payment carried ("b-3", the request's reference), so the owner finds it in their UPI app and sends the money back to the account it came from.
+   */
+  paidAtMs?: number;
+  upiNote?: string;
 }
 
 export type TemplateId =
@@ -81,7 +92,13 @@ export type TemplateId =
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
   | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | DiscountTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | DiscountTemplateId | CaseAskedTemplateId;
+
+/**
+ * A case asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts): the one line the asker gets (it names nothing of the booking: no service,
+ * time, amount, name or number), the same line when the owner could not be told, and the owner's notice (a WhatsApp template, owner_booking_asked_elsewhere).
+ */
+export type CaseAskedTemplateId = "case_other_number" | "case_other_number_untold" | "owner_case_other_number";
 
 /**
  * E1, the discount authority (24 Nov 2026; go/internal/discounts): a price below the list that the agent may give alone, one it asks the owner about, and the owner's
@@ -116,7 +133,8 @@ export const TEMPLATE_NAMES = { customer: "booking_update", reminder: "booking_r
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | DiscountTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | DiscountTemplateId | CaseAskedTemplateId>, Template>;
+type CaseAskedSet = Record<CaseAskedTemplateId, Template>;
 type DiscountSet = Record<DiscountTemplateId, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
 type LicenceSet = Record<LicenceTemplateId, Template>;
@@ -134,6 +152,12 @@ export const inr = (f: MessageFacts, key: "priceInr" | "depositInr" | "refundInr
 export const Service = (f: MessageFacts) => sentenceStart(need(f, "serviceName"), f.language);
 /** The customer's number as people write it ("+91 98111 11111"); the check holds this form too (check.ts). Only ever in a message to the owner. */
 export const phone = (f: MessageFacts) => groupPhone(need(f, "customerPhone"));
+/** The number (or chat guest) that asked about a case from another conversation, grouped like phone(). Only ever in a message to the owner. */
+export const asker = (f: MessageFacts) => groupPhone(need(f, "askerPhone"));
+/** The day the owner marked the payment a UPI refund gives back ("Tue 3 Nov"), in the shop's time zone. */
+export const paidDate = (f: MessageFacts) => formatDate(localParts(need(f, "paidAtMs"), f.timeZone), f.language);
+/** The note that payment carried in the owner's UPI app: the request's reference ("b-3"). */
+export const upiNote = (f: MessageFacts) => need(f, "upiNote");
 /**
  * The owner's day list: a heading that names the day, then one short line per booking: the time, the service and the customer's number. The date is in the
  * heading, so a row does not repeat it, and the booking's id is left out: nothing on the list is typed back. The words around it are per language.
@@ -486,8 +510,10 @@ const upiEn: UpiSet = {
   owner_upi_already: () => "That payment is already marked, so it counts only once.",
   owner_upi_unknown: () => "Sorry, I don't recognise that code. Please use the one in my latest message about this payment.",
   owner_upi_late: (f) => `You marked ${marked(f)} from ${phone(f)} as received after their hold had ended, so it wasn't booked by itself. Please book them yourself, or send the ${inr(f, "refundInr")} back by UPI. Then tap Refund sent or Kept for booking (or reply: refunded ${code(f)} or kept ${code(f)}).`,
-  owner_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to ${phone(f)}. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded ${code(f)}).`,
-  owner_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to ${phone(f)}. Once you've sent it by UPI, tap Refund sent (or reply: refunded ${code(f)}).`,
+  // 25 Nov 2026: the money goes back to the account it came from (a family member may have paid), found in the owner's UPI app by its note, amount and date; the
+  // customer's number stays as the person the agent tells
+  owner_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} back to the account that paid you ${marked(f)} on ${paidDate(f)} with the note ${upiNote(f)}. Find that payment in your UPI app and send it back to that account. I never send money myself, and I'll tell the customer (${phone(f)}) once it's marked sent. When you've sent it, tap Refund sent (or reply: refunded ${code(f)}).`,
+  owner_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to the account that paid you ${marked(f)} on ${paidDate(f)} with the note ${upiNote(f)} (customer ${phone(f)}). Once you've sent it by UPI, tap Refund sent (or reply: refunded ${code(f)}).`,
   owner_upi_refund_marked: (f) => `Thanks! The ${inr(f, "refundInr")} refund is marked as sent, and the customer has been told.`,
   owner_upi_refund_kept: (f) => `Noted: you're keeping the ${inr(f, "refundInr")} for a booking you make yourself. Nothing more is owed back.`,
 };
@@ -516,8 +542,8 @@ const upiHi: UpiSet = {
   owner_upi_already: () => "यह पेमेंट पहले ही दर्ज हो चुका है, इसलिए एक ही बार गिना जाएगा।",
   owner_upi_unknown: () => "माफ़ कीजिए, यह कोड मैं पहचान नहीं पाया। इस पेमेंट के बारे में मेरे सबसे नए मैसेज वाला कोड भेजिए।",
   owner_upi_late: (f) => `आपने ग्राहक ${phone(f)} के ${marked(f)} उनकी रोक खत्म होने के बाद मिला हुआ दर्ज किए, इसलिए बुकिंग अपने-आप नहीं हुई। कृपया उनकी बुकिंग खुद कर दीजिए, या ${inr(f, "refundInr")} UPI से वापस भेज दीजिए। फिर "रिफंड भेज दिया" या "बुकिंग के लिए रखा" दबाइए (या लिखिए: refunded ${code(f)} या kept ${code(f)})।`,
-  owner_upi_refund_owed: (f) => `वापस भेजना है: ग्राहक ${phone(f)} को UPI से ${inr(f, "refundInr")}। मैं खुद कभी पैसे नहीं भेजता। आप भेज दें तो "रिफंड भेज दिया" दबाइए (या लिखिए: refunded ${code(f)})।`,
-  owner_upi_refund_reminder: (f) => `याद दिलाना: ग्राहक ${phone(f)} को ${inr(f, "refundInr")} अभी भी वापस देना बाकी है। UPI से भेज दें तो "रिफंड भेज दिया" दबाइए (या लिखिए: refunded ${code(f)})।`,
+  owner_upi_refund_owed: (f) => `वापस भेजना है: ${inr(f, "refundInr")}, उस खाते में जिससे आपको ${paidDate(f)} को ${marked(f)} मिले थे, नोट ${upiNote(f)} के साथ। अपने UPI ऐप में वह भुगतान ढूँढिए और उसी खाते में वापस भेजिए। मैं खुद कभी पैसे नहीं भेजता, और भेजा हुआ दर्ज होते ही ग्राहक (${phone(f)}) को बता दूँगा। भेज दें तो "रिफंड भेज दिया" दबाइए (या लिखिए: refunded ${code(f)})।`,
+  owner_upi_refund_reminder: (f) => `याद दिलाना: ${inr(f, "refundInr")} अभी भी उस खाते में वापस भेजना बाकी है जिससे आपको ${paidDate(f)} को ${marked(f)} मिले थे, नोट ${upiNote(f)} के साथ (ग्राहक ${phone(f)})। UPI से भेज दें तो "रिफंड भेज दिया" दबाइए (या लिखिए: refunded ${code(f)})।`,
   owner_upi_refund_marked: (f) => `शुक्रिया! ${inr(f, "refundInr")} का रिफंड भेजा हुआ दर्ज हो गया, और ग्राहक को बता दिया गया है।`,
   owner_upi_refund_kept: (f) => `ठीक है: ${inr(f, "refundInr")} आप अपनी खुद की बुकिंग के लिए रख रहे हैं। अब कुछ वापस देना बाकी नहीं है।`,
 };
@@ -546,8 +572,8 @@ const upiMl: UpiSet = {
   owner_upi_already: () => "ആ പേയ്മെന്റ് ഇതിനകം രേഖപ്പെടുത്തിയതാണ്, അതുകൊണ്ട് ഒരു തവണ മാത്രമേ കണക്കാക്കൂ.",
   owner_upi_unknown: () => "ക്ഷമിക്കണം, ആ കോഡ് എനിക്ക് മനസ്സിലായില്ല. ഈ പേയ്മെന്റിനെക്കുറിച്ചുള്ള എന്റെ ഏറ്റവും പുതിയ മെസ്സേജിലെ കോഡ് ഉപയോഗിക്കൂ.",
   owner_upi_late: (f) => `മാറ്റിവച്ച സമയം കഴിഞ്ഞ ശേഷമാണ് നിങ്ങൾ ${marked(f)} കിട്ടിയതായി രേഖപ്പെടുത്തിയത് (കസ്റ്റമർ ${phone(f)}), അതുകൊണ്ട് തനിയെ ബുക്ക് ആയില്ല. അവരുടെ ബുക്കിംഗ് നിങ്ങൾ തന്നെ ചെയ്യൂ, അല്ലെങ്കിൽ ${inr(f, "refundInr")} UPI വഴി തിരികെ അയക്കൂ. എന്നിട്ട് "റീഫണ്ട് അയച്ചു" അല്ലെങ്കിൽ "ബുക്കിംഗിനായി വെച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)} അല്ലെങ്കിൽ kept ${code(f)}).`,
-  owner_upi_refund_owed: (f) => `തിരികെ അയക്കാനുണ്ട്: കസ്റ്റമർ ${phone(f)}, UPI വഴി ${inr(f, "refundInr")}. പണം ഞാൻ ഒരിക്കലും സ്വയം അയക്കില്ല. നിങ്ങൾ അയച്ചുകഴിഞ്ഞാൽ "റീഫണ്ട് അയച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)}).`,
-  owner_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട് (കസ്റ്റമർ ${phone(f)}). UPI വഴി അയച്ചുകഴിഞ്ഞാൽ "റീഫണ്ട് അയച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)}).`,
+  owner_upi_refund_owed: (f) => `തിരികെ അയക്കാനുണ്ട്: ${inr(f, "refundInr")}, ${paidDate(f)} തീയതിയിൽ ${upiNote(f)} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് ${marked(f)} അയച്ച അക്കൗണ്ടിലേക്ക്. നിങ്ങളുടെ UPI ആപ്പിൽ ആ പേയ്മെന്റ് കണ്ടെത്തി അതേ അക്കൗണ്ടിലേക്ക് തിരികെ അയക്കൂ. പണം ഞാൻ ഒരിക്കലും സ്വയം അയക്കില്ല; അയച്ചതായി രേഖപ്പെടുത്തിയാൽ കസ്റ്റമറെ (${phone(f)}) ഞാൻ അറിയിക്കും. അയച്ചുകഴിഞ്ഞാൽ "റീഫണ്ട് അയച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)}).`,
+  owner_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${paidDate(f)} തീയതിയിൽ ${upiNote(f)} എന്ന കുറിപ്പോടെ നിങ്ങൾക്ക് ${marked(f)} അയച്ച അക്കൗണ്ടിലേക്ക് ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട് (കസ്റ്റമർ ${phone(f)}). UPI വഴി അയച്ചുകഴിഞ്ഞാൽ "റീഫണ്ട് അയച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)}).`,
   owner_upi_refund_marked: (f) => `നന്ദി! ${inr(f, "refundInr")} റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, കസ്റ്റമറെ അറിയിച്ചിട്ടുമുണ്ട്.`,
   owner_upi_refund_kept: (f) => `ശരി, ${inr(f, "refundInr")} നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല.`,
 };
@@ -576,8 +602,8 @@ const upiKn: UpiSet = {
   owner_upi_already: () => "ಆ ಪಾವತಿ ಈಗಾಗಲೇ ಗುರುತಿಸಲಾಗಿದೆ, ಹಾಗಾಗಿ ಒಮ್ಮೆ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ.",
   owner_upi_unknown: () => "ಕ್ಷಮಿಸಿ, ಆ ಕೋಡ್ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. ಈ ಪಾವತಿಯ ಬಗ್ಗೆ ನನ್ನ ಇತ್ತೀಚಿನ ಮೆಸೇಜಿನಲ್ಲಿರುವ ಕೋಡ್ ಬಳಸಿ.",
   owner_upi_late: (f) => `ನೀವು ${phone(f)} ಅವರ ${marked(f)} ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು, ಹಾಗಾಗಿ ತಾನಾಗಿ ಬುಕ್ ಆಗಲಿಲ್ಲ. ಅವರಿಗೆ ನೀವೇ ಬುಕ್ ಮಾಡಿ, ಅಥವಾ ${inr(f, "refundInr")} UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸಿ. ಆಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಅಥವಾ "ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)} ಅಥವಾ kept ${code(f)}).`,
-  owner_upi_refund_owed: (f) => `ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: ${phone(f)} ಅವರಿಗೆ UPI ಮೂಲಕ ${inr(f, "refundInr")}. ನಾನು ಯಾವತ್ತೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ನೀವು ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)}).`,
-  owner_upi_refund_reminder: (f) => `ನೆನಪಿಸುತ್ತಿದ್ದೇನೆ: ${phone(f)} ಅವರಿಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)}).`,
+  owner_upi_refund_owed: (f) => `ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: ${inr(f, "refundInr")}, ${paidDate(f)} ರಂದು ${upiNote(f)} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ ${marked(f)} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಆ ಪಾವತಿಯನ್ನು ಹುಡುಕಿ ಅದೇ ಖಾತೆಗೆ ಮರಳಿ ಕಳುಹಿಸಿ. ನಾನು ಯಾವತ್ತೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ; ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ ಮೇಲೆ ಗ್ರಾಹಕರಿಗೆ (${phone(f)}) ತಿಳಿಸುತ್ತೇನೆ. ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)}).`,
+  owner_upi_refund_reminder: (f) => `ನೆನಪಿಸುತ್ತಿದ್ದೇನೆ: ${paidDate(f)} ರಂದು ${upiNote(f)} ಎಂಬ ಟಿಪ್ಪಣಿಯೊಂದಿಗೆ ನಿಮಗೆ ${marked(f)} ಕಳುಹಿಸಿದ ಖಾತೆಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ (ಗ್ರಾಹಕರು ${phone(f)}). UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)}).`,
   owner_upi_refund_marked: (f) => `ಧನ್ಯವಾದ! ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ್ದೇನೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ.`,
   owner_upi_refund_kept: (f) => `ಸರಿ: ${inr(f, "refundInr")} ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತಿದ್ದೀರಿ. ಇನ್ನು ಏನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ.`,
 };
@@ -668,7 +694,30 @@ const discountKn: DiscountSet = {
   owner_discount_stale: () => "ಈ ಉತ್ತರ ಬದಲಾದ ಅಥವಾ ಈಗಾಗಲೇ ಉತ್ತರಿಸಿದ ಬೆಲೆಯ ಕೋರಿಕೆಗೆ ಸಂಬಂಧಿಸಿದ್ದು, ಆದ್ದರಿಂದ ಏನೂ ಮಾಡಲಿಲ್ಲ.",
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...discountEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...discountHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...discountMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...discountKn } };
+// A case asked about from another conversation (25 Nov 2026, modules/record/case-asked.ts). The asker's line names nothing of the booking; the owner's names the booking,
+// the number that asked and the booking's own number. Hindi, Malayalam and Kannada are machine-written and wait for a native reader (REVIEW-*.md).
+const caseAskedEn: CaseAskedSet = {
+  case_other_number: () => "I can't show that booking to this number. I've told the owner, and they'll get in touch with you.",
+  case_other_number_untold: () => "I can't show that booking to this number, and I couldn't reach the owner just now. Please try again in a few minutes.",
+  owner_case_other_number: (f) => `Someone at ${asker(f)} asks about ${need(f, "bookingRef")} (booked from ${phone(f)}). Check before you help.`,
+};
+const caseAskedHi: CaseAskedSet = {
+  case_other_number: () => "मैं वह बुकिंग इस नंबर पर नहीं दिखा सकता। मैंने मालिक को बता दिया है, वे आपसे संपर्क करेंगे।",
+  case_other_number_untold: () => "मैं वह बुकिंग इस नंबर पर नहीं दिखा सकता, और अभी मालिक तक बात नहीं पहुँची। थोड़ी देर बाद फिर कोशिश कीजिए।",
+  owner_case_other_number: (f) => `कोई ${asker(f)} से ${need(f, "bookingRef")} के बारे में पूछ रहा है (बुकिंग ${phone(f)} से हुई थी)। मदद करने से पहले जाँच लीजिए।`,
+};
+const caseAskedMl: CaseAskedSet = {
+  case_other_number: () => "ആ ബുക്കിംഗ് ഈ നമ്പറിൽ കാണിക്കാൻ എനിക്ക് പറ്റില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും.",
+  case_other_number_untold: () => "ആ ബുക്കിംഗ് ഈ നമ്പറിൽ കാണിക്കാൻ എനിക്ക് പറ്റില്ല, ഇപ്പോൾ ഉടമയെ അറിയിക്കാനും പറ്റിയില്ല. കുറച്ച് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ.",
+  owner_case_other_number: (f) => `ഒരാൾ ${asker(f)} എന്ന നമ്പറിൽ നിന്ന് ${need(f, "bookingRef")} നെക്കുറിച്ച് ചോദിക്കുന്നു (ബുക്ക് ചെയ്തത് ${phone(f)} നമ്പറിൽ നിന്നാണ്). സഹായിക്കുന്നതിന് മുമ്പ് ഒന്ന് പരിശോധിക്കൂ.`,
+};
+const caseAskedKn: CaseAskedSet = {
+  case_other_number: () => "ಆ ಬುಕಿಂಗ್ ಅನ್ನು ಈ ನಂಬರ್‌ಗೆ ತೋರಿಸಲು ಆಗುವುದಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.",
+  case_other_number_untold: () => "ಆ ಬುಕಿಂಗ್ ಅನ್ನು ಈ ನಂಬರ್‌ಗೆ ತೋರಿಸಲು ಆಗುವುದಿಲ್ಲ, ಮತ್ತು ಈಗ ಮಾಲೀಕರನ್ನು ತಲುಪಲು ಆಗಲಿಲ್ಲ. ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  owner_case_other_number: (f) => `ಯಾರೋ ${asker(f)} ನಂಬರ್‌ನಿಂದ ${need(f, "bookingRef")} ಬಗ್ಗೆ ಕೇಳುತ್ತಿದ್ದಾರೆ (${phone(f)} ನಂಬರ್‌ನಿಂದ ಬುಕ್ ಆಗಿತ್ತು). ಸಹಾಯ ಮಾಡುವ ಮೊದಲು ಪರಿಶೀಲಿಸಿ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...discountEn, ...caseAskedEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...discountHi, ...caseAskedHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...discountMl, ...caseAskedMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...discountKn, ...caseAskedKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

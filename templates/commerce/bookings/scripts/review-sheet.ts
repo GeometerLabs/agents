@@ -48,6 +48,8 @@ export function sampleFacts(language: Language, id: TemplateId, dayList: DayList
     pageLink: "https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s",
     // the licence's notices (B13): who set the shop up, and the bookings still to come at the final stop
     partner: "Divya, Sri Sai Digital", upcomingCount: 3,
+    // 25 Nov 2026: the number that asked about b-3 from elsewhere, and the day and note of the payment a UPI refund gives back
+    askerPhone: "+919822222222", paidAtMs: zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 11, minute: 30 }, TIME_ZONE), upiNote: "b-3",
     // the owner's day list (B72): two of the day's bookings, so the reviewer sees the heading and how each row reads (DAY_LIST_VARIANTS has the other forms)
     // two haircuts on the sample day (named in the language, as the agent names them), or none
     ...(id === "owner_day_bookings" ? {
@@ -174,8 +176,11 @@ const WHEN: Record<TemplateId, string> = {
   owner_upi_already: "UPI shop: the owner used a code that was already used: counted once",
   owner_upi_unknown: "UPI shop: the owner used a code the agent never gave",
   owner_upi_late: "UPI shop: the owner marked the money after the hold ended: book by hand, or send it back",
-  owner_upi_refund_owed: "UPI shop: a refund the owner must send from their UPI app, with the code",
-  owner_upi_refund_reminder: "UPI shop: a reminder of a refund still owed (once a day, three times at most)",
+  owner_upi_refund_owed: "UPI shop: a refund the owner must send from their UPI app, back to the account that paid (found by its note, amount and date), with the code",
+  owner_upi_refund_reminder: "UPI shop: a reminder of a refund still owed back to the account that paid (once a day, three times at most)",
+  case_other_number: "Someone writes from a number with no booking and names another person's booking: nothing of it is shown, the owner is told",
+  case_other_number_untold: "The same, when the owner could not be told just now",
+  owner_case_other_number: "To the owner: someone at another number asked about a booking; check before helping",
   owner_upi_refund_marked: "UPI shop: the answer to the owner's Refund sent",
   owner_upi_refund_kept: "UPI shop: the answer to the owner's Kept for booking",
   booking_paused: "The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later",

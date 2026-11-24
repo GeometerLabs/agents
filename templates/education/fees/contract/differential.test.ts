@@ -43,6 +43,10 @@ interface Both { w: World; c: Centre; parent: string; chips: string[]; people: R
 /** The newest payment link a parent was sent, as its id. */
 const linkIn = (texts: string[]): string => { for (const t of [...texts].reverse()) { const m = /https:\/\/pay\.example\/([A-Za-z0-9_]+)/u.exec(t); if (m) return m[1]; } throw new Error("the parent was sent no payment link"); };
 
+/** A number that holds no fee (25 Nov 2026), and its words: the demo parent's first fee, as "F3". */
+const STRANGER = "+919877777777";
+const strangerAsk = (b: Both): string => `what about ${[...b.w.store.dues.values()].find((d) => d.customer === b.parent)!.id.toUpperCase().replace("-", "")}?`;
+
 const STEPS: Step<Both>[] = [
   {
     name: "the first beat: the earlier month opens and the parent is reminded, with a link",
@@ -58,6 +62,12 @@ const STEPS: Step<Both>[] = [
       await b.c.events(events.map((event) => ({ kind: "payment_event", event })));
       await b.c.settle();
     },
+  },
+  // 25 Nov 2026 (modules/record/case-asked.ts): another number names the parent's fee: the one line that shows nothing, and the owner's notice
+  {
+    name: "another number names the parent's fee (F<n>)",
+    ts: (b) => b.w.say(strangerAsk(b), { from: STRANGER }).then(() => undefined),
+    go: (b) => b.c.inbound(STRANGER, strangerAsk(b)).then(() => undefined),
   },
   { name: "the parent says the first chip (I already paid the fee)", ts: (b) => b.w.say(b.chips[0], { from: b.parent }), go: (b) => b.c.inbound(b.parent, b.chips[0]) },
   { name: "the parent says the second chip (STOP)", ts: (b) => b.w.say(b.chips[1], { from: b.parent }), go: (b) => b.c.inbound(b.parent, b.chips[1]) },
@@ -103,7 +113,7 @@ describe("the Fees demo and the Go centre say the same on the demo's paths", () 
       assert.deepEqual(validateSettings(JSON.parse(readFileSync(join(c.client, "settings.json"), "utf8"))), { ok: true, settings }, "the Go centre was given the same centre");
       const w = createWorld({ settings, nowMs: Date.now() });
       await c.start();
-      const people: Record<string, string> = { owner: w.owner, ...Object.fromEntries([...new Set(settings.students.map((x) => x.parent))].map((p) => [`parent ${p}`, p])) };
+      const people: Record<string, string> = { owner: w.owner, stranger: STRANGER, ...Object.fromEntries([...new Set(settings.students.map((x) => x.parent))].map((p) => [`parent ${p}`, p])) };
       const ts: Side = { name: "TypeScript demo", sentTo: (n) => w.messaging.sentTo(n), sync: () => w.clock.set(Date.now()) };
       const go: Side = { name: "Go shop", sentTo: (n) => c.sent(n), sync: () => undefined };
       const walked = await walk({ steps: STEPS, people, ts, go, world: { w, c, parent: demo.customer, chips: demo.chips, people }, rules: RULES });

@@ -176,7 +176,7 @@ export function latestBooking(store: Store, customer: string, states: BookingSta
 }
 
 /** The values of this booking's record that a message may use. Everything comes from the booking and the settings, never from message text. */
-export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"]; pageLink?: string } = {}): MessageFacts {
+export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"]; pageLink?: string; bookingRef?: string; askerPhone?: string; paidAtMs?: number; upiNote?: string } = {}): MessageFacts {
   const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   const service = booking?.serviceId ? settings.services.find((s) => s.id === booking.serviceId) : undefined;
   return {
@@ -194,7 +194,7 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
     link: booking?.linkUrl,
     holdMinutes: settings.deposit.holdMinutes,
     windowHours: settings.cancellation.windowHours,
-    bookingRef: booking?.id || undefined,
+    bookingRef: extra.bookingRef ?? (booking?.id || undefined), // a case asked about from another number names it without the booking (agent.ts onCaseAsked)
     customerPhone: extra.customerPhone ?? booking?.customer,
     ...(payTo ? { upiId: payTo.id, payee: payTo.name } : {}),
     ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
@@ -202,6 +202,9 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
     ...(extra.leftInr !== undefined ? { leftInr: extra.leftInr } : {}),
     ...(extra.day ? { day: extra.day, dayBookings: extra.dayBookings ?? [] } : {}),
     ...(extra.pageLink ? { pageLink: extra.pageLink } : {}),
+    ...(extra.askerPhone ? { askerPhone: extra.askerPhone } : {}),
+    ...(extra.paidAtMs !== undefined ? { paidAtMs: extra.paidAtMs } : {}),
+    ...(extra.upiNote ? { upiNote: extra.upiNote } : {}),
   };
 }
 

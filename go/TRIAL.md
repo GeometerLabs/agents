@@ -1723,3 +1723,38 @@ parts shop a press on a `g-` case is owned by two parts and is recorded and not 
   `last` (six files) 3 failed in that run, then 59 pass, 11 skipped, 0 fail rerun after the entry above. Hand checks on Go: every one holds all, the starter shop 28 of 28 (its own 6, fees 4, stock-orders
   14, orders 4) and Stock orders on the starter's stock settings 15 of 15, but Bookings with the assistant 39 of 40 ("the model is down mid-conversation": the owner is not
   told a second time), which main fails the same way (not this stream's). 0 shop programs left.
+
+
+## morning-clock-25nov: the assistant hand check's evening failure, found at its cause (25 Nov 2026)
+
+Bookings with the assistant held 40 of 40 in the morning runs of 24 Nov and 39 of 40 in the evening ones ("The model is down mid-conversation": the owner got the morning line
+after the heads-up). Not the time of day: the same situation held alone at 19:25 and failed in the full run at 19:28. The shop's beat runs on a real-time timer from the process's
+start (0.2 s in the hand check), the world opens at 10:00 on the shop's clock, inside the owner's morning window, and the situation books and pays in some 0.15 s. In the failing
+run the booking was confirmed at .226 and the first beat claimed the morning line at .230, counting it; when the beat came first, the day was quiet and the process did not look
+again (`runtime/morning.go`, as `morning.ts` did). A margin of milliseconds, so any change in start-up or step speed flipped it. Fixed in the hand check, not the program: a
+hand-check shop's start (`modules/crash-test/go-shop.ts`, also after a restart) now returns once its first beat has ended, as a running shop has beaten before its customer
+writes; every template's world shares it. The owner link file is now made at the shop's start instant too (it was the machine's time; the program only checks it is there).
+Test: `templates/commerce/bookings/test/first-beat.test.ts` (a 2 s beat; before the fix the morning line always went, after it never). A live shop saw nothing wrong: its line
+goes once, inside the window. The quiet day kept per process only is noted in `internal/runtime/Deferred.md`. The cost: about 0.25 s a world (one beat), so the Bookings hand
+check takes some 27 s instead of 17 s, Orders' 9 s instead of 5 s.
+
+## refund-paths-25nov: a case asked from another number, and the UPI refund's account (25 Nov 2026)
+
+Owner, 25 Nov: "yes, plan and fix both". Built in TypeScript (each template's `src/`, the public demo) and Go (the shops), with the words generated as always.
+
+- **A case named from a number that holds none.** `modules/record/case-asked.ts` and its twin `internal/runtime/caseasked.go` (vectors: `testdata/caseasked-vectors.json`,
+  `scripts/gen_caseasked_vectors.ts --check`) read a reference ("b-3", "B3", "f-3.2", "o-5.b", a receipt's number, a payment id the record holds, a UPI reference a customer
+  typed; the word form "booking 3" only when nothing else was read). Each template's `onCaseAsked` (Bookings `agent_flow.go`, Orders `agent_owner.go` with holds and plans,
+  Fees `agent_talk.go` with the credit book) answers with one line that shows nothing, tells the owner by a WhatsApp template at most once an hour per asker and case (from the
+  record), and writes `case_asked_elsewhere` with `refs.case` and `booking` null. New templates: `owner_booking_asked_elsewhere`, `owner_order_asked_elsewhere`,
+  `owner_fee_asked_elsewhere`, `owner_credit_asked_elsewhere`.
+- **The UPI refund's account.** `ownermarked.RefundSource` (ledger.ts `refundSource`) names the mark a refund gives back; the owner's message says the note, the amount and the
+  day, and keeps the customer's number as the person to tell. Renamed templates (changed bodies need Meta again; the old names stay registered, unused):
+  `owner_upi_refund_to_account` / `owner_upi_refund_account_reminder` (Bookings and the owner-marked desk), `owner_order_upi_refund_to_account` /
+  `owner_order_upi_refund_account_reminder`, `owner_fee_upi_refund_to_account` / `owner_fee_upi_refund_account_reminder`, `owner_credit_refund_to_account` /
+  `owner_credit_refund_account_due`.
+- **Tests.** Contract cases `contract/other-number.contract.test.ts` in Bookings, Orders and Fees; a stranger step in each `differential.test.ts`; the hand check's shared
+  situation `modules/crash-test/case-asked.ts` in every Bookings, Orders (holds too) and Fees (the credit book too) run.
+- **Not done.** The parts router of decision 65 was not on main: modules/Deferred.md says what it needs. Stock orders has no customer cases (its Deferred.md). A customer
+  with a case of their own who names another's is answered as before (the brief's rule kept literally; each template's Deferred.md).
+
