@@ -1618,3 +1618,13 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   the log); the "before" side runs on the programs the shop runs now (copied out of the image the deployed compose file names into <server>/programs-running). The update
   test that put a fault into a version's TypeScript agent now puts it into the new version's program (a build that misreads windows over 24 hours): the 48-hour client is
   held back, the other moves.
+- **Three more on the plans example shop**, found once the run of record passed each settings file as its own argument: on a UPI shop the plan's renewal writes the UPI ID
+  after its link and so filled no template (the link slot now holds the link as every payment request writes it, `payTo`, and the Go words read it so), and "your plan is on"
+  and the owner's "plan cancelled" had no template (both added, with the plan's meals and days as slots). All three went under the generic name, refused outside the window.
+  The Orders tests now run the plans shop's situations on Go (22 of 22); the other unasked plan messages are a row in templates/commerce/orders/Deferred.md. The agent update
+  (bundle/agent/update.ts) reads the not-run situations too, so it treats them as the shop update does.
+- **Run of record** at 04c689b8, clean tree: go build, vet, test (40 packages ok); contracts Bookings 178/178, Orders 136/136, Fees 111/111, Stock orders 74/74, listings
+  210/210; 41 generators `--check` none stale; units Bookings 838, Orders 216, Fees 245, Stock orders 124, all pass; bundle 724 pass, 9 skipped (Caddy, needs
+  REAL_CADDY=1 and Docker); panel 276/276; every hand check on Go holds: Bookings 40/40, UPI 9/9, rental 35/35, discounts 43/43, assistant 40/40; Orders 17/17,
+  Razorpay 18/18, Sweet Crumbs 16/16, plans 22/22, hold 4/4, discounts 20/20; Fees 26/26, Maths Circle 23/23, UPI 7/7, Classes 31/31, credit 4/4; Stock orders 17/17.
+  No shop program left running.
