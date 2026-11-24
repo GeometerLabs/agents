@@ -62,10 +62,10 @@ test("a shop's settings are judged by the template its pathway.lock names; a loc
     for (const lock of ["nonesuch@0.1.0", "constructor@0.1.0", "toString@0.1.0".toLowerCase()]) {
       writeFileSync(join(w.paths.shop("bright"), "pathway.lock"), `${lock}\n`);
       const p = readShop(w.root, "bright").problems;
-      assert.ok(p.some((x) => x.includes(`pinned to "${lock.split("@")[0]}"`) && x.includes("bookings, fees, orders, stock-orders, listings")), `${lock}: ${p.join("|")}`);
+      assert.ok(p.some((x) => x.includes(`pinned to "${lock.split("@")[0]}"`) && x.includes("bookings, fees, orders, stock-orders, parts, listings")), `${lock}: ${p.join("|")}`);
     }
     assert.equal(kindFor("constructor"), undefined);
-    assert.deepEqual(Object.keys(KINDS), ["bookings", "fees", "orders", "stock-orders", "listings"]);
+    assert.deepEqual(Object.keys(KINDS), ["bookings", "fees", "orders", "stock-orders", "parts", "listings"]); // parts: decision 65, a shop of several template parts
   } finally { w.done(); }
 });
 
