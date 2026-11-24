@@ -20,9 +20,13 @@ import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.t
 import { OWNER_MARKED_KINDS } from "./guards.ts";
 
 
-/** Item 11h: the customer side of a shop's page, from its pathway (none for a pathway that has no page: an agent someone else wrote has no runtime of ours). */
-const channelKind = (pathway: string | undefined): "bookings" | "orders" | "fees" | "stock" | "listings" | undefined =>
-  pathway === undefined || pathway === "bookings" ? "bookings" : pathway === "orders" ? "orders" : pathway === "fees" ? "fees" : pathway === "stock-orders" ? "stock" : pathway === "listings" ? "listings" : undefined;
+/**
+ * Item 11h: the customer side of a shop's page, from its pathway (none for a pathway that has no page: an agent someone else wrote has no runtime of ours). Decision 65: a shop
+ * of several parts shows its customer part's side (`partsChannel`: the pickup hold's, else the credit book's; Stock orders alone has the owner's page only).
+ */
+const channelKind = (pathway: string | undefined, partsChannel?: "orders" | "fees"): "bookings" | "orders" | "fees" | "stock" | "listings" | undefined =>
+  pathway === undefined || pathway === "bookings" ? "bookings" : pathway === "orders" ? "orders" : pathway === "fees" ? "fees" : pathway === "stock-orders" ? "stock" : pathway === "listings" ? "listings"
+    : pathway === "parts" ? partsChannel ?? "stock" : undefined;
 
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";
@@ -108,7 +112,7 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
         secretsDir: `/run/secrets/${s.name}`,
         // item 11d: a shop's page, its API, MCP endpoint and owner page are served by this process (/s/<shop>/...), with its channel_token. Item 11h: every template
         // has one now (Bookings' booking page; Orders' menu and orders; Fees' centre page and parents' private pages), and `kind` says which customer side it is
-        ...(channelKind((s as { pathway?: string }).pathway) ? { channel: { publicUrl: `${publicUrl(server)}/s/${s.name}`, kind: channelKind((s as { pathway?: string }).pathway)! } } : {}),
+        ...(channelKind((s as { pathway?: string }).pathway) ? { channel: { publicUrl: `${publicUrl(server)}/s/${s.name}`, kind: channelKind((s as { pathway?: string }).pathway, (s as { partsChannel?: "orders" | "fees" }).partsChannel)! } } : {}),
       }]),
       // an agent someone else wrote has no runtime: its WhatsApp number's webhook comes here, the owner's replies go to the relay (when the relay has something
       // for it: a held call to ask about, or the desk), and the rest goes on to the agent itself

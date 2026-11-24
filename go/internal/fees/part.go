@@ -101,11 +101,18 @@ func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
 	if m.Reply != nil && intentFromReply(m.Reply.ID) != nil {
 		return runtime.ClaimCommand // a tap on one of the centre's own buttons
 	}
+	if m.Image {
+		return runtime.ClaimWords // a picture from someone the centre knows may be a payment's screenshot (it is read as "I paid", never as paid)
+	}
 	switch parseIntent(m.Text).Kind {
 	case "yes", "no", "pay", "paid", "refund", "stop":
 		return runtime.ClaimOpen
+	case "discount", "owner":
+		return runtime.ClaimWords
 	}
-	return runtime.ClaimWords
+	// words the centre's rules do not read, from someone it knows ("hello", "keep one for me"): as much the centre's as any part's that takes new business, so a part that
+	// reads them as its own takes them, and with none the shop asks
+	return runtime.ClaimNew
 }
 
 // creditPerson: the settings' credit book names this number (the book opens its people on the centre's first step, which may not have run yet).

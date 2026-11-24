@@ -162,7 +162,7 @@ func (c *StepContext) InForce(id string) (int64, bool) {
 	if c.rt == nil || c.Snap == nil {
 		return 0, false
 	}
-	return c.rt.inForceIn(c.Snap, id)
+	return c.rt.inForceIn(c.Snap, c.limitNS+id)
 }
 
 // Assistant is the owner's assistant of one step of a template's agent (conversation.ts createAssistant's return).

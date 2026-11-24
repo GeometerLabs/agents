@@ -105,30 +105,21 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   const raw = rows.map((r) => JSON.parse(r.entry) as Record<string, unknown>);
   const usage = summarizeUsage(raw, rates); // counted before the conversation is hidden, and it reads no text
   // A Bookings snapshot holds `bookings`, a Fees one holds `dues`, an Orders one holds `orders`: whichever the shop's store has is exported, under its own file name.
-  const saved = state ? (JSON.parse(state.snapshot) as { bookings?: [string, Record<string, unknown>][]; dues?: [string, Record<string, unknown>][]; orders?: [string, Record<string, unknown>][] }) : {};
-  // Stock orders (17 Nov 2026) also keeps an `orders` map (its purchase orders), told apart by its own counter `seq` (an Orders store has `nextOrder`): it must never be exported as Orders'
-  const isStock = saved.orders !== undefined && (saved as { seq?: unknown; nextOrder?: unknown }).seq !== undefined && (saved as { nextOrder?: unknown }).nextOrder === undefined;
-  // A listings-only shop (18 Nov 2026) has a saved state (its assistant and AI counts) and none of the three maps: it has no cases, so no cases file is written for it.
-  const isListingsOnly = state !== undefined && saved.bookings === undefined && saved.dues === undefined && saved.orders === undefined;
-  const isOrders = saved.orders !== undefined && !isStock;
-  const isFees = !isOrders && !isStock && saved.dues !== undefined && saved.bookings === undefined;
-  const casesFile = isStock ? "purchase-orders.json" : isOrders ? "orders.json" : isFees ? "dues.json" : "bookings.json";
-  const students = isFees ? [...new Set((saved.dues ?? []).map(([, d]) => String(d.studentName ?? "")).filter((n) => n.length >= 2))].sort((a, b) => b.length - a.length) : [];
+  const whole = state ? (JSON.parse(state.snapshot) as Saved & { parts?: Record<string, Saved> }) : {};
+  // decision 65: a shop of several parts keeps each part's store under `parts.<name>`; each part's cases are exported as its own template's are, under parts/<name>/. The shop's
+  // router (its question waiting for an answer holds a message's words) is never exported.
+  const partStores = whole.parts && typeof whole.parts === "object" ? Object.entries(whole.parts) : [];
+  const own = casesOf(whole, hide);
+  const partCases = partStores.map(([name, saved]) => ({ name, ...casesOf(saved, hide) }));
+  const isListingsOnly = state !== undefined && own.kind === "none" && partStores.length === 0;
+  const students = [...new Set([...own.students, ...partCases.flatMap((p) => p.students)])].sort((a, b) => b.length - a.length);
+  const isFees = own.kind === "fees" || partCases.some((p) => p.kind === "fees");
   const scrub = (text: unknown): unknown => (typeof text === "string" ? students.reduce((t, name) => t.split(name).join(hide("s", name)), text) : text);
   const entries = raw.map((e) => ({ ...e, conversation: hide("c", e.conversation), ...(isFees && "notes" in e ? { notes: scrub(e.notes) } : {}) }));
-  // An order also carries the delivery address a customer wrote: it is the shop's, for the owner, and never leaves the shop's volume (only the place on the delivery list does).
-  // Item 11h: an order from the shop's page carries the name and number its customer typed and its handle's hash too: as for a page booking below, the name and the hash
-  // stay in the shop's volume and the number leaves only as a fingerprint.
-  // a purchase order names a supplier by id and carries no customer: only the owner's WhatsApp message id that asked for it (`requestId`) is left out
-  const cases = isStock
-    ? (saved.orders ?? []).map(([, o]) => { const { requestId: _requestId, ...rest } = o as Record<string, unknown>; return rest; })
-    : isOrders
-    ? (saved.orders ?? []).map(([, o]) => { const { address: _address, contact, handle: _handle, ...rest } = o as Record<string, unknown> & { contact?: { phone?: string } }; return { ...rest, customer: hide("p", o.customer), ...(contact?.phone ? { contact: { phone: hide("p", contact.phone) } } : {}) }; })
-    : isFees
-    ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
-    // item 11d: a booking from the page also carries the name and number its customer typed, and its handle's hash: the name and the hash stay in the shop's volume,
-    // and the number leaves only as a fingerprint, the same as a WhatsApp customer's (so a person's statement can still find it)
-    : (saved.bookings ?? []).map(([, b]) => { const { contact, handle: _handle, ...rest } = b as Record<string, unknown> & { contact?: { phone?: string } }; return { ...rest, customer: hide("p", b.customer), ...(contact?.phone ? { contact: { phone: hide("p", contact.phone) } } : {}) }; });
+  const casesFile = own.file;
+  const cases = own.cases;
+  const isStock = own.kind === "stock";
+  const isOrders = own.kind === "orders";
   mkdirSync(shop.out, { recursive: true });
   let ledger: unknown[] | undefined;
   let ledgerSaid: Exported["ledger"];
@@ -141,10 +132,18 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   const digests = raw.map((e) => String(e.inputsDigest ?? ""));
   const ids = raw.map((e) => (e.refs as { messageId?: string } | undefined)?.messageId).filter((m): m is string => typeof m === "string");
   const form: PersonForm = { schema: 1, form: PERSON_FORM, keyId: keyIdOf(personKey), inputs: { keyed: digests.filter((d) => d.startsWith("k-")).length, older: digests.filter((d) => !d.startsWith("k-")).length }, messageIds: { fingerprinted: ids.filter((m) => /^m-[0-9a-f]{12}$/u.test(m)).length, older: ids.filter((m) => !/^m-[0-9a-f]{12}$/u.test(m)).length } };
-  for (const [file, value] of [["record.json", entries], ...(isListingsOnly ? [] : [[casesFile, cases] as const]), ["person-form.json", form], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
+  for (const [file, value] of [["record.json", entries], ...(isListingsOnly || partStores.length > 0 ? [] : [[casesFile, cases] as const]), ["person-form.json", form], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
     const tmp = join(shop.out, `.${file}.tmp`);
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
     renameSync(tmp, join(shop.out, file));
+  }
+  for (const p of partCases) {
+    if (p.kind === "none") continue;
+    const dir = join(shop.out, "parts", p.name);
+    mkdirSync(dir, { recursive: true });
+    const tmp = join(dir, `.${p.file}.tmp`);
+    writeFileSync(tmp, JSON.stringify(p.cases), { mode: 0o644 });
+    renameSync(tmp, join(dir, p.file));
   }
   // Block S: the shop's listings (the owner's whole copy: drafts and hidden ones too, never a removed one's words) and their photos, read from the same consistent database. Only a
   // shop that has listings gets the files, so every other shop's export is as it was.
@@ -176,11 +175,44 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     renameSync(tmp, join(shop.out, "stock.json"));
   }
   let open: Record<string, number> | undefined;
-  if (!isListingsOnly) try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
-  return { name: shop.name, ok: true, entries: entries.length, ...(isListingsOnly ? {} : isOrders || isStock ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}), ...(shopKeyFile ? { shopKeyFile } : {}) };
+  // a parts shop's to-do list is each part's (not counted here yet: bundle Deferred.md, decision 65)
+  if (!isListingsOnly && partStores.length === 0) try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : own.kind === "fees" ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
+  return { name: shop.name, ok: true, entries: entries.length, ...(isListingsOnly || partStores.length > 0 ? {} : isOrders || isStock ? { orders: cases.length } : own.kind === "fees" ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}), ...(shopKeyFile ? { shopKeyFile } : {}) };
 }
 
 if (import.meta.main) {
   const job = JSON.parse(readFileSync(process.argv[2], "utf8")) as ExportJob;
   console.log(JSON.stringify({ results: job.shops.map((s) => { try { return exportShop(s); } catch (e) { return { name: s.name, ok: false, error: (e as Error).message }; } }) }));
+}
+
+/** A template's saved store, as far as the export reads it. */
+type Saved = { bookings?: [string, Record<string, unknown>][]; dues?: [string, Record<string, unknown>][]; orders?: [string, Record<string, unknown>][]; seq?: unknown; nextOrder?: unknown };
+
+/**
+ * One template's store's cases as they leave the shop's volume, and the file they go in: what the export did inline until decision 65 made it once per part. A number leaves only
+ * as its fingerprint (`hide`); a name a customer typed, an order's address and a handle's hash stay in the shop's volume.
+ */
+function casesOf(saved: Saved, hide: (kind: string, value: unknown) => unknown): { kind: "stock" | "orders" | "fees" | "bookings" | "none"; file: string; cases: unknown[]; students: string[] } {
+  // Stock orders (17 Nov 2026) also keeps an `orders` map (its purchase orders), told apart by its own counter `seq` (an Orders store has `nextOrder`): it must never be exported as Orders'
+  const isStock = saved.orders !== undefined && saved.seq !== undefined && saved.nextOrder === undefined;
+  // A listings-only shop (18 Nov 2026) has a saved state (its assistant and AI counts) and none of the three maps: it has no cases, so no cases file is written for it.
+  const none = saved.bookings === undefined && saved.dues === undefined && saved.orders === undefined;
+  const isOrders = saved.orders !== undefined && !isStock;
+  const isFees = !isOrders && !isStock && saved.dues !== undefined && saved.bookings === undefined;
+  const file = isStock ? "purchase-orders.json" : isOrders ? "orders.json" : isFees ? "dues.json" : "bookings.json";
+  const students = isFees ? [...new Set((saved.dues ?? []).map(([, d]) => String(d.studentName ?? "")).filter((n) => n.length >= 2))] : [];
+  // An order also carries the delivery address a customer wrote: it is the shop's, for the owner, and never leaves the shop's volume (only the place on the delivery list does).
+  // Item 11h: an order from the shop's page carries the name and number its customer typed and its handle's hash too: as for a page booking below, the name and the hash
+  // stay in the shop's volume and the number leaves only as a fingerprint.
+  // a purchase order names a supplier by id and carries no customer: only the owner's WhatsApp message id that asked for it (`requestId`) is left out
+  const cases = isStock
+    ? (saved.orders ?? []).map(([, o]) => { const { requestId: _requestId, ...rest } = o as Record<string, unknown>; return rest; })
+    : isOrders
+    ? (saved.orders ?? []).map(([, o]) => { const { address: _address, contact, handle: _handle, ...rest } = o as Record<string, unknown> & { contact?: { phone?: string } }; return { ...rest, customer: hide("p", o.customer), ...(contact?.phone ? { contact: { phone: hide("p", contact.phone) } } : {}) }; })
+    : isFees
+    ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
+    // item 11d: a booking from the page also carries the name and number its customer typed, and its handle's hash: the name and the hash stay in the shop's volume,
+    // and the number leaves only as a fingerprint, the same as a WhatsApp customer's (so a person's statement can still find it)
+    : (saved.bookings ?? []).map(([, b]) => { const { contact, handle: _handle, ...rest } = b as Record<string, unknown> & { contact?: { phone?: string } }; return { ...rest, customer: hide("p", b.customer), ...(contact?.phone ? { contact: { phone: hide("p", contact.phone) } } : {}) }; });
+  return { kind: none ? "none" : isStock ? "stock" : isOrders ? "orders" : isFees ? "fees" : "bookings", file, cases, students };
 }

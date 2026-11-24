@@ -27,7 +27,7 @@ const isObj = (x: unknown): x is Obj => typeof x === "object" && x !== null && !
 export interface CheckedPart { name: PartName; settings: any; file: Obj }
 
 /** A parts shop's settings, checked: the shop's name, time zone and owner (what the bundle reads of every shop), its languages, its parts in order, and the carried part. */
-export interface Settings { name: string; timezone: string; owner: { whatsapp: string; language: string }; languages: string[]; assistant?: unknown; parts: CheckedPart[]; carried?: PartName }
+export interface Settings { name: string; timezone: string; owner: { whatsapp: string; language: string }; languages: string[]; assistant?: unknown; parts: CheckedPart[]; carried?: PartName; /** settings.json as given. */ file: Obj }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
 
@@ -65,7 +65,12 @@ export function validateSettings(input: unknown): SettingsResult {
   if (typeof carried === "string" && !parts.some((p) => p.name === carried) && !errors.some((e) => e.startsWith(`parts.${carried}`))) errors.push(`"carried" names "${carried}", which is not one of the shop's parts.`);
   if (errors.length > 0) return { ok: false, errors };
   const first = parts[0].settings as { name: string; timezone: string; owner: { whatsapp: string; language: string }; languages: string[]; assistant?: unknown };
-  return { ok: true, settings: { name: first.name, timezone: first.timezone, owner: first.owner, languages: first.languages, ...(first.assistant !== undefined ? { assistant: first.assistant } : {}), parts, ...(typeof carried === "string" ? { carried: carried as PartName } : {}) } };
+  return { ok: true, settings: { name: first.name, timezone: first.timezone, owner: first.owner, languages: first.languages, ...(first.assistant !== undefined ? { assistant: first.assistant } : {}), parts, ...(typeof carried === "string" ? { carried: carried as PartName } : {}), file: input } };
+}
+
+/** The part whose customer side the shop's page and chat are (go/internal/parts kit.go customerPart): the first Orders part, else the first Fees part, else none. */
+export function customerPartOf(parts: readonly string[]): "orders" | "fees" | undefined {
+  return parts.includes("orders") ? "orders" : parts.includes("fees") ? "fees" : undefined;
 }
 
 /** As validateSettings, throwing every problem at once. */

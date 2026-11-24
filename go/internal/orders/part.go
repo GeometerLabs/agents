@@ -49,13 +49,22 @@ func (a *Agent) ClaimOwner(m messaging.InboundMessage) runtime.Claim {
 // (their words about it read by the shop's rules), and any customer it has not met: an Orders shop takes new customers.
 func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
 	if m.Image {
-		return runtime.ClaimOpen
+		// a picture: an item enquiry on a pickup-hold shop (photoStartsHold), a payment screenshot on a shop that takes an advance; as much another part's when that part
+		// reads pictures too (the credit book reads one as "I paid"), so the shop asks
+		if a.settings.NoAdvance() && !a.photoStartsHold(m.From) {
+			return runtime.ClaimNone
+		}
+		return runtime.ClaimWords
 	}
 	if m.Reply != nil && reading.IntentFromReply(m.Reply.ID, a.parse) != nil {
 		return runtime.ClaimCommand
 	}
 	if a.store.LatestOrder(m.From, LiveStates) == nil {
-		return runtime.ClaimNew // nothing open with them: a new piece of business, which an Orders shop takes
+		// nothing open with them: a new piece of business, which an Orders shop takes; an order its rules read ("1 MCB 16A today evening") is its own words
+		if k := reading.ParseIntent(m.Text, a.parse).Kind; k == "order" || a.wordsStartHold(m.From, m.Text) {
+			return runtime.ClaimWords
+		}
+		return runtime.ClaimNew
 	}
 	switch k := reading.ParseIntent(m.Text, a.parse).Kind; k {
 	case "", "greeting", "unknown":

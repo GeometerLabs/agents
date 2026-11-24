@@ -10,6 +10,8 @@ package runtime
 // beat work (the licence notice, the morning line) said once for the shop (record.go SharedBeatOff).
 
 import (
+	"strings"
+
 	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/store"
 )
@@ -60,19 +62,38 @@ type PartAgent interface {
 // when the assistant is made.
 func (c *StepContext) SetCoParts(co []func() (AssistantHooks, bool)) { c.coParts = co }
 
+// LimitID is a part's declared limit as a shop of several parts declares it: "<part>_<id>" ("stock_orders_order_cap"), so two parts' limits of one kind are two limits, each
+// read only by its own part. The limit ids stay what the owner's page and changes may carry (limits.go limitID: lower-case letters and "_").
+func LimitID(part, id string) string { return strings.ReplaceAll(part, "-", "_") + "_" + id }
+
+// SetLimitPart makes this step context's InForce read part's own limits (LimitID).
+func (c *StepContext) SetLimitPart(part string) { c.limitNS = LimitID(part, "") }
+
 // TickPart is the part whose beat this step is, in a shop of several parts ("" for every other step, and for every single-part shop).
 func (c *StepContext) TickPart() string { return c.tickPart }
 
 // tickParts runs the clock's beat of a shop of several parts: one step per part, in the shop's order, each saved on its own. A part's failed beat is said and the next part's
 // beat still runs; the morning line and the licence notice ride on the first part's beat (record.go SharedBeatOff).
+//
+// A panic in one part's beat (with the program's OnPanic, as go/cmd/parts sets it) is said and the next part's beat still runs; without OnPanic it goes on up, as every other
+// panic of the runner does.
 func (r *Runtime) tickParts(pk PartsKit) {
 	for _, p := range pk.Parts() {
-		r.tickPart = p
-		err := r.step(nil, "")
-		r.tickPart = ""
-		if err != nil {
-			r.fail("A tick of the "+p+" part failed", err)
-		}
+		func() {
+			r.tickPart = p
+			defer func() {
+				r.tickPart = ""
+				if r.o.OnPanic != nil {
+					if v := recover(); v != nil {
+						r.stepSince.Store(0)
+						r.panicked("beat of the "+p+" part", v)
+					}
+				}
+			}()
+			if err := r.step(nil, ""); err != nil {
+				r.fail("A tick of the "+p+" part failed", err)
+			}
+		}()
 	}
 }
 

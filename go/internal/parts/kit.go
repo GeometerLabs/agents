@@ -110,17 +110,14 @@ func (k *Kit) KeepCounters(s, taken runtime.KitState) bool {
 	return moved
 }
 
-// Limits are every part's declared limits, each where it sits in the settings (`parts.<template>.` before the part's own path). A limit id two parts both declare is the
-// first part's only: the owner's "refund limit 500" must name one limit, never two at once (the second part's stays as its settings say; Deferred.md).
+// Limits are every part's declared limits, each under its part's own id (runtime.LimitID: "orders_refund_limit") and where it sits in the settings (`parts.<template>.`
+// before the part's own path), so two parts' limits of one kind (a refund limit in the credit book and in the hold) are two limits and each part reads only its own
+// (agent.go sets each part's step context to its own: StepContext.SetLimitPart).
 func (k *Kit) Limits() []runtime.LimitDecl {
 	var out []runtime.LimitDecl
-	seen := map[string]bool{}
 	for _, p := range k.parts {
 		for _, l := range p.Kit.Limits() {
-			if seen[l.ID] {
-				continue
-			}
-			seen[l.ID] = true
+			l.ID = runtime.LimitID(p.Name, l.ID)
 			l.Path = "parts." + p.Name + "." + l.Path
 			out = append(out, l)
 		}

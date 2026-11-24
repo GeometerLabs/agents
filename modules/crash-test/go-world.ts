@@ -175,16 +175,36 @@ export function samePicture(a: Uint8Array | undefined, b: Uint8Array | undefined
  */
 export const goWorldHook: { closing?: (world: { settings: unknown; entries: any[]; store: unknown }) => void } = {};
 
+/**
+ * Decision 65: while `current` is set, every world a template's situations open runs as ONE PART of a shop of several parts, on that shop's program (go/cmd/parts) and the
+ * shop's other parts' settings (the parts template's hand check sets it around each part's run: templates/commerce/parts/report/papers.ts). What changes for the situation:
+ * the settings file is the shop's with this part's block made from the situation's own settings (`wrap`); the saved state it reads is this part's members (`unwrap`); the
+ * record it reads is this part's lines (refs.part, and lines with no part); the stand-in WhatsApp knows the shop's number's templates (`standins`, the union of the parts').
+ * Nothing else: the situation's steps and checks are its own. Unset (every single-part shop): exactly as before.
+ */
+export interface GoWorldPart {
+  part: string;
+  program: string;
+  version: string;
+  wrap(file: Record<string, unknown>): Record<string, unknown>;
+  unwrap(snapshot: string): string;
+  standins(clock: Clock, fakes: { payments: FakePayments; messaging: FakeMessaging }): Promise<StandinsServer>;
+}
+export const goWorldPart: { current?: GoWorldPart } = {};
+
 const PHONE_NUMBER_ID = "100000000000001";
 const PAGES = "https://reports.example.com/r";
 
 /** Start a world. It is closed when the situation that made it ends (situations.ts closeLater). Throws when the program is not there: runOnProgram checks first. */
 export async function openGoWorld<Settings extends { owner: { whatsapp: string } }, Store>(o: GoWorldBaseOptions<Settings>): Promise<GoWorldBase<Settings, Store>> {
-  const program = goProgram(o.program);
+  const asPart = goWorldPart.current;
+  const program = goProgram(asPart ? asPart.program : o.program);
   if (!program.ok) throw new Error(program.reason);
   // the program runs on a settings.json made from the settings the situation planned with: it must read back as exactly those, or the run would not be on this shop's settings
-  const file = (o.settingsFile ?? settingsJson)(o.settings);
-  if (canonical(o.parseSettings(file)) !== canonical(o.settings)) throw new Error("The settings file made for the program does not read back as the shop's own settings, so the situation was not run on them.");
+  const own = (o.settingsFile ?? settingsJson)(o.settings);
+  if (canonical(o.parseSettings(own)) !== canonical(o.settings)) throw new Error("The settings file made for the program does not read back as the shop's own settings, so the situation was not run on them.");
+  const file = asPart ? asPart.wrap(own) : own;
+  const mine = (e: any): boolean => !asPart || e.refs?.part === undefined || e.refs.part === asPart.part;
   // the stand-ins read the shop's clock (go-shop.ts makes it with the shop); until the shop exists, the start instant
   let clock: MovableClock = { now: () => o.at, set: () => undefined, advanceMinutes: () => undefined };
   const viaShop: Clock = { now: () => clock.now() };
@@ -199,13 +219,13 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   const inject = messaging.inject.bind(messaging);
   messaging.inject = ((...a: Parameters<typeof inject>) => { sendFaultsPlanned = true; return inject(...a); }) as typeof inject;
   closeLater(async () => {
-    const lines = shop ? shop.record() : [];
-    if (shop && goWorldHook.closing) { const text = shop.snapshot(); goWorldHook.closing({ settings: o.settings, entries: lines, store: text === null ? o.emptyStore() : o.parseStore(text) }); }
+    const lines = shop ? shop.record().filter(mine) : [];
+    if (shop && goWorldHook.closing) { const text = shop.snapshot(); goWorldHook.closing({ settings: o.settings, entries: lines, store: text === null ? o.emptyStore() : o.parseStore(asPart ? asPart.unwrap(text) : text) }); }
     await shop?.close();
     for (const c of closers.reverse()) await c();
     return sendFaultsPlanned ? [] : lines.filter((e) => e.action === "send_message" && e.outcome === "failed").map((e) => `a message ${e.refs?.to ? `to the ${e.refs.to} ` : ""}was refused by the provider: ${String(e.notes ?? "").slice(0, 160)}`);
   });
-  const standins = await o.standins(viaShop, { payments, messaging });
+  const standins = await (asPart ? asPart.standins : o.standins)(viaShop, { payments, messaging });
   closers.push(() => standins.close());
   // a shop with a gateway reaches it through Guard: the stub Guard holds and refuses by the shop's own limits. A UPI shop has no gateway and so no payments Guard.
   const guard = o.gateway && o.spec ? await startStubGuard({
@@ -224,7 +244,7 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   if (decision) closers.push(() => decision.close());
 
   shop = await startGoShop({
-    program: program.path, pathway: o.program, version: o.version, settings: file, at: o.at, slug: "hand-check",
+    program: program.path, pathway: asPart ? asPart.program : o.program, version: asPart ? asPart.version : o.version, settings: file, at: o.at, slug: "hand-check",
     services: {
       ...(guard ? { payments: { baseUrl: guard.agentUrl, agentToken } } : {}),
       ...(o.services?.(standins.url) ?? {}),
@@ -248,8 +268,8 @@ export async function openGoWorld<Settings extends { owner: { whatsapp: string }
   const handle = async (message: InboundMessage): Promise<void> => { await s.events([{ kind: "message", message }]); };
   const world: GoWorldBase<Settings, Store> = {
     settings: o.settings, clock, payments, messaging, guard, owner: o.settings.owner.whatsapp, shop: s, asked,
-    record: { entries: () => s.record() },
-    get store(): Store { const text = s.snapshot(); return (text === null ? o.emptyStore() : o.parseStore(text)) as Store; },
+    record: { entries: () => s.record().filter(mine) },
+    get store(): Store { const text = s.snapshot(); return (text === null ? o.emptyStore() : o.parseStore(asPart ? asPart.unwrap(text) : text)) as Store; },
     async say(text, m = {}) {
       // a provider's message id is unique per message, as the inbox hands it on (unless the situation gives one)
       const message = messaging.receive(m.from ?? o.customer, text, { id: m.id ?? `wamid.hc_${++inbound}`, ...(m.image ? { image: true } : {}), ...(m.reply ? { reply: m.reply } : {}) });

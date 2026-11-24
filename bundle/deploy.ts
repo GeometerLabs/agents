@@ -8,6 +8,7 @@
 //      certificate ("N of M limits proven to bite") is read from there. A mismatch stops the shop with the kill switch.
 //   6. write status/<shop>.json for the panel
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
+import { customerPartOf } from "../templates/commerce/parts/src/settings.ts";
 import { gatewayOf, isGatewayKind } from "../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../modules/payments/providers/index.ts";
 import { chownSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
@@ -436,7 +437,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const whatsappRoute = m.provider === "gupshup" && m.appId ? { whatsappRoute: { provider: "gupshup" as const, appId: m.appId } }
       : m.provider === "gupshup-selfserve" && m.appName && m.sourceNumber ? { whatsappRoute: { provider: "gupshup-selfserve" as const, appName: m.appName, sourceNumber: m.sourceNumber, ...(m.appId ? { appId: m.appId } : {}) } } : {};
     // follow-up 2: from the snapshot, so the compose file mounts the renewed token exactly when the applied Guard was compiled to read it
-    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner?.whatsapp ?? "", phoneNumberId: m.phoneNumberId, ...whatsappRoute, ...(snap.whatsappTokens === "renewed" ? { gupshupRenewed: true } : {}), pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
+    // decision 65: a shop of several parts shows its customer part's page (templates/commerce/parts/src/settings.ts customerPartOf, the twin of the Go program's customerPart)
+    const partsChannel = snap.pathway.startsWith("parts@") ? customerPartOf(Object.keys((settings as { parts?: object }).parts ?? {})) : undefined;
+    return { ...deployOf(ctx, name, s), ...(partsChannel ? { partsChannel } : {}), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner?.whatsapp ?? "", phoneNumberId: m.phoneNumberId, ...whatsappRoute, ...(snap.whatsappTokens === "renewed" ? { gupshupRenewed: true } : {}), pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
   });
   for (const [name, s] of applied) {
     // a listings-only shop's folder is in generated/listings/ (the one folder the shared process mounts), and its pathway.lock is written LAST: the process starts a shop only when

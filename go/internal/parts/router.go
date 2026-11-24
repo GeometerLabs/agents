@@ -53,8 +53,31 @@ func decide(claims []runtime.Claim, first int) decision {
 type routerState struct {
 	// Routed are the last messages and the part each went to ("" for one the shop asked about).
 	Routed []routed `json:"routed,omitempty"`
-	// Asked is the message the shop asked about, waiting for the answer; nil when none.
-	Asked *asked `json:"asked,omitempty"`
+	// Asked are the messages the shop asked about, each waiting for its writer's answer: one per number (a newer question to the same number replaces its older one).
+	Asked []*asked `json:"asked,omitempty"`
+}
+
+// askedKeep is how many numbers' questions wait at once; the oldest goes first (its message is not acted on, as with any question not answered).
+const askedKeep = 50
+
+// takeAsked is the question waiting for this number's answer, and takes it off the list (the next message from the number either answers it or leaves it unanswered).
+func (r *routerState) takeAsked(from string) *asked {
+	for i, q := range r.Asked {
+		if digitsOf(q.From) == digitsOf(from) {
+			r.Asked = append(r.Asked[:i:i], r.Asked[i+1:]...)
+			return q
+		}
+	}
+	return nil
+}
+
+// ask puts a question on the list.
+func (r *routerState) ask(q *asked) {
+	r.takeAsked(q.From)
+	r.Asked = append(r.Asked, q)
+	if len(r.Asked) > askedKeep {
+		r.Asked = r.Asked[len(r.Asked)-askedKeep:]
+	}
 }
 
 type routed struct {

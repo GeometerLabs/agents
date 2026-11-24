@@ -154,8 +154,8 @@ test("the build: the pinned Go image by digest, the source read-only, the settin
   assert.ok(script.includes("go build -p 1 "), "one package at a time");
   for (const flag of ["-trimpath", "-mod=readonly", '-ldflags "-s -w"']) assert.ok(script.includes(flag), flag);
   assert.deepEqual(run.slice(run.indexOf("-c") + 3), [...GO_PROGRAMS], "every program of GO_PROGRAMS is built by the same command");
-  // the seven programs, named here and not only through the constant: a program dropped from GO_PROGRAMS would leave its shops with no runtime in the image
-  assert.deepEqual([...GO_PROGRAMS].sort(), ["bookings", "directory", "fees", "listings", "listings-shared", "orders", "stock-orders"]);
+  // the eight programs (parts since decision 65), named here and not only through the constant: a program dropped from GO_PROGRAMS would leave its shops with no runtime in the image
+  assert.deepEqual([...GO_PROGRAMS].sort(), ["bookings", "directory", "fees", "listings", "listings-shared", "orders", "parts", "stock-orders"]);
   for (const p of ["bookings", "orders", "fees", "stock-orders", "listings", "listings-shared", "directory"]) assert.ok(script.includes('-o "/out/$p" "./cmd/$p"') && run.includes(p), `${p} is compiled from go/cmd/${p}`);
   assert.ok(script.endsWith(`cp /${GO_CA_FILE} /out/${GO_CA_FILE}`), "the builder image's certificate authorities are copied, for the directory's https calls");
   assert.deepEqual(s.seen.context!.sort(), ["Dockerfile", "root/", "root/home/", "root/home/node/", "root/etc/", "root/etc/ssl/", "root/etc/ssl/certs/", `root/${GO_CA_FILE}`, ...GO_PROGRAMS.map((p) => `root/${p}`)].sort(), "the programs, the empty home folder and the certificate authorities, nothing else");

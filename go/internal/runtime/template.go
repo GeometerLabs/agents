@@ -135,6 +135,8 @@ type StepContext struct {
 	// Decision 65 (parts.go): in a shop of several parts, the other parts' assistant hooks (SetCoParts) and the part whose beat this step is (TickPart). Zero otherwise.
 	coParts  []func() (AssistantHooks, bool)
 	tickPart string
+	// limitNS leads every limit id this step's agent asks for (InForce): a part's own limits in a shop of several parts, each declared as "<part>_<id>" (SetLimitPart)
+	limitNS string
 }
 
 // AfterTicker is an Agent with work that rides on the clock's beat AFTER its own and saves for itself (core.ts step: the licence notice and the monthly report, each with

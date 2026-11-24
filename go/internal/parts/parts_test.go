@@ -12,7 +12,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GeometerLabs/agents/go/internal/fees"
+	"github.com/GeometerLabs/agents/go/internal/orders"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
+	"github.com/GeometerLabs/agents/go/internal/stockorders"
 )
 
 const example = "../../../templates/commerce/parts/settings/ganesh-electricals-starter.example.json"
@@ -65,9 +68,27 @@ func TestTheStarterExampleIsThreeParts(t *testing.T) {
 		t.Fatalf("kinds %s %s", kindOf(k.parts[0]), kindOf(k.parts[2]))
 	}
 	// every limit sits in its part's block
+	wireOwn(k)
+	if len(k.Limits()) == 0 {
+		t.Fatal("no limits declared")
+	}
 	for _, l := range k.Limits() {
 		if !strings.HasPrefix(l.Path, "parts.") {
 			t.Fatalf("limit %s at %s", l.ID, l.Path)
+		}
+	}
+}
+
+// wireOwn gives each part's Kit its own settings, as Wire does when the program starts (a Kit declares its limits from them).
+func wireOwn(k *Kit) {
+	for _, p := range k.parts {
+		switch x := p.Kit.(type) {
+		case *fees.Kit:
+			x.Settings = p.Own.(*fees.Settings)
+		case *orders.Kit:
+			x.Settings = p.Own.(*orders.Settings)
+		case *stockorders.Kit:
+			x.Settings = p.Own.(*stockorders.Settings)
 		}
 	}
 }
@@ -211,5 +232,44 @@ func TestStateRoundTrip(t *testing.T) {
 	legacy := []runtime.Member{{Name: "orders", Raw: json.RawMessage(`[]`)}}
 	if _, err := k.ParseState(legacy); err == nil {
 		t.Fatal("a flat state with no carried part was read")
+	}
+}
+
+func TestQuestionsWaitPerNumber(t *testing.T) {
+	r := &routerState{}
+	r.ask(&asked{ID: "a", From: "+919800000001"})
+	r.ask(&asked{ID: "b", From: "+919811111111"})
+	r.ask(&asked{ID: "c", From: "919800000001"}) // the same number written another way: replaces its older question
+	if len(r.Asked) != 2 {
+		t.Fatalf("%d questions wait", len(r.Asked))
+	}
+	if q := r.takeAsked("+919811111111"); q == nil || q.ID != "b" {
+		t.Fatalf("the second number's question: %v", q)
+	}
+	if q := r.takeAsked("+919800000001"); q == nil || q.ID != "c" {
+		t.Fatalf("the first number's newer question: %v", q)
+	}
+	if r.takeAsked("+919800000001") != nil {
+		t.Fatal("a question is answered once")
+	}
+}
+
+func TestEachPartReadsItsOwnLimits(t *testing.T) {
+	raw, _ := os.ReadFile(filepath.Clean(example))
+	k, _, _ := readSettings(t, raw)
+	wireOwn(k)
+	seen := map[string]bool{}
+	for _, l := range k.Limits() {
+		if seen[l.ID] {
+			t.Fatalf("limit id %s twice", l.ID)
+		}
+		seen[l.ID] = true
+		part := strings.SplitN(l.Path, ".", 3)[1]
+		if !strings.HasPrefix(l.ID, runtime.LimitID(part, "")) {
+			t.Fatalf("limit %s at %s is not its part's", l.ID, l.Path)
+		}
+	}
+	if !seen[runtime.LimitID("fees", "refund_limit")] || !seen[runtime.LimitID("orders", "refund_limit")] {
+		t.Fatalf("both parts' refund limits are declared, each its own: %v", seen)
 	}
 }

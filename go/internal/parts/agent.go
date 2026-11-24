@@ -66,6 +66,7 @@ func (k *Kit) NewAgent(c *runtime.StepContext) runtime.Agent {
 			})
 		}
 		cc.SetCoParts(co)
+		cc.SetLimitPart(p.Name)
 		a.ctxs = append(a.ctxs, &cc)
 	}
 	return a
@@ -114,24 +115,40 @@ func (a *agent) Handle(ev map[string]any) error {
 		return a.onOwnerAction(ev)
 	case "chat_message":
 		if i := a.k.customerPart(); i >= 0 {
-			return a.part(i).Handle(ev)
+			return a.give(i, ev)
 		}
 		return a.unrouted(ev, "a chat guest's message, and the shop has no part with a page that chats")
 	case "channel_request":
 		op, _ := ev["op"].(string)
 		for i := range a.k.parts {
 			if a.part(i).TakesChannel(op) {
-				return a.part(i).Handle(ev)
+				return a.give(i, ev)
 			}
 		}
 		return a.unrouted(ev, "a page's request ("+op+") that no part of the shop takes")
 	case "payment_event", "approval_decision", "recovery":
 		if i := a.ownerOfRefs(ev); i >= 0 {
-			return a.part(i).Handle(ev)
+			return a.give(i, ev)
 		}
 		return a.unrouted(ev, "a "+kind+" whose case no single part of the shop owns")
 	}
-	return a.part(0).Handle(ev)
+	return a.give(0, ev)
+}
+
+// give hands the event to part i. A step that can neither wait nor run again (runtime.EndTask) carries the state it threw away so its id counters are kept (B75): the part's
+// own state is put into the shop's, so the runtime's KeepCounters reads it as the shop's.
+func (a *agent) give(i int, ev map[string]any) error {
+	err := a.part(i).Handle(ev)
+	var end *runtime.EndTask
+	if errors.As(err, &end) && end.Taken != nil {
+		if _, isShop := end.Taken.(*State); !isShop {
+			taken := *a.st
+			taken.parts = append([]runtime.KitState(nil), a.st.parts...)
+			taken.parts[i] = end.Taken
+			end.Taken = &taken
+		}
+	}
+	return err
 }
 
 // unrouted writes that an event was not handed to any part, and why; nothing else is done.
@@ -185,9 +202,9 @@ func (a *agent) onOwnerAction(ev map[string]any) error {
 	cs, _ := ev["case"].(string)
 	if action == "card_yes" || action == "card_no" {
 		if i := a.cardPart(a.cardByID(cs)); i >= 0 {
-			return a.part(i).Handle(ev)
+			return a.give(i, ev)
 		}
-		return a.part(0).Handle(ev)
+		return a.give(0, ev)
 	}
 	found := -1
 	for i := range a.k.parts {
@@ -201,7 +218,7 @@ func (a *agent) onOwnerAction(ev map[string]any) error {
 	if found < 0 {
 		return a.unrouted(ev, "the owner's press on "+cs+", which no part of the shop owns")
 	}
-	return a.part(found).Handle(ev)
+	return a.give(found, ev)
 }
 
 // cardByID and cardByCode find a card of the shop's one assistant.
@@ -251,12 +268,11 @@ func (a *agent) onMessage(ev map[string]any, m messaging.InboundMessage) error {
 			a.line(m.From, "receive_message", "blocked", map[string]any{"id": m.ID}, map[string]string{"messageId": m.ID}, "the same message was delivered again while the shop asks which part it is for, so it is ignored")
 			return nil
 		}
-		return a.part(a.k.partIndex(part)).Handle(ev) // the part it went to drops it as delivered twice
+		return a.give(a.k.partIndex(part), ev) // the part it went to drops it as delivered twice
 	}
 	number, lang := a.c.Owner()
 	owner := m.From == number
-	if q := r.Asked; q != nil && digitsOf(q.From) == digitsOf(m.From) {
-		r.Asked = nil
+	if q := r.takeAsked(m.From); q != nil {
 		replyID := ""
 		if m.Reply != nil {
 			replyID = m.Reply.ID
@@ -277,7 +293,7 @@ func (a *agent) onMessage(ev map[string]any, m messaging.InboundMessage) error {
 				i = 0
 			}
 			r.remember(m.ID, a.k.parts[i].Name)
-			return a.part(i).Handle(ev)
+			return a.give(i, ev)
 		}
 		for i := range a.k.parts {
 			claims[i] = a.part(i).ClaimOwner(m)
@@ -286,13 +302,31 @@ func (a *agent) onMessage(ev map[string]any, m messaging.InboundMessage) error {
 		for i := range a.k.parts {
 			claims[i] = a.part(i).ClaimCustomer(m)
 		}
+		// a STOP is the shop's: every part that knows the number hears it (each stops its own messages to them), never a question back
+		if understanding.IsStop(language.Canon(m.Text)) {
+			var knows []int
+			for i, c := range claims {
+				if c >= runtime.ClaimWords {
+					knows = append(knows, i)
+				}
+			}
+			if len(knows) > 1 {
+				r.remember(m.ID, a.k.parts[knows[0]].Name)
+				for _, i := range knows {
+					if err := a.give(i, ev); err != nil {
+						return err
+					}
+				}
+				return nil
+			}
+		}
 	}
 	d := decide(claims, 0)
 	if len(d.ask) > 0 {
 		return a.ask(ev, m, d.ask, owner, lang)
 	}
 	r.remember(m.ID, a.k.parts[d.part].Name)
-	return a.part(d.part).Handle(ev)
+	return a.give(d.part, ev)
 }
 
 func (a *agent) partsNamed(names []string) []*Part {
@@ -321,7 +355,7 @@ func (a *agent) answered(q *asked, m messaging.InboundMessage, name string) erro
 		return err
 	}
 	r.remember(q.ID, name)
-	return a.part(a.k.partIndex(name)).Handle(ev)
+	return a.give(a.k.partIndex(name), ev)
 }
 
 // ask keeps the message and asks its writer which part it is for: the parts' names, with a button each. Nothing else is done with it until the answer comes.
@@ -335,7 +369,7 @@ func (a *agent) ask(ev map[string]any, m messaging.InboundMessage, tied []int, o
 	for _, i := range tied {
 		names = append(names, a.k.parts[i].Name)
 	}
-	r.Asked = &asked{ID: m.ID, From: m.From, Owner: owner, Parts: names, AtMs: a.now(), Event: raw}
+	r.ask(&asked{ID: m.ID, From: m.From, Owner: owner, Parts: names, AtMs: a.now(), Event: raw})
 	r.remember(m.ID, "")
 	in := map[string]any{"id": m.ID}
 	if m.Reply != nil {

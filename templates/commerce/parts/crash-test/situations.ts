@@ -3,7 +3,7 @@
 // situation judges from the stand-in WhatsApp's outbox and the shop's own record and saved state, never from what the program said it did:
 //
 //   parts-owner-words      the owner's words for each part reach that part: "<name> owes <n>" the credit book, "order <n> <unit> <item> from <supplier>" Stock orders
-//   parts-customers        a new customer's message the hold, a listed supplier's Stock orders, someone in the credit book the credit book (and a STOP there is theirs)
+//   parts-customers        a new customer's message the hold, a listed supplier's Stock orders; someone in the credit book asking to keep an item the hold, and their STOP both
 //   parts-unclear          words two parts could take ("<name> paid <n>" with a purchase order open): ONE short question, nothing about money done; the answer sends it to the part
 //   parts-redelivered      a message delivered twice: read once, by the part it took it, and nobody is sent anything twice
 //   parts-owner-page       one owner's page: what waits in each part, the credit book's rows, the one assistant
@@ -13,6 +13,8 @@
 import { checker, runOnProgram } from "../../../../modules/crash-test/situations.ts";
 import type { CheckResult, HandCheckRun, Situation, Skipped } from "../../../../modules/crash-test/situations.ts";
 import { PROGRAM, VERSION, createPartsWorld } from "./go-world.ts";
+import { ownerPage } from "../../../../modules/channels/owner-page.ts";
+import { OWNER_CREDIT_WORDS } from "../../../../modules/channels/owner-credit.ts";
 import type { PartsFile, PartsWorld } from "./go-world.ts";
 
 type Obj = Record<string, any>;
@@ -76,7 +78,7 @@ const BUILDERS: Build[] = [
   }),
   (p) => !p.credit || !p.stock || !p.hold ? { title: "Each customer reaches the part they belong to", skip: "it needs the credit book, Stock orders and the pickup hold" } : ({
     id: "parts-customers", title: "A new customer reaches the hold, a supplier Stock orders, someone in the credit book the credit book",
-    how: "three people write to the shop's one number: one it has never met, its supplier, and a person in the credit book (who sends STOP)",
+    how: "three people write to the shop's one number: one it has never met, its supplier, and a person in the credit book (who asks to keep an item, then sends STOP)",
     async run() {
       const { results, expect } = checker();
       const w = await createPartsWorld(p.settings);
@@ -85,9 +87,14 @@ const BUILDERS: Build[] = [
       expect("The owner was asked about the hold", w.textsTo(w.owner).length >= 1, "nothing to the owner");
       await w.say("ok", { from: p.stock!.supplierPhone });
       expect("Stock orders read the supplier's message", lines(w, "stock-orders", "receive_message").length === 1, JSON.stringify(w.linesOf("stock-orders").map((e) => e.action)));
+      // someone in the credit book asks to keep an item: the hold's words, so the hold takes it (the credit book does not read them)
+      await w.say(evening(p), { from: p.credit!.phone });
+      expect("The hold read the hold request of someone in the credit book", lines(w, "orders", "receive_message", "confirmed").length === 2 && lines(w, "fees", "receive_message").length === 0, JSON.stringify(w.record.entries().filter((e) => e.action === "receive_message").map((e) => `${e.refs?.part}:${e.outcome}`)));
+      // and then sends STOP: the shop's, so both parts that know the number stop writing to them, with no question back
+      const before = w.textsTo(p.credit!.phone).length;
       await w.say("STOP", { from: p.credit!.phone });
-      expect("The credit book read the STOP of someone in its book", lines(w, "fees", "receive_message", "confirmed").length === 1 && lines(w, "fees", "opt_out").length + lines(w, "fees", "stop").length >= 1, JSON.stringify(w.linesOf("fees").map((e) => `${e.action}:${e.outcome}`)));
-      expect("No part read a message that was not its own", lines(w, "orders", "receive_message").length === 1, `${lines(w, "orders", "receive_message").length} hold lines`);
+      expect("The credit book and the hold both heard the STOP", lines(w, "fees", "opt_out", "confirmed").length === 1 && lines(w, "orders", "opt_out", "confirmed").length === 1, JSON.stringify(w.record.entries().filter((e) => e.action === "opt_out").map((e) => e.refs?.part)));
+      expect("The STOP was not answered with a question", w.textsTo(p.credit!.phone).length === before, `${w.textsTo(p.credit!.phone).length - before} more messages`);
       return results;
     },
   }),
@@ -143,6 +150,10 @@ const BUILDERS: Build[] = [
       expect("The hold waiting is on it", (v.items ?? []).some((i: Obj) => String(i.kind).startsWith("hold")), JSON.stringify(v.items));
       expect("The credit book's people are on it", (v.credit ?? []).length === (p.settings.parts.fees as Obj).creditBook.people.length, JSON.stringify(v.credit));
       expect("It has the one assistant", typeof v.app === "object" && v.app !== null, "no app view");
+      // the page the owner opens is drawn from that one view by the front (modules/channels/owner-page.ts): the hold's card and the credit book's section on one page
+      const html = String(ownerPage({ base: "https://pages.example/owner", language: "en", view: v as never, relayAsks: [] }));
+      const holdCase = (v.items ?? []).find((i: Obj) => String(i.kind).startsWith("hold"))?.case;
+      expect("The owner's page draws the credit book's section and the hold's card", html.includes(OWNER_CREDIT_WORDS.en.title) && holdCase !== undefined && html.includes(String(holdCase)), "the drawn page lacks one of them");
       return results;
     },
   }),
