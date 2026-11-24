@@ -5,6 +5,7 @@ package fees
 // answer is no. The rules are the agent's own (onOwnerMessage, creditOwnerText, onMessage), read the same way, in the same order.
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/messaging"
@@ -128,10 +129,24 @@ func (a *Agent) creditPerson(phone string) bool {
 	return false
 }
 
-// OwnsCase: a fee (f-3), a request (q-2), a credit account (c-4) is the centre's.
+// OwnsCase: a fee (f-3), a request (q-2), a credit account (c-4), a parent (p- and 12 hex digits, the owner page's send_link and revoke_link), anything the centre's own
+// owner page lists, and with Classes a doubt (d-3) or a class session's case.
 func (a *Agent) OwnsCase(ref string) bool {
-	return feeRef.MatchString(ref) || (a.credit() && a.store.creditOf(false).byRef(ref) != nil)
+	if feeRef.MatchString(ref) || parentRefRe.MatchString(ref) || (a.credit() && a.store.creditOf(false).byRef(ref) != nil) {
+		return true
+	}
+	for _, x := range ownerItems(a.settings, a.store) {
+		if x.Case == ref {
+			return true
+		}
+	}
+	return a.settings.Classes != nil && (doubtRefRe.MatchString(ref) || strings.Contains(ref, "."))
 }
+
+var (
+	parentRefRe = regexp.MustCompile(`^p-[0-9a-f]{12}$`)
+	doubtRefRe  = regexp.MustCompile(`^d-\d+$`)
+)
 
 // TakesChannel: a fee's page pays or says it paid.
 func (a *Agent) TakesChannel(op string) bool { return op == "fee_pay" || op == "fee_paid" }
