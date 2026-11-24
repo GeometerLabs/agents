@@ -679,7 +679,3 @@ and listed for the owner to confirm.
 - [ ] **A parts shop's page and chat are ONE part's customer side**: the first Orders or Fees part in the shop's order (the Operator chooses by the order; the starter
   shop's is the credit book's). A customer-facing part that is not it sends no link to a page the shop does not serve (its page address is left out: no parent's private
   link, no order page link). Done when the front serves several customer sides under one shop's address.
-- [ ] **A Fees centre (with parents) beside an Orders part, through the router.** Its own contract suite run through the parts program leaves three cases open: a parent's
-  picture is asked about (the hold could take a picture too) instead of read as "I paid"; the owner page's Received press on a parent's claim; the reminders' words with no
-  page link. The shop starter (the credit book) passes its own suite through the router. Done with the parent's picture claimed by the centre when the hold has nothing open
-  with them, and the two owner-page cases traced.

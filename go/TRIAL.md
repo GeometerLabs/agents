@@ -1679,12 +1679,11 @@ process per part behind a router, and why) is bundle/Explanation.md "Several tem
   settings as one part beside two quiet companions; cases that test what a parts shop is not by design are SKIPPED with the reason (via-parts.ts BY_DESIGN: the status's
   name, a settings file the test writes itself, the differential against the demo's single shop, refs compared whole, one report per part, the shop's one page and chat).
 
-Findings in the templates' own situations (not changed; the TypeScript and Go readers agree, so they are reported, not fixed):
-- **Stock orders reads the digit in an item's name as a quantity.** On the starter shop, "LED bulb 9W is low" is read as an order of 9 (reading.ts `quantityIn`
-  takes the first run of digits not after a word character; its Go twin does the same), so the low-stock situation (#15) orders 9 where the usual quantity is 10. Any shop
-  whose items carry a digit in their names meets it; it is not a parts-shop matter.
-- **Stock orders' "the catalogue's price moves" situation (#5) cannot run on a shop with the assistant:** it reads the settings back with `parseSettings` after its change,
-  and the checked assistant block (`morningAt`) is not a settings key, so it throws before it runs.
+Findings in the templates' own situations (both fixed at their cause in part B, below):
+- **Stock orders read the digit in an item's name as a quantity.** On the starter shop, "LED bulb 9W is low" was read as an order of 9 (reading.ts `quantityIn`
+  took the first run of digits not after a word character; its Go twin did the same), so the low-stock situation (#15) ordered 9 where the usual quantity is 10.
+- **Stock orders' "the catalogue's price moves" situation (#5) could not run on a shop with the assistant:** it read the settings back with `parseSettings` after its
+  change, and the checked assistant block (`morningAt`) is not a settings key, so it threw before it ran.
 
 TypeScript findings: none in the templates' code. One thing worth knowing: the Orders skill owns `g-` references (`^[og]-`) and so does the Fees skill (`^[fqg]-`); in a
 parts shop a press on a `g-` case is owned by two parts and is recorded and not done (the router never guesses).
@@ -1700,3 +1699,18 @@ parts shop a press on a `g-` case is owned by two parts and is recorded and not 
   day): parts 14/14, Orders 136/136 on its own program, bundle update.test 14/14; Fees through the parts program 48 pass, 55 skipped (gateway or by design), 8 fail: 5 by
   design but outside the skip (the four gateway differential cases and the restart case use test() directly), and 3 open: a picture from a parent the hold could also
   take is asked about instead of read as "I paid", the owner page's Received press on a parent's claim, and the reminders' words with no page link (bundle Deferred.md).
+
+### Part B (25 Nov 2026): the starter shop passes its own gate
+
+- **A number written against a letter or in a fraction is part of a name, never a quantity** (reading.ts `quantityIn` and reading.go, the same rule): "9W", "5L", "2kg",
+  "16A", "1/2 inch" are names; "2x" keeps its 2; "order 10 LED bulb 9W" is 10. Vectors in en/hi/ml/kn (gen_stockorders_vectors.ts), a Go test
+  (reading_names_test.go) and a contract case (an item named "shampoo 5L": its low mark orders the line's usual 12).
+- **The price situation reads the edited settings back in their file's shape** (`settingsJson`, as the go world writes them), and Stock orders' stand-in knows the
+  assistant's templates when the shop has the assistant. Tests: Stock orders' hand check on a single shop with the assistant, and on items named with a number, holds all.
+- **A Fees part behaves as a Fees shop through the router.** Cause of all three open cases: the shop's customer side was the hold's when the shop had one, so the
+  credit book's parents got no page link and the owner page's items were read as the hold's. The customer side is now the FIRST Orders or Fees part in the shop's order
+  (`customerPart`, Go and TypeScript `customerPartOf`); a customer-facing part that is not it gets no page address. A picture from someone the hold has nothing open with
+  is the hold's only as a new customer (ClaimNew), so a parent's picture is the centre's ("I paid", which the owner still confirms; nothing is settled on a picture).
+- **The by-design cases a suite starts with `test()` itself** (a gateway shop's restart, the gateway differential) are skipped through the parts program with the
+  reason (via-parts.ts `gatewayCaseThroughParts`); the page and link cases are by design only for a part that is not the shop's page (`CONTRACT_PARTS=last`).
+

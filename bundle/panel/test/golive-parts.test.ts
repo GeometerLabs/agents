@@ -34,14 +34,14 @@ test("the starter shop of three parts: every part's situations run on the parts 
     const parts = (ran?.hand as { parts?: { name: string; summary: { total: number; held: number } }[] } | undefined)?.parts ?? [];
     assert.deepEqual(parts.map((p) => p.name), ["fees", "stock-orders", "orders"], "each part's own situations ran");
     for (const p of parts) assert.ok(p.summary.total > 0, `${p.name} ran its situations: ${JSON.stringify(p.summary)}`);
-    // every situation holds but two of Stock orders' own, which its OWN program fails on these settings too (go/TRIAL.md: the digit in "LED bulb 9W" read as a quantity,
-    // and the price situation's reload on a shop with the assistant): the gate counts them as failed, as it must
+    // every situation holds, the parts' and the shop's own (Stock orders' two that failed on these settings, a number in "LED bulb 9W" and the price
+    // situation on a shop with the assistant, were fixed at their cause: go/TRIAL.md d65 part B)
     const failed = parts.flatMap((p) => (p.summary as { failedTitles?: string[] }).failedTitles ?? []);
-    assert.deepEqual(failed.sort(), ["A low-stock mark with no reorder quantity asks how many; with one it orders that; a second mark makes no second order", "The catalogue's price moves after the card: the old approval does not count"]);
-    assert.ok(ran && ran.hand.held === ran.hand.total - 2 && ran.hand.total > parts.reduce((n, p) => n + p.summary.total, 0), "the shop's own situations are counted too, and all hold");
+    assert.deepEqual(failed, [], "no situation failed");
+    assert.ok(ran && ran.hand.held === ran.hand.total && ran.hand.total > parts.reduce((n, p) => n + p.summary.total, 0), "the shop's own situations are counted too, and all hold");
     assert.equal(ran.hand.program?.name, "parts", "it ran on the parts program");
     assert.equal(ran.settingsDigest, KINDS.parts.papers!.policyDigest(shops.settings("ganesh")));
-    assert.ok(live.unmet("ganesh", shops.settings("ganesh")).includes("hand-check"), "two failed, so the hand check does not stand");
+    assert.ok(!live.unmet("ganesh", shops.settings("ganesh")).includes("hand-check"), "every situation held, so the hand check stands");
     const dir = mkdtempSync(join(tmpdir(), "golive-parts-"));
     const { files } = KINDS.parts.papers!.writeGoLiveCertificate({ settings: shops.settings("ganesh"), handCheck: ran.hand, language: "en", out: dir, key: generateKeyPairSync("ed25519").privateKey, now: Date.UTC(2026, 10, 25) });
     for (const p of ["fees", "stock-orders", "orders"]) assert.ok(files.some((f) => f.includes(`/${p}/go-live-certificate.json`)), `${p}'s certificate`);
