@@ -10,6 +10,7 @@ import { META_TEMPLATES as ORDERS_META } from "../../orders/src/language/meta-te
 import { REPORT_TEMPLATES as ORDERS_REPORT } from "../../orders/report/whatsapp.ts";
 import { META_TEMPLATES as STOCK_META } from "../../stock-orders/src/language/meta-templates.ts";
 import { REPORT_TEMPLATES as STOCK_REPORT } from "../../stock-orders/report/whatsapp.ts";
+import { assistantCatalogue } from "../../../../modules/assistant/templates.ts";
 import type { PartName } from "./settings.ts";
 
 /** Each part's own templates, as its template's stand-ins and generator know them. */
@@ -37,9 +38,12 @@ export function unionOfTemplates<T extends { name: string; language?: string }>(
   return { templates, conflicts };
 }
 
-/** The Meta templates a parts shop's number needs: its parts', each once (what the hand check's stand-in serves). Throws on a conflict. */
-export function partsMetaTemplates<T extends { name: string } = { name: string }>(parts: readonly PartName[]): T[] {
-  const u = unionOfTemplates(parts.map((p) => OF[p]));
+/**
+ * The Meta templates a parts shop's number needs: its parts', each once, and with the shop's assistant (an "assistant" block) the assistant's own (the morning line, a closed
+ * day), which belong to the shop and not to any part. What the hand check's stand-in serves. Throws on a conflict.
+ */
+export function partsMetaTemplates<T extends { name: string } = { name: string }>(parts: readonly PartName[], o: { assistant?: boolean } = {}): T[] {
+  const u = unionOfTemplates([...parts.map((p) => OF[p]), ...(o.assistant ? [assistantCatalogue.templates] : [])]);
   if (u.conflicts.length > 0) throw new Error(u.conflicts.join(" "));
   return u.templates as T[];
 }

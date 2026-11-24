@@ -95,7 +95,7 @@ func (a *Agent) creditTakes(text string) bool {
 // ClaimCustomer: someone in the credit book, or a parent with fees: open with them; their yes or no, a payment, a refund or a STOP read by the centre's rules is about it. The
 // centre takes no customer it has never met (a new customer is the shop's other parts').
 func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
-	if a.creditAccountOf(m.From) == nil && len(a.store.duesOf(m.From)) == 0 {
+	if a.creditAccountOf(m.From) == nil && len(a.store.duesOf(m.From)) == 0 && !a.creditPerson(m.From) {
 		return runtime.ClaimNone
 	}
 	if m.Reply != nil && intentFromReply(m.Reply.ID) != nil {
@@ -106,6 +106,19 @@ func (a *Agent) ClaimCustomer(m messaging.InboundMessage) runtime.Claim {
 		return runtime.ClaimOpen
 	}
 	return runtime.ClaimWords
+}
+
+// creditPerson: the settings' credit book names this number (the book opens its people on the centre's first step, which may not have run yet).
+func (a *Agent) creditPerson(phone string) bool {
+	if !a.credit() {
+		return false
+	}
+	for _, p := range a.settings.Credit.People {
+		if p.Phone == phone {
+			return true
+		}
+	}
+	return false
 }
 
 // OwnsCase: a fee (f-3), a request (q-2), a credit account (c-4) is the centre's.

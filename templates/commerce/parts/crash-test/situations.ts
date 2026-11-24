@@ -5,7 +5,7 @@
 //   parts-owner-words      the owner's words for each part reach that part: "<name> owes <n>" the credit book, "order <n> <unit> <item> from <supplier>" Stock orders
 //   parts-customers        a new customer's message the hold, a listed supplier's Stock orders, someone in the credit book the credit book (and a STOP there is theirs)
 //   parts-unclear          words two parts could take ("<name> paid <n>" with a purchase order open): ONE short question, nothing about money done; the answer sends it to the part
-//   parts-redelivered      a message delivered twice: read once, by the part it went to the first time
+//   parts-redelivered      a message delivered twice: read once, by the part it took it, and nobody is sent anything twice
 //   parts-owner-page       one owner's page: what waits in each part, the credit book's rows, the one assistant
 //   parts-shared-stock     one count for an item two parts know: the last unit held for one customer is not held for another; collected once, it is one reorder, not two
 //
@@ -113,16 +113,18 @@ const BUILDERS: Build[] = [
     },
   }),
   (p) => !p.hold ? { title: "A message delivered twice is read once", skip: "it needs the pickup hold" } : ({
-    id: "parts-redelivered", title: "A message delivered twice is read once, by the part it went to the first time",
+    id: "parts-redelivered", title: "A message delivered twice is read once, by the part that took it, and nobody hears anything twice",
     how: "the inbox hands the same WhatsApp message on twice",
     async run() {
       const { results, expect } = checker();
       const w = await createPartsWorld(p.settings);
       const m = await w.say(evening(p));
+      const toOwner = w.textsTo(w.owner).length;
+      const toCustomer = w.textsTo(m.from).length;
       await w.redeliver(m);
-      const got = w.record.entries().filter((e) => e.action === "receive_message" && e.refs?.part === "orders");
-      expect("One read, one dropped as delivered again", got.filter((e) => e.outcome === "confirmed").length === 1 && got.filter((e) => e.outcome === "blocked").length === 1, JSON.stringify(got.map((e) => e.outcome)));
-      expect("One question to the owner", w.textsTo(w.owner).length === 1, `${w.textsTo(w.owner).length} messages`);
+      const got = w.record.entries().filter((e) => e.action === "receive_message" && e.outcome === "confirmed");
+      expect("The message was read once, by the hold", got.length === 1 && got[0].refs?.part === "orders", JSON.stringify(got.map((e) => `${e.refs?.part}:${e.outcome}`)));
+      expect("The second delivery sent nobody anything", w.textsTo(w.owner).length === toOwner && w.textsTo(m.from).length === toCustomer, `owner ${w.textsTo(w.owner).length - toOwner}, customer ${w.textsTo(m.from).length - toCustomer} more`);
       return results;
     },
   }),
@@ -132,6 +134,7 @@ const BUILDERS: Build[] = [
     async run() {
       const { results, expect } = checker();
       const w = await createPartsWorld(p.settings);
+      await w.tick(); // the shop's first beat: the credit book opens the people its settings name
       await w.say(evening(p));
       const page = await w.ownerPage();
       const v = page.body as Obj;

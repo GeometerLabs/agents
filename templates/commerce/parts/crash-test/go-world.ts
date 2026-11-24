@@ -36,7 +36,7 @@ export interface PartsWorld extends GoWorldBase<PartsFile, Record<string, unknow
 
 export async function createPartsWorld(settings: PartsFile, o: { nowMs?: number } = {}): Promise<PartsWorld> {
   const tz = settings.timezone ?? "Asia/Kolkata";
-  const catalogue = { templates: partsMetaTemplates(Object.keys(settings.parts).filter(isPartName)) } as TemplateCatalogue;
+  const catalogue = { templates: partsMetaTemplates(Object.keys(settings.parts).filter(isPartName), { assistant: settings.assistant !== undefined }) } as TemplateCatalogue;
   const base = await openGoWorld<PartsFile, Record<string, unknown>>({
     program: PROGRAM, version: VERSION, settings, at: o.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, tz), customer: "+919844444444",
     parseStore: (json) => JSON.parse(json) as Record<string, unknown>, emptyStore: () => ({}), parseSettings: (raw) => raw as PartsFile, settingsFile: (s) => s as Record<string, unknown>,
