@@ -159,7 +159,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
   // 25 Nov 2026: each shop's WhatsApp message templates, submitted to its own account through its Guard and read back (wa-templates.ts)
-  const waTemplates = createWaTemplates(config, shops, store, () => discoverTemplates(config.templatesDir), log);
+  const waTemplates = createWaTemplates(config, shops, store, () => templates(), log); // `templates` is defined below; it is only called once a request runs
   const confirmations = createConfirmations(store, now);
   // item 11d: a shop that moves to another Operator loses the owner's link the old Operator made; the new Operator makes the owner a new one
   const handover = createHandover(shops, accounts, store, now, (shop, move) => {
