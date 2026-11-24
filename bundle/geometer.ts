@@ -103,12 +103,14 @@
 //   logs <shop> [--tail N]       a shop's runtime and Guards;   logs [--tail N] with no shop: the server's own services (the panel, HTTPS, the heartbeat, the inbox, the relay)
 //   apply [--watch]              the host-side deployer: applies what the panel writes, running the same checked deploy
 //   whatsapp-templates <shop> [--submit | --status] [--template bookings|orders|fees] [--languages hi,en] [--only name1,name2]
-//                                put the shop's WhatsApp templates (about 130 messages in four languages) into ITS OWN Gupshup account, instead of typing them into Gupshup's dashboard.
-//                                Plain steps: 1. the shop is set up on its own Gupshup account (runtime.json has the app name; add "appId" under services.messaging, shown on the app's page).
-//                                2. Give the key for this one command: GUPSHUP_APIKEY=... node bundle/geometer.ts whatsapp-templates <shop> --server <folder>   (or it is read from the shop's
-//                                secret file once `gupshup_apikey` is handed in); never type it as an argument. 3. Run it as it is: a DRY RUN prints exactly what would be sent and sends nothing.
-//                                4. Try one first: add --submit --only <name> --languages en, then --status. 5. Then --submit for all; a template already pending or approved is skipped, so
-//                                running it again is safe. 6. --status lists each one's state; Meta approves in up to a day. A rejected one is left alone and flagged. Not tried against the real service.
+//                                the same submission the panel makes when it saves a shop's WhatsApp connection (lib/wa-templates.ts): the shop's WhatsApp templates, in its languages,
+//                                into ITS OWN account (Meta direct, or its own Gupshup app), skipping any already there. Use it when the panel cannot reach the shop's Guard.
+//                                Plain steps: 1. the shop's WhatsApp is set up in the panel, with its WhatsApp Business Account id (Meta) or its app id (Gupshup) in the WhatsApp step.
+//                                2. The key is read from the shop's secret file, or given for this one command: WHATSAPP_TOKEN=... (Meta) or GUPSHUP_APIKEY=... (Gupshup)
+//                                node bundle/geometer.ts whatsapp-templates <shop> --server <folder>; never type it as an argument. 3. Run it as it is: a DRY RUN prints exactly what would be
+//                                sent and sends nothing. 4. Try one first: add --submit --only <name> --languages en, then --status. 5. Then --submit for all; a template already pending or
+//                                approved is skipped, so running it again is safe (Meta takes 100 an hour: run it again later for the rest). 6. --status lists each one's state, with the
+//                                provider's reason for a rejected one; approval takes up to a day. A rejected one is left alone and flagged. Not tried against the real services.
 //   backup now | drill           the nightly snapshot and the weekly restore drill, once
 //
 // The deployer is the only process with the Docker socket. The panel never gets it.
