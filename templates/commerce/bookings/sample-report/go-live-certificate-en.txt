@@ -1,5 +1,5 @@
 Sample Salon · Bookings agent · Go-live certificate · Mon 30 Nov 2026
-Held 9 of 9 situations. 0 failed. 15 not tested.
+Held 10 of 10 situations. 0 failed. 15 not tested.
 Your limits:
 • Nothing below your price list: haircut ₹450 · beard trim ₹250 · facial ₹900 · hair colour ₹1,800
 • Deposit ₹200, and the slot is held 60 minutes for it
@@ -8,5 +8,5 @@ Your limits:
 • No bookings outside your opening hours
 Not checked: phone calls · group bookings · walk-ins · real WhatsApp · a real calendar · a real AI model (messages are read by fixed rules and answered from fixed templates) · Tamil, Telugu and other languages · a native speaker's review of the Malayalam and Kannada wording (machine-written) · a crash or restart in the middle of a step · two customers at the exact same instant · problems beyond the ones tried · automatic payment checking: with UPI the owner marks each payment received · a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment) · webhook signatures (proof that a message came from WhatsApp) · some of these checks, which this shop's settings cannot run (so they were left out)
 Checks were run by hand against stand-in services, not real WhatsApp, payments or a calendar. Test money only.
-Set up by: Divya, local partner (example) · Agent version: bookings 0.2.0 · Code: X7AV-JZE0
-Check it is genuine: https://geometer.dev/verify/#s1.AwIACjIwMjYtMTEtMzAIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQQJCQAPtQAD4MyO4UPp1bl9wLjdOFxKM4LUftjsiWUN1lAVs-BlnzE7M8LnBg.iwJuLm7uH3KyDrk5ErgXUso-t59aPQgOfaodHQb8p3kU2MvP4ZWDl2x6oOSABasZKAKwwt5hfxuKcCnheO8CCQ
+Set up by: Divya, local partner (example) · Agent version: bookings 0.2.0 · Code: 1QA9-S0QP
+Check it is genuine: https://geometer.dev/verify/#s1.AwIACjIwMjYtMTEtMzAIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQQKCgAPtQAD4MyO4UMN1JyC9oZxEXCKlGnTyhQrZ2LvTGSCQ2gF7G2AQL000Q.qPa0cRb3SIQ6c6XFOeIc63lp0FdPfeo4CaKuCaYil45cFI9k6M38i2nOxjhor3ncTmLz6UVdDE1mE6qZxmw_CA

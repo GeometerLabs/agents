@@ -34,7 +34,7 @@ const handCheck = () => (hand ??= runAll().then(summariseHandCheck));
 
 test("the go-live certificate says what the hand check says: the same counts, the same list, the same words", { skip: goSkip("bookings") }, async () => {
   const summary = await handCheck();
-  assert.deepEqual([summary.held, summary.total, summary.failedTitles.length], [40, 40, 0]);
+  assert.deepEqual([summary.held, summary.total, summary.failedTitles.length], [41, 41, 0]);
   const env = seal(buildGoLiveCertificate({ settings, handCheck: summary, issuedAt: ISSUED }));
   const cert = env.document;
   assert.deepEqual(cert.checks, { held: 41, total: 41, failed: 0, failedTitles: [], checks: summary.checks });

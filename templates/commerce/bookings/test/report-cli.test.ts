@@ -88,7 +88,7 @@ test("go-live-certificate.ts runs the hand check and writes the certificate in t
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(tree(out), ["go-live-certificate-ml.html", "go-live-certificate-ml.txt", "go-live-certificate.json"]);
   const text = readFileSync(join(out, "go-live-certificate-ml.txt"), "utf8");
-  assert.ok(text.includes("40 സാഹചര്യങ്ങളിൽ 40 എണ്ണം") && text.includes("stand-in services") && text.includes("പരിശോധനാ സർട്ടിഫിക്കറ്റ്") && text.includes("Divya, local Operator"));
+  assert.ok(text.includes("41 സാഹചര്യങ്ങളിൽ 41 എണ്ണം") && text.includes("stand-in services") && text.includes("പരിശോധനാ സർട്ടിഫിക്കറ്റ്") && text.includes("Divya, local Operator"));
   const v = verifyEnvelopeText(readFileSync(join(out, "go-live-certificate.json"), "utf8"));
   assert.equal(v.unchanged && v.signed, true);
   const en = run("go-live-certificate.ts", "--settings", join(dir, "settings.json"), "--lang", "en", "--out", join(dir, "golive-en"));
