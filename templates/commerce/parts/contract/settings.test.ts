@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { asParts, partSettings, validateSettings } from "../src/settings.ts";
 import { partsMetaTemplates, unionOfTemplates } from "../src/whatsapp.ts";
+import { shopTemplateSet } from "../../../../bundle/lib/wa-templates.ts";
+import { checkoutDirOf } from "../../../../bundle/lib/pathways.ts";
+import { fileURLToPath } from "node:url";
 
 const starter = JSON.parse(readFileSync(new URL("../settings/ganesh-electricals-starter.example.json", import.meta.url), "utf8")) as Record<string, any>;
 const hold = JSON.parse(readFileSync(new URL("../../orders/settings/ganesh-electricals-hold.example.json", import.meta.url), "utf8")) as Record<string, any>;
@@ -44,4 +47,15 @@ test("the shop's WhatsApp templates are the union of its parts', each once; the 
   const u = unionOfTemplates([[{ name: "a", language: "en", text: "x" }], [{ name: "a", language: "en", text: "x" }, { name: "a", language: "hi", text: "y" }], [{ name: "a", language: "en", text: "z" }]]);
   assert.equal(u.templates.length, 2);
   assert.equal(u.conflicts.length, 1);
+});
+
+test("the shop's template set to submit (bundle/lib/wa-templates.ts) is every part's, each name and language once", () => {
+  const repo = fileURLToPath(new URL("../../../../", import.meta.url));
+  const set = shopTemplateSet({ templateId: "parts", settings: starter, folderOf: (id) => checkoutDirOf(repo, id) });
+  const keys = set.map((e) => `${e.name}:${e.language}`);
+  assert.equal(new Set(keys).size, keys.length, "each once");
+  for (const id of ["fees", "orders", "stock-orders"]) {
+    const own = shopTemplateSet({ templateId: id, settings: { ...starter, parts: undefined }, folderOf: (x) => checkoutDirOf(repo, x) });
+    for (const e of own) assert.ok(keys.includes(`${e.name}:${e.language}`), `${id}'s ${e.name} (${e.language}) is in the shop's set`);
+  }
 });

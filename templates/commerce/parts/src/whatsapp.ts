@@ -1,9 +1,8 @@
-// The WhatsApp templates of a shop of several parts (decision 65): the UNION of its parts' templates, each once. ONE function, `unionOfTemplates`, makes the union for every
-// shape a list comes in (the Meta templates a stand-in serves, the entries of each template's whatsapp-templates.json the panel submits), so there is one rule:
+// The WhatsApp templates of a shop of several parts (decision 65), as the HAND CHECK's stand-in WhatsApp knows them: the union of its parts' Meta template catalogues
+// (and the shop's assistant's), each once. What the shop SUBMITS to its WhatsApp account is the bundle's one template set, bundle/lib/wa-templates.ts (`shopParts` reads a
+// parts shop's parts; `templateSet` merges same-name same-words entries and refuses different words): this file does not submit anything. The rule here is the same one:
 //   a template is the same template when its name (and, for an entry, its language) is the same; the same name with other words in two parts is a CONFLICT, said in plain
-//   words and never sent (one number cannot have one template name meaning two messages).
-// The stream `wa-templates-25nov` makes the template set a function of the shop; when it lands, its function takes this one's place (bundle/lib/parts-templates.ts is the one
-// caller in the bundle).
+//   words and never used (one number cannot have one template name meaning two messages).
 import { META_TEMPLATES as FEES_META } from "../../../education/fees/src/language/meta-templates.ts";
 import { REPORT_TEMPLATES as FEES_REPORT } from "../../../education/fees/report/whatsapp.ts";
 import { META_TEMPLATES as ORDERS_META } from "../../orders/src/language/meta-templates.ts";
