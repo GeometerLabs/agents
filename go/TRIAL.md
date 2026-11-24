@@ -1638,3 +1638,13 @@ checked by the TypeScript `messagingConfigProblem` and `modules/runtime/config.t
 runtime's generated config without it, so neither the Go nor the kept TypeScript runtimes ever see it; `go/internal/messaging/providers.go` (the port of
 `messagingConfigProblem`) has no `wabaId` rule, and needs none while that holds. The messaging vectors (`go/scripts/vectors/messaging.ts`) carry no config with the field,
 so they are unchanged. TypeScript findings: none.
+
+## fees-flake-25nov: the Fees hand check's rare failure, found and fixed at its cause (25 Nov 2026)
+
+The full bundle suite once held a Fees centre back at `claim-paid` (25 of 26): "a message to the owner was refused by the provider: Template name does not exist". Not load
+(`claim-paid` held 15 of 15 under ten busy loops) and not the clock: the outgoing check (`go/internal/language/check.go`, word for word `modules/language/check.ts`) masked the
+record's names and references BEFORE it read the links, and a page link's random handle (`newHandle`, 32 characters of base64url) holds the fee's reference (`f-5`, any case)
+about one time in 4,000, so the record's own link was cut in two and read as a link not in the record. The reminder was held back, and the owner's word about it
+(`owner_message_held`, unasked, outside the owner's window) had no WhatsApp template and went under the generic name. Fixed in both runtimes at once (the check is shared, so
+the TypeScript change is the same fix, with a test): the record's own links are read whole first. `owner_message_held` is now the template `owner_fee_message_held`, its
+hi/ml/kn words starting with fixed words; whatsapp-templates.json, the review sheets and the Go words regenerated. TypeScript finding: the same bug, fixed (above).
