@@ -23,7 +23,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { PARTS_VERSION, VIA_PARTS, gatewayOf, notThroughParts, track, viaParts } from "../../parts/contract/via-parts.ts";
+import { PARTS_VERSION, VIA_PARTS, byDesign, gatewayOf, notThroughParts, partStatus, track, viaParts } from "../../parts/contract/via-parts.ts";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
 import { OWNER_GRANTS_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { guestHash, handleHash, newGuestHandle, newHandle } from "../../../../modules/channels/handle.ts";
@@ -55,7 +55,7 @@ const GO_BIN = VIA_PARTS ? (process.env.PARTS_GO_BIN ?? join(REPO, "go", "bin", 
 export const SKIP: string | undefined = !existsSync(GO_BIN) ? `the Go Orders program is not built (go build -o go/bin/ ./cmd/orders, or set ORDERS_GO_BIN)` : undefined;
 
 /** The ONE wrapper every contract test goes through: a test is skipped only when what it needs is not there, and says so. */
-export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, (t) => track(t, fn)); };
+export const contract = (name: string, fn: () => Promise<void> | void): void => { const why = byDesign(name); void test(name, SKIP ? { skip: SKIP } : why ? { skip: `not run through the parts shop, by design: ${why}` } : {}, (t) => track(t, fn)); };
 
 export const PAGE = "https://pages.example/annapurna";
 export const OWNER_BASE = "https://pages.example/owner";
@@ -300,7 +300,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
       clock.advance(ms);
     },
     orderDay: () => dayAhead(shop.now(), mode === "fakes" && clock ? 1 : 2),
-    async status() { return (await shop.call("/status")).body; },
+    async status() { return partStatus((await shop.call("/status")).body, "orders", "orders"); }, // CONTRACT_PARTS: the part's own counts under its own name (via-parts.ts)
     events: (list) => shop.call("/internal/events", { body: { events: list } }),
     async inbound(from, text, m = {}) {
       // in guards mode the message is made by the WhatsApp stand-in, which also opens the customer's 24-hour window there

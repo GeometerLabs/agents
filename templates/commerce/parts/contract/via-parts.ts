@@ -75,3 +75,37 @@ export function notThroughParts(why: string): never {
 export function gatewayOf(settings: Record<string, unknown>): boolean {
   return (settings.payment as { module?: unknown } | undefined)?.module === "razorpay";
 }
+
+// ---- what differs by design ------------------------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * A parts shop's /status counts its cases under "cases", by part ("orders:confirmed"); a single-part shop counts its own under its template's name ("orders"). Through the
+ * parts program, the harness's status() gives the test the part's own counts under its template's name as well, read from "cases" (nothing else of the answer changes).
+ */
+export function partStatus(body: any, part: string, casesName: string): any {
+  if (!VIA_PARTS || !body || typeof body !== "object" || typeof body.cases !== "object") return body;
+  const own: Record<string, number> = {};
+  for (const [key, n] of Object.entries(body.cases as Record<string, number>)) if (key.startsWith(`${part}:`)) own[key.slice(part.length + 1)] = n;
+  return { ...body, [casesName]: own };
+}
+
+/**
+ * The cases of a template's own suite that test what a parts shop is not, by design, with the reason: they are SKIPPED through the parts program (never passed). Each reason is
+ * a decision 65 design point (bundle/Explanation.md), not a fault.
+ */
+export const BY_DESIGN: Record<string, { match: RegExp; why: string }[]> = {
+  common: [
+    { match: /a folder pinned to another version or another pathway/u, why: "it writes a single template's pathway.lock and settings.json into the folder itself; a parts shop's folder is pinned to parts@ and its settings are the parts'" },
+    { match: /^in (en|hi|ml|kn): /u, why: "the differential test compares the settings file with the demo's single-template shop; a parts shop's file wraps it as one part" },
+    { match: /names its cases/u, why: "a parts shop's /status names its cases \"cases\", by part" },
+    { match: /one report folder appears/u, why: "each part sends its own monthly report, so a parts shop's report folder has one per part" },
+    { match: /Stock page offers/u, why: "the shop's one Stock page offers every part's items, the other parts' too" },
+    
+  ],
+};
+
+/** The by-design reason this case is not run through the parts program, or undefined. */
+export function byDesign(name: string): string | undefined {
+  if (!VIA_PARTS) return undefined;
+  return BY_DESIGN.common.find((d) => d.match.test(name))?.why;
+}

@@ -54,6 +54,10 @@ test("a live hold shop takes the credit book and Stock orders, moves onto the pa
     const code = /\byes ([A-Z0-9]{4,6})\b/u.exec(w.textsTo(w.owner).reverse().join("\n"))?.[1];
     assert.ok(code, "the owner was sent the reorder's card");
     await w.ownerSays(`no ${code}`);
+    // the card said no; the order it would have sent waits to be cancelled, and while it is open the part cannot be taken out
+    const waiting = removePart({ settings: two.settings, lock: two.lock, part: "stock-orders", openCases: openCasesOf((await w.shop.status()).cases, "stock-orders") });
+    assert.ok(!waiting.ok && /open case/u.test(waiting.errors[0]), JSON.stringify(waiting));
+    await w.ownerSays("cancel po-1");
     const status = await w.shop.status();
     const out = removePart({ settings: two.settings, lock: two.lock, part: "stock-orders", openCases: openCasesOf(status.cases, "stock-orders") });
     assert.ok(out.ok, JSON.stringify({ out, cases: status.cases }));

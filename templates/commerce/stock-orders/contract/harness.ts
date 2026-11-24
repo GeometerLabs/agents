@@ -20,7 +20,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { PARTS_VERSION, VIA_PARTS, gatewayOf, notThroughParts, track, viaParts } from "../../parts/contract/via-parts.ts";
+import { PARTS_VERSION, VIA_PARTS, byDesign, gatewayOf, notThroughParts, partStatus, track, viaParts } from "../../parts/contract/via-parts.ts";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
 import { OWNER_GRANTS_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { TEST_CLOCK_FILE, TEST_SWITCH } from "../../../../modules/runtime/test-clock.ts";
@@ -49,7 +49,7 @@ export const SKIP: string | undefined = !existsSync(GO_BIN) ? "the Go Stock orde
 export const BOTH = existsSync(GO_BIN);
 
 /** The ONE wrapper every contract test goes through. */
-export const contract = (name: string, fn: () => Promise<void> | void): void => { void test(name, SKIP ? { skip: SKIP } : {}, (t) => track(t, fn)); };
+export const contract = (name: string, fn: () => Promise<void> | void): void => { const why = byDesign(name); void test(name, SKIP ? { skip: SKIP } : why ? { skip: `not run through the parts shop, by design: ${why}` } : {}, (t) => track(t, fn)); };
 
 export const TZ = "Asia/Kolkata";
 /** The unit tests' instant (test/runtime.test.ts): Mon 9 Nov 2026, 10:00 in India. A "fakes" shop starts here. */
@@ -233,7 +233,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     async cleanup() { rmSync(root, { recursive: true, force: true }); await guard?.close(); },
     now: () => clock?.now() ?? Date.now(),
     advance(ms) { if (!clock) throw new Error("only a fakes shop has a test clock"); clock.advance(ms); },
-    async status() { return (await shop.call("/status")).body; },
+    async status() { return partStatus((await shop.call("/status")).body, "stock-orders", "orders"); }, // CONTRACT_PARTS: the part's own counts under its own name (via-parts.ts)
     events: (list) => shop.call("/internal/events", { body: { events: list } }),
     async inbound(from, text, m = {}) {
       const made = guard ? guard.fake.receive(from, text, { ...(m.id ? { id: m.id } : {}), ...(m.reply ? { reply: m.reply } : {}) }) : undefined;
