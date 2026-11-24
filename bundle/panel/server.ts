@@ -92,6 +92,7 @@ import { createStore } from "./store.ts";
 import { CONFIRM_CHARS, createServerSetup } from "./server-setup.ts";
 import { backupKeyFile, backupKeyPage, serverPage } from "./views-server.ts";
 import { discoverTemplates } from "./templates.ts";
+import { createWaTemplates, waConfirmLines } from "./wa-templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
 import { errorPage, strandedPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
@@ -103,7 +104,8 @@ const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/u;
 const DOC_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(html|json|txt)$/u;
 const NOTICES = new Set(["report"]);
 
-export interface RunningPanel { host: string; port: number; url: string; close(): Promise<void> }
+/** `settled`: every background job of the panel (a shop's WhatsApp template submission, wa-templates.ts) finished; `close` waits for it too. */
+export interface RunningPanel { host: string; port: number; url: string; close(): Promise<void>; settled(): Promise<void> }
 /** `prices`: the price list in force, which prices both a shop's plan and its running-cost line. Left out: the newest in prices/ (the repo's root) that is not a proposal. */
 export interface PanelDeps { log?: (line: string) => void; prices?: PriceList }
 
@@ -141,7 +143,7 @@ export function openStores(config: PanelConfig) {
 }
 
 /** One request answered: what the panel's server (or the on-demand launcher, ondemand.ts) calls for every request. */
-export type PanelHandler = (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+export type PanelHandler = ((req: IncomingMessage, res: ServerResponse) => Promise<void>) & { /** The panel's background jobs, finished (wa-templates.ts). */ settled?: () => Promise<void> };
 
 // Builds everything the panel needs (stores, accounts, the routes) and returns the function that answers one request. Split from the listening so the
 // launcher (ondemand.ts) can load this file only when the first request comes. `deps` lets tests replace the clock, network and runtimes.
@@ -156,6 +158,8 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
   const shops = createShops(config, store);
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
+  // 25 Nov 2026: each shop's WhatsApp message templates, submitted to its own account through its Guard and read back (wa-templates.ts)
+  const waTemplates = createWaTemplates(config, shops, store, () => discoverTemplates(config.templatesDir), log);
   const confirmations = createConfirmations(store, now);
   // item 11d: a shop that moves to another Operator loses the owner's link the old Operator made; the new Operator makes the owner a new one
   const handover = createHandover(shops, accounts, store, now, (shop, move) => {
@@ -564,8 +568,9 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const pagesNotice = new URL(r.req.url ?? "/", "http://x").searchParams.get("pages");
     const plan = planView(shops.fleet(id), prices, config.mode === "own", counts?.ai?.budget, shops.budgetOverride(id)); // a panel on a builder's own server: the builder licence; the shop's own model budget comes from its runtime's status (decision 60)
     const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
+    const wa = await waTemplates.fresh(id); // read from the provider only when what is kept is old (never a send)
     const view: ShopView = {
-      id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
+      id, name: settings?.name ?? id, live, ...(wa.state || wa.busy ? { waTemplates: wa } : {}), status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
       ...(tradeLabel(shops.meta(id).trade, presets, c.lang) ? { trade: tradeLabel(shops.meta(id).trade, presets, c.lang) } : {}),
       summary: settings && !own ? summaryOf(c, settings) : undefined,
       // a Fees or Orders shop: its own pieces, with the plan's allowance from the price list in force; Bookings: the cost table
@@ -593,6 +598,15 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
       ...(notice && NOTICES.has(notice) ? { notice: c.w.shop.reportMade } : {}),
     };
     page(r, 200, shopPage(c, view));
+  });
+
+  // 25 Nov 2026: "Send the N not sent yet" on the shop page: the shop's templates that its account does not hold go now, in the background (wa-templates.ts)
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/wa-templates$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    waTemplates.submit(ref.id);
+    log(`wa-templates ${ref.id}: sent by ${r.account!.id}`);
+    redirect(r, `/shops/${ref.id}`);
   });
 
   // item 11d: the owner's approvals link. Making one shows it once and keeps only its hash; a new one replaces the old; revoking removes the file. The deployer hands the
@@ -996,6 +1010,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const files = d.shopId ? goLive.documents(d.shopId, "go-live").filter((f) => f.endsWith(".html")) : [];
     return {
       draft: d, steps: template.steps, now: template.steps.indexOf("checks"), saved: d.saved && Boolean(settings), problems, checks: d.shopId ? goLive.stored(d.shopId) : undefined,
+      ...(d.shopId && settings ? { waTemplates: waTemplates.view(d.shopId) } : {}),
       settingsOk: Boolean(settings), deployApplied: status?.deploy?.state === "applied" ? { at: status.deploy.at } : undefined, limits: status?.limits,
       guardConfigured: Boolean(config.guardUrl), unmet, ready: Boolean(meta?.readyAt) && unmet.length === 0,
       ...(own
@@ -1104,6 +1119,8 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     // item 11i: every mood drawn once into the shop's own data (shops/<shop>/character), only when the look changed; the deployer draws it on its next pass if this fails
     try { const drawn = await ensureShopCharacter(config.serverDir, d.shopId, written(built)); if (drawn?.drawn) log(`shop ${d.shopId}: its character's pictures drawn (${drawn.version})`); }
     catch (e) { log(`shop ${d.shopId}: its character's pictures could not be drawn now (${(e as Error).message}); the deployer draws them`); }
+    // 25 Nov 2026: the shop's WhatsApp templates go to its own account, in the background (a new shop's Guard is not running yet: the checks run tries again)
+    waTemplates.submit(d.shopId);
     d.saved = true; d.editing = true;
     d.lostDetails = (built as { lost?: string[] }).lost ?? []; // students whose old details could not be carried over: the checks page says so
     store.write(`drafts/${d.id}.json`, d);
@@ -1120,7 +1137,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     if (!d.shopId) return notFound(r);
     if (!shops.exists(d.shopId)) return redirect(r, `/setup/${d.id}/${template.steps.indexOf("checks") + 1}`);
     const here = `/setup/${d.id}/${template.steps.indexOf("checks") + 1}`;
-    if (r.params[1] === "check") await goLive.run(d.shopId);
+    if (r.params[1] === "check") { await goLive.run(d.shopId); waTemplates.submit(d.shopId); } // the shop is applied by now: the templates go if they have not
     else if (r.params[1] === "expected") {
       const v = (r.form.expectedBookings ?? "").trim();
       if (/^\d{1,6}$/u.test(v) || v === "") {
@@ -1138,13 +1155,6 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
 
   // ---- one-time confirmations asked for from outside the panel (the Claude Code plugin; confirmations.ts) ------------------------------------
   // A link is made on the command line and does nothing by itself. Opening it shows what is asked; only a POST from a signed-in person who may see the shop does it.
-  const waTemplates = (shop: string): string[] => {
-    const t = templates().find((x) => x.id === shops.kind(shop));
-    try {
-      const list = JSON.parse(readFileSync(join((t as { folder: string }).folder, "whatsapp-templates.json"), "utf8")) as { name: string; language: string }[];
-      return [...new Set(list.map((x) => `${x.name} (${x.language})`))];
-    } catch { return []; }
-  };
   const confirmFor = (r: Req) => {
     const token = r.params[0];
     if (!CONFIRM_TOKEN.test(token)) return { gone: "unknown" as const };
@@ -1156,7 +1166,7 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
   };
   const goLivePieces = (shop: string) => {
     const checks = goLive.stored(shop);
-    return { ...(checks ? { hand: { held: checks.hand.held, total: checks.hand.total, failedTitles: checks.hand.failedTitles, notTested: checks.hand.notTested } } : {}), connections: checks?.connections ?? null, templates: waTemplates(shop) };
+    return { ...(checks ? { hand: { held: checks.hand.held, total: checks.hand.total, failedTitles: checks.hand.failedTitles, notTested: checks.hand.notTested } } : {}), connections: checks?.connections ?? null, templates: waConfirmLines(waTemplates.view(shop)) };
   };
   on("GET", /^\/confirm\/([A-Za-z0-9_-]{16,80})$/u, "user", (r) => {
     const f = confirmFor(r);
@@ -1192,9 +1202,10 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     const result = goLive.ready(c.shop, owner ? preparedByOf(owner) : r.account!.name);
     if (!result.ok) return again([], result.unmet);
     if (!confirmations.spend(f.token, r.account!.id)) return page(r, 410, confirmGonePage(r.ctx(), "used"));
-    shops.saveMeta(c.shop, { ...shops.meta(c.shop), goLiveStatement: { at: new Date(now()).toISOString(), by: r.account!.id, whatsappTemplatesSeenApproved: true, keysHandedInThroughGuard: true } });
+    const wa = waTemplates.view(c.shop).state; // what the provider said, kept beside the person's statement that they read it
+    shops.saveMeta(c.shop, { ...shops.meta(c.shop), goLiveStatement: { at: new Date(now()).toISOString(), by: r.account!.id, whatsappTemplatesRead: true, ...(wa?.counts ? { whatsappTemplates: { approved: wa.counts.approved, of: wa.total, at: wa.at } } : {}), keysHandedInThroughGuard: true } });
     log(`go-live confirmed for ${c.shop} by ${r.account!.id} through ${c.id}`);
-    page(r, 200, confirmGoLivePage(r.ctx(), { token: f.token, shopName: name, shopId: c.shop, unmet: [], connections: goLive.stored(c.shop)?.connections ?? null, templates: [], problems: [], done: true, certificate: `/shops/${c.shop}/docs/go-live/go-live-certificate.html` }));
+    page(r, 200, confirmGoLivePage(r.ctx(), { token: f.token, shopName: name, shopId: c.shop, unmet: [], connections: goLive.stored(c.shop)?.connections ?? null, templates: { said: "", notApproved: [] }, problems: [], done: true, certificate: `/shops/${c.shop}/docs/go-live/go-live-certificate.html` }));
   });
 
   // ---- the server ---------------------------------------------------------------------------------------------------------------------------
@@ -1252,17 +1263,21 @@ export function panelHandler(config: PanelConfig, deps: PanelDeps = {}): PanelHa
     }
   }
 
-  return handle;
+  const h: PanelHandler = handle;
+  h.settled = () => waTemplates.settled();
+  return h;
 }
 
 /** Starts the panel's HTTP server at once, fully loaded (what the tests use; `main.ts serve` starts it on demand instead, ondemand.ts). Returns a handle to stop it. */
 export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Promise<RunningPanel> {
-  const server = panelServer(panelHandler(config, deps));
+  const handler = panelHandler(config, deps);
+  const server = panelServer(handler);
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(config.port, config.host, () => {
       const port = (server.address() as { port: number }).port;
-      resolve({ host: config.host, port, url: `http://${config.host.includes(":") ? `[${config.host}]` : config.host}:${port}`, close: () => new Promise<void>((done) => { server.closeAllConnections(); server.close(() => done()); }) });
+      resolve({ host: config.host, port, url: `http://${config.host.includes(":") ? `[${config.host}]` : config.host}:${port}`, settled: () => handler.settled?.() ?? Promise.resolve(),
+        close: async () => { await handler.settled?.(); await new Promise<void>((done) => { server.closeAllConnections(); server.close(() => done()); }); } });
     });
   });
 }

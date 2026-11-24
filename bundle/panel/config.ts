@@ -17,6 +17,8 @@ export interface PanelConfig {
   signingKeyFile?: string;
   /** The hand check's runner (golive.ts). Left out: the template's situations on the shop's own Go program, in a child process (bundle/lib/hand-check-go.ts). */
   handCheck?: (kind: string, settingsFile: string) => Promise<import("../lib/hand-check-go.ts").HandCheckOutcome>;
+  /** The pause between two template submissions (wa-templates.ts). Left out: half a second, as Gupshup rate-limits. A test passes none. */
+  templatesPause?: () => Promise<void>;
   /** Where each shop's fingerprint key (B69) is, as secrets/panel/person-keys/<shop>: what matches a typed number to the record's fingerprints. Left out: a person's statement is refused, and the panel says why. */
   personKeysDir?: string;
   /** The Google address a calendar is shared with (a service account's), when the server has one for every shop. */
@@ -59,6 +61,11 @@ const fill = (template: string | undefined, values: Record<string, string>): str
 
 // The URL templates in the config hold `{shop}` and `{kind}` slots; these small helpers fill them so every caller addresses a shop's services the same way.
 export const runtimeUrlFor = (c: PanelConfig, shop: string) => fill(c.runtimeUrl, { shop });
+/** The panel's own credential for the shops' Guards, read once: the connection checks (golive.ts) and the template submissions (wa-templates.ts) present it. */
+export function readGuardAgentToken(c: PanelConfig): string | undefined {
+  if (!c.guardAgentTokenFile) return undefined;
+  try { return readFileSync(c.guardAgentTokenFile, "utf8").trim() || undefined; } catch { return undefined; }
+}
 // Per-shop path of the bearer-token file for that shop's runtime, read by the panel only to call the runtime's /status.
 export const runtimeTokenFileFor = (c: PanelConfig, shop: string) => fill(c.runtimeTokenFile, { shop });
 // Per-shop, per-kind address of the shop's Guard, used by the read-only connection checks (checks.ts).

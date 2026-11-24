@@ -35,6 +35,7 @@ import { OWNER_CREDIT_WORDS } from "../../modules/channels/owner-credit.ts";
 import { PRESET_WORDS } from "./words-presets.ts";
 import { KEEP_WORDS } from "./words-keep.ts";
 import { DISCOUNT_WORDS } from "./discounts.ts";
+import { WA_TEMPLATE_SAMPLES, WA_TEMPLATE_WORDS } from "./wa-templates.ts";
 import { PANEL_LEAVE } from "./words-leave.ts";
 import { LEAVE_PAGE } from "../../modules/channels/words-leave.ts";
 import { PHONE_TEMPLATES, PRESETS_DIR, loadPresets, presetTexts } from "./presets.ts";
@@ -108,6 +109,8 @@ const leaveFlat = (language: Language): Map<string, string> => {
 const keepFlat = (language: Language): Map<string, string> => flatWords({ keep: KEEP_WORDS[language] }, { "keep.lost": ["Rahul"] });
 /** E1's discount boxes of the Bookings deposit step and the Orders rules step (discounts.ts), under the ids "discounts.*". */
 const discountsFlat = (language: Language): Map<string, string> => flatWords({ discounts: DISCOUNT_WORDS[language] }, { "discounts.floor": ["Haircut"] });
+/** 25 Nov 2026: the shop's WhatsApp message templates on the shop page, the checks page and the WhatsApp step (wa-templates.ts), under the ids "waTemplates.*". */
+const waTemplatesFlat = (language: Language): Map<string, string> => flatWords({ waTemplates: WA_TEMPLATE_WORDS[language] }, WA_TEMPLATE_SAMPLES);
 import { CHATS_LIST_WORDS } from "../../modules/channels/chats-list.ts";
 
 /**
@@ -258,8 +261,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...phonesFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...chatKindFlat(language), ...stockFlat(language), ...listingsShopFlat(language), ...classesFlat(language), ...creditFlat(language), ...presetsFlat(language), ...keepFlat(language), ...discountsFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language), ...directoryFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...phonesFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...chatKindFlat("en"), ...stockFlat("en"), ...listingsShopFlat("en"), ...classesFlat("en"), ...creditFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...discountsFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en"), ...directoryFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...phonesFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...chatKindFlat(language), ...stockFlat(language), ...listingsShopFlat(language), ...classesFlat(language), ...creditFlat(language), ...presetsFlat(language), ...keepFlat(language), ...discountsFlat(language), ...waTemplatesFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language), ...directoryFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...phonesFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...chatKindFlat("en"), ...stockFlat("en"), ...listingsShopFlat("en"), ...classesFlat("en"), ...creditFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...discountsFlat("en"), ...waTemplatesFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en"), ...directoryFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

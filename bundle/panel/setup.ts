@@ -12,7 +12,9 @@ import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/p
 import type { PaymentSettings } from "../../modules/payments/providers/index.ts";
 import { checkSecret } from "./secrets.ts";
 import { KEEP, keepHidden } from "./keep.ts";
-import { GUPSHUP_APP_NAME } from "../../modules/messaging/gupshup-selfserve.ts";
+import { GUPSHUP_APP_NAME, GUPSHUP_SELFSERVE_APP_ID } from "../../modules/messaging/gupshup-selfserve.ts";
+import { META_WABA_ID } from "../../modules/messaging/providers.ts";
+import { waWords } from "./wa-templates.ts";
 import { DEFAULT_PROVIDER, gatewayOf, ownerMarkedOf, providerById } from "../../modules/payments/providers/index.ts";
 import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";
@@ -44,7 +46,8 @@ export interface Draft {
   twoAboveInr?: string;
   /** Item 11c: `provider` "gupshup-selfserve" means the shop's own Gupshup account (with its `appName`); left out is Meta direct, as before. A draft from before has neither. */
   /** Item 11h: `none` when the Operator chose to start without WhatsApp (the number fields stay empty, and runtime.json names no messaging service). */
-  whatsapp: { businessNumber: string; numberId: string; provider?: "gupshup-selfserve"; appName?: string; none?: true };
+  /** 25 Nov 2026: `wabaId` (Meta direct) and `appId` (Gupshup) name the account the shop's message templates go to (wa-templates.ts); both optional, as a draft from before has neither. */
+  whatsapp: { businessNumber: string; numberId: string; provider?: "gupshup-selfserve"; appName?: string; appId?: string; wabaId?: string; none?: true };
   /** B72: `use` is "own" (the shop's own booking list, the default) or "google" (a Google Calendar, which needs `id`). A draft saved before 12 Nov has no `use`: read as "own" for a new shop. */
   calendar: { id: string; use?: "own" | "google" };
   /** B71: the gateway key as typed, for a shop that chose a gateway: its mode and id. */
@@ -123,7 +126,7 @@ export function whatsappDraftOf(meta: ShopMeta, runtime: Record<string, any> | u
   const m = runtime?.services?.messaging;
   // item 11h: a shop already saved with no messaging service started without WhatsApp
   if (runtime && !m) return { businessNumber: "", numberId: "", none: true };
-  return { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(m?.phoneNumberId ?? ""), ...(m?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(m.appName ?? "") } : {}) };
+  return { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(m?.phoneNumberId ?? ""), ...(m?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(m.appName ?? ""), ...(typeof m.appId === "string" ? { appId: m.appId } : {}) } : typeof m?.wabaId === "string" ? { wabaId: m.wabaId } : {}) };
 }
 
 /** A draft for a shop that already exists, so changing its settings is the same six steps. */
@@ -306,13 +309,19 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
       // the callback's secret word are write-only, like every key; the token and app secret of Meta are not asked for.
       const appName = text(body.waAppName, 64);
       if (!GUPSHUP_APP_NAME.test(appName)) problems.push(s.appNameBad);
-      draft.whatsapp = { businessNumber: business ?? text(body.waNumber, 30), numberId: business ? digitsOf(business) : "", provider: "gupshup-selfserve", appName };
+      // 25 Nov 2026: the app's id, optional: Gupshup's create call needs it, so without it the panel can read the templates' state but not submit them (wa-templates.ts)
+      const appId = text(body.waAppId, 64);
+      if (appId !== "" && !GUPSHUP_SELFSERVE_APP_ID.test(appId)) problems.push(waWords(lang).setup.appIdBad);
+      draft.whatsapp = { businessNumber: business ?? text(body.waNumber, 30), numberId: business ? digitsOf(business) : "", provider: "gupshup-selfserve", appName, ...(appId ? { appId } : {}) };
       take("gupshup_apikey", body.waApiKey, label.whatsapp.selfServe.apiKey, true);
       take("whatsapp_path_token", body.waPathToken, label.whatsapp.selfServe.pathToken, true);
     } else {
       const numberId = text(body.waNumberId, 30);
       if (!/^\d{6,20}$/u.test(numberId)) problems.push(s.numberIdBad);
-      draft.whatsapp = { businessNumber: business ?? text(body.waNumber, 30), numberId };
+      // 25 Nov 2026: the WhatsApp Business Account the shop's templates go to, optional: Meta documents no way to read it from the number id, so it is asked here
+      const wabaId = text(body.waWabaId, 30);
+      if (wabaId !== "" && !META_WABA_ID.test(wabaId)) problems.push(waWords(lang).setup.wabaIdBad);
+      draft.whatsapp = { businessNumber: business ?? text(body.waNumber, 30), numberId, ...(wabaId ? { wabaId } : {}) };
       take("whatsapp_token", body.waToken, label.whatsapp.token, true);
       take("whatsapp_app_secret", body.waAppSecret, label.whatsapp.appSecret, true);
     }
@@ -418,13 +427,18 @@ export function keepWhatsAppProvider(runtime: Record<string, unknown>, before: u
   const services = runtime.services as { messaging?: Record<string, unknown> };
   if (!services.messaging) return runtime; // item 11h: a shop with no WhatsApp has no provider to keep
   // Item 11c: the setup now has the step for it. A shop whose draft picked its own Gupshup account is written as one; its number is `sourceNumber` (digits, with the country code).
+  // 25 Nov 2026: the app's id from the step when it was given there, else the one runtime.json had (a draft from before the step asked for it)
   if (whatsapp?.provider === "gupshup-selfserve") {
     const prior = (before as { services?: { messaging?: { appId?: unknown } } } | undefined)?.services?.messaging;
-    return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: "gupshup-selfserve", appName: whatsapp.appName, sourceNumber: digitsOf(whatsapp.businessNumber), ...(prior?.appId !== undefined ? { appId: prior.appId } : {}) } } };
+    const appId = whatsapp.appId ?? prior?.appId;
+    return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: "gupshup-selfserve", appName: whatsapp.appName, sourceNumber: digitsOf(whatsapp.businessNumber), ...(appId !== undefined ? { appId } : {}) } } };
   }
-  const m = (before as { services?: { messaging?: { provider?: unknown; appId?: unknown } } } | undefined)?.services?.messaging;
+  const m = (before as { services?: { messaging?: { provider?: unknown; appId?: unknown; wabaId?: unknown } } } | undefined)?.services?.messaging;
+  // 25 Nov 2026: a Meta direct shop's WhatsApp Business Account (its templates' account): the step's, else the one it had
+  const wabaId = whatsapp?.wabaId ?? (m?.provider === undefined && typeof m?.wabaId === "string" ? m.wabaId : undefined);
+  const asMeta = wabaId ? { ...runtime, services: { ...services, messaging: { ...services.messaging, wabaId } } } : runtime;
   // no provider named before, or a self-serve shop whose draft now says Meta direct (the Operator switched it on purpose): written as Meta, as made
-  if (!m || m.provider === undefined || m.provider === "gupshup-selfserve") return runtime;
+  if (!m || m.provider === undefined || m.provider === "gupshup-selfserve") return asMeta;
   return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: m.provider, ...(m.appId !== undefined ? { appId: m.appId } : {}) } } };
 }
 

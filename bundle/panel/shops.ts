@@ -35,7 +35,12 @@ export interface ShopMeta {
   trade?: { preset?: string; typed?: string };
   readyAt?: string;
   /** What the person said when they confirmed go-live through a one-time link: written down as their statement, not as something checked. */
-  goLiveStatement?: { at: string; by: string; whatsappTemplatesSeenApproved: boolean; keysHandedInThroughGuard: boolean };
+  /**
+   * What the person confirmed at go-live. 25 Nov 2026: the panel now reads the templates' state from the provider (wa-templates.ts), so the person says they READ it
+   * (`whatsappTemplatesRead`), and what the provider said is kept beside it; go-live no longer waits for every template (it warns). A statement from before has
+   * `whatsappTemplatesSeenApproved` instead: the person said they saw them approved.
+   */
+  goLiveStatement?: { at: string; by: string; whatsappTemplatesRead?: boolean; whatsappTemplatesSeenApproved?: boolean; whatsappTemplates?: { approved: number; of: number; at: string }; keysHandedInThroughGuard: boolean };
 }
 
 export interface ShopRef { id: string; owner: OwnerFile | undefined }

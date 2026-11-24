@@ -1915,6 +1915,48 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `discounts.capHelp` | दोनों में से जो कम है, वही माना जाएगा। उससे ज़्यादा पर एजेंट पहले आपसे पूछेगा। | The lower of the two is used. Above it, the agent asks you first. |  |
 | `discounts.floorsHelp` | हर एक का सबसे कम दाम। जिस पर छूट नहीं देनी, उसका खाना खाली छोड़ें। | The lowest price for each. Leave a box empty for no discount on that one. |  |
 | `discounts.floor` | Haircut का सबसे कम दाम (₹) | Lowest price for Haircut (₹) |  |
+| `waTemplates.heading` | WhatsApp संदेशों के शब्द | WhatsApp message wordings |  |
+| `waTemplates.intro` | ग्राहक के 24 घंटे पूरे होने के बाद दुकान जो भी संदेश भेजती है, उसके शब्द Meta पहले मंज़ूर करता है। पैनल ये शब्द दुकान के अपने WhatsApp खाते में भेजता है और बताता है कि क्या जवाब आया। | Meta approves each wording the shop sends after a customer's 24 hours are over. The panel sends them to the shop's own WhatsApp account and shows what came back. |  |
+| `waTemplates.label.approved` | मंज़ूर | Approved |  |
+| `waTemplates.label.pending` | मंज़ूरी का इंतज़ार | Waiting for approval |  |
+| `waTemplates.label.rejected` | नामंज़ूर | Rejected |  |
+| `waTemplates.label.stopped` | रुका हुआ या बंद | Paused or turned off |  |
+| `waTemplates.label.not-submitted` | अभी नहीं भेजा | Not sent yet |  |
+| `waTemplates.asOf` | 25 Nov 2026, 10:30 पर Meta ने यही बताया। | As Meta said at 25 Nov 2026, 10:30. |  |
+| `waTemplates.asking` | अभी पूछ रहे हैं। एक मिनट बाद यह पेज फिर खोलें। | Asking now. Open this page again in a minute. |  |
+| `waTemplates.busy` | शब्द अभी भेजे जा रहे हैं। एक मिनट बाद यह पेज फिर खोलें। | Sending the wordings now. Open this page again in a minute. |  |
+| `waTemplates.never` | अभी पूछा नहीं गया। | Not asked yet. |  |
+| `waTemplates.allApproved` | सारे शब्द मंज़ूर हैं: दुकान कभी भी ग्राहकों को संदेश भेज सकती है। | Every wording is approved: the shop can message customers at any time. |  |
+| `waTemplates.pendingHelp` | मंज़ूरी आमतौर पर एक दिन में आ जाती है। तब तक भी दुकान हर ग्राहक को उसके संदेश के 24 घंटे के अंदर जवाब देती है। | Approval usually comes within a day. Until then the shop still answers every customer within 24 hours of their message. |  |
+| `waTemplates.rejectedHead` | नामंज़ूर, बताए गए कारण के साथ: | Rejected, with the reason given: |  |
+| `waTemplates.noReason` | कोई कारण नहीं बताया | no reason given |  |
+| `waTemplates.rejectedHelp` | क्या करें: WhatsApp Manager (या Gupshup डैशबोर्ड) खोलें, कारण पढ़ें, और अगर शब्द ठीक हैं तो वहीं दोबारा जाँच माँगें। अगर शब्द बदलने हैं, तो नाम के साथ hello@geometer.dev पर लिखें। | What to do: open WhatsApp Manager (or the Gupshup dashboard), read the reason, and ask for a review there if the words are right. If the words need changing, write to hello@geometer.dev with the name. |  |
+| `waTemplates.stoppedHead` | रुका हुआ या बंद: | Paused or turned off: |  |
+| `waTemplates.stoppedHelp` | क्या करें: कारण देखने के लिए WhatsApp Manager (या Gupshup डैशबोर्ड) खोलें, और वहीं इसे फिर चालू करें। | What to do: open WhatsApp Manager (or the Gupshup dashboard) to see why, and turn it on again there. |  |
+| `waTemplates.refusedHead` | भेजते समय मना किया गया: | Refused when sent: |  |
+| `waTemplates.cannotHead` | यहाँ से नहीं भेजे जा सकते (इन्हें हाथ से जोड़ें): | Cannot be sent from here (add these by hand): |  |
+| `waTemplates.more` | और 4 और | and 4 more |  |
+| `waTemplates.send` | अभी तक न भेजे गए 6 भेजें | Send the 6 not sent yet |  |
+| `waTemplates.ask` | अभी फिर पूछें | Ask again now |  |
+| `waTemplates.blocked.account-id` | दुकान के WhatsApp चरण में (सेटिंग बदलें) उसका WhatsApp Business Account ID जोड़ें, ताकि पैनल शब्द भेज सके। Meta इसे API Setup पेज पर, फ़ोन नंबर ID के पास दिखाता है। | Add the shop's WhatsApp Business Account ID in its WhatsApp step (Edit the settings), so the panel can send the wordings. Meta shows it on the API Setup page, next to the phone number ID. |  |
+| `waTemplates.blocked.app-id` | दुकान के WhatsApp चरण में (सेटिंग बदलें) Gupshup app ID जोड़ें, ताकि पैनल शब्द भेज सके। Gupshup इसे ऐप के पेज पर दिखाता है। | Add the Gupshup app ID in the shop's WhatsApp step (Edit the settings), so the panel can send the wordings. Gupshup shows it on the app's page. |  |
+| `waTemplates.blocked.provider` | इस दुकान का WhatsApp किसी दूसरी कंपनी के Gupshup खाते से चलता है, और वही कंपनी शब्द जोड़ती है। उनसे पूछें कि क्या स्थिति है। | This shop's WhatsApp runs through another company's Gupshup account, and that company adds the wordings. Ask them how they stand. |  |
+| `waTemplates.blocked.no-guard` | इस सर्वर ने नहीं बताया कि दुकानों के कनेक्शन कहाँ हैं, इसलिए पैनल शब्द नहीं भेज सकता। इसके बजाय सर्वर पर geometer whatsapp-templates चलाएँ। | This server has not said where the shops' connections are, so the panel cannot send the wordings. Run geometer whatsapp-templates on the server instead. |  |
+| `waTemplates.blocked.conflict` | इस दुकान के दो हिस्से एक ही नाम को अलग-अलग शब्द देते हैं, इसलिए कुछ नहीं भेजा गया। hello@geometer.dev पर लिखें। | Two parts of this shop give one wording name different words, so nothing was sent. Write to hello@geometer.dev. |  |
+| `waTemplates.stop.key` | Meta ने दुकान की key नहीं मानी। दुकान के WhatsApp चरण में इसे फिर से दें, फिर नीचे वाला बटन दबाएँ। | Meta did not accept the shop's key. Hand it in again in the shop's WhatsApp step, then press the button below. |  |
+| `waTemplates.stop.rate` | Meta एक घंटे में ज़्यादा से ज़्यादा 100 नए शब्द लेता है। बाक़ी के लिए एक घंटे बाद बटन फिर दबाएँ। | Meta takes up to 100 new wordings an hour. Press the button again in an hour for the rest. |  |
+| `waTemplates.stop.unreachable` | दुकान का WhatsApp कनेक्शन अभी चल नहीं रहा, इसलिए कुछ नहीं भेजा गया। सर्वर दुकान को लागू कर दे, तब नीचे वाला बटन दबाएँ। | The shop's WhatsApp connection is not running yet, so nothing was sent. Once the server has applied the shop, press the button below. |  |
+| `waTemplates.stop.guard` | दुकान के कनेक्शन ने इसकी इजाज़त नहीं दी। अगर सर्वर अभी अपडेट हुआ है, तो उसके दुकान लागू करने का इंतज़ार करें, फिर बटन दबाएँ। | The shop's connection did not allow this. If the server was updated just now, wait for it to apply the shop, then press the button again. |  |
+| `waTemplates.stop.other` | पूछते समय कुछ गड़बड़ हुई। बटन फिर दबाएँ; अगर ऐसा ही रहे, तो hello@geometer.dev पर लिखें। | Something went wrong while asking. Press the button again; if it stays, write to hello@geometer.dev. |  |
+| `waTemplates.checks.ok` | WhatsApp शब्द: सब मंज़ूर। | WhatsApp wordings: all approved. |  |
+| `waTemplates.checks.warn` | WhatsApp शब्द: 44 में से 38 मंज़ूर। आप फिर भी लाइव जा सकते हैं: बाक़ी मंज़ूर होने तक दुकान ग्राहकों को उनके संदेश के 24 घंटे के अंदर जवाब देती है, और उसके बाद का संदेश अपनी मंज़ूरी का इंतज़ार करता है। | WhatsApp wordings: 38 of 44 approved. You can still go live: until the rest are approved, the shop answers customers within 24 hours of their message, and a message after that waits for its approval. |  |
+| `waTemplates.checks.none` | WhatsApp शब्द: अभी पूछा नहीं गया। दुकान का कनेक्शन चलते ही पैनल इन्हें भेज देता है। | WhatsApp wordings: not asked yet. The panel sends them once the shop's connection is running. |  |
+| `waTemplates.setup.wabaId` | WhatsApp Business Account ID | WhatsApp Business Account ID |  |
+| `waTemplates.setup.wabaIdHelp` | सिर्फ़ अंक। Meta इसे API Setup पेज पर, फ़ोन नंबर ID के पास दिखाता है। पैनल दुकान के संदेशों के शब्द मंज़ूरी के लिए इसी खाते में भेजता है। | Digits. Meta shows it on the API Setup page, next to the phone number ID. The panel sends the shop's message wordings to this account for approval. |  |
+| `waTemplates.setup.wabaIdBad` | WhatsApp Business Account ID में सिर्फ़ अंक होते हैं (6 से 20)। | The WhatsApp Business Account ID is digits only (6 to 20 of them). |  |
+| `waTemplates.setup.appId` | Gupshup app ID | Gupshup app ID |  |
+| `waTemplates.setup.appIdHelp` | Gupshup में ऐप के पेज पर। पैनल दुकान के संदेशों के शब्द मंज़ूरी के लिए इसी ऐप में भेजता है। | On the app's page in Gupshup. The panel sends the shop's message wordings to this app for approval. |  |
+| `waTemplates.setup.appIdBad` | Gupshup app ID में अक्षर, अंक और हाइफ़न होते हैं, जैसा Gupshup दिखाता है। | The Gupshup app ID is letters, digits and hyphens, as Gupshup shows it. |  |
 | `leave.assistant.leave_file_asked` | हो गया। आपकी दुकान की फ़ाइल करीब आधे घंटे में आपके ऐप पेज पर होगी, उसे लेने का बटन भी। बटन एक बार और 3 दिन तक चलता है। इसके लिए आपके Operator की ज़रूरत नहीं है, और उनसे पूछा भी नहीं जाता। | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
 | `leave.assistant.leave_file_again` | आपने थोड़ी देर पहले दुकान की फ़ाइल माँगी थी। वह आ रही है; थोड़ी देर में अपना ऐप पेज देखिए। | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
 | `leave.assistant.leave_operator_asked` | हो गया। मैंने आपके Operator को बता दिया है कि आप दूसरा Operator चाहते हैं। आपकी हाँ के बिना कुछ नहीं बदलता: आपका Operator नए व्यक्ति का नाम देता है, आपको एक कोड मिलता है, और आप उसे यहाँ "move" और कोड लिखकर भेजते हैं। 14 दिन में कुछ न हुआ तो Geometer आपकी मदद करेगा। | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |
