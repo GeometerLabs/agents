@@ -16,8 +16,8 @@ import (
 
 var _ runtime.PartAgent = (*Agent)(nil)
 
-// ClaimOwner: a card's answer for one of its order cards, a command naming its own order, a question it is waiting on the owner to answer, an order of an item or from a
-// supplier, the order status, and a command without a reference while it has an order open.
+// ClaimOwner: a card's answer for one of its order cards, a command naming its own order, a question it is waiting on the owner to answer, an order (its reader's "order":
+// an item, a supplier, or the words "order" or "low"), the order status, and a command without a reference while it has an order open.
 func (a *Agent) ClaimOwner(m messaging.InboundMessage) runtime.Claim {
 	replyID := ""
 	if m.Reply != nil {
@@ -48,9 +48,8 @@ func (a *Agent) ClaimOwner(m messaging.InboundMessage) runtime.Claim {
 			return runtime.ClaimWords
 		}
 	case "order":
-		if r.Item != "" || len(r.Tied) > 0 || r.Supplier != "" || r.UnknownSupplier != "" {
-			return runtime.ClaimWords
-		}
+		// an order of an item or from a supplier, and words that say "order" or "running low" with nothing it knows in them (it answers what can be ordered)
+		return runtime.ClaimWords
 	case "status":
 		return runtime.ClaimWords
 	}
