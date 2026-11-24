@@ -21,7 +21,7 @@ import { CREDIT_META } from "../credit/words.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode" | "partner" | "openFees" | "page" | "lines" | "classDate" | "classTime" | "classLink" | "materialLink" | "waiting";
+export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode" | "partner" | "openFees" | "page" | "lines" | "classDate" | "classTime" | "classLink" | "materialLink" | "waiting" | "asker" | "paidDate" | "note";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   student: (f) => need(f, "studentName"),
@@ -53,15 +53,20 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   classLink: (f) => need(f, "classLink"),
   materialLink: (f) => need(f, "materialLink"),
   waiting: (f) => String(need(f, "waitingCount")),
+  // 25 Nov 2026: who asked about a fee from another number; the day a UPI refund's payment was marked, and the note it carried
+  asker: (f) => need(f, "askerPhone"),
+  paidDate: (f) => formatDate(localParts(need(f, "paidAtMs"), f.timeZone), f.language),
+  note: (f) => need(f, "upiNote"),
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
-const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", student: "§student§", batch: "§batch§", month: "§month§", link: "§link§", phone: "§phone§", ref: "§ref§", req: "§req§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", page: "§page§", classLink: "§classlink§", materialLink: "§materiallink§" };
+const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", student: "§student§", batch: "§batch§", month: "§month§", link: "§link§", phone: "§phone§", ref: "§ref§", req: "§req§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", page: "§page§", classLink: "§classlink§", materialLink: "§materiallink§" , asker: "§asker§", note: "§note§" };
 const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { fee: 7_000_001, late: 7_000_002, balance: 7_000_003, paid: 7_000_004, received: 7_000_005, waiver: 7_000_006, refund: 7_000_007, limit: 7_000_008 };
 const STAND_IN_DUE_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of ours would state (Fri 14 Jun 2030)
 const STAND_IN_HOURS = 7_000_009;
 const STAND_IN_COUNT: Partial<Record<Slot, number>> = { openFees: 7_000_010, waiting: 7_000_011 };
 const STAND_IN_CLASS_MS = Date.UTC(2030, 6, 19, 13, 30); // a class no message of ours would state (Fri 19 Jul 2030, 1:30 pm)
+const STAND_IN_PAID_MS = Date.UTC(2030, 9, 9, 0, 0); // 25 Nov 2026: the day a UPI refund's payment was marked (Wed 9 Oct 2030), a day no other stand-in is
 
 /** The family reminder is written once with one stand-in fee line; the whole rendered line is then the template's `{lines}`. */
 const STAND_IN_FAMILY = [{ studentName: "§student§", batchName: "§batch§", monthLabel: "§month§", balanceInr: 7_000_003, dueMs: STAND_IN_DUE_MS, link: "§link§", dueRef: "§ref§" }];
@@ -69,11 +74,12 @@ const STAND_IN_FAMILY = [{ studentName: "§student§", batchName: "§batch§", m
 function standInFacts(language: Language): MessageFacts {
   const facts: MessageFacts = { language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, dueMs: STAND_IN_DUE_MS, classMs: STAND_IN_CLASS_MS, approvalHours: STAND_IN_HOURS, openFeesCount: STAND_IN_COUNT.openFees, waitingCount: STAND_IN_COUNT.waiting };
   const set = facts as unknown as Record<string, unknown>;
-  const names: Partial<Record<Slot, string>> = { student: "studentName", batch: "batchName", month: "monthLabel", link: "link", phone: "customerPhone", ref: "dueRef", req: "requestRef", code: "approvalCode", upiCode: "upiCode", partner: "partner", page: "pageLink", classLink: "classLink", materialLink: "materialLink" };
+  const names: Partial<Record<Slot, string>> = { student: "studentName", batch: "batchName", month: "monthLabel", link: "link", phone: "customerPhone", ref: "dueRef", req: "requestRef", code: "approvalCode", upiCode: "upiCode", partner: "partner", page: "pageLink", classLink: "classLink", materialLink: "materialLink" , asker: "askerPhone", note: "upiNote" };
   for (const [slot, key] of Object.entries(names)) set[key] = STAND_IN_TEXT[slot as Slot];
   const amounts: Partial<Record<Slot, string>> = { fee: "feeInr", late: "lateFeeInr", balance: "balanceInr", paid: "paidInr", received: "receivedInr", waiver: "waiverInr", refund: "refundInr", limit: "waiverLimitInr" };
   for (const [slot, key] of Object.entries(amounts)) set[key] = STAND_IN_AMOUNT[slot as Slot];
   facts.family = STAND_IN_FAMILY;
+  facts.paidAtMs = STAND_IN_PAID_MS;
   return facts;
 }
 
@@ -85,6 +91,7 @@ function bodyOf(id: TemplateId, language: Language): string {
   for (const [slot, stand] of Object.entries(STAND_IN_TEXT)) text = text.split(stand!).join(`{${slot}}`);
   for (const [slot, n] of Object.entries(STAND_IN_AMOUNT)) text = text.split(formatInr(n)).join(`{${slot}}`);
   text = text.split(formatDate(localParts(STAND_IN_DUE_MS, "UTC"), language)).join("{date}");
+  text = text.split(formatDate(localParts(STAND_IN_PAID_MS, "UTC"), language)).join("{paidDate}");
   text = text.split(formatDate(localParts(STAND_IN_CLASS_MS, "UTC"), language)).join("{classDate}").split(formatTime(localParts(STAND_IN_CLASS_MS, "UTC"), language)).join("{classTime}");
   for (const [slot, n] of Object.entries(STAND_IN_COUNT)) text = text.split(String(n)).join(`{${slot}}`);
   return text.split(String(STAND_IN_HOURS)).join("{hours}");
@@ -133,8 +140,12 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   // UPI centres (B33): what the owner is asked to look for or send back, and what the parent hears about a refund, which can come days later
   template("owner_fee_upi_check", "owner_fee_upi_expected", "owner"),
   template("owner_fee_upi_parent_says_paid", "owner_fee_upi_claim", "owner"),
-  template("owner_fee_upi_refund_to_send", "owner_fee_upi_refund_owed", "owner"),
-  template("owner_fee_upi_refund_reminder", "owner_fee_upi_refund_reminder", "owner"),
+  // 25 Nov 2026: new words under new names (the money goes back to the account it came from, found by its note, amount and date); the bodies approved under
+  // owner_fee_upi_refund_to_send and owner_fee_upi_refund_reminder stay registered and unused (Deferred.md)
+  template("owner_fee_upi_refund_to_account", "owner_fee_upi_refund_owed", "owner"),
+  template("owner_fee_upi_refund_account_reminder", "owner_fee_upi_refund_reminder", "owner"),
+  // 25 Nov 2026 (modules/record/case-asked.ts): someone at another number named a fee; it reaches the owner outside their window
+  template("owner_fee_asked_elsewhere", "owner_case_other_number", "owner"),
   template("fee_upi_refund_coming", "fee_upi_refund_owed", "customer"),
   template("fee_upi_refund_marked_sent", "fee_upi_refund_sent", "customer"),
   // 12 Nov 2026: the promise fee_refund_checking makes ("as soon as it is confirmed"), kept when the payments service's list settles the refund, often days later
@@ -191,6 +202,8 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
       { studentName: settings.students[Math.min(1, settings.students.length - 1)].name, batchName: batchName(batch, language), startMs: Date.UTC(2026, 10, 10, 12, 30) },
     ],
     leadMinutes: 30, presentCount: 4, absentCount: 1, notedCount: 1, waitingCount: 2, sentCount: 3, heldCount: 1,
+    // 25 Nov 2026: the number that asked about a fee, and the day and note of a UPI refund's payment (Tue 3 Nov 2026, 11:30 am in India)
+    askerPhone: "+919822222222", paidAtMs: Date.UTC(2026, 10, 3, 6, 0), upiNote: "f-3.1",
   };
 }
 

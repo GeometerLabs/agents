@@ -13,10 +13,10 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     shownMs: facts.dueMs ?? facts.classMs,
     // a reminder that lists several fees states each one's own due date (the first is `shownMs` too); nothing else
     // (Classes) the class of a class message, and the next class of each student in the timetable answer
-    momentsMs: [...(facts.family ?? []).map((l) => l.dueMs), ...(facts.classMs !== undefined ? [facts.classMs] : []), ...(facts.classLines ?? []).map((l) => l.startMs)],
+    momentsMs: [...(facts.family ?? []).map((l) => l.dueMs), ...(facts.classMs !== undefined ? [facts.classMs] : []), ...(facts.classLines ?? []).map((l) => l.startMs), ...(facts.paidAtMs !== undefined ? [facts.paidAtMs] : [])], // 25 Nov 2026: the day a UPI refund's payment was marked
     // the payment link, and (item 11h) the parent's own private page in a message to that parent; (Classes) the class link and the reading-material page
     links: [facts.link, facts.pageLink, facts.classLink, facts.materialLink, ...(facts.family ?? []).map((l) => l.link)].filter((v): v is string => v !== undefined),
-    literals: [...(facts.family ?? []).flatMap((l) => [l.studentName, l.batchName, l.monthLabel, l.dueRef]), facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, facts.roster, facts.doubtText, ...(facts.classLines ?? []).flatMap((l) => [l.studentName, l.batchName])],
+    literals: [...(facts.family ?? []).flatMap((l) => [l.studentName, l.batchName, l.monthLabel, l.dueRef]), facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.askerPhone, facts.upiNote, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, facts.roster, facts.doubtText, ...(facts.classLines ?? []).flatMap((l) => [l.studentName, l.batchName])],
   };
 }
 

@@ -98,6 +98,11 @@ func (a *Agent) onMessage(m messaging.InboundMessage) error {
 	if taken, err := a.creditCustomer(phone, in); err != nil || taken {
 		return err
 	}
+	// 25 Nov 2026: a conversation that holds no fee (and no account in the credit book) names one (a reference, a receipt, a payment id); the word form ("fee 3") only when
+	// nothing else was read
+	if m.Reply == nil && a.onCaseAsked(phone, m.Text, in.Kind == "unknown" || in.Kind == "greeting") {
+		return nil
+	}
 	switch in.Kind {
 	case "pay":
 		return a.onPay(phone, in)
@@ -439,6 +444,64 @@ func (a *Agent) onRefundAsk(phone string, in intent) error {
 }
 
 // onTalkToOwner is agent.ts onTalkToOwner: the owner told, once an hour for the same parent; replyTo is where the parent hears it (a parent's chat).
+// feeForms is agent.ts FEE_FORMS: how a parent names a fee ("f-3", and the word before the number in each language).
+var feeForms = runtime.CaseForms{Prefix: "f", Words: []string{"fee", "fees", "फीस", "ഫീസ്", "ಶುಲ್ಕ"}}
+
+// onCaseAsked is agent.ts onCaseAsked (25 Nov 2026, runtime/caseasked.go): only for a conversation that holds no fee and no credit account, words that name one of the
+// centre's fees (a credit account's entries are fees too) get one line that shows nothing of it, and the owner is told (at most once an hour for this asker and fee, by the
+// record) with both numbers; a credit account's notice names the account (credit.go creditTwins). The record line keeps the fee in refs.case and leaves `booking` null.
+// False: nothing was named, and the message goes on as before.
+func (a *Agent) onCaseAsked(phone, text string, words bool) bool {
+	if a.creditAccountOf(phone) != nil {
+		return false
+	}
+	for _, x := range a.store.Dues {
+		if x.Customer == phone {
+			return false
+		}
+	}
+	entries := a.c.Rec.Entries()
+	keys := runtime.RecordCaseKeys(entries)
+	for _, x := range a.store.Dues {
+		if x.ClaimRef != "" {
+			keys[runtime.CaseKey(x.ClaimRef)] = x.ID
+		}
+	}
+	named := runtime.NamedCase(text, feeForms, func(id string) bool { return a.store.Due(id) != nil }, keys, words)
+	if named == nil {
+		return false
+	}
+	d := a.store.Due(named.Case)
+	lately := runtime.ToldLately(entries, phone, d.ID, a.now())
+	// agent.ts `shown`: a chat guest is named by its label (chat-guest.ts guestLabel), never "chat:..."
+	shown := func(p string) string {
+		if runtime.IsChatConversation(p) {
+			return runtime.GuestLabel(a.store.chanState(), p, a.settings.Owner.Language)
+		}
+		return p
+	}
+	o := sayOpts{dueRef: d.ID, phoneShown: shown(d.Customer), askerPhone: shown(phone)}
+	if isCredit(d) {
+		o.creditName = d.StudentName // the owner's credit notice names the account
+	}
+	told := lately || a.tellOwner(nil, phone, "owner_case_other_number", o)
+	outcome, how := "failed", "the owner could not be told"
+	switch {
+	case lately:
+		outcome, how = "blocked", "the owner was already told in the last hour"
+	case told:
+		outcome, how = "confirmed", "the owner was told"
+	}
+	a.log(nil, phone, runtime.CaseAsked, outcome, map[string]any{"case": d.ID, "via": named.Via}, logMore{refs: map[string]string{"case": d.ID, "via": named.Via, "to": "owner"},
+		notes: "another conversation named " + d.ID + " (" + named.Via + "); nothing of the fee was shown and nothing changed; " + how})
+	t := "fee_case_other_number_untold"
+	if told {
+		t = "fee_case_other_number"
+	}
+	a.tellCustomer(nil, phone, []string{t}, sayOpts{})
+	return true
+}
+
 func (a *Agent) onTalkToOwner(phone, replyTo string) error {
 	c := a.store.Customer(phone)
 	now := a.now()

@@ -36,6 +36,7 @@ const TZ = "Asia/Kolkata";
 const DUE_MS = Date.UTC(2026, 10, 4, 18, 30); // Thu 5 Nov 2026 at midnight in India
 const CLASS_MS = Date.UTC(2026, 10, 9, 11, 30); // Mon 9 Nov 2026, 5:00 pm in India
 const OTHER_MS = Date.UTC(2026, 9, 21, 18, 30); // Thu 22 Oct 2026
+const PAID_MS = Date.UTC(2026, 10, 3, 6, 0); // Tue 3 Nov 2026: the day a UPI refund's payment was marked (25 Nov 2026)
 
 type Fact = keyof MessageFacts;
 type Bag = Record<string, string>;
@@ -52,22 +53,24 @@ function probe(language: Language, upi: boolean): MessageFacts {
     classMs: CLASS_MS, classLink: "https://qzclass.example/j", materialLink: "https://qzmaterial.example/m", roster: "qzroster", doubtText: "qzdoubt",
     classLines: [{ studentName: "qzlinestudent", batchName: "qzlinebatch", startMs: CLASS_MS }],
     leadMinutes: 8805, presentCount: 8806, absentCount: 8807, notedCount: 8808, waitingCount: 8809, sentCount: 8810, heldCount: 8811,
+    askerPhone: "+919000000009", paidAtMs: PAID_MS, upiNote: "qznote",
   };
 }
 
 const familyLine = (tag: string): FamilyLine => ({ studentName: `qzfam${tag}student`, batchName: `qzfam${tag}batch`, monthLabel: `qzfam${tag}month`, balanceInr: 7770090, dueMs: OTHER_MS, link: `https://qzfam${tag}.example/pay`, dueRef: `qzfam${tag}ref` });
 
 /** Every fact `need()` can ask for. */
-const NEEDED: Fact[] = ["studentName", "batchName", "monthLabel", "feeInr", "lateFeeInr", "balanceInr", "paidInr", "receivedInr", "waiverInr", "refundInr", "waiverLimitInr", "dueMs", "graceDays", "link", "dueRef", "requestRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "payee", "upiCode", "partner", "openFeesCount", "pageLink", "family", "classMs", "classLink", "materialLink", "roster", "doubtText", "classLines", "leadMinutes", "presentCount", "absentCount", "notedCount", "waitingCount", "sentCount", "heldCount"];
+const NEEDED: Fact[] = ["studentName", "batchName", "monthLabel", "feeInr", "lateFeeInr", "balanceInr", "paidInr", "receivedInr", "waiverInr", "refundInr", "waiverLimitInr", "dueMs", "graceDays", "link", "dueRef", "requestRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "payee", "upiCode", "partner", "openFeesCount", "pageLink", "family", "classMs", "classLink", "materialLink", "roster", "doubtText", "classLines", "leadMinutes", "presentCount", "absentCount", "notedCount", "waitingCount", "sentCount", "heldCount", "askerPhone", "paidAtMs", "upiNote"];
 
 /** The slots, in the order they are looked for: [the probe's text, the slot's name]. */
 function slotTable(f: MessageFacts): [string, string][] {
   const rupees = (k: "feeInr" | "lateFeeInr" | "balanceInr" | "paidInr" | "receivedInr" | "waiverInr" | "refundInr" | "waiverLimitInr"): [string, string] => [formatInr(f[k] as number), k];
   const counts = (["graceDays", "approvalHours", "approvalsLeft", "openFeesCount", "leadMinutes", "presentCount", "absentCount", "notedCount", "waitingCount", "sentCount", "heldCount"] as const).map((k): [string, string] => [String(f[k]), k]);
-  const texts = (["businessName", "studentName", "batchName", "monthLabel", "dueRef", "requestRef", "customerPhone", "approvalCode", "upiCode", "partner", "pageLink", "classLink", "materialLink", "roster", "doubtText", "link"] as const).map((k): [string, string] => [String(f[k]), k]);
+  const texts = (["businessName", "studentName", "batchName", "monthLabel", "dueRef", "requestRef", "customerPhone", "approvalCode", "upiCode", "partner", "pageLink", "classLink", "materialLink", "roster", "doubtText", "link", "askerPhone", "upiNote"] as const).map((k): [string, string] => [String(f[k]), k]);
   const t: [string, string][] = [
     [familyLines(f), "family"], [classLines(f), "classLines"], [payTo(f), "payTo"],
     [formatDate(localParts(DUE_MS, TZ), f.language), "dueDate"], [formatDate(localParts(CLASS_MS, TZ), f.language), "classDate"], [formatTime(localParts(CLASS_MS, TZ), f.language), "classTime"],
+    [formatDate(localParts(PAID_MS, TZ), f.language), "paidDate"],
     ...(["feeInr", "lateFeeInr", "balanceInr", "paidInr", "receivedInr", "waiverInr", "refundInr", "waiverLimitInr"] as const).map(rupees),
     ...counts, ...texts,
     [f.payee!, "payee"], ...(f.upiId ? [[f.upiId, "upiId"] as [string, string]] : []),
@@ -77,7 +80,7 @@ function slotTable(f: MessageFacts): [string, string][] {
 
 /** The fact each slot reads, as a refusal names it. `payTo` reads the link (and a UPI centre's payee); `dueDate` reads dueMs; the class date and time read classMs. */
 const FACT: Record<string, Fact | null> = {
-  family: "family", classLines: "classLines", payTo: "link", dueDate: "dueMs", classDate: "classMs", classTime: "classMs", businessName: null, upiId: null, payee: "payee",
+  family: "family", classLines: "classLines", payTo: "link", dueDate: "dueMs", classDate: "classMs", classTime: "classMs", paidDate: "paidAtMs", businessName: null, upiId: null, payee: "payee",
   ...Object.fromEntries(NEEDED.map((k) => [k, k])),
 };
 
