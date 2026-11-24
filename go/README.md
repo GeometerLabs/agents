@@ -27,8 +27,9 @@ go build -o bin/directory ./cmd/directory               # the directory of local
 go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (0.2.0 on)
 go build -o bin/orders ./cmd/orders                     # one Orders shop (0.2.0 on)
 go build -o bin/stock-orders ./cmd/stock-orders         # one Stock orders shop (0.2.0 on)
+go build -o bin/parts ./cmd/parts                       # one shop of several template parts (decision 65; parts@0.1.0)
 go build -o bin/fees ./cmd/fees                         # one Fees (and Classes) centre (0.2.0 on)
-go build -o bin/ ./cmd/...                              # all seven, as the server's image has them
+go build -o bin/ ./cmd/...                              # all eight, as the server's image has them
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -52,6 +53,8 @@ node --test --test-concurrency=1 templates/commerce/bookings/contract/        # 
 node --test --test-concurrency=1 templates/commerce/orders/contract/          # Orders (go/bin/orders, or ORDERS_GO_BIN)
 node --test --test-concurrency=1 templates/education/fees/contract/           # Fees and Classes (go/bin/fees, or FEES_GO_BIN)
 node --test --test-concurrency=1 templates/commerce/stock-orders/contract/    # Stock orders (go/bin/stock-orders, or STOCK_ORDERS_GO_BIN)
+node --test --test-concurrency=1 templates/commerce/parts/contract/           # a shop of several parts (go/bin/parts, or PARTS_GO_BIN)
+CONTRACT_PARTS=first node --test --test-concurrency=1 templates/commerce/orders/contract/   # a part's own suite through the parts program (also fees, stock-orders; =last)
 ```
 
 The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
@@ -69,6 +72,8 @@ internal/bookings/       the Bookings template (wave 2): the settings checked wi
                          agent_assistant.go is Bookings as a skill of the shop's assistant (src/assistant.ts), agent_mode.go the button-mode and step-pause lines (reader.ts announceButtonMode); the words of every message, the WhatsApp templates, the labels and lists
                          (templates.go, meta.go, interactive.go) are packed per language in words/*.json.gz, made from the TypeScript by scripts/gen_bookings_words.ts
 cmd/fees/                main of ONE Fees (and Classes) centre (wave 3): the same command line, token files, environment and test clock as cmd/bookings; the shared runtime with the Fees Kit
+                         (since 25 Nov 2026 cmd/fees, cmd/orders and cmd/stock-orders are runtime.Serve with their Kit, whose wiring is the package's wire.go, and each package's
+                         part.go is what it gives a shop of several parts: runtime/parts.go PartAgent)
 internal/fees/           the Fees template (wave 3): the settings with the TypeScript's sentences, the store field for field, the agent over one step (the month's fees and reminders, the
                          payment record and one link for what is owed, a UPI centre's owner-marked money, waivers, refunds through the shared refunds, the parent's private link and page,
                          the owner's page), the words packed per language (words/*.json.gz and reading.json, made by scripts/gen_fees_words.ts), the reading material, and
@@ -123,6 +128,12 @@ internal/stock/          the shop's one stock count (modules/stock/stock.ts): th
 internal/stockorders/    the Stock orders template (wave 2, go-w5-stock-22nov): settings, the store field for field, the rule reader, the words (generated), the limits, the agent with
                          its approval cards and send once for the purchase order and the reminder, the owner's page, the assistant skill (with the talk's reads and the open list since 23 Nov), the owner's
                          push route and the wait for a Guard that is down; cmd/stock-orders runs one shop (go-stockorders-gaps-23nov: TRIAL.md)
+cmd/parts/               main of ONE shop of several template parts (decision 65, 25 Nov 2026): runtime.Serve with internal/parts' Kit and a panic in a step caught (OnPanic)
+internal/parts/          a shop of several template parts behind one number (decision 65): a runtime.Kit made of the parts' own Kits (Fees for the credit book, Orders for the pickup
+                         hold, Stock orders), the settings (the shop's keys at the top, each part's in parts.<template>, each checked by its own template), the saved state (`parts`,
+                         `router`, the shared assistant and AI), the router (each part's claim by its rules alone; a tie asks one short question, words generated from
+                         templates/commerce/parts/src/words.ts by scripts/gen_parts_words.ts), one owner's page joined over the parts, each part's limits under its own id, one
+                         stock count for an item two parts know; read bundle/Explanation.md "Several template parts in one shop" and TRIAL.md "d65-parts-25nov"
 cmd/directory/           main of the directory of local shops (CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change, `health <url>`; the contract's test clock on 127.0.0.1 only)
 internal/directory/      the directory (modules/discovery): signed feeds read, checked and indexed (SQLite + FTS5, the TypeScript's own file), the fair order, search, the pages, the MCP endpoint, the signed
                          Agent Card, the buyer's assistant; the words are GENERATED from modules/discovery/words.ts (scripts/gen_directory.ts), the page's style, script, tools, card and prompt are Go source (words/); read Explanation.md and Deferred.md
