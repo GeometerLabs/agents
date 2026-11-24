@@ -68,6 +68,7 @@ func (k *Kit) NewAgent(c *runtime.StepContext) runtime.Agent {
 		}
 		cc.SetCoParts(co)
 		cc.SetLimitPart(p.Name)
+		cc.SetCaseHeldElsewhere(func(conversation string) bool { return a.holdsCase(conversation, i) })
 		a.ctxs = append(a.ctxs, &cc)
 	}
 	return a
@@ -343,12 +344,46 @@ func (a *agent) onMessage(ev map[string]any, m messaging.InboundMessage) error {
 			}
 		}
 	}
+	// a case asked about from a number that holds no case in ANY part: the part whose record holds the case it names (runtime CaseHolder), which gives its one line
+	if !owner {
+		if i := a.caseAskedPart(m); i >= 0 {
+			r.remember(m.ID, a.k.parts[i].Name)
+			return a.give(i, ev)
+		}
+	}
 	d := decide(claims, 0)
 	if len(d.ask) > 0 {
 		return a.ask(ev, m, d.ask, owner, lang)
 	}
 	r.remember(m.ID, a.k.parts[d.part].Name)
 	return a.give(d.part, ev)
+}
+
+// holdsCase: a part other than `except` (-1: any part) holds a case of this conversation (runtime CaseHolder). A part being made is not asked (part returns nil).
+func (a *agent) holdsCase(conversation string, except int) bool {
+	for j := range a.k.parts {
+		if j == except {
+			continue
+		}
+		if ch, ok := a.part(j).(runtime.CaseHolder); ok && ch.HoldsCase(conversation) {
+			return true
+		}
+	}
+	return false
+}
+
+// caseAskedPart is the part a customer's message goes to as a case asked about from another conversation (refund-paths, runtime/caseasked.go): when the number holds no
+// case in any part, the first part (in the shop's order) whose own reading finds its case named; -1 otherwise, and the message is routed by the claims as before.
+func (a *agent) caseAskedPart(m messaging.InboundMessage) int {
+	if a.holdsCase(m.From, -1) {
+		return -1
+	}
+	for i := range a.k.parts {
+		if ch, ok := a.part(i).(runtime.CaseHolder); ok && ch.NamesCase(m) {
+			return i
+		}
+	}
+	return -1
 }
 
 func (a *agent) partsNamed(names []string) []*Part {

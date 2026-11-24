@@ -13,7 +13,10 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 )
 
-var _ runtime.PartAgent = (*Agent)(nil)
+var (
+	_ runtime.PartAgent  = (*Agent)(nil)
+	_ runtime.CaseHolder = (*Agent)(nil)
+)
 
 func replyOf(m messaging.InboundMessage) string {
 	if m.Reply != nil {
@@ -169,3 +172,19 @@ func (a *Agent) AssistantHooks() (runtime.AssistantHooks, bool) {
 
 // PartMessaging is the agent's own WhatsApp for this step.
 func (a *Agent) PartMessaging() messaging.Messaging { return a.msg }
+
+// HoldsCase: the number holds a fee or a credit account of this centre, or the credit book names it (its account opens on the centre's first step, and until the person's
+// yes the book's gate decides what they hear).
+func (a *Agent) HoldsCase(conversation string) bool {
+	return a.holdsCase(conversation) || a.creditPerson(conversation)
+}
+
+// NamesCase: a parent's or a stranger's typed words name one of this centre's fees, read as onMessage reads them for onCaseAsked (the word form "fee 3" only when the rules
+// read nothing else). A tap, a picture or a voice note names nothing.
+func (a *Agent) NamesCase(m messaging.InboundMessage) bool {
+	if m.Reply != nil || m.Image || m.VoiceNote || m.From == a.owner() {
+		return false
+	}
+	k := parseIntent(m.Text).Kind
+	return a.caseNamed(m.From, m.Text, k == "unknown" || k == "greeting") != nil
+}

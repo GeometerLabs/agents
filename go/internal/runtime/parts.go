@@ -58,6 +58,25 @@ type PartAgent interface {
 	PartMessaging() messaging.Messaging
 }
 
+// CaseHolder is a part that answers a case asked about from another conversation (caseasked.go). In a shop of several parts the question "does this conversation hold a
+// case?" is the shop's, over ALL its parts: a conversation that holds a case in one part is answered as before by whichever part takes it, and one that holds none anywhere
+// and names a case one part's record holds goes to that part, which gives its one line and tells the owner (internal/parts agent.go caseAskedPart). Both methods read only.
+type CaseHolder interface {
+	// HoldsCase: this conversation holds a case of this part (an order or a plan, a fee or a credit account or a person in the credit book, a supplier's orders).
+	HoldsCase(conversation string) bool
+	// NamesCase: the words name one of this part's cases by the part's own reading (its onCaseAsked rule, with no effect), the conversation holding no case of this part.
+	NamesCase(m messaging.InboundMessage) bool
+}
+
+// SetCaseHeldElsewhere hands a part's step context the shop's question "does another part hold a case of this conversation?" (internal/parts), so the part's own
+// onCaseAsked never answers a conversation the shop already has a case with.
+func (c *StepContext) SetCaseHeldElsewhere(f func(conversation string) bool) { c.heldElsewhere = f }
+
+// CaseHeldElsewhere: in a shop of several parts, another part holds a case of this conversation. Always false in a single-part shop.
+func (c *StepContext) CaseHeldElsewhere(conversation string) bool {
+	return c.heldElsewhere != nil && c.heldElsewhere(conversation)
+}
+
 // SetCoParts hands a part's step context the other parts' assistant hooks (internal/parts), so the assistant this part makes hosts every part's skill. Each is called only
 // when the assistant is made.
 func (c *StepContext) SetCoParts(co []func() (AssistantHooks, bool)) { c.coParts = co }

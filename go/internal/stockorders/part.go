@@ -14,7 +14,10 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 )
 
-var _ runtime.PartAgent = (*Agent)(nil)
+var (
+	_ runtime.PartAgent  = (*Agent)(nil)
+	_ runtime.CaseHolder = (*Agent)(nil)
+)
 
 // ClaimOwner: a card's answer for one of its order cards, a command naming its own order, a question it is waiting on the owner to answer, an order (its reader's "order":
 // an item, a supplier, or the words "order" or "low"), the order status, and a command without a reference while it has an order open.
@@ -92,3 +95,10 @@ func (a *Agent) AssistantHooks() (runtime.AssistantHooks, bool) {
 
 // PartMessaging is the agent's own WhatsApp for this step (the owner's route; its suppliers' numbers pass through).
 func (a *Agent) PartMessaging() messaging.Messaging { return a.msg }
+
+// HoldsCase: the number is one of the shop's suppliers (its purchase orders are the conversation's cases), so the shop's router never answers it as a stranger asking about
+// another part's case.
+func (a *Agent) HoldsCase(conversation string) bool { return a.supplierByNumber(conversation) != nil }
+
+// NamesCase: Stock orders answers no case asked about from another number (its cases are the owner's and the suppliers'), so it names none.
+func (a *Agent) NamesCase(messaging.InboundMessage) bool { return false }

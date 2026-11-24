@@ -13,7 +13,10 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 )
 
-var _ runtime.PartAgent = (*Agent)(nil)
+var (
+	_ runtime.PartAgent  = (*Agent)(nil)
+	_ runtime.CaseHolder = (*Agent)(nil)
+)
 
 // ClaimOwner: the owner's mark of a code in this shop's own ledger, and its fixed commands about one of its own orders ("approve o-3", "balance o-3 cash", a price card's answer,
 // "pick o-3 <item>", "collected o-3").
@@ -97,3 +100,19 @@ func (a *Agent) AssistantHooks() (runtime.AssistantHooks, bool) {
 
 // PartMessaging is the agent's own WhatsApp for this step.
 func (a *Agent) PartMessaging() messaging.Messaging { return a.msg }
+
+// HoldsCase: the number holds an order (a hold, a plan's period) or a plan of this shop.
+func (a *Agent) HoldsCase(conversation string) bool {
+	return a.holdsCase(conversation, a.store.PlansState(false).All())
+}
+
+// NamesCase: a customer's typed words name one of this shop's orders or plans, read as onMessage reads them for onCaseAsked (the word form "order 5" only when the rules
+// read nothing else). A tap, a picture or a voice note (its words are heard only in the step) names nothing.
+func (a *Agent) NamesCase(m messaging.InboundMessage) bool {
+	if m.Reply != nil || m.Image || m.VoiceNote || m.From == a.owner() {
+		return false
+	}
+	k := reading.ParseIntent(m.Text, a.parse).Kind
+	named, _ := a.caseNamed(m.From, m.Text, k == "unknown" || k == "greeting")
+	return named != nil
+}

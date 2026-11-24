@@ -137,6 +137,8 @@ type StepContext struct {
 	tickPart string
 	// limitNS leads every limit id this step's agent asks for (InForce): a part's own limits in a shop of several parts, each declared as "<part>_<id>" (SetLimitPart)
 	limitNS string
+	// heldElsewhere: in a shop of several parts, whether another part holds a case of a conversation (SetCaseHeldElsewhere, parts.go CaseHolder). Nil otherwise.
+	heldElsewhere func(conversation string) bool
 }
 
 // AfterTicker is an Agent with work that rides on the clock's beat AFTER its own and saves for itself (core.ts step: the licence notice and the monthly report, each with
