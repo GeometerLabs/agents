@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "parts",
+  "setup": "parts",
+  "steps": ["business", "languages", "accounts", "character", "checks"],
+  "accounts": ["whatsapp"],
+  "settingsExample": "settings/ganesh-electricals-starter.example.json",
+  "runtime": "go",
+  "program": "parts"
+}

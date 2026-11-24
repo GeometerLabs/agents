@@ -90,3 +90,6 @@ func (a *Agent) AssistantHooks() (runtime.AssistantHooks, bool) {
 	}
 	return a.assistantHooks(), true
 }
+
+// PartMessaging is the agent's own WhatsApp for this step (the owner's route; its suppliers' numbers pass through).
+func (a *Agent) PartMessaging() messaging.Messaging { return a.msg }

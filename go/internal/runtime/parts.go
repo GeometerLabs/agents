@@ -51,6 +51,9 @@ type PartAgent interface {
 	TakesChannel(op string) bool
 	// AssistantHooks is the part's skill and ways out for the shop's one assistant; ok false when the part has no assistant (its settings have no "assistant" block).
 	AssistantHooks() (h AssistantHooks, ok bool)
+	// PartMessaging is the part's own WhatsApp for this step (watched for a Guard that is down, the owner's messages by the owner's route): the shop's router asks its one
+	// question through the part the message could belong to.
+	PartMessaging() messaging.Messaging
 }
 
 // SetCoParts hands a part's step context the other parts' assistant hooks (internal/parts), so the assistant this part makes hosts every part's skill. Each is called only
@@ -119,4 +122,19 @@ type WiredKit interface {
 	Kit
 	Wire(w Wiring) error
 	Started(rt *Runtime)
+}
+
+// CardCode is the code of a card of the shop's assistant that a message answers: a tap on its button ("card-yes:K7M2QX") or the typed "yes K7M2QX" (cards.ts BUTTON_RE and
+// the typed reply, the same patterns the assistant reads: assistant.go). "" when the message answers no card's code. The shop of several parts sends such a message to the part
+// whose skill made the card.
+func CardCode(m messaging.InboundMessage) string {
+	if m.Reply != nil {
+		if g := buttonReply.FindStringSubmatch(m.Reply.ID); g != nil {
+			return g[2]
+		}
+	}
+	if g := typedReply.FindStringSubmatch(m.Text); g != nil {
+		return g[2]
+	}
+	return ""
 }
