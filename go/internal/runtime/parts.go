@@ -11,6 +11,7 @@ package runtime
 
 import (
 	"github.com/GeometerLabs/agents/go/internal/messaging"
+	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
 // PartsKit is a Kit made of several template parts (internal/parts). Parts is the parts' names in the shop's order (the first is the one that says the shop's shared beat work).
@@ -99,4 +100,23 @@ func joinHooks(own AssistantHooks, co []AssistantHooks) AssistantHooks {
 		return false
 	}
 	return out
+}
+
+// Wiring is what a template's program hands its Kit before the runtime is made: the client folder (settings, runtime.json), the template's own settings (Settings.Own, or one
+// part's in a shop of several), the store, the clock and the log. RT is the runtime once runtime.New has returned (no step runs before then, so a closure may call it).
+// Each template's wire.go does with it what its cmd/<template>/main.go did inline, so cmd/parts wires every part the same way and no wiring is copied.
+type Wiring struct {
+	Client *Client
+	Own    any
+	Store  *store.Store
+	Now    func() int64
+	Log    func(string)
+	RT     func() *Runtime
+}
+
+// WiredKit is a Kit that wires itself (wire.go of internal/orders, internal/fees, internal/stockorders): Wire before runtime.New, Started after it.
+type WiredKit interface {
+	Kit
+	Wire(w Wiring) error
+	Started(rt *Runtime)
 }

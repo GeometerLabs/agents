@@ -11,23 +11,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/GeometerLabs/agents/go/internal/reportwire"
 	"os"
-	"os/signal"
-	"path/filepath"
 	"strings"
-	"syscall"
-	"time"
 
-	"github.com/GeometerLabs/agents/go/internal/access"
-	"github.com/GeometerLabs/agents/go/internal/guard"
 	"github.com/GeometerLabs/agents/go/internal/health"
-	"github.com/GeometerLabs/agents/go/internal/messaging"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/stockorders"
-	"github.com/GeometerLabs/agents/go/internal/store"
-	"github.com/GeometerLabs/agents/go/internal/testclock"
-	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
 func main() {
@@ -57,115 +46,7 @@ func main() {
 }
 
 func run(folder string) error {
-	log := func(line string) { fmt.Println(line) }
-	kit := &stockorders.Kit{}
-	client, err := runtime.LoadClientKit(folder, kit)
-	if err != nil {
-		return err
-	}
-	msgConf, hasMessaging := client.Config.Services["messaging"].(map[string]any)
-	if client.Config.Mode == "live" && !hasMessaging {
-		// config.ts readRuntimeConfig with STOCK_SERVICES: WhatsApp may not be left out (readService's sentence for a missing service)
-		return runtime.ClientError{Msg: "runtime.json needs fixing:\n- In \"services\", add \"messaging\" with its \"baseUrl\" and \"phoneNumberId\"."}
-	}
-	token, err := runtime.ReadToken(os.Getenv("INTERNAL_TOKEN_FILE"), "internal token")
-	if err != nil {
-		return err
-	}
-	channelToken := ""
-	if f := os.Getenv("CHANNEL_TOKEN_FILE"); f != "" {
-		if t, err := runtime.ReadToken(f, "channel token"); err == nil {
-			channelToken = t
-		} else {
-			log("No usable channel token in " + f + " (CHANNEL_TOKEN_FILE): this shop's owner's page is off until the next deploy makes one.")
-		}
-	}
-	key, err := runtime.RecordKey(client.Config.Mode, os.Getenv("RECORD_KEY_FILE"))
-	if err != nil {
-		return err
-	}
-	st, err := store.Open(client.Config.DataDir)
-	if err != nil {
-		return err
-	}
-	defer st.Close()
-	now := func() int64 { return time.Now().UnixMilli() }
-	if test, err := testclock.FromEnv(os.Getenv, client.Config.Mode); err != nil {
-		return runtime.ClientError{Msg: err.Error()}
-	} else if test != nil {
-		now = test
-	}
-	if _, err := runtime.LoadShopKey(st, client.Config.DataDir, now(), log); err != nil {
-		return err
-	}
-	kit.Settings, kit.Now = client.Settings.Own.(*stockorders.Settings), now
-	// services.ts buildServices: the stand-in WhatsApp in fakes mode (made once, so it keeps what it was told while the process runs), the live client in live mode
-	// the hand check's shop (runtime.json "standins": "http") takes the live client too, to the stand-in over HTTP (runtime/config.go)
-	if !client.Config.UsesClients() {
-		if _, has := client.Config.Services["messaging"]; client.Config.Services == nil || has {
-			kit.WhatsApp = messaging.NewStandIn(messaging.Clock(now), stockorders.TemplateNames(), log)
-		}
-	} else {
-		timeout := guard.DefaultTimeoutMs
-		if t, ok := client.Config.Services["timeoutMs"].(float64); ok {
-			timeout = int(t)
-		}
-		tok := ""
-		if f, _ := msgConf["agentTokenFile"].(string); f != "" {
-			b, err := os.ReadFile(f)
-			if err != nil || strings.TrimSpace(string(b)) == "" {
-				return runtime.ClientError{Msg: fmt.Sprintf("I could not read the agent credential file %s (services.*.agentTokenFile).", f)}
-			}
-			tok = strings.TrimSpace(string(b))
-		}
-		str := func(k string) string { s, _ := msgConf[k].(string); return s }
-		opt := func(k string) *string {
-			if s, ok := msgConf[k].(string); ok {
-				return &s
-			}
-			return nil
-		}
-		c, err := messaging.NewLive(messaging.LiveConfig{BaseURL: str("baseUrl"), PhoneNumberID: str("phoneNumberId"), Provider: str("provider"), AppID: opt("appId"), AppName: opt("appName"),
-			SourceNumber: opt("sourceNumber"), AgentToken: tok, TimeoutMs: timeout}, messaging.Deps{Clock: messaging.Clock(now), Window: st})
-		if err != nil {
-			return runtime.ClientError{Msg: err.Error()}
-		}
-		kit.WhatsApp = c
-	}
-	// the monthly report (report/monthly-job.ts) from runtime.json's `report` block; without it none is made
-	if cfg, err := reportwire.ReadSetup(client.Config, client.Folder, log); err != nil {
-		return err
-	} else if cfg != nil {
-		kit.Report = stockorders.NewMonthlyReport(*cfg, kit.Settings, kit.WhatsApp)
-	}
-	var acc *access.Access
-	if channelToken != "" {
-		if acc, err = access.Open(filepath.Join(client.Config.DataDir, access.OwnerAccessFile)); err != nil {
-			return err
-		}
-		defer acc.Close()
-	}
-	// item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push.ts pushMessaging); rt exists once runtime.New returns, and no step runs before then
-	var rt *runtime.Runtime
-	kit.PushOwner = func(text string) []string { return rt.OwnerPush(text) }
-	kit.OwnerRoute = func(hasWhatsApp bool) string { return rt.OwnerRoute(hasWhatsApp) }
-	rt, err = runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: understanding.NewModel(client.Config.Talk, log, "The talk is off", understanding.TalkTimeoutMs, understanding.TalkMaxTokens), RecordKey: key, Log: log, Now: now, Kit: kit})
-	if err != nil {
-		return err
-	}
-	srv, err := runtime.Listen(rt, token, channelToken, client.Config.Host, client.Config.Port)
-	if err != nil {
-		return err
-	}
-	rt.Start(time.Duration(client.Config.TickSeconds * float64(time.Second)))
-	rt.Kick()
-	fmt.Printf("Geometer · Stock orders agent (Go) · %s (%s) · %s@%s\n", client.Settings.Name, filepath.Base(client.Folder), client.Lock.Pathway, client.Lock.Version)
-	fmt.Printf("Listening on %s · data in %s · a tick every %g s\n", srv.URL, client.Config.DataDir, client.Config.TickSeconds)
-	fmt.Println("Press Ctrl+C to stop.")
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
-	srv.Close()
-	rt.Close()
-	return nil
+	// the start of the shop (the folder, tokens, store, test clock, shop key, the runtime and its face) is runtime.Serve, and the Kit's own wiring internal/stockorders wire.go:
+	// both shared with go/cmd/parts since 25 Nov 2026 (decision 65)
+	return runtime.Serve(folder, &stockorders.Kit{}, runtime.ServeOptions{Label: "Stock orders agent", Noun: "shop"})
 }
