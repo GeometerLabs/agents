@@ -133,7 +133,7 @@ func (k *Kit) ReadSettings(in map[string]any, raw []byte, shared *runtime.Settin
 		}
 		merged, mergedRaw, clash := merge(top, own)
 		if clash != "" {
-			errs = append(errs, fmt.Sprintf(`parts.%s: %q is the shop's, set once at the top of the settings.`, b.Name, clash))
+			errs = append(errs, fmt.Sprintf(`parts.%s: %q is the shop's, set once at the top of the settings.`, b.Name, strings.TrimSpace(clash)))
 			continue
 		}
 		kit := make_()
@@ -174,18 +174,29 @@ func names() []string {
 }
 
 // merge is the top keys followed by the part's own, as one object (its map and its bytes, in that order, so a template that says its problems in the file's order says them in
-// this one). A key in both is a clash: the part may not set what the shop sets once.
+// this one). A key the part's block shares with the top is a clash, except an object at both (the owner: {"whatsapp", "language"} at the top, {"approveOverInr"} in an Orders
+// part): then the part's members are added after the top's, and only a member in both is a clash ("owner.whatsapp"), since the part may not change what the shop sets once.
 func merge(top, own []runtime.Member) (map[string]any, []byte, string) {
-	at := map[string]bool{}
-	for _, m := range top {
-		at[m.Name] = true
+	at := map[string]int{}
+	for i, m := range top {
+		at[m.Name] = i
+	}
+	all := append([]runtime.Member{}, top...)
+	for _, m := range own {
+		i, both := at[m.Name]
+		if !both {
+			all = append(all, m)
+			continue
+		}
+		joined, clash := joinObjects(top[i].Raw, m.Raw)
+		if clash != "" {
+			return nil, nil, m.Name + clash
+		}
+		all[i] = runtime.Member{Name: m.Name, Raw: joined}
 	}
 	var b bytes.Buffer
 	b.WriteByte('{')
-	for i, m := range append(append([]runtime.Member{}, top...), own...) {
-		if i >= len(top) && at[m.Name] {
-			return nil, nil, m.Name
-		}
+	for i, m := range all {
 		if i > 0 {
 			b.WriteByte(',')
 		}
@@ -200,6 +211,37 @@ func merge(top, own []runtime.Member) (map[string]any, []byte, string) {
 		return nil, nil, ""
 	}
 	return out, b.Bytes(), ""
+}
+
+// joinObjects is two objects' members, the first's then the second's; a member in both, or either not an object, is the clash ("" for the whole key, ".x" for a member).
+func joinObjects(a, b json.RawMessage) (json.RawMessage, string) {
+	am, ok1 := topMembers(a)
+	bm, ok2 := topMembers(b)
+	if !ok1 || !ok2 {
+		return nil, " "
+	}
+	seen := map[string]bool{}
+	for _, m := range am {
+		seen[m.Name] = true
+	}
+	for _, m := range bm {
+		if seen[m.Name] {
+			return nil, "." + m.Name
+		}
+	}
+	var out bytes.Buffer
+	out.WriteByte('{')
+	for i, m := range append(am, bm...) {
+		if i > 0 {
+			out.WriteByte(',')
+		}
+		k, _ := json.Marshal(m.Name)
+		out.Write(k)
+		out.WriteByte(':')
+		out.Write(m.Raw)
+	}
+	out.WriteByte('}')
+	return out.Bytes(), ""
 }
 
 // topMembers is a JSON object's members in the order they were written.
