@@ -1629,3 +1629,31 @@ engine (src/harness.ts), which the shops no longer run and which has no pickup h
   REAL_CADDY=1 and Docker); panel 276/276; every hand check on Go holds: Bookings 40/40, UPI 9/9, rental 35/35, discounts 43/43, assistant 40/40; Orders 17/17,
   Razorpay 18/18, Sweet Crumbs 16/16, plans 22/22, hold 4/4, discounts 20/20; Fees 26/26, Maths Circle 23/23, UPI 7/7, Classes 31/31, credit 4/4; Stock orders 17/17.
   No shop program left running.
+
+## d65-parts-25nov: several template parts in one shop (25 Nov 2026, decision 65)
+
+Owner, 24 Nov: "one shop can run several template parts, thats what the higher tier price slab is for". The design note (one Go program hosting the parts, not one
+process per part behind a router, and why) is bundle/Explanation.md "Several template parts in one shop"; what is left, with the owner's questions, is bundle/Deferred.md.
+
+- **The program.** `cmd/parts` with `internal/parts`: a `runtime.Kit` made of the parts' own Kits (Fees for the credit book, Orders for the pickup hold, Stock orders),
+  unchanged. The settings keep the shop's keys at the top and each part's own in `parts.<template>`, each checked by its own template; the saved state keeps each part's
+  members under `parts`, the router's under `router`, and the shared assistant and AI counts as every shop does; `carried` names the template the shop was before it took a
+  second part (its flat state and its record lines from then are that part's).
+- **The seam in the runtime** (`runtime/parts.go`, `record.go`, `serve.go`; nothing changes for a single-part shop): a part's view of the one record (its lines carry
+  `refs.part`, it reads only its own; document numbers over the whole record through accounting `ShopReader`); a beat per part, each its own step (a panic in one part's
+  beat does not skip the others' with OnPanic set); the owner's ONE assistant hosting every part's skill (StepContext.SetCoParts; its record lines written by the part that
+  owns the case); the licence notice and the morning line said once per shop, by the first part (the morning line over every part's skill and the whole record); each part's
+  limits under its own id (`LimitID`: `orders_refund_limit`); one stock count for an item two parts know (StockAliaser: the line under `supply:<id>` with `menu:<id>` as its
+  alias, so the hold's collection lowers it and Stock orders' low mark reorders it once); `CardCode`; `Serve`, the one start of Orders', Fees', Stock orders' and the parts
+  programs (each package's `wire.go` is its main's wiring, moved unchanged).
+- **Each part's `part.go`** says by its rules alone, with no effect, how sure it is a message is its own (runtime.Claim: its command with its own case, its words or an open
+  conversation, a customer's words about what is open, a new customer), which cases and page requests are its own, and hands its skill to the one assistant.
+- **The router** (`internal/parts` router.go, agent.go): the highest claim takes a message; a tie asks one short question with a button per part (words generated from
+  templates/commerce/parts/src/words.ts by scripts/gen_parts_words.ts, `--check`), keeps the message per number for 30 minutes and hands it to the part the answer names; a
+  message no part claims goes to the first part; a STOP goes to every part that knows the number; a redelivery goes where the message went; an owner's press goes to the
+  part that owns the case, a card's answer to the part whose skill made it; a payment event, an approval or a recovery whose case no single part owns is recorded and not done.
+- **One owner's page**: every part's items, coming list, credit rows, parents and cash in the shop's order, the one assistant's view (Stock orders' order cards left out as its
+  own page leaves them), the Money section summed over the parts.
+
+TypeScript findings: none in the templates' code. One thing worth knowing: the Orders skill owns `g-` references (`^[og]-`) and so does the Fees skill (`^[fqg]-`); in a
+parts shop a press on a `g-` case is owned by two parts and is recorded and not done (the router never guesses).
