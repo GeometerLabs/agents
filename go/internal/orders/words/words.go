@@ -70,6 +70,11 @@ type Example struct {
 	// E1: the owner's card's code, and how much below the item's price the example's price asked is
 	DiscountCode string `json:"discountCode"`
 	OfferedLess  int64  `json:"offeredLess"`
+	// 25 Nov 2026: the number that asked about an order, and a UPI refund's payment: its note, its day and the time of day it was marked
+	AskerPhone string `json:"askerPhone"`
+	UpiNote    string `json:"upiNote"`
+	PaidDate   [3]int `json:"paidDate"`
+	PaidClock  string `json:"paidClock"`
 }
 
 // Words is one language's pack. Unpacked once per process per language, the first time a shop needs it.

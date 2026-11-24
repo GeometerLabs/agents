@@ -15,6 +15,7 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
+	"github.com/GeometerLabs/agents/go/internal/orders/words"
 	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/payments/ownermarked"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
@@ -129,6 +130,77 @@ func (a *Agent) onKeep(phone string) error {
 
 // onTalkToOwner is agent.ts onTalkToOwner: the owner is told, once an hour for the same customer, and the customer is told the owner will message them; the agent does not reply on
 // the owner's behalf and decides nothing. If the owner could not be told, the customer is told that.
+// orderForms and planForms are agent.ts ORDER_FORMS and PLAN_FORMS: how a customer names an order and a plan ("o-5", "p-5", and the word before the number in each language).
+var (
+	orderForms = runtime.CaseForms{Prefix: "o", Words: []string{"order", "ऑर्डर", "ഓർഡർ", "ಆರ್ಡರ್"}}
+	planForms  = runtime.CaseForms{Prefix: "p", Words: []string{"plan", "प्लान", "പ്ലാൻ", "ಪ್ಲಾನ್"}}
+)
+
+// onCaseAsked is agent.ts onCaseAsked (25 Nov 2026, runtime/caseasked.go): only for a conversation that holds no order and no plan, words that name one of the shop's orders (a
+// pickup hold and a plan's period are orders too) or plans get one line that shows nothing of it, and the owner is told (at most once an hour for this asker and case, by the
+// record) with both numbers. The record line keeps the case in refs.case and leaves `booking` null. False: nothing was named, and the message goes on as before.
+func (a *Agent) onCaseAsked(phone, text string, wordForm bool) bool {
+	plans := a.store.PlansState(false).All()
+	for _, x := range a.store.Orders {
+		if x.Customer == phone {
+			return false
+		}
+	}
+	for _, p := range plans {
+		if p.Customer == phone {
+			return false
+		}
+	}
+	entries := a.c.Rec.Entries()
+	keys := runtime.RecordCaseKeys(entries)
+	for _, x := range a.store.Orders {
+		if x.ClaimRef != "" {
+			keys[runtime.CaseKey(x.ClaimRef)] = x.ID
+		}
+	}
+	planOf := func(id string) *Plan {
+		for _, p := range plans {
+			if p.ID == id {
+				return p
+			}
+		}
+		return nil
+	}
+	named := runtime.NamedCase(text, orderForms, func(id string) bool { return a.store.Order(id) != nil }, keys, wordForm)
+	if named == nil {
+		named = runtime.NamedCase(text, planForms, func(id string) bool { return planOf(id) != nil }, map[string]string{}, wordForm)
+	}
+	if named == nil {
+		return false
+	}
+	caseCustomer := ""
+	if o := a.store.Order(named.Case); o != nil {
+		caseCustomer = a.shownPhone(o.Customer, o)
+	} else {
+		caseCustomer = a.shownPhone(planOf(named.Case).Customer, nil)
+	}
+	lately := runtime.ToldLately(entries, phone, named.Case, a.now())
+	asker, ref := a.shownPhone(phone, nil), named.Case
+	told := lately || a.tellOwner(nil, phone, "owner_case_other_number", sayOpts{facts: func(f *words.MessageFacts) {
+		f.OrderRef, f.CustomerPhone, f.AskerPhone = words.S(ref), words.S(caseCustomer), words.S(asker)
+	}})
+	outcome, how := "failed", "the owner could not be told"
+	switch {
+	case lately:
+		outcome, how = "blocked", "the owner was already told in the last hour"
+	case told:
+		outcome, how = "confirmed", "the owner was told"
+	}
+	a.log(nil, phone, runtime.CaseAsked, outcome, map[string]any{"case": named.Case, "via": named.Via}, logMore{refs: map[string]string{"case": named.Case, "via": named.Via, "to": "owner"},
+		notes: "another conversation named " + named.Case + " (" + named.Via + "); nothing of it was shown and nothing changed; " + how})
+	t := "case_other_number_untold"
+	if told {
+		t = "case_other_number"
+	}
+	a.tellCustomer(nil, phone, []string{t}, sayOpts{})
+	return true
+}
+
 func (a *Agent) onTalkToOwner(phone string) error {
 	c := a.store.Customer(phone)
 	now := a.now()

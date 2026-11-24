@@ -1,12 +1,13 @@
 // The outgoing check for Orders: the shared check (modules/language/check.ts) given the values an order's record holds. The order's lines are one literal ("2 × Veg
 // thali, 1 × Curd") read whole from the record, so a message that states a different quantity or item than the record's lines leaves a bare number the check refuses.
+// 25 Nov 2026: the asker's number and a UPI refund's note are literals, and the day its payment was marked a moment (modules/record/case-asked.ts, ledger.ts refundSource).
 import { checkText } from "../../../../../modules/language/check.ts";
 import type { CheckFacts, CheckResult } from "../../../../../modules/language/check.ts";
 import type { MessageFacts } from "./templates.ts";
 
 /** The lists the check reads, made from an order conversation's facts. */
 export function checkFactsOf(facts: MessageFacts): CheckFacts {
-  const moments = [facts.slotToMs, facts.cutoffMs, facts.dateMs, ...(facts.slotChoices ?? []).flatMap((s) => [s.fromMs, s.toMs]), facts.plan?.fromMs, facts.plan?.toMs].filter((v): v is number => v !== undefined);
+  const moments = [facts.slotToMs, facts.cutoffMs, facts.dateMs, ...(facts.slotChoices ?? []).flatMap((s) => [s.fromMs, s.toMs]), facts.plan?.fromMs, facts.plan?.toMs, facts.paidAtMs].filter((v): v is number => v !== undefined);
   return {
     language: facts.language,
     timeZone: facts.timeZone,
@@ -15,7 +16,7 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     shownMs: facts.slotFromMs ?? facts.dateMs,
     momentsMs: moments,
     links: facts.link ? [facts.link] : [],
-    literals: [facts.businessName, facts.itemsText, facts.itemName, ...facts.menu.map((i) => i.name), facts.area, facts.address, ...(facts.areas ?? []), facts.orderRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, facts.discountCode],
+    literals: [facts.businessName, facts.itemsText, facts.itemName, ...facts.menu.map((i) => i.name), facts.area, facts.address, ...(facts.areas ?? []), facts.orderRef, facts.customerPhone, facts.askerPhone, facts.upiNote, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, facts.discountCode],
   };
 }
 

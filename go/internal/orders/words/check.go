@@ -43,6 +43,7 @@ func CheckFactsOf(f *MessageFacts) language.Facts {
 	if f.Plan != nil {
 		moments = append(moments, f.Plan.FromMs, f.Plan.ToMs)
 	}
+	moments = append(moments, f.PaidAtMs) // 25 Nov 2026: the day a UPI refund's payment was marked
 	for _, v := range moments {
 		if v != nil {
 			out.MomentsMs = append(out.MomentsMs, *v)
@@ -60,7 +61,7 @@ func CheckFactsOf(f *MessageFacts) language.Facts {
 	for _, a := range f.Areas {
 		lits = append(lits, S(a))
 	}
-	lits = append(lits, f.OrderRef, f.CustomerPhone, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.DiscountCode)
+	lits = append(lits, f.OrderRef, f.CustomerPhone, f.AskerPhone, f.UpiNote, f.ApprovalCode, f.UpiID, f.Payee, f.UpiCode, f.Partner, f.DiscountCode)
 	for _, l := range lits {
 		if l != nil {
 			out.Literals = append(out.Literals, *l)

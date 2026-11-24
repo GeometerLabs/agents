@@ -49,6 +49,7 @@ const DATE_MS = Date.UTC(2026, 10, 12, 18, 30); // Fri 13 Nov, midnight in India
 const CUTOFF = Date.UTC(2026, 10, 9, 14, 30); // Mon 9 Nov, 8:00 pm
 const PLAN_FROM = Date.UTC(2026, 10, 15, 18, 30); // Mon 16 Nov
 const PLAN_TO = Date.UTC(2026, 11, 14, 18, 30); // Tue 15 Dec
+const PAID_MS = Date.UTC(2026, 10, 3, 6, 0); // Tue 3 Nov: the day a UPI refund's payment was marked (25 Nov 2026)
 
 type Fact = string; // a key of MessageFacts, or "plan.meals" | "plan.fromMs" | "plan.toMs"
 type Bag = Record<string, string>;
@@ -66,13 +67,14 @@ function probe(language: Language, upi: boolean): MessageFacts {
     approvalCode: "QZCODE", approvalHours: 8805, approvalsLeft: 8806, payee: "qzpayee", upiCode: "QZUPICODE", partner: "qzpartner", upcomingCount: 8807,
     offeredInr: 7770008, discountCode: "QZDISCODE",
     plan: { meals: 8808, fromMs: PLAN_FROM, toMs: PLAN_TO },
+    askerPhone: "+919000000009", paidAtMs: PAID_MS, upiNote: "qzpaidnote",
   };
   if (upi) f.upiId = "qzupi@bank";
   return f;
 }
 
 /** Every fact `need()` can ask for (dateMs and upiId are not: a message does not refuse without them). */
-const NEEDED: Fact[] = ["itemsText", "itemName", "priceInr", "leftCount", "totalInr", "advanceInr", "balanceInr", "refundInr", "markedInr", "leftInr", "slotFromMs", "slotToMs", "cutoffMs", "mode", "area", "address", "areas", "link", "holdMinutes", "windowHours", "maxItems", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "payee", "upiCode", "partner", "upcomingCount", "plan", "plan.meals", "plan.fromMs", "plan.toMs", "offeredInr", "discountCode"];
+const NEEDED: Fact[] = ["itemsText", "itemName", "priceInr", "leftCount", "totalInr", "advanceInr", "balanceInr", "refundInr", "markedInr", "leftInr", "slotFromMs", "slotToMs", "cutoffMs", "mode", "area", "address", "areas", "link", "holdMinutes", "windowHours", "maxItems", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "payee", "upiCode", "partner", "upcomingCount", "plan", "plan.meals", "plan.fromMs", "plan.toMs", "offeredInr", "discountCode", "askerPhone", "paidAtMs", "upiNote"];
 
 const dateOf = (ms: number, language: Language) => formatDate(localParts(ms, TZ), language);
 const clockOf = (ms: number, language: Language) => formatTime(localParts(ms, TZ), language);
@@ -83,7 +85,9 @@ function slotTable(f: MessageFacts): [string, string][] {
   const t: [string, string][] = [
     [f.menu.map((i) => `${i.name} ${formatInr(i.priceInr)}`).join(", "), "menuList"],
     [when(f), "when"], [cutAt(f), "cutAt"], [how(f), "how"], [rest(f), "rest"], [day(f), "day"],
-    [dateOf(PLAN_FROM, f.language), "planFrom"], [dateOf(PLAN_TO, f.language), "planTo"],
+    [dateOf(PLAN_FROM, f.language), "planFrom"], [dateOf(PLAN_TO, f.language), "planTo"], [dateOf(PAID_MS, f.language), "paidDate"],
+    // 25 Nov 2026: the UPI refund's note is the slot "paidNote" ("upiNote" is this file's UPI sentence), the asker's number "askerPhone"
+    [f.upiNote!, "paidNote"], [f.askerPhone!, "askerPhone"],
     [f.link!, "link"],
     rupees("priceInr"), rupees("totalInr"), rupees("advanceInr"), rupees("balanceInr"), rupees("refundInr"), rupees("markedInr"), rupees("leftInr"), rupees("offeredInr"),
     [String(f.leftCount), "leftCount"], [String(f.holdMinutes), "holdMinutes"], [String(f.windowHours), "windowHours"], [String(f.maxItems), "maxItems"], [String(f.approvalHours), "approvalHours"],
@@ -105,7 +109,7 @@ const FACTS: Record<string, (f: MessageFacts) => Fact[]> = {
   planFrom: () => ["plan", "plan.fromMs"], planTo: () => ["plan", "plan.toMs"], meals: () => ["plan", "plan.meals"],
   leftCount: () => ["leftCount"], holdMinutes: () => ["holdMinutes"], windowHours: () => ["windowHours"], maxItems: () => ["maxItems"], approvalHours: () => ["approvalHours"],
   approvalsLeft: () => ["approvalsLeft"], upcomingCount: () => ["upcomingCount"], address: () => ["address"], areas: () => ["areas"], orderRef: () => ["orderRef"],
-  customerPhone: () => ["customerPhone"], approvalCode: () => ["approvalCode"], upiCode: () => ["upiCode"], payee: () => ["payee"], partner: () => ["partner"], link: () => ["link"], upiId: () => [],
+  customerPhone: () => ["customerPhone"], askerPhone: () => ["askerPhone"], paidDate: () => ["paidAtMs"], paidNote: () => ["upiNote"], approvalCode: () => ["approvalCode"], upiCode: () => ["upiCode"], payee: () => ["payee"], partner: () => ["partner"], link: () => ["link"], upiId: () => [],
 };
 
 /** A probe's text turned into slots. Throws when braces are left over (a word that looks like a slot) or a probe is left in, so a slot is never confused with a word. */
@@ -239,7 +243,7 @@ function metaWords(language: Language): { meta: unknown[]; metaSlots: Bag } {
 function exampleWords(language: Language): unknown {
   const a = annapurna(), b = sweetCrumbs();
   const ea = exampleFacts(a, language), eb = exampleFacts(b, language);
-  const keys = ["address", "link", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiCode", "partner", "upcomingCount", "leftInr", "mode", "discountCode"] as const;
+  const keys = ["address", "link", "orderRef", "customerPhone", "approvalCode", "approvalHours", "approvalsLeft", "upiCode", "partner", "upcomingCount", "leftInr", "mode", "discountCode", "askerPhone", "upiNote"] as const;
   const out: Record<string, unknown> = {};
   for (const k of keys) {
     if (ea[k] !== eb[k]) throw new Error(`exampleFacts ${k} differs between shops: it is not a constant`);
@@ -260,6 +264,11 @@ function exampleWords(language: Language): unknown {
   out.date = ymd(ea.dateMs!);
   out.cutoffDate = ymd(ea.cutoffMs!);
   out.planToDate = ymd(ea.plan!.toMs!);
+  // 25 Nov 2026: a UPI refund's payment, marked on a fixed day at a fixed time of day in the shop's zone
+  out.paidDate = ymd(ea.paidAtMs!);
+  const paid = localParts(ea.paidAtMs!, a.timezone);
+  out.paidClock = `${String(paid.hour).padStart(2, "0")}:${String(paid.minute).padStart(2, "0")}`;
+  if (JSON.stringify(ymd(eb.paidAtMs!)) !== JSON.stringify(out.paidDate)) throw new Error("exampleFacts paidAtMs differs between shops");
   // E1: the price asked is the item's price less a constant
   if (ea.priceInr !== item.priceInr || ea.itemName !== first || item.priceInr - ea.offeredInr! !== b.menu[0].priceInr - eb.offeredInr!) throw new Error("exampleFacts' discount facts are not the item's price less a constant");
   out.offeredLess = item.priceInr - ea.offeredInr!;
@@ -329,6 +338,7 @@ function probeless(language: Language): MessageFacts {
     approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, payee: "Annapurna Tiffins", upiCode: "P4XR9T", partner: "Divya, Sri Sai Digital", upcomingCount: 4,
     plan: { meals: 22, fromMs: Date.UTC(2026, 10, 15, 18, 30), toMs: Date.UTC(2026, 11, 14, 18, 30) },
     offeredInr: 160, discountCode: "Q7RM2X",
+    askerPhone: "+919822222222", paidAtMs: Date.UTC(2026, 10, 3, 6, 0), upiNote: "o-3", // 25 Nov 2026: the asker, and a UPI refund's payment
   };
 }
 

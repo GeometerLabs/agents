@@ -18,11 +18,11 @@ import type { MetaTemplate } from "../../../../../modules/language/meta-template
 import { zonedToMs } from "../../../../../modules/core/time.ts";
 import { itemName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
-import { cutAt, dateOf, day, how, inr, need, payTo, render, when } from "./templates.ts";
+import { cutAt, dateOf, day, how, inr, need, paidDate, payTo, render, upiNote, when } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "link" | "item" | "price" | "offered" | "dcode" | "meals" | "planFrom" | "planTo";
+export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "link" | "item" | "price" | "offered" | "dcode" | "meals" | "planFrom" | "planTo" | "asker" | "paidDate" | "paidNote";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   items: (f) => need(f, "itemsText"),
@@ -57,6 +57,10 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   meals: (f) => String(planFact(f, "meals")),
   planFrom: (f) => dateOf(f, planFact(f, "fromMs")),
   planTo: (f) => dateOf(f, planFact(f, "toMs")),
+  // 25 Nov 2026: who asked about an order from another number; the day a UPI refund's payment was marked, and the note it carried
+  asker: (f) => need(f, "askerPhone"),
+  paidDate: (f) => paidDate(f),
+  paidNote: (f) => upiNote(f), // not "upiNote": that name is the Go words' UPI sentence (go/scripts/gen_orders_words.ts)
 };
 
 /** A plan fact, or the refusal a message gives when the record does not have it. */
@@ -67,7 +71,7 @@ function planFact<K extends "meals" | "fromMs" | "toMs">(f: MessageFacts, key: K
 }
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
-const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", items: "§items§", address: "§address§", ref: "§ref§", phone: "§phone§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", link: "§link§", item: "§item§", dcode: "§dcode§" };
+const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", items: "§items§", address: "§address§", ref: "§ref§", phone: "§phone§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", link: "§link§", item: "§item§", dcode: "§dcode§" , asker: "§asker§", paidNote: "§paidnote§" };
 const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { total: 7_000_001, advance: 7_000_002, balance: 7_000_003, refund: 7_000_004, marked: 7_000_005, left: 7_000_006, price: 7_000_007, offered: 7_000_008 };
 const STAND_IN_DAY_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of ours would state (Fri 14 Jun 2030)
 const STAND_IN_FROM_MS = Date.UTC(2030, 5, 14, 10, 17);
@@ -76,6 +80,7 @@ const STAND_IN_CUTOFF_MS = Date.UTC(2030, 5, 13, 19, 29); // Thu 13 Jun 2030
 const STAND_IN_COUNT: Partial<Record<Slot, number>> = { hours: 7_000_009, window: 7_000_012, upcoming: 7_000_010, meals: 7_000_011 };
 const STAND_IN_PLAN_FROM_MS = Date.UTC(2030, 7, 20, 0, 0); // Tue 20 Aug 2030 and Thu 19 Sep 2030: days no other stand-in is
 const STAND_IN_PLAN_TO_MS = Date.UTC(2030, 8, 19, 0, 0);
+const STAND_IN_PAID_MS = Date.UTC(2030, 9, 9, 0, 0); // Wed 9 Oct 2030: the day a UPI refund's payment was marked (25 Nov 2026), a day no other stand-in is
 
 function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageFacts {
   return {
@@ -87,6 +92,7 @@ function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageF
     approvalHours: STAND_IN_COUNT.hours, windowHours: STAND_IN_COUNT.window, upcomingCount: STAND_IN_COUNT.upcoming,
     plan: { meals: STAND_IN_COUNT.meals, fromMs: STAND_IN_PLAN_FROM_MS, toMs: STAND_IN_PLAN_TO_MS },
     itemName: STAND_IN_TEXT.item, priceInr: STAND_IN_AMOUNT.price, offeredInr: STAND_IN_AMOUNT.offered, discountCode: STAND_IN_TEXT.dcode,
+    askerPhone: STAND_IN_TEXT.asker, upiNote: STAND_IN_TEXT.paidNote, paidAtMs: STAND_IN_PAID_MS,
   };
 }
 
@@ -102,6 +108,7 @@ function bodyOf(id: TemplateId, language: Language, mode: "pickup" | "delivery")
   text = text.split(day(facts)).join("{day}");
   text = text.split(dateOf(facts, STAND_IN_PLAN_FROM_MS)).join("{planFrom}");
   text = text.split(dateOf(facts, STAND_IN_PLAN_TO_MS)).join("{planTo}");
+  text = text.split(dateOf(facts, STAND_IN_PAID_MS)).join("{paidDate}");
   if (mode === "delivery") text = text.split(how(facts)).join("{how}"); // a pickup template says "pickup" in fixed words
   for (const [slot, n] of Object.entries(STAND_IN_COUNT)) text = text.split(String(n)).join(`{${slot}}`);
   return text;
@@ -140,8 +147,12 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   // UPI shops (B33): what the owner is asked to look for or send back, and what the customer hears about a refund, which can come days later
   template("owner_order_upi_check", "owner_upi_expected", "owner"),
   template("owner_order_upi_says_paid", "owner_upi_claim", "owner"),
-  template("owner_order_upi_refund_to_send", "owner_upi_refund_owed", "owner"),
-  template("owner_order_upi_refund_reminder", "owner_upi_refund_reminder", "owner"),
+  // 25 Nov 2026: new words under new names (the money goes back to the account it came from, found by its note, amount and date); the bodies Meta approved under
+  // owner_order_upi_refund_to_send and owner_order_upi_refund_reminder stay registered and unused (Deferred.md)
+  template("owner_order_upi_refund_to_account", "owner_upi_refund_owed", "owner"),
+  template("owner_order_upi_refund_account_reminder", "owner_upi_refund_reminder", "owner"),
+  // 25 Nov 2026 (modules/record/case-asked.ts): someone at another number named an order; it reaches the owner outside their window
+  template("owner_order_asked_elsewhere", "owner_case_other_number", "owner"),
   template("order_upi_refund_coming", "upi_refund_owed", "customer"),
   template("order_upi_refund_marked_sent", "upi_refund_sent", "customer"),
   // 12 Nov 2026: the promise refund_checking makes ("as soon as it is confirmed"), kept when the payments service's list settles the refund, often days later
@@ -196,6 +207,8 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     link: "https://rzp.io/i/example", orderRef: "o-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name, windowHours: settings.cancellation.windowHours,
     partner: "Divya, Sri Sai Digital", upcomingCount: 4, itemName: itemName(item, language), priceInr: item.priceInr, offeredInr: item.priceInr - 20, discountCode: "Q7RM2X",
     plan: { meals: 22, fromMs: at("00:00"), toMs: at("00:00", { year: 2026, month: 12, day: 11 }) },
+    // 25 Nov 2026: the number that asked about an order, and the day and note of a UPI refund's payment
+    askerPhone: "+919822222222", paidAtMs: at("11:30", { year: 2026, month: 11, day: 3 }), upiNote: "o-3",
   };
 }
 
