@@ -1659,5 +1659,6 @@ again (`runtime/morning.go`, as `morning.ts` did). A margin of milliseconds, so 
 hand-check shop's start (`modules/crash-test/go-shop.ts`, also after a restart) now returns once its first beat has ended, as a running shop has beaten before its customer
 writes; every template's world shares it. The owner link file is now made at the shop's start instant too (it was the machine's time; the program only checks it is there).
 Test: `templates/commerce/bookings/test/first-beat.test.ts` (a 2 s beat; before the fix the morning line always went, after it never). A live shop saw nothing wrong: its line
-goes once, inside the window. The quiet day kept per process only is noted in `internal/runtime/Deferred.md`.
+goes once, inside the window. The quiet day kept per process only is noted in `internal/runtime/Deferred.md`. The cost: about 0.25 s a world (one beat), so the Bookings hand
+check takes some 27 s instead of 17 s, Orders' 9 s instead of 5 s.
 
