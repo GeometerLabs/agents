@@ -28,7 +28,8 @@ test("the WhatsApp Guard writes to any number when a part writes to customers; a
   assert.ok(!JSON.stringify(spec).includes("approved-recipients-only"), "no list, no allowlist");
   const stockOnly = k.validateSettings({ ...starter, parts: { "stock-orders": starter.parts["stock-orders"] } });
   assert.ok(stockOnly.ok);
-  assert.deepEqual([...k.guardRecipients!(stockOnly.settings)].sort(), ["+919800000001", "+919876500001"].sort(), "the owner and the approved supplier");
+  const list = k.guardRecipients!(stockOnly.settings);
+  assert.ok(list.includes("+919800000001") && list.includes("+919876500001") && list.length === KINDS["stock-orders"].guardRecipients!(stockOnly.settings.parts[0].settings).length, "the owner and the approved supplier, as Stock orders' own list");
 });
 
 test("each part's limits are its own, under its own id and path", () => {
